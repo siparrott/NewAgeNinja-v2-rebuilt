@@ -193,7 +193,7 @@ const GalleryPage: React.FC = () => {
             {!isAuthenticated ? (
               <GalleryAuthForm 
                 gallerySlug={slug || ''} 
-                isPasswordProtected={!!gallery.passwordHash}
+                isPasswordProtected={gallery.isPasswordProtected || !!gallery.password}
                 onAuthenticated={handleAuthenticated}
               />
             ) : (
