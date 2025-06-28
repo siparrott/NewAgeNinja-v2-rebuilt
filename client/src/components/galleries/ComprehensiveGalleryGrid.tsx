@@ -38,6 +38,17 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
 }) => {
   const { t } = useLanguage();
   const [selectedGallery, setSelectedGallery] = useState<string | null>(null);
+  
+  // Debug logging for props
+  console.log('ComprehensiveGalleryGrid props:', {
+    isAdmin,
+    onDelete: !!onDelete,
+    onShare: !!onShare,
+    onEdit: !!onEdit,
+    onDuplicate: !!onDuplicate,
+    onPreview: !!onPreview,
+    galleriesCount: galleries.length
+  });
 
   const getGalleryUrl = (gallery: Gallery) => {
     return `/gallery/${gallery.slug}`;
@@ -206,22 +217,24 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                         Share
                       </button>
                       <hr className="my-2" />
-                      <button
-                        onClick={() => {
-                          console.log('Delete button clicked for gallery:', gallery.id, gallery.title);
-                          console.log('onDelete function exists:', !!onDelete);
-                          if (onDelete) {
-                            onDelete(gallery.id);
-                          } else {
-                            console.error('onDelete function is not provided!');
-                          }
-                          setSelectedGallery(null);
-                        }}
-                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 size={14} className="mr-2" />
-                        Delete
-                      </button>
+                      {onDelete && (
+                        <button
+                          onClick={() => {
+                            console.log('Delete button clicked for gallery:', gallery.id, gallery.title);
+                            console.log('onDelete function exists:', !!onDelete);
+                            if (onDelete) {
+                              onDelete(gallery.id);
+                            } else {
+                              console.error('onDelete function is not provided!');
+                            }
+                            setSelectedGallery(null);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 size={14} className="mr-2" />
+                          Delete
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
