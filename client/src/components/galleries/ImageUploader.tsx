@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, X, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Loader2, AlertCircle, Image as ImageIcon, Folder, FolderPlus } from 'lucide-react';
 import { uploadGalleryImages } from '../../lib/gallery-api';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -14,6 +14,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ galleryId, onUploadComple
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [folderName, setFolderName] = useState<string>('');
+  const [showFolderInput, setShowFolderInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Track files being processed for upload
@@ -105,6 +107,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ galleryId, onUploadComple
       setError('Gallery ID is missing. Please save the gallery first.');
       return;
     }
+
+    if (!folderName.trim()) {
+      setError('Please enter a folder name for organizing your images.');
+      return;
+    }
     
     try {
       setUploading(true);
@@ -121,8 +128,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ galleryId, onUploadComple
         });
       }, 500);
       
-      // Upload files
-      await uploadGalleryImages(galleryId, files);
+      // Upload files with folder name
+      await uploadGalleryImages(galleryId, files, folderName.trim());
       
       // Clear progress interval
       clearInterval(progressInterval);
@@ -136,6 +143,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ galleryId, onUploadComple
       });
       setFiles([]);
       setPreviews([]);
+      setFolderName('');
+      setShowFolderInput(false);
       
       // Notify parent component
       onUploadComplete();
