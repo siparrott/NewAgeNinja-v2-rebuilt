@@ -109,38 +109,38 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
   }, [isOpen, editingInvoice]);  const fetchClients = async () => {
     try {
       setLoading(true);
-      // Try to fetch from the clients table first
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, first_name, last_name, email, address1, city, country')
-        .order('first_name');
-
-      if (error) {
-        console.error('Supabase error fetching clients:', error);
-        // Use sample clients as fallback
-        setClients(getSampleClients());
-        return;
+      setError(null);
+      
+      // Fetch from the PostgreSQL crm_clients table via Express API
+      const response = await fetch('/api/crm/clients');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const data = await response.json();
 
       if (data && data.length > 0) {
-        // Transform the data to match our Client interface
-        const transformedClients = data.map(client => ({
+        // Transform the CRM client data to match our Client interface
+        const transformedClients = data.map((client: any) => ({
           id: client.id,
-          name: `${client.first_name} ${client.last_name}`.trim(),
+          name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.company || 'Unnamed Client',
           email: client.email || '',
-          address1: client.address1,
+          address1: client.address,
           city: client.city,
           country: client.country
         }));
         setClients(transformedClients);
+        console.log(`Loaded ${transformedClients.length} clients from CRM database`);
       } else {
-        // No clients found, use sample clients
-        console.log('No clients found in database, using sample clients');
+        // No clients found in CRM, use sample clients as fallback
+        console.log('No clients found in CRM database, using sample clients');
         setClients(getSampleClients());
       }
     } catch (err) {
-      console.error('Error fetching clients:', err);
-      setError('Failed to load clients, using sample data');
+      console.error('Error fetching clients from CRM:', err);
+      setError('Failed to load clients from database');
+      // Fallback to sample clients
       setClients(getSampleClients());
     } finally {
       setLoading(false);
