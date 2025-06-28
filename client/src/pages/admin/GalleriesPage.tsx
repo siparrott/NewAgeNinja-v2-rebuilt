@@ -49,26 +49,40 @@ const GalleriesPage: React.FC = () => {
     
     setFilteredGalleries(filtered);
   };  const handleDeleteGallery = async (id: string) => {
+    console.log('handleDeleteGallery called with ID:', id);
+    
     const gallery = galleries.find(g => g.id === id);
     const galleryTitle = gallery?.title || 'this gallery';
     
+    console.log('Found gallery for deletion:', gallery);
+    
     if (!confirm(`Are you sure you want to delete "${galleryTitle}"? This action cannot be undone.`)) {
+      console.log('User cancelled deletion');
       return;
     }
 
+    console.log('User confirmed deletion, proceeding...');
+
     try {
       setLoading(true);
+      console.log('Calling deleteGallery API...');
       await deleteGallery(id);
+      console.log('deleteGallery API call successful');
       
       // Update local state
-      setGalleries(prevGalleries => prevGalleries.filter(gallery => gallery.id !== id));
+      setGalleries(prevGalleries => {
+        const updated = prevGalleries.filter(gallery => gallery.id !== id);
+        console.log('Updated galleries list:', updated);
+        return updated;
+      });
       
       // Clear any existing errors
       setError(null);
       setLoading(false);
+      console.log('Gallery deletion completed successfully');
     } catch (err) {
       console.error('Error deleting gallery:', err);
-      setError('Failed to delete gallery. Please try again.');
+      setError(`Failed to delete gallery: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setLoading(false);
     }
   };

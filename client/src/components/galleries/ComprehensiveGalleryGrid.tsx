@@ -40,7 +40,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
   const [selectedGallery, setSelectedGallery] = useState<string | null>(null);
 
   const getGalleryUrl = (gallery: Gallery) => {
-    return `/galleries/${gallery.slug}`;
+    return `/gallery/${gallery.slug}`;
   };
 
   const getShareUrl = (gallery: Gallery) => {
@@ -208,7 +208,13 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                       <hr className="my-2" />
                       <button
                         onClick={() => {
-                          onDelete && onDelete(gallery.id);
+                          console.log('Delete button clicked for gallery:', gallery.id, gallery.title);
+                          console.log('onDelete function exists:', !!onDelete);
+                          if (onDelete) {
+                            onDelete(gallery.id);
+                          } else {
+                            console.error('onDelete function is not provided!');
+                          }
                           setSelectedGallery(null);
                         }}
                         className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
