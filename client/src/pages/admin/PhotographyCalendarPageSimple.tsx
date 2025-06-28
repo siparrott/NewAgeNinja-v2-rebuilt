@@ -76,6 +76,7 @@ const PhotographyCalendarPage: React.FC = () => {
   const [selectedSession, setSelectedSession] = useState<PhotographySession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [newLeadsCount, setNewLeadsCount] = useState(8);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [activeView, setActiveView] = useState('calendar');
   const [showSessionForm, setShowSessionForm] = useState(false);
@@ -109,7 +110,20 @@ const PhotographyCalendarPage: React.FC = () => {
 
   useEffect(() => {
     fetchSessions();
+    fetchLeadsCount();
   }, []);
+
+  const fetchLeadsCount = async () => {
+    try {
+      const response = await fetch('/api/crm/leads');
+      if (response.ok) {
+        const data = await response.json();
+        setNewLeadsCount(data.length);
+      }
+    } catch (error) {
+      console.log('Leads API not ready yet, using default count');
+    }
+  };
 
   const fetchSessions = async () => {
     try {
@@ -285,7 +299,7 @@ const PhotographyCalendarPage: React.FC = () => {
                 <span className="text-sm font-medium text-gray-600">New Leads</span>
                 <TrendingUp className="h-5 w-5 text-blue-500" />
               </div>
-              <div className="text-2xl font-bold text-blue-600">8</div>
+              <div className="text-2xl font-bold text-blue-600">{newLeadsCount}</div>
               <p className="text-xs text-gray-500 flex items-center mt-1">
                 <span className="text-green-600 mr-1">↗ 12.5%</span>
                 this week
