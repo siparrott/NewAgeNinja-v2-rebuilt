@@ -54,74 +54,70 @@ const AdminDashboardPageDev: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch real data from PostgreSQL API endpoints
-      const [
-        invoicesResponse,
-        clientsResponse,
-        leadsResponse,
-        sessionsResponse
-      ] = await Promise.allSettled([
-        fetch('/api/crm/invoices'),
-        fetch('/api/crm/clients'),
-        fetch('/api/crm/leads'),
-        fetch('/api/photography/sessions')
+      // Mock data for development
+      setMetrics({
+        avgOrderValue: 245.50,
+        activeUsers: 1247,
+        bookedRevenue: 15420.00,
+        trendData: [
+          { date: '2025-01-01', value: 1200 },
+          { date: '2025-01-02', value: 1350 },
+          { date: '2025-01-03', value: 1180 },
+          { date: '2025-01-04', value: 1420 },
+          { date: '2025-01-05', value: 1380 },
+        ]
+      });
+
+      setRecentLeads([
+        {
+          id: '1',
+          name: 'Sarah Mueller',
+          email: 'sarah@example.com',
+          phone: '+43 123 456 789',
+          service: 'Family Photoshoot',
+          status: 'new',
+          createdAt: '2025-01-25T10:30:00Z'
+        },
+        {
+          id: '2',
+          name: 'Michael Schmidt',
+          email: 'michael@example.com',
+          phone: '+43 987 654 321',
+          service: 'Wedding Photography',
+          status: 'contacted',
+          createdAt: '2025-01-25T09:15:00Z'
+        },
+        {
+          id: '3',
+          name: 'Anna Weber',
+          email: 'anna@example.com',
+          phone: '+43 555 123 456',
+          service: 'Newborn Photoshoot',
+          status: 'new',
+          createdAt: '2025-01-24T16:45:00Z'
+        }
       ]);
 
-      // Process real data
-      const invoices = invoicesResponse.status === 'fulfilled' && invoicesResponse.value.ok 
-        ? await invoicesResponse.value.json() : [];
-      const clients = clientsResponse.status === 'fulfilled' && clientsResponse.value.ok 
-        ? await clientsResponse.value.json() : [];
-      const leads = leadsResponse.status === 'fulfilled' && leadsResponse.value.ok 
-        ? await leadsResponse.value.json() : [];
-      const sessions = sessionsResponse.status === 'fulfilled' && sessionsResponse.value.ok 
-        ? await sessionsResponse.value.json() : [];
-
-      // Calculate real metrics
-      const totalRevenue = invoices.reduce((sum: number, inv: any) => 
-        sum + (parseFloat(inv.total) || 0), 0);
-      const avgOrderValue = invoices.length > 0 ? totalRevenue / invoices.length : 0;
-      
-      // Generate trend data from recent sessions with safe date parsing
-      const trendData = sessions.slice(0, 5).map((session: any, index: number) => {
-        const dateStr = session.startTime || new Date().toISOString();
-        const date = new Date(dateStr);
-        
-        return {
-          date: isNaN(date.getTime()) ? new Date().toISOString().split('T')[0] : date.toISOString().split('T')[0],
-          value: Math.floor(Math.random() * 500) + 1000 // Revenue estimate per session
-        };
-      });
-
-      setMetrics({
-        avgOrderValue: avgOrderValue,
-        activeUsers: clients.length,
-        bookedRevenue: totalRevenue,
-        trendData: trendData
-      });
-
-      // Use real leads data
-      const recentLeadsData = leads.slice(0, 3).map((lead: any) => ({
-        id: lead.id,
-        name: `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || lead.name || 'Unknown Client',
-        email: lead.email || 'No email',
-        phone: lead.phone || 'No phone',
-        service: lead.serviceType || lead.notes || 'Photography Service',
-        status: lead.status?.toLowerCase() || 'new',
-        createdAt: lead.createdAt || new Date().toISOString()
-      }));
-
-      setRecentLeads(recentLeadsData);
-
-      // Use actual gallery images or sessions for popular images
-      const popularImagesData = sessions.slice(0, 3).map((session: any) => ({
-        id: session.id,
-        url: `https://images.pexels.com/photos/${Math.floor(Math.random() * 1000000) + 1000000}/pexels-photo.jpeg`, // Placeholder until real images
-        title: session.title || session.sessionType || 'Photography Session',
-        views: Math.floor(Math.random() * 1000) + 500
-      }));
-
-      setPopularImages(popularImagesData);
+      setPopularImages([
+        {
+          id: '1',
+          url: 'https://images.pexels.com/photos/1668928/pexels-photo-1668928.jpeg',
+          title: 'Family Portrait Session',
+          views: 1250
+        },
+        {
+          id: '2',
+          url: 'https://images.pexels.com/photos/3875080/pexels-photo-3875080.jpeg',
+          title: 'Newborn Photography',
+          views: 980
+        },
+        {
+          id: '3',
+          url: 'https://images.pexels.com/photos/3662850/pexels-photo-3662850.jpeg',
+          title: 'Maternity Shoot',
+          views: 875
+        }
+      ]);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
