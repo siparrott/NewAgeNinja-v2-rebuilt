@@ -26,7 +26,8 @@ import {
   CheckSquare,
   Square,
   SortAsc,
-  SortDesc
+  SortDesc,
+  Folder
 } from 'lucide-react';
 
 interface FileItem {
@@ -91,10 +92,13 @@ const ProDigitalFilesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
-  const [showUploadModal, setShowUploadModal] = useState(false);  const [showMetadataModal, setShowMetadataModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showMetadataModal, setShowMetadataModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [iptcData, setIptcData] = useState<IPTCData>({});
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [folderName, setFolderName] = useState<string>('');
+  const [selectedFilesForUpload, setSelectedFilesForUpload] = useState<FileList | null>(null);
 
   useEffect(() => {
     fetchFiles();
@@ -185,6 +189,12 @@ const ProDigitalFilesPage: React.FC = () => {
   const handleFileUpload = async (files: FileList) => {
     if (!files.length) return;
 
+    // Check if folder name is provided
+    if (!folderName.trim()) {
+      setError('Please enter a folder name to organize your files.');
+      return;
+    }
+
     try {
       setUploadProgress(0);
       
@@ -197,13 +207,17 @@ const ProDigitalFilesPage: React.FC = () => {
 
       const totalFiles = files.length;
       let completedFiles = 0;
+      const sanitizedFolderName = folderName.trim().replace(/[^a-zA-Z0-9\-_\s]/g, '').replace(/\s+/g, '_');
 
       for (const file of Array.from(files)) {
-        // Upload to Supabase Storage
+        // Create file path with folder structure
         const fileName = `${Date.now()}-${file.name}`;
+        const filePath = `${sanitizedFolderName}/${fileName}`;
+        
+        // Upload to Supabase Storage with folder path
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('digital-files')
-          .upload(fileName, file);
+          .upload(filePath, file);
 
         if (uploadError) {
           console.error('Storage upload error:', uploadError);
@@ -213,7 +227,7 @@ const ProDigitalFilesPage: React.FC = () => {
         // Extract metadata
         const metadata = await extractFileMetadata(file);
 
-        // Save file record to database
+        // Save file record to database with folder information
         const fileRecord = {
           filename: fileName,
           original_filename: file.name,
@@ -223,6 +237,7 @@ const ProDigitalFilesPage: React.FC = () => {
           category: getCategoryFromMimeType(file.type),
           is_public: false,
           uploaded_by: user.id,
+          location: sanitizedFolderName, // Store folder name in location field
           ...metadata
         };
 
@@ -243,6 +258,8 @@ const ProDigitalFilesPage: React.FC = () => {
       await fetchFiles();
       setShowUploadModal(false);
       setUploadProgress(0);
+      setFolderName('');
+      setSelectedFilesForUpload(null);
     } catch (err: any) {
       console.error('Error uploading files:', err);
       setError(err.message || 'Failed to upload files. Please try again.');
@@ -783,11 +800,30 @@ const ProDigitalFilesPage: React.FC = () => {
             <div className="bg-white rounded-lg p-6 w-full max-w-lg">
               <h3 className="text-lg font-medium text-gray-900 mb-4">{t('file.upload')}</h3>
               
+              {/* Folder Name Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Folder className="inline h-4 w-4 mr-1" />
+                  Folder Name *
+                </label>
+                <input
+                  type="text"
+                  value={folderName}
+                  onChange={(e) => setFolderName(e.target.value)}
+                  placeholder="Enter folder name (e.g., 'Client Photos', 'Wedding 2024')"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-sm"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Files will be organized in this folder for better management
+                </p>
+              </div>
+              
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <input
                   type="file"
                   multiple
-                  onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                  onChange={(e) => e.target.files && setSelectedFilesForUpload(e.target.files)}
                   className="hidden"
                   id="file-upload"
                   accept="image/*,video/*,.pdf,.doc,.docx,.txt"
@@ -803,6 +839,22 @@ const ProDigitalFilesPage: React.FC = () => {
                 </label>
               </div>
 
+              {/* Selected Files Display */}
+              {selectedFilesForUpload && selectedFilesForUpload.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Selected files ({selectedFilesForUpload.length}):
+                  </p>
+                  <div className="max-h-24 overflow-y-auto text-xs text-gray-600">
+                    {Array.from(selectedFilesForUpload).map((file, index) => (
+                      <div key={index} className="py-1">
+                        {file.name} ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {uploadProgress > 0 && (
                 <div className="mt-4">
                   <div className="bg-gray-200 rounded-full h-2">
@@ -817,11 +869,25 @@ const ProDigitalFilesPage: React.FC = () => {
 
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => setShowUploadModal(false)}
+                  onClick={() => {
+                    setShowUploadModal(false);
+                    setFolderName('');
+                    setSelectedFilesForUpload(null);
+                  }}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                 >
                   {t('action.cancel')}
                 </button>
+                {selectedFilesForUpload && selectedFilesForUpload.length > 0 && (
+                  <button
+                    onClick={() => handleFileUpload(selectedFilesForUpload)}
+                    disabled={!folderName.trim() || uploadProgress > 0}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg flex items-center"
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    Upload to "{folderName.trim()}"
+                  </button>
+                )}
               </div>
             </div>
           </div>
