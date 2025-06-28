@@ -165,7 +165,11 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                   </button>
 
                   {selectedGallery === gallery.id && (
-                    <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999] min-w-[160px]">
+                    <div className="fixed bg-white rounded-lg shadow-xl border border-gray-300 py-2 z-[9999] min-w-[160px]" 
+                         style={{
+                           top: '200px',
+                           right: '50px'
+                         }}>
                       <button
                         onClick={() => {
                           onEdit && onEdit(gallery);
