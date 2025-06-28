@@ -40,6 +40,24 @@ const PhotographyCalendarPage: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [activeView, setActiveView] = useState('calendar');
+  const [showSessionForm, setShowSessionForm] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    sessionType: 'portrait',
+    status: 'scheduled',
+    startTime: '',
+    endTime: '',
+    clientName: '',
+    clientEmail: '',
+    locationName: '',
+    basePrice: '',
+    depositAmount: '',
+    equipmentList: [] as string[],
+    weatherDependent: false,
+    goldenHourOptimized: false,
+    portfolioWorthy: false
+  });
 
   // Mock stats - will be replaced with real data
   const stats: DashboardStats = {
@@ -107,7 +125,81 @@ const PhotographyCalendarPage: React.FC = () => {
   };
 
   const handleCreateSession = () => {
-    alert('Photography session creation form will be implemented soon! The new calendar system is ready.');
+    setShowSessionForm(true);
+  };
+
+  const handleSubmitSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const sessionData = {
+        ...formData,
+        basePrice: formData.basePrice ? parseFloat(formData.basePrice) : undefined,
+        depositAmount: formData.depositAmount ? parseFloat(formData.depositAmount) : undefined,
+        equipmentList: formData.equipmentList.filter(item => item.trim() !== ''),
+        startTime: formData.startTime,
+        endTime: formData.endTime
+      };
+
+      const response = await fetch('/api/photography/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sessionData),
+      });
+
+      if (response.ok) {
+        setShowSessionForm(false);
+        setFormData({
+          title: '',
+          description: '',
+          sessionType: 'portrait',
+          status: 'scheduled',
+          startTime: '',
+          endTime: '',
+          clientName: '',
+          clientEmail: '',
+          locationName: '',
+          basePrice: '',
+          depositAmount: '',
+          equipmentList: [],
+          weatherDependent: false,
+          goldenHourOptimized: false,
+          portfolioWorthy: false
+        });
+        fetchSessions(); // Refresh the sessions list
+      } else {
+        alert('Failed to create session. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating session:', error);
+      alert('Error creating session. Please try again.');
+    }
+  };
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const addEquipmentItem = () => {
+    const equipment = prompt('Enter equipment item:');
+    if (equipment) {
+      setFormData(prev => ({
+        ...prev,
+        equipmentList: [...prev.equipmentList, equipment]
+      }));
+    }
+  };
+
+  const removeEquipmentItem = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      equipmentList: prev.equipmentList.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSessionClick = (session: PhotographySession) => {
