@@ -6,7 +6,7 @@ import {
   insertBlogPostSchema,
   insertCrmClientSchema,
   insertCrmLeadSchema,
-  insertCalendarEventSchema,
+  insertPhotographySessionSchema,
   insertGallerySchema
 } from "@shared/schema";
 import { z } from "zod";
@@ -226,62 +226,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ==================== CALENDAR ROUTES ====================
-  app.get("/api/calendar/events", authenticateUser, async (req: Request, res: Response) => {
+  // ==================== PHOTOGRAPHY SESSION ROUTES ====================
+  app.get("/api/photography/sessions", authenticateUser, async (req: Request, res: Response) => {
     try {
-      const calendarId = req.query.calendarId as string;
-      const events = await storage.getCalendarEvents(calendarId);
-      res.json(events);
+      const photographerId = req.query.photographerId as string;
+      const sessions = await storage.getPhotographySessions(photographerId);
+      res.json(sessions);
     } catch (error) {
-      console.error("Error fetching calendar events:", error);
+      console.error("Error fetching photography sessions:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  app.get("/api/calendar/events/:id", authenticateUser, async (req: Request, res: Response) => {
+  app.get("/api/photography/sessions/:id", authenticateUser, async (req: Request, res: Response) => {
     try {
-      const event = await storage.getCalendarEvent(req.params.id);
-      if (!event) {
-        return res.status(404).json({ error: "Event not found" });
+      const session = await storage.getPhotographySession(req.params.id);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
       }
-      res.json(event);
+      res.json(session);
     } catch (error) {
-      console.error("Error fetching calendar event:", error);
+      console.error("Error fetching photography session:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  app.post("/api/calendar/events", authenticateUser, async (req: Request, res: Response) => {
+  app.post("/api/photography/sessions", authenticateUser, async (req: Request, res: Response) => {
     try {
-      const eventData = { ...req.body, createdBy: req.user.id };
-      const validatedData = insertCalendarEventSchema.parse(eventData);
-      const event = await storage.createCalendarEvent(validatedData);
-      res.status(201).json(event);
+      const sessionData = { ...req.body, createdBy: req.user!.id, photographerId: req.user!.id };
+      const validatedData = insertPhotographySessionSchema.parse(sessionData);
+      const session = await storage.createPhotographySession(validatedData);
+      res.status(201).json(session);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Validation error", details: error.errors });
       }
-      console.error("Error creating calendar event:", error);
+      console.error("Error creating photography session:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  app.put("/api/calendar/events/:id", authenticateUser, async (req: Request, res: Response) => {
+  app.put("/api/photography/sessions/:id", authenticateUser, async (req: Request, res: Response) => {
     try {
-      const event = await storage.updateCalendarEvent(req.params.id, req.body);
-      res.json(event);
+      const session = await storage.updatePhotographySession(req.params.id, req.body);
+      res.json(session);
     } catch (error) {
-      console.error("Error updating calendar event:", error);
+      console.error("Error updating photography session:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  app.delete("/api/calendar/events/:id", authenticateUser, async (req: Request, res: Response) => {
+  app.delete("/api/photography/sessions/:id", authenticateUser, async (req: Request, res: Response) => {
     try {
-      await storage.deleteCalendarEvent(req.params.id);
+      await storage.deletePhotographySession(req.params.id);
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting calendar event:", error);
+      console.error("Error deleting photography session:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

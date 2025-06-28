@@ -186,34 +186,34 @@ export class DatabaseStorage implements IStorage {
     await db.delete(crmLeads).where(eq(crmLeads.id, id));
   }
 
-  // Calendar management
-  async getCalendarEvents(calendarId?: string): Promise<CalendarEvent[]> {
-    let query = db.select().from(calendarEvents);
+  // Photography Session management
+  async getPhotographySessions(photographerId?: string): Promise<PhotographySession[]> {
+    let query = db.select().from(photographySessions);
     
-    if (calendarId) {
-      query = query.where(eq(calendarEvents.calendarId, calendarId));
+    if (photographerId) {
+      query = query.where(eq(photographySessions.photographerId, photographerId));
     }
     
-    return await query.orderBy(asc(calendarEvents.startTime));
+    return await query.orderBy(asc(photographySessions.startTime));
   }
 
-  async getCalendarEvent(id: string): Promise<CalendarEvent | undefined> {
-    const result = await db.select().from(calendarEvents).where(eq(calendarEvents.id, id)).limit(1);
+  async getPhotographySession(id: string): Promise<PhotographySession | undefined> {
+    const result = await db.select().from(photographySessions).where(eq(photographySessions.id, id)).limit(1);
     return result[0];
   }
 
-  async createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent> {
-    const result = await db.insert(calendarEvents).values(event).returning();
+  async createPhotographySession(session: InsertPhotographySession): Promise<PhotographySession> {
+    const result = await db.insert(photographySessions).values(session).returning();
     return result[0];
   }
 
-  async updateCalendarEvent(id: string, updates: Partial<CalendarEvent>): Promise<CalendarEvent> {
-    const result = await db.update(calendarEvents).set(updates).where(eq(calendarEvents.id, id)).returning();
+  async updatePhotographySession(id: string, updates: Partial<PhotographySession>): Promise<PhotographySession> {
+    const result = await db.update(photographySessions).set(updates).where(eq(photographySessions.id, id)).returning();
     return result[0];
   }
 
-  async deleteCalendarEvent(id: string): Promise<void> {
-    await db.delete(calendarEvents).where(eq(calendarEvents.id, id));
+  async deletePhotographySession(id: string): Promise<void> {
+    await db.delete(photographySessions).where(eq(photographySessions.id, id));
   }
 
   // Gallery management
