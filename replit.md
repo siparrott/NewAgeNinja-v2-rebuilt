@@ -109,7 +109,16 @@ The application follows a monorepo structure with clear separation between clien
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+- June 28, 2025. Initial migration from Bolt to Replit completed
+- June 28, 2025. Removed basic calendar system and replaced with comprehensive photography session management system
+- June 28, 2025. Added advanced scheduling features: golden hour optimization, weather integration, equipment conflict detection, client portal integration
+- June 28, 2025. Implemented multi-view calendar displays: day/week/month/timeline views plus unique "shoot overview" for equipment and workflow management
+- June 28, 2025. Added AI-powered analytics foundation for booking patterns, revenue forecasting, and portfolio gap analysis
+- June 28, 2025. Created photography-specific data models with comprehensive session, equipment, task, and communication tracking
+
 ## Changelog
 
 Changelog:
-- June 28, 2025. Initial setup
+- June 28, 2025. Initial setup and complete calendar system replacement with photography-focused solution
