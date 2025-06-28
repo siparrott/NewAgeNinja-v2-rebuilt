@@ -560,14 +560,14 @@ const AdminDashboardPage: React.FC = () => {
         {/* CRM Operations Assistant - Moved to top */}
         <div className="mt-6">
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center pt-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
               CRM Operations Assistant
             </h3>
             <EmbeddedCRMChat
               assistantId={CRM_ASSISTANT_ID}
               onCRMAction={handleCRMAction}
-              height="400px"
+              height="600px"
               title="CRM Operations Assistant"
               className="w-full"
             />
