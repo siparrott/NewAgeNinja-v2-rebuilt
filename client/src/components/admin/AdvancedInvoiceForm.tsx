@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -70,10 +70,14 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [clients, setClients] = useState<Client[]>([]);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
+  const [clientSearch, setClientSearch] = useState('');
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPriceList, setShowPriceList] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<InvoiceFormData>({
     client_id: '',
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
@@ -106,7 +110,21 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
         loadInvoiceData();
       }
     }
-  }, [isOpen, editingInvoice]);  const fetchClients = async () => {
+  }, [isOpen, editingInvoice]);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowClientDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);  const fetchClients = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -131,20 +149,49 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
           country: client.country
         }));
         setClients(transformedClients);
+        setFilteredClients(transformedClients);
         console.log(`Loaded ${transformedClients.length} clients from CRM database`);
       } else {
         // No clients found in CRM, use sample clients as fallback
         console.log('No clients found in CRM database, using sample clients');
-        setClients(getSampleClients());
+        const sampleClients = getSampleClients();
+        setClients(sampleClients);
+        setFilteredClients(sampleClients);
       }
     } catch (err) {
       console.error('Error fetching clients from CRM:', err);
       setError('Failed to load clients from database');
       // Fallback to sample clients
-      setClients(getSampleClients());
+      const sampleClients = getSampleClients();
+      setClients(sampleClients);
+      setFilteredClients(sampleClients);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filter clients based on search input
+  const filterClients = (searchTerm: string) => {
+    setClientSearch(searchTerm);
+    if (!searchTerm.trim()) {
+      setFilteredClients(clients);
+      return;
+    }
+    
+    const filtered = clients.filter(client =>
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (client.address1 && client.address1.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (client.city && client.city.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    setFilteredClients(filtered);
+  };
+
+  // Handle client selection
+  const selectClient = (client: Client) => {
+    setFormData(prev => ({ ...prev, client_id: client.id }));
+    setClientSearch(client.name);
+    setShowClientDropdown(false);
   };
 
   const getSampleClients = (): Client[] => {
@@ -354,22 +401,41 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Client * {clients.length > 0 && <span className="text-sm text-gray-500">({clients.length} clients available)</span>}
               </label>
-              <select
-                value={formData.client_id}
-                onChange={(e) => setFormData(prev => ({ ...prev, client_id: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                required
-                disabled={loading}
-              >
-                <option value="">
-                  {loading ? 'Loading clients...' : 'Choose a client...'}
-                </option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.name} ({client.email})
-                  </option>
-                ))}
-              </select>              {clients.length === 0 && !loading && (
+              <div className="relative" ref={dropdownRef}>
+                <input
+                  type="text"
+                  value={clientSearch}
+                  onChange={(e) => filterClients(e.target.value)}
+                  onFocus={() => setShowClientDropdown(true)}
+                  placeholder={loading ? 'Loading clients...' : 'Search clients by name, email, or location...'}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  required={!formData.client_id}
+                  disabled={loading}
+                />
+                {showClientDropdown && filteredClients.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredClients.map(client => (
+                      <button
+                        key={client.id}
+                        type="button"
+                        onClick={() => selectClient(client)}
+                        className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium text-gray-900">{client.name}</div>
+                        <div className="text-sm text-gray-500">{client.email}</div>
+                        {client.city && (
+                          <div className="text-xs text-gray-400">{client.city}{client.country && `, ${client.country}`}</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showClientDropdown && clientSearch && filteredClients.length === 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                    <div className="text-gray-500 text-center">No clients found matching "{clientSearch}"</div>
+                  </div>
+                )}
+              </div>              {clients.length === 0 && !loading && (
                 <p className="mt-2 text-sm text-amber-600">
                   <AlertCircle className="inline w-4 h-4 mr-1" />
                   No clients found. Using sample clients for demo.
