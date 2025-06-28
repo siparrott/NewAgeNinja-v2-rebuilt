@@ -430,26 +430,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!supabaseImages || supabaseImages.length === 0) {
         console.log('No database records found, checking Supabase Storage...');
         
-        // Get files from the correct storage location: images/galleries/images
-        const { data: storageFiles, error: storageError } = await supabase.storage
-          .from('images')
-          .list('galleries/images', { limit: 100 });
+        // First check if this gallery has its own folder in the galleries bucket
+        const { data: gallerySpecificFiles, error: galleryError } = await supabase.storage
+          .from('galleries')
+          .list(`${gallery.id}/display`, { limit: 100 });
         
-        if (storageError) {
-          console.error('Failed to fetch from Supabase Storage:', storageError);
-        } else if (storageFiles && storageFiles.length > 0) {
-          console.log(`Found ${storageFiles.length} files in storage`);
+        if (!galleryError && gallerySpecificFiles && gallerySpecificFiles.length > 0) {
+          console.log(`Found ${gallerySpecificFiles.length} gallery-specific files`);
           
-          // Convert storage files to gallery images format
-          const realImages = storageFiles
+          // Convert gallery-specific files to gallery images format
+          const galleryImages = gallerySpecificFiles
             .filter(file => file.metadata && file.metadata.size > 0) // Only actual files, not folders
             .map((file, index) => {
               const { data: { publicUrl } } = supabase.storage
-                .from('images')
-                .getPublicUrl(`galleries/images/${file.name}`);
+                .from('galleries')
+                .getPublicUrl(`${gallery.id}/display/${file.name}`);
               
               return {
-                id: `storage-${file.name}`,
+                id: `gallery-${file.name}`,
                 galleryId: gallery.id,
                 filename: file.name,
                 originalUrl: publicUrl,
@@ -466,8 +464,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
             })
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Most recent first
           
-          res.json(realImages);
+          res.json(galleryImages);
           return;
+        }
+        
+        // If no gallery-specific files found, check the shared images folder but filter by gallery relationship
+        const { data: storageFiles, error: storageError } = await supabase.storage
+          .from('images')
+          .list('galleries/images', { limit: 100 });
+        
+        if (storageError) {
+          console.error('Failed to fetch from Supabase Storage:', storageError);
+        } else if (storageFiles && storageFiles.length > 0) {
+          console.log(`Found ${storageFiles.length} files in shared storage`);
+          
+          // For Pantling Family gallery, show a subset of the uploaded images
+          // This is a temporary solution until proper gallery-specific organization is implemented
+          if (gallery.slug === 'pantling-family') {
+            // Show only the most recent landscape photos for this gallery
+            const selectedImages = storageFiles
+              .filter(file => file.metadata && file.metadata.size > 0)
+              .filter(file => {
+                // Select specific images for the Pantling Family gallery based on size and date
+                return file.metadata.size > 100000 && ( // Larger files (likely actual photos)
+                       file.name.includes('1751121') || // Files from specific upload session
+                       file.name.includes('1751126') || // Recent uploads
+                       file.name.includes('vip690lwu') || // Specific landscape image
+                       file.name.includes('gde3zjzvvy8')); // Another landscape image
+              })
+              .slice(0, 6) // Limit to 6 images for this gallery
+              .map((file, index) => {
+                const { data: { publicUrl } } = supabase.storage
+                  .from('images')
+                  .getPublicUrl(`galleries/images/${file.name}`);
+                
+                return {
+                  id: `pantling-${file.name}`,
+                  galleryId: gallery.id,
+                  filename: file.name,
+                  originalUrl: publicUrl,
+                  displayUrl: publicUrl,
+                  thumbUrl: publicUrl,
+                  title: `Family Photo ${index + 1}`,
+                  description: `Beautiful family moment captured`,
+                  orderIndex: index,
+                  createdAt: file.updated_at || new Date().toISOString(),
+                  sizeBytes: file.metadata?.size || 0,
+                  contentType: file.metadata?.mimetype || 'image/jpeg',
+                  capturedAt: null
+                };
+              })
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Most recent first
+            
+            if (selectedImages.length > 0) {
+              console.log(`Showing ${selectedImages.length} selected images for Pantling Family gallery`);
+              res.json(selectedImages);
+              return;
+            }
+          }
+          
+          // For other galleries, don't show shared images to maintain gallery-specific display
+          console.log('Skipping shared images for other galleries to maintain separation');
         }
       }
       
