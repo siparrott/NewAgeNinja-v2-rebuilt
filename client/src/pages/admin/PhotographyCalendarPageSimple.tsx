@@ -720,6 +720,156 @@ const PhotographyCalendarPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Session Detail Modal */}
+        {selectedSession && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium">{selectedSession.title}</h3>
+                <button
+                  onClick={() => setSelectedSession(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Session Details</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Type:</span>
+                        <span className={`px-2 py-1 rounded text-xs ${getSessionTypeColor(selectedSession.sessionType)}`}>
+                          {selectedSession.sessionType}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Status:</span>
+                        <div className="flex items-center space-x-1">
+                          {getStatusIcon(selectedSession.status)}
+                          <span>{selectedSession.status}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Start:</span>
+                        <span>{format(parseISO(selectedSession.startTime), 'MMM d, yyyy h:mm a')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">End:</span>
+                        <span>{format(parseISO(selectedSession.endTime), 'MMM d, yyyy h:mm a')}</span>
+                      </div>
+                      {selectedSession.clientName && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Client:</span>
+                          <span>{selectedSession.clientName}</span>
+                        </div>
+                      )}
+                      {selectedSession.clientEmail && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Email:</span>
+                          <span>{selectedSession.clientEmail}</span>
+                        </div>
+                      )}
+                      {selectedSession.locationName && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Location:</span>
+                          <span>{selectedSession.locationName}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedSession.description && (
+                    <div>
+                      <h4 className="font-medium mb-2">Description</h4>
+                      <p className="text-sm text-gray-600">{selectedSession.description}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  {(selectedSession.basePrice || selectedSession.depositAmount) && (
+                    <div>
+                      <h4 className="font-medium mb-2">Pricing</h4>
+                      <div className="space-y-2 text-sm">
+                        {selectedSession.basePrice && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Base Price:</span>
+                            <span>${selectedSession.basePrice}</span>
+                          </div>
+                        )}
+                        {selectedSession.depositAmount && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Deposit:</span>
+                            <span>${selectedSession.depositAmount}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedSession.equipmentList && selectedSession.equipmentList.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2">Equipment List</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedSession.equipmentList.map((equipment, index) => (
+                          <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                            {equipment}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className="font-medium mb-2">Special Features</h4>
+                    <div className="space-y-1 text-sm">
+                      {selectedSession.goldenHourOptimized && (
+                        <div className="flex items-center space-x-2">
+                          <Sun className="w-4 h-4 text-yellow-600" />
+                          <span>Golden Hour Optimized</span>
+                        </div>
+                      )}
+                      {selectedSession.weatherDependent && (
+                        <div className="flex items-center space-x-2">
+                          <Cloud className="w-4 h-4 text-blue-600" />
+                          <span>Weather Dependent</span>
+                        </div>
+                      )}
+                      {selectedSession.portfolioWorthy && (
+                        <div className="flex items-center space-x-2">
+                          <Star className="w-4 h-4 text-purple-600" />
+                          <span>Portfolio Worthy</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-6 mt-6 border-t">
+                <button
+                  onClick={() => setSelectedSession(null)}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    // Edit functionality can be added later
+                    console.log('Edit session:', selectedSession.id);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Edit Session
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
