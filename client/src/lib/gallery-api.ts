@@ -95,9 +95,37 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
 
     console.log('Generated slug:', slug);
 
-    // First, create the gallery with basic columns only
+    // Handle cover image upload if provided
+    let coverImageUrl = null;
+    if (galleryData.coverImage) {
+      try {
+        const fileExt = galleryData.coverImage.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('gallery-images')
+          .upload(`covers/${fileName}`, galleryData.coverImage);
+
+        if (uploadError) {
+          console.error('Cover image upload error:', uploadError);
+        } else {
+          const { data } = supabase.storage
+            .from('gallery-images')
+            .getPublicUrl(uploadData.path);
+          coverImageUrl = data.publicUrl;
+        }
+      } catch (uploadError) {
+        console.error('Error uploading cover image:', uploadError);
+      }
+    }
+
+    // Create the gallery with cover image
     const insertData = {
       title: galleryData.title,
+      slug: slug,
+      description: galleryData.description || null,
+      cover_image: coverImageUrl,
+      download_enabled: galleryData.downloadEnabled ?? true,
       client_id: session.user.id
     };
     
@@ -120,10 +148,10 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
     const galleryResult: Gallery = {
       id: gallery.id,
       title: gallery.title,
-      slug: slug, // Generate slug locally for now
-      coverImage: null, // No cover image support in basic version
-      passwordHash: null, // No password support in basic version
-      downloadEnabled: true, // Default to true
+      slug: gallery.slug || slug,
+      coverImage: gallery.cover_image,
+      passwordHash: gallery.password_hash,
+      downloadEnabled: gallery.download_enabled,
       clientId: gallery.client_id,
       createdAt: gallery.created_at,
       updatedAt: gallery.updated_at || gallery.created_at
