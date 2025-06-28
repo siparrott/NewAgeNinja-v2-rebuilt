@@ -52,7 +52,7 @@ export async function getGalleryById(id: string): Promise<Gallery> {
 // Get a single gallery by slug (public)
 export async function getGalleryBySlug(slug: string): Promise<Gallery> {
   try {
-    const response = await fetch(`${API_URL}/public/galleries/${slug}`, {
+    const response = await fetch(`/api/galleries/${slug}`, {
       headers: {
         'Content-Type': 'application/json',
       },

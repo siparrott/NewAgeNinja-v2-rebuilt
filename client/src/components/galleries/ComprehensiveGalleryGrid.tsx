@@ -72,11 +72,11 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
       {galleries.map(gallery => (
         <div 
           key={gallery.id}
-          className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-purple-300 overflow-hidden"
+          className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-purple-300"
         >
           {/* Gallery Preview */}
           <div className="relative aspect-video bg-gradient-to-br from-purple-50 to-pink-50 overflow-hidden">
@@ -165,11 +165,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                   </button>
 
                   {selectedGallery === gallery.id && (
-                    <div className="fixed bg-white rounded-lg shadow-xl border border-gray-300 py-2 z-[9999] min-w-[160px]" 
-                         style={{
-                           top: '200px',
-                           right: '50px'
-                         }}>
+                    <div className="absolute right-0 top-10 bg-white rounded-lg shadow-xl border border-gray-300 py-2 z-[9999] min-w-[160px]">
                       <button
                         onClick={() => {
                           onEdit && onEdit(gallery);
