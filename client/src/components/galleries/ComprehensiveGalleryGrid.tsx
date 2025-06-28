@@ -165,10 +165,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                   </button>
 
                   {selectedGallery === gallery.id && (
-                    <div 
-                      className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 min-w-[200px] max-h-none"
-                      style={{ backgroundColor: 'white', border: '3px solid blue', minHeight: '300px' }}
-                    >
+                    <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 min-w-[160px]">
                       <button
                         onClick={() => {
                           onEdit && onEdit(gallery);
@@ -189,16 +186,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                         <Eye size={14} className="mr-2" />
                         Preview
                       </button>
-                      <button
-                        onClick={() => {
-                          onDuplicate && onDuplicate(gallery);
-                          setSelectedGallery(null);
-                        }}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <Copy size={14} className="mr-2" />
-                        Duplicate
-                      </button>
+
                       <button
                         onClick={() => {
                           copyShareUrl(gallery);
@@ -232,10 +220,9 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                           setSelectedGallery(null);
                         }}
                         className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                        style={{ backgroundColor: 'yellow', border: '2px solid red' }}
                       >
                         <Trash2 size={14} className="mr-2" />
-                        🗑️ DELETE BUTTON TEST
+                        Delete
                       </button>
                     </div>
                   )}
