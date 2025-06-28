@@ -557,6 +557,20 @@ const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Layout Improvements Summary */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Recent Layout Improvements</h3>
+          <div className="text-sm text-gray-700 space-y-2">
+            <p className="font-medium">The layout now features:</p>
+            <ul className="list-disc list-inside space-y-1 ml-4">
+              <li>A prominent Quick Actions section at the top with larger, more visually appealing buttons</li>
+              <li>A cleaner chat interface below without the internal buttons</li>
+              <li>Better visual separation between the action buttons and chat conversation</li>
+              <li>More space for the chat messages area</li>
+            </ul>
+          </div>
+        </div>
+
         {/* CRM Operations Assistant - Moved to top */}
         <div className="mt-6">
           {/* Quick Actions Section */}
