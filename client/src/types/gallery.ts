@@ -4,17 +4,21 @@ export interface Gallery {
   slug: string;
   description?: string;
   coverImage: string | null;
-  passwordHash: string | null;
-  downloadEnabled: boolean;
-  watermarkEnabled?: boolean;
-  maxDownloadsPerVisitor?: number;
-  expiresAt?: string;
-  clientId: string;
-  clientEmail?: string;
-  isFeatured?: boolean;
+  isPublic?: boolean;
+  isPasswordProtected?: boolean;
+  password?: string | null;
+  clientId?: string;
+  createdBy?: string;
   sortOrder?: number;
   createdAt: string;
   updatedAt: string;
+  // Legacy fields for backward compatibility
+  downloadEnabled?: boolean;
+  watermarkEnabled?: boolean;
+  maxDownloadsPerVisitor?: number;
+  expiresAt?: string;
+  clientEmail?: string;
+  isFeatured?: boolean;
 }
 
 export interface GalleryImage {

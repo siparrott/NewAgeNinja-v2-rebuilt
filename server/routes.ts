@@ -355,6 +355,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Gallery authentication endpoint (public)
+  app.post("/api/galleries/:slug/auth", async (req: Request, res: Response) => {
+    try {
+      const { slug } = req.params;
+      const { email, firstName, lastName, password } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      // Get the gallery
+      const gallery = await storage.getGalleryBySlug(slug);
+      if (!gallery) {
+        return res.status(404).json({ error: "Gallery not found" });
+      }
+
+      // Check password if gallery is password protected
+      if (gallery.isPasswordProtected && gallery.password) {
+        if (!password) {
+          return res.status(401).json({ error: "Password is required" });
+        }
+
+        // Simple password comparison (in production, use hashed passwords)
+        if (password !== gallery.password) {
+          return res.status(401).json({ error: "Invalid password" });
+        }
+      }
+
+      // For now, return a simple token (in production, use JWT)
+      const token = Buffer.from(`${gallery.id}:${email}:${Date.now()}`).toString('base64');
+      
+      res.json({ token });
+    } catch (error) {
+      console.error("Error authenticating gallery access:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // ==================== DASHBOARD METRICS ROUTE ====================
   app.get("/api/crm/dashboard/metrics", authenticateUser, async (req: Request, res: Response) => {
     try {

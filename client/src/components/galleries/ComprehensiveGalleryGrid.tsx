@@ -139,7 +139,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
 
             {/* Status Badges */}
             <div className="absolute top-3 left-3 flex space-x-2">
-              {gallery.passwordHash && (
+              {(gallery.isPasswordProtected || gallery.password) && (
                 <div className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs flex items-center">
                   <Lock size={12} className="mr-1" />
                   Private

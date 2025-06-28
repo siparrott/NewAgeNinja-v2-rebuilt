@@ -507,7 +507,7 @@ export async function getGalleryStats(galleryId: string): Promise<GalleryStats> 
 // Authenticate to a gallery (public)
 export async function authenticateGallery(slug: string, authData: GalleryAuthData): Promise<{ token: string }> {
   try {
-    const response = await fetch(`${API_URL}/public/galleries/${slug}/auth`, {
+    const response = await fetch(`/api/galleries/${slug}/auth`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -518,23 +518,6 @@ export async function authenticateGallery(slug: string, authData: GalleryAuthDat
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Authentication failed');
-    }
-
-    // Log access
-    try {
-      await supabase
-        .from('gallery_access_logs')
-        .insert({
-          gallery_id: (await getGalleryBySlug(slug)).id,
-          email: authData.email,
-          first_name: authData.firstName || null,
-          last_name: authData.lastName || null,
-          ip_address: null, // Client-side can't reliably get IP
-          user_agent: navigator.userAgent
-        });
-    } catch (logError) {
-      console.error('Error logging gallery access:', logError);
-      // Don't fail authentication if logging fails
     }
 
     return await response.json();
@@ -672,11 +655,15 @@ function mapDatabaseToGallery(dbGallery: any): Gallery {
     id: dbGallery.id,
     title: dbGallery.title,
     slug: dbGallery.slug || dbGallery.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-'),
-    coverImage: dbGallery.cover_image || null,
-    passwordHash: dbGallery.password_hash || null,
-    downloadEnabled: dbGallery.download_enabled ?? true,
-    clientId: dbGallery.client_id || dbGallery.created_by, // Handle both old and new column names
-    createdAt: dbGallery.created_at,
-    updatedAt: dbGallery.updated_at || dbGallery.created_at
+    description: dbGallery.description,
+    coverImage: dbGallery.cover_image || dbGallery.coverImage || null,
+    isPublic: dbGallery.is_public ?? dbGallery.isPublic ?? true,
+    isPasswordProtected: dbGallery.is_password_protected ?? dbGallery.isPasswordProtected ?? false,
+    password: dbGallery.password || null,
+    clientId: dbGallery.client_id || dbGallery.clientId,
+    createdBy: dbGallery.created_by || dbGallery.createdBy,
+    sortOrder: dbGallery.sort_order || dbGallery.sortOrder || 0,
+    createdAt: dbGallery.created_at || dbGallery.createdAt,
+    updatedAt: dbGallery.updated_at || dbGallery.updatedAt || dbGallery.created_at || dbGallery.createdAt
   };
 }
