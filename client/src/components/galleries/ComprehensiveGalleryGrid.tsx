@@ -163,7 +163,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         <Edit size={14} className="mr-2" />
-                        {t('action.edit')}
+                        Edit
                       </button>
                       <button
                         onClick={() => {
@@ -183,7 +183,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         <Copy size={14} className="mr-2" />
-                        {t('action.duplicate')}
+                        Duplicate
                       </button>
                       <button
                         onClick={() => {
@@ -203,7 +203,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         <Share2 size={14} className="mr-2" />
-                        {t('gallery.share')}
+                        Share
                       </button>
                       <hr className="my-2" />
                       <button
@@ -220,7 +220,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                         className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                       >
                         <Trash2 size={14} className="mr-2" />
-                        {t('action.delete')}
+                        Delete
                       </button>
                     </div>
                   )}
