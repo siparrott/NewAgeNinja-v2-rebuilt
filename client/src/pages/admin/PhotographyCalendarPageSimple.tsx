@@ -137,8 +137,8 @@ const PhotographyCalendarPage: React.FC = () => {
         basePrice: formData.basePrice ? parseFloat(formData.basePrice) : undefined,
         depositAmount: formData.depositAmount ? parseFloat(formData.depositAmount) : undefined,
         equipmentList: formData.equipmentList.filter(item => item.trim() !== ''),
-        startTime: formData.startTime,
-        endTime: formData.endTime
+        startTime: formData.startTime ? new Date(formData.startTime).toISOString() : undefined,
+        endTime: formData.endTime ? new Date(formData.endTime).toISOString() : undefined
       };
 
       const response = await fetch('/api/photography/sessions', {

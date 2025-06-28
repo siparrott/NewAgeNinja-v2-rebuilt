@@ -254,7 +254,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/photography/sessions", authenticateUser, async (req: Request, res: Response) => {
     try {
       console.log("Received session data:", JSON.stringify(req.body, null, 2));
-      const sessionData = { ...req.body, createdBy: req.user!.id, photographerId: req.user!.id };
+      const sessionData = { 
+        ...req.body, 
+        createdBy: req.user!.id, 
+        photographerId: req.user!.id,
+        // Convert string dates to Date objects if they're strings
+        startTime: req.body.startTime ? new Date(req.body.startTime) : undefined,
+        endTime: req.body.endTime ? new Date(req.body.endTime) : undefined,
+      };
       console.log("Session data with user info:", JSON.stringify(sessionData, null, 2));
       const validatedData = insertPhotographySessionSchema.parse(sessionData);
       const session = await storage.createPhotographySession(validatedData);
