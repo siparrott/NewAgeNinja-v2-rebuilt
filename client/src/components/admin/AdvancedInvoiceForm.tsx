@@ -14,7 +14,9 @@ import {
   Check,
   ShoppingCart
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '../../lib/queryClient';
+import { invoiceApi, type CreateInvoiceData } from '../../lib/invoice-api';
 import { PRICE_LIST_CATEGORIES, getPriceListByCategory, PriceListItem } from '../../data/priceList';
 
 interface Client {

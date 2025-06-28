@@ -10,6 +10,7 @@ import {
   insertCrmLeadSchema,
   insertPhotographySessionSchema,
   insertGallerySchema,
+  insertCrmInvoiceSchema,
   galleryImages
 } from "@shared/schema";
 import { z } from "zod";
