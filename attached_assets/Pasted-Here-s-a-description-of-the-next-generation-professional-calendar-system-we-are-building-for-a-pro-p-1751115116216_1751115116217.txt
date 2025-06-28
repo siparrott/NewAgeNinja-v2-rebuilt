@@ -1,0 +1,58 @@
+Here’s a description of the next-generation professional calendar system we are building for a pro photographer:
+
+---
+
+### Next-Gen Professional Calendar System: Key Features
+
+**1. Advanced Event & Session Management**
+- Create, edit, and delete events (sessions, shoots, meetings, etc.)
+- Support for multiple session types (e.g., wedding, portrait, commercial) with custom durations, pricing, and requirements
+- Color-coded categories for easy visual organization
+- Recurring events with full RRULE support (daily, weekly, monthly, yearly, custom)
+
+**2. Client & Attendee Integration**
+- Link events to clients from your CRM
+- Add multiple attendees/participants with RSVP tracking and status (accepted, declined, tentative, no response)
+- Store and display client contact info, special requests, and notes
+
+**3. Availability & Booking**
+- Define business hours, working days, and custom availability templates
+- Block out time for vacations, breaks, or maintenance
+- Real-time booking availability and conflict detection
+- Online booking form with customizable fields and automated confirmation
+
+**4. Payment & Invoicing**
+- Track event/session payment status (unpaid, deposit paid, fully paid, refunded)
+- Set deposit requirements and mark when paid
+- Integration with invoice system for seamless workflow
+
+**5. Reminders & Notifications**
+- Automated email/SMS reminders for clients and staff
+- Customizable reminder times (e.g., 24h, 2h before event)
+- Confirmation and follow-up notifications
+
+**6. Calendar Views & UI**
+- Month, week, day, agenda, and list views
+- Drag-and-drop event rescheduling
+- Color by session type, category, status, or client
+- Responsive, mobile-friendly UI with Tailwind CSS and Framer Motion animations
+
+**7. iCal & External Calendar Integration**
+- Import/export events via iCal (.ics) files
+- Two-way sync with Google Calendar (OAuth2)
+- Unique iCal feed URL for clients or staff
+
+**8. Advanced Filtering & Search**
+- Filter by session type, category, client, status, payment, and date range
+- Quick search for events and clients
+
+**9. Security & Permissions**
+- Role-based access (admin, staff, assistant)
+- Row-level security for event data
+
+**10. Audit & Sync Logs**
+- Track all sync operations (Google, iCal) with status and error reporting
+
+---
+
+This system is designed to be robust, flexible, and tailored for the needs of a busy professional photographer, supporting both internal workflow and client-facing features. If you want to start with a specific feature or UI, let me know!

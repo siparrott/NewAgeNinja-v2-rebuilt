@@ -163,32 +163,75 @@ export const photographySessions = pgTable("photography_sessions", {
   status: text("status").default("scheduled"),
   startTime: timestamp("start_time", { withTimezone: true }).notNull(),
   endTime: timestamp("end_time", { withTimezone: true }).notNull(),
+  
+  // Client Integration & Attendees
+  clientId: text("client_id"), // Link to CRM clients
   clientName: text("client_name"),
   clientEmail: text("client_email"),
   clientPhone: text("client_phone"),
+  attendees: jsonb("attendees"), // Array of attendee objects with RSVP status
+  
+  // Location & Weather
   locationName: text("location_name"),
   locationAddress: text("location_address"),
   locationCoordinates: text("location_coordinates"),
+  weatherDependent: boolean("weather_dependent").default(false),
+  goldenHourOptimized: boolean("golden_hour_optimized").default(false),
+  backupPlan: text("backup_plan"),
+  
+  // Pricing & Payment Status
   basePrice: decimal("base_price", { precision: 10, scale: 2 }),
   depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
   depositPaid: boolean("deposit_paid").default(false),
   finalPayment: decimal("final_payment", { precision: 10, scale: 2 }),
   finalPaymentPaid: boolean("final_payment_paid").default(false),
+  paymentStatus: text("payment_status").default("unpaid"), // unpaid, deposit_paid, fully_paid, refunded
+  
+  // Equipment & Workflow
   equipmentList: text("equipment_list").array(),
   crewMembers: text("crew_members").array(),
-  weatherDependent: boolean("weather_dependent").default(false),
-  goldenHourOptimized: boolean("golden_hour_optimized").default(false),
-  backupPlan: text("backup_plan"),
+  conflictDetected: boolean("conflict_detected").default(false),
   notes: text("notes"),
   portfolioWorthy: boolean("portfolio_worthy").default(false),
   editingStatus: text("editing_status").default("not_started"),
   deliveryStatus: text("delivery_status").default("pending"),
   deliveryDate: timestamp("delivery_date", { withTimezone: true }),
+  
+  // Recurring Events Support
+  isRecurring: boolean("is_recurring").default(false),
+  recurrenceRule: text("recurrence_rule"), // RRULE format for recurring events
+  parentEventId: text("parent_event_id"), // For recurring event instances
+  
+  // External Calendar Integration
+  googleCalendarEventId: text("google_calendar_event_id"),
+  icalUid: text("ical_uid"),
+  externalCalendarSync: boolean("external_calendar_sync").default(false),
+  
+  // Automated Reminders & Notifications
+  reminderSettings: jsonb("reminder_settings"), // Customizable reminder times
+  reminderSent: boolean("reminder_sent").default(false),
+  confirmationSent: boolean("confirmation_sent").default(false),
+  followUpSent: boolean("follow_up_sent").default(false),
+  
+  // Booking & Availability
+  isOnlineBookable: boolean("is_online_bookable").default(false),
+  bookingRequirements: jsonb("booking_requirements"), // Custom fields for booking
+  availabilityStatus: text("availability_status").default("available"), // available, blocked, tentative
+  
+  // Enhanced Display & Organization
+  color: text("color"), // Custom color for calendar display
+  priority: text("priority").default("medium"), // low, medium, high, urgent
+  isPublic: boolean("is_public").default(false), // For client-facing calendar
+  category: text("category"), // Additional categorization beyond session type
+  
+  // Metadata
   galleryId: text("gallery_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   photographerId: text("photographer_id"),
   tags: text("tags").array(),
+  customFields: jsonb("custom_fields"), // Flexible custom data storage
+  
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 export const sessionEquipment = pgTable("session_equipment", {
@@ -252,6 +295,103 @@ export const businessInsights = pgTable("business_insights", {
   category: text("category"),
   priority: text("priority").default("medium"),
   actionable: boolean("actionable").default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+// Advanced Calendar Features - Availability Management
+export const availabilityTemplates = pgTable("availability_templates", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  photographerId: text("photographer_id").notNull(),
+  businessHours: jsonb("business_hours"),
+  breakTime: jsonb("break_time"),
+  bufferTime: integer("buffer_time").default(30),
+  maxSessionsPerDay: integer("max_sessions_per_day").default(3),
+  isDefault: boolean("is_default").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const availabilityOverrides = pgTable("availability_overrides", {
+  id: text("id").primaryKey(),
+  photographerId: text("photographer_id").notNull(),
+  date: timestamp("date", { withTimezone: true }).notNull(),
+  overrideType: text("override_type").notNull(),
+  title: text("title"),
+  description: text("description"),
+  customHours: jsonb("custom_hours"),
+  isRecurring: boolean("is_recurring").default(false),
+  recurrenceRule: text("recurrence_rule"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+// External Calendar Integration
+export const calendarSyncSettings = pgTable("calendar_sync_settings", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  provider: text("provider").notNull(),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  calendarId: text("calendar_id"),
+  syncEnabled: boolean("sync_enabled").default(true),
+  syncDirection: text("sync_direction").default("bidirectional"),
+  lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+  syncStatus: text("sync_status").default("active"),
+  syncErrors: jsonb("sync_errors"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const calendarSyncLogs = pgTable("calendar_sync_logs", {
+  id: text("id").primaryKey(),
+  syncSettingId: text("sync_setting_id").notNull(),
+  syncType: text("sync_type").notNull(),
+  status: text("status").notNull(),
+  eventsProcessed: integer("events_processed").default(0),
+  eventsCreated: integer("events_created").default(0),
+  eventsUpdated: integer("events_updated").default(0),
+  eventsDeleted: integer("events_deleted").default(0),
+  errors: jsonb("errors"),
+  duration: integer("duration"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+// Online Booking System
+export const bookingForms = pgTable("booking_forms", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  sessionTypes: text("session_types").array(),
+  fields: jsonb("fields"),
+  requirements: jsonb("requirements"),
+  pricing: jsonb("pricing"),
+  availability: jsonb("availability"),
+  confirmationMessage: text("confirmation_message"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const onlineBookings = pgTable("online_bookings", {
+  id: text("id").primaryKey(),
+  formId: text("form_id").notNull(),
+  sessionId: text("session_id"),
+  clientName: text("client_name").notNull(),
+  clientEmail: text("client_email").notNull(),
+  clientPhone: text("client_phone"),
+  formData: jsonb("form_data"),
+  requestedDate: timestamp("requested_date", { withTimezone: true }),
+  requestedTime: text("requested_time"),
+  sessionType: text("session_type").notNull(),
+  status: text("status").default("pending"),
+  notes: text("notes"),
+  adminNotes: text("admin_notes"),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+  processedBy: text("processed_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
