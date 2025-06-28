@@ -71,6 +71,17 @@ export interface IStorage {
   createGallery(gallery: InsertGallery): Promise<Gallery>;
   updateGallery(id: string, updates: Partial<Gallery>): Promise<Gallery>;
   deleteGallery(id: string): Promise<void>;
+
+  // Invoice management
+  getCrmInvoices(): Promise<CrmInvoice[]>;
+  getCrmInvoice(id: string): Promise<CrmInvoice | undefined>;
+  createCrmInvoice(invoice: InsertCrmInvoice): Promise<CrmInvoice>;
+  updateCrmInvoice(id: string, updates: Partial<CrmInvoice>): Promise<CrmInvoice>;
+  deleteCrmInvoice(id: string): Promise<void>;
+  
+  // Invoice Items management
+  getCrmInvoiceItems(invoiceId: string): Promise<CrmInvoiceItem[]>;
+  createCrmInvoiceItems(items: InsertCrmInvoiceItem[]): Promise<CrmInvoiceItem[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -245,6 +256,42 @@ export class DatabaseStorage implements IStorage {
 
   async deleteGallery(id: string): Promise<void> {
     await db.delete(galleries).where(eq(galleries.id, id));
+  }
+
+  // Invoice management
+  async getCrmInvoices(): Promise<CrmInvoice[]> {
+    const result = await db.select().from(crmInvoices).orderBy(desc(crmInvoices.createdAt));
+    return result;
+  }
+
+  async getCrmInvoice(id: string): Promise<CrmInvoice | undefined> {
+    const result = await db.select().from(crmInvoices).where(eq(crmInvoices.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createCrmInvoice(invoice: InsertCrmInvoice): Promise<CrmInvoice> {
+    const result = await db.insert(crmInvoices).values(invoice).returning();
+    return result[0];
+  }
+
+  async updateCrmInvoice(id: string, updates: Partial<CrmInvoice>): Promise<CrmInvoice> {
+    const result = await db.update(crmInvoices).set(updates).where(eq(crmInvoices.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteCrmInvoice(id: string): Promise<void> {
+    await db.delete(crmInvoices).where(eq(crmInvoices.id, id));
+  }
+
+  // Invoice Items management
+  async getCrmInvoiceItems(invoiceId: string): Promise<CrmInvoiceItem[]> {
+    const result = await db.select().from(crmInvoiceItems).where(eq(crmInvoiceItems.invoiceId, invoiceId)).orderBy(asc(crmInvoiceItems.sortOrder));
+    return result;
+  }
+
+  async createCrmInvoiceItems(items: InsertCrmInvoiceItem[]): Promise<CrmInvoiceItem[]> {
+    const result = await db.insert(crmInvoiceItems).values(items).returning();
+    return result;
   }
 }
 

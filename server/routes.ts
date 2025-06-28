@@ -661,6 +661,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== INVOICE ROUTES ====================
+  app.get("/api/crm/invoices", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const invoices = await storage.getCrmInvoices();
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/crm/invoices/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.getCrmInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/crm/invoices", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Validate the invoice data
+      const invoiceData = insertCrmInvoiceSchema.parse(req.body);
+      
+      // Add auto-generated invoice number if not provided
+      if (!invoiceData.invoiceNumber) {
+        const timestamp = Date.now();
+        invoiceData.invoiceNumber = `INV-${timestamp}`;
+      }
+      
+      // Create the invoice
+      const invoice = await storage.createCrmInvoice({
+        ...invoiceData,
+        createdBy: req.user!.id
+      });
+
+      // Create invoice items if provided
+      if (req.body.items && req.body.items.length > 0) {
+        const itemsData = req.body.items.map((item: any, index: number) => ({
+          invoiceId: invoice.id,
+          description: item.description,
+          quantity: item.quantity.toString(),
+          unitPrice: item.unit_price.toString(),
+          taxRate: item.tax_rate ? item.tax_rate.toString() : "0",
+          sortOrder: index
+        }));
+        
+        await storage.createCrmInvoiceItems(itemsData);
+      }
+      
+      res.status(201).json(invoice);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      console.error("Error creating invoice:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/crm/invoices/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.updateCrmInvoice(req.params.id, req.body);
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/crm/invoices/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteCrmInvoice(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // ==================== HEALTH CHECK ====================
   app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
