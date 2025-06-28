@@ -419,19 +419,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-      // Query Supabase for gallery images
+      // Query Supabase for gallery images (first try database)
       const { data: supabaseImages, error: supabaseError } = await supabase
         .from('gallery_images')
         .select('*')
         .eq('gallery_id', gallery.id)
         .order('order_index');
 
-      if (supabaseError) {
-        console.error('Failed to fetch from Supabase:', supabaseError);
-        // Don't return error - fall back to sample images
+      // If no database records found, fetch actual uploaded files from storage
+      if (!supabaseImages || supabaseImages.length === 0) {
+        console.log('No database records found, checking Supabase Storage...');
+        
+        // Get files from the correct storage location: images/galleries/images
+        const { data: storageFiles, error: storageError } = await supabase.storage
+          .from('images')
+          .list('galleries/images', { limit: 100 });
+        
+        if (storageError) {
+          console.error('Failed to fetch from Supabase Storage:', storageError);
+        } else if (storageFiles && storageFiles.length > 0) {
+          console.log(`Found ${storageFiles.length} files in storage`);
+          
+          // Convert storage files to gallery images format
+          const realImages = storageFiles
+            .filter(file => file.metadata && file.metadata.size > 0) // Only actual files, not folders
+            .map((file, index) => {
+              const { data: { publicUrl } } = supabase.storage
+                .from('images')
+                .getPublicUrl(`galleries/images/${file.name}`);
+              
+              return {
+                id: `storage-${file.name}`,
+                galleryId: gallery.id,
+                filename: file.name,
+                originalUrl: publicUrl,
+                displayUrl: publicUrl,
+                thumbUrl: publicUrl,
+                title: `Image ${index + 1}`,
+                description: `Uploaded image: ${file.name}`,
+                orderIndex: index,
+                createdAt: file.updated_at || new Date().toISOString(),
+                sizeBytes: file.metadata?.size || 0,
+                contentType: file.metadata?.mimetype || 'image/jpeg',
+                capturedAt: null
+              };
+            })
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Most recent first
+          
+          res.json(realImages);
+          return;
+        }
       }
       
-      // If no images found in Supabase, return sample images for the Pantling Family gallery
+      // If still no images found, use fallback sample images
       if (!supabaseImages || supabaseImages.length === 0) {
         const sampleImages = [
           {
