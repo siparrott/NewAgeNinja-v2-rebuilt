@@ -412,28 +412,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Gallery not found" });
       }
 
-      // Fetch images from the gallery_images table
-      const result = await db
-        .select()
-        .from(galleryImages)
-        .where(eq(galleryImages.galleryId, gallery.id))
-        .orderBy(galleryImages.sortOrder, galleryImages.createdAt);
+      // Fetch images from Supabase database (the actual uploaded images)
+      const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+      const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        return res.status(500).json({ error: "Supabase configuration missing" });
+      }
+
+      // Query Supabase for gallery images
+      const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/gallery_images?gallery_id=eq.${gallery.id}&order=order_index`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!supabaseResponse.ok) {
+        console.error('Failed to fetch from Supabase:', await supabaseResponse.text());
+        return res.status(500).json({ error: "Failed to fetch gallery images" });
+      }
+
+      const supabaseImages = await supabaseResponse.json();
       
       // Map to expected format
-      const images = result.map(img => ({
+      const images = supabaseImages.map((img: any) => ({
         id: img.id,
-        galleryId: img.galleryId,
+        galleryId: img.gallery_id,
         filename: img.filename,
-        originalUrl: img.url,
-        displayUrl: img.url,
-        thumbUrl: img.url,
+        originalUrl: img.original_url,
+        displayUrl: img.display_url || img.original_url,
+        thumbUrl: img.thumb_url || img.original_url,
         title: img.title,
         description: img.description,
-        orderIndex: img.sortOrder || 0,
-        createdAt: img.createdAt,
-        sizeBytes: 0, // Default values for missing fields
-        contentType: 'image/jpeg',
-        capturedAt: null
+        orderIndex: img.order_index || 0,
+        createdAt: img.created_at || img.uploaded_at,
+        sizeBytes: img.size_bytes || 0,
+        contentType: img.content_type || 'image/jpeg',
+        capturedAt: img.captured_at
       }));
       
       res.json(images);
