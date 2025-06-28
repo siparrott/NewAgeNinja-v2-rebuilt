@@ -39,7 +39,7 @@ import AdminInboxPageV2 from './pages/admin/AdminInboxPageV2';
 import QuestionnairesPageV2 from './pages/admin/QuestionnairesPageV2';
 import ComprehensiveReportsPage from './pages/admin/ComprehensiveReportsPage';
 import CustomizationPage from './pages/admin/CustomizationPage';
-import PhotographyCalendarPage from './pages/admin/PhotographyCalendarPage';
+import PhotographyCalendarPage from './pages/admin/PhotographyCalendarPageSimple';
 import SurveySystemDemoPage from './pages/SurveySystemDemoPage';
 import SurveyTakingPage from './pages/SurveyTakingPage';
 import AdminBlogPostsPage from './pages/admin/AdminBlogPostsPage';
