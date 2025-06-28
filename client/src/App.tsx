@@ -85,6 +85,7 @@ function App() {
                 <Route path="/account/profile" element={<AccountProfilePage />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/galleries" element={<PublicGalleriesPage />} />
+                <Route path="/galerie" element={<PublicGalleriesPage />} />
                 <Route path="/gallery/:slug" element={<GalleryPage />} />
                 <Route path="/gallery" element={<ProtectedRoute><GalleryPage /></ProtectedRoute>} />
                 <Route path="/survey-demo" element={<SurveySystemDemoPage />} />

@@ -15,17 +15,13 @@ const API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/galleries`;
 // Get all galleries (admin only)
 export async function getGalleries(): Promise<Gallery[]> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch('/api/galleries');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
-    }    const { data, error } = await supabase
-      .from('galleries')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return (data || []).map(mapDatabaseToGallery);
+    const galleries = await response.json();
+    return galleries;
   } catch (error) {
     console.error('Error fetching galleries:', error);
     throw error;
@@ -640,41 +636,17 @@ export async function downloadGallery(slug: string, token: string): Promise<Blob
 // Get all public galleries (no authentication required)
 export async function getPublicGalleries(limit?: number): Promise<Gallery[]> {
   try {
-    let query = supabase
-      .from('galleries')
-      .select('id, title, slug, description, cover_image, created_at, client_email')
-      .or('password_hash.is.null,password_hash.eq.\'\'')
-      .or('expires_at.is.null,expires_at.gt.now()')
-      .order('created_at', { ascending: false });
-
-    if (limit) {
-      query = query.limit(limit);
+    const response = await fetch('/api/galleries');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    // Format for public consumption
-    return (data || []).map(gallery => ({
-      id: gallery.id,
-      title: gallery.title,
-      slug: gallery.slug,
-      description: gallery.description,
-      coverImage: gallery.cover_image,
-      clientEmail: gallery.client_email,
-      createdAt: gallery.created_at,
-      updatedAt: gallery.created_at,
-      isPasswordProtected: false, // Only public galleries are returned
-      downloadEnabled: true, // Will be checked per gallery on access
-      passwordHash: null,
-      watermarkEnabled: false,
-      maxDownloadsPerVisitor: undefined,
-      expiresAt: null,
-      clientId: null,
-      isFeatured: false,
-      sortOrder: 0
-    }));
+    
+    const galleries = await response.json();
+    
+    // Apply limit if specified
+    const result = limit ? galleries.slice(0, limit) : galleries;
+    
+    return result;
   } catch (error) {
     console.error('Error fetching public galleries:', error);
     throw error;
