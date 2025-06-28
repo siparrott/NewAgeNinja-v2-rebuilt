@@ -49,12 +49,22 @@ const GalleriesPage: React.FC = () => {
     
     setFilteredGalleries(filtered);
   };  const handleDeleteGallery = async (id: string) => {
+    const gallery = galleries.find(g => g.id === id);
+    const galleryTitle = gallery?.title || 'this gallery';
+    
+    if (!confirm(`Are you sure you want to delete "${galleryTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
     try {
       setLoading(true);
       await deleteGallery(id);
       
       // Update local state
       setGalleries(prevGalleries => prevGalleries.filter(gallery => gallery.id !== id));
+      
+      // Clear any existing errors
+      setError(null);
       setLoading(false);
     } catch (err) {
       console.error('Error deleting gallery:', err);

@@ -175,24 +175,16 @@ export async function updateGallery(id: string, galleryData: GalleryFormData): P
 // Delete a gallery (admin only)
 export async function deleteGallery(id: string): Promise<void> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
+    const response = await fetch(`/api/galleries/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
     }
 
-    // Delete the gallery (cascade will delete images, visitors, and actions)
-    const { error } = await supabase
-      .from('galleries')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-    
-    // Delete files from storage
-    await supabase.storage
-      .from('galleries')
-      .remove([`${id}`]);
+    console.log('Gallery deleted successfully:', id);
   } catch (error) {
     console.error(`Error deleting gallery ${id}:`, error);
     throw error;
