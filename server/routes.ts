@@ -13,6 +13,7 @@ import {
   galleryImages
 } from "@shared/schema";
 import { z } from "zod";
+import { createClient } from '@supabase/supabase-js';
 
 // Authentication middleware placeholder - replace with actual auth
 const authenticateUser = async (req: Request, res: Response, next: Function) => {
@@ -412,29 +413,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Gallery not found" });
       }
 
-      // Fetch images from Supabase database (the actual uploaded images)
-      const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-      const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+      // Create Supabase client (using hardcoded values from client config)
+      const supabaseUrl = 'https://gtnwccyxwrevfnbkjvzm.supabase.co';
+      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0bndjY3l4d3JldmZuYmtqdnptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNDgwMTgsImV4cCI6MjA2NTgyNDAxOH0.MiOeCq2NCD969D_SXQ1wAlheSvRY5h04cUnV0XNuOrc';
       
-      if (!supabaseUrl || !supabaseKey) {
-        return res.status(500).json({ error: "Supabase configuration missing" });
-      }
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
       // Query Supabase for gallery images
-      const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/gallery_images?gallery_id=eq.${gallery.id}&order=order_index`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { data: supabaseImages, error: supabaseError } = await supabase
+        .from('gallery_images')
+        .select('*')
+        .eq('gallery_id', gallery.id)
+        .order('order_index');
 
-      if (!supabaseResponse.ok) {
-        console.error('Failed to fetch from Supabase:', await supabaseResponse.text());
+      if (supabaseError) {
+        console.error('Failed to fetch from Supabase:', supabaseError);
         return res.status(500).json({ error: "Failed to fetch gallery images" });
       }
-
-      const supabaseImages = await supabaseResponse.json();
       
       // Map to expected format
       const images = supabaseImages.map((img: any) => ({
