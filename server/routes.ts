@@ -1,13 +1,16 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { 
   insertUserSchema,
   insertBlogPostSchema,
   insertCrmClientSchema,
   insertCrmLeadSchema,
   insertPhotographySessionSchema,
-  insertGallerySchema
+  insertGallerySchema,
+  galleryImages
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -389,6 +392,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ token });
     } catch (error) {
       console.error("Error authenticating gallery access:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get gallery images (public, requires authentication token)
+  app.get("/api/galleries/:slug/images", async (req: Request, res: Response) => {
+    try {
+      const { slug } = req.params;
+      const token = req.headers.authorization?.replace('Bearer ', '');
+
+      if (!token) {
+        return res.status(401).json({ error: "Authentication token required" });
+      }
+
+      // Get the gallery first
+      const gallery = await storage.getGalleryBySlug(slug);
+      if (!gallery) {
+        return res.status(404).json({ error: "Gallery not found" });
+      }
+
+      // Fetch images from the gallery_images table
+      const result = await db
+        .select()
+        .from(galleryImages)
+        .where(eq(galleryImages.galleryId, gallery.id))
+        .orderBy(galleryImages.sortOrder, galleryImages.createdAt);
+      
+      // Map to expected format
+      const images = result.map(img => ({
+        id: img.id,
+        galleryId: img.galleryId,
+        filename: img.filename,
+        originalUrl: img.url,
+        displayUrl: img.url,
+        thumbUrl: img.url,
+        title: img.title,
+        description: img.description,
+        orderIndex: img.sortOrder || 0,
+        createdAt: img.createdAt,
+        sizeBytes: 0, // Default values for missing fields
+        contentType: 'image/jpeg',
+        capturedAt: null
+      }));
+      
+      res.json(images);
+    } catch (error) {
+      console.error("Error fetching gallery images:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

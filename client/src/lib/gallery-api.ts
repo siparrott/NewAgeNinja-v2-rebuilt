@@ -530,7 +530,7 @@ export async function authenticateGallery(slug: string, authData: GalleryAuthDat
 // Get images for a public gallery (requires JWT)
 export async function getPublicGalleryImages(slug: string, token: string): Promise<GalleryImage[]> {
   try {
-    const response = await fetch(`${API_URL}/public/galleries/${slug}/images`, {
+    const response = await fetch(`/api/galleries/${slug}/images`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
