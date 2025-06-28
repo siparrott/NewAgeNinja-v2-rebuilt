@@ -264,6 +264,60 @@ const PhotographyCalendarPage: React.FC = () => {
           </button>
         </div>
 
+        {/* Key Business Metrics - Highlighted Section */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Key Business Metrics</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-purple-500">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">Total Revenue</span>
+                <DollarSign className="h-5 w-5 text-purple-500" />
+              </div>
+              <div className="text-2xl font-bold text-purple-600">€{stats.totalRevenue.toLocaleString()}</div>
+              <p className="text-xs text-gray-500 flex items-center mt-1">
+                <span className="text-green-600 mr-1">↗ 8.2%</span>
+                vs last month
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-500">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">New Leads</span>
+                <TrendingUp className="h-5 w-5 text-blue-500" />
+              </div>
+              <div className="text-2xl font-bold text-blue-600">8</div>
+              <p className="text-xs text-gray-500 flex items-center mt-1">
+                <span className="text-green-600 mr-1">↗ 12.5%</span>
+                this week
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-green-500">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">Upcoming Bookings</span>
+                <Calendar className="h-5 w-5 text-green-500" />
+              </div>
+              <div className="text-2xl font-bold text-green-600">{stats.upcomingSessions}</div>
+              <p className="text-xs text-gray-500 flex items-center mt-1">
+                <span className="text-blue-600 mr-1">→ 0</span>
+                next 30 days
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-orange-500">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">Conversion Rate</span>
+                <CheckCircle className="h-5 w-5 text-orange-500" />
+              </div>
+              <div className="text-2xl font-bold text-orange-600">87.5%</div>
+              <p className="text-xs text-gray-500 flex items-center mt-1">
+                <span className="text-green-600 mr-1">↗ 3.2%</span>
+                vs last month
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Dashboard Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div className="bg-white p-4 rounded-lg border">
@@ -322,60 +376,6 @@ const PhotographyCalendarPage: React.FC = () => {
             <p className="text-xs text-gray-500">
               {stats.equipmentConflicts > 0 ? 'Needs resolution' : 'All clear'}
             </p>
-          </div>
-        </div>
-
-        {/* Key Business Metrics - Highlighted Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Key Business Metrics</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-purple-500">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Total Revenue</span>
-                <DollarSign className="h-5 w-5 text-purple-500" />
-              </div>
-              <div className="text-2xl font-bold text-purple-600">€{stats.totalRevenue.toLocaleString()}</div>
-              <p className="text-xs text-gray-500 flex items-center mt-1">
-                <span className="text-green-600 mr-1">↗ 8.2%</span>
-                vs last month
-              </p>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-500">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">New Leads</span>
-                <TrendingUp className="h-5 w-5 text-blue-500" />
-              </div>
-              <div className="text-2xl font-bold text-blue-600">8</div>
-              <p className="text-xs text-gray-500 flex items-center mt-1">
-                <span className="text-green-600 mr-1">↗ 12.5%</span>
-                this week
-              </p>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-green-500">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Upcoming Bookings</span>
-                <Calendar className="h-5 w-5 text-green-500" />
-              </div>
-              <div className="text-2xl font-bold text-green-600">{stats.upcomingSessions}</div>
-              <p className="text-xs text-gray-500 flex items-center mt-1">
-                <span className="text-blue-600 mr-1">→ 0</span>
-                next 30 days
-              </p>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-orange-500">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Conversion Rate</span>
-                <CheckCircle className="h-5 w-5 text-orange-500" />
-              </div>
-              <div className="text-2xl font-bold text-orange-600">87.5%</div>
-              <p className="text-xs text-gray-500 flex items-center mt-1">
-                <span className="text-green-600 mr-1">↗ 3.2%</span>
-                vs last month
-              </p>
-            </div>
           </div>
         </div>
 
