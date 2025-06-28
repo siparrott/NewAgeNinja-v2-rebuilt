@@ -217,24 +217,22 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                         Share
                       </button>
                       <hr className="my-2" />
-                      {onDelete && (
-                        <button
-                          onClick={() => {
-                            console.log('Delete button clicked for gallery:', gallery.id, gallery.title);
-                            console.log('onDelete function exists:', !!onDelete);
-                            if (onDelete) {
-                              onDelete(gallery.id);
-                            } else {
-                              console.error('onDelete function is not provided!');
-                            }
-                            setSelectedGallery(null);
-                          }}
-                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 size={14} className="mr-2" />
-                          Delete
-                        </button>
-                      )}
+                      <button
+                        onClick={() => {
+                          console.log('Delete button clicked for gallery:', gallery.id, gallery.title);
+                          console.log('onDelete function exists:', !!onDelete);
+                          if (onDelete) {
+                            onDelete(gallery.id);
+                          } else {
+                            console.error('onDelete function is not provided!');
+                          }
+                          setSelectedGallery(null);
+                        }}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 size={14} className="mr-2" />
+                        Delete
+                      </button>
                     </div>
                   )}
                 </div>
