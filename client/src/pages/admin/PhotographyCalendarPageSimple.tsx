@@ -12,17 +12,54 @@ interface PhotographySession {
   status: string;
   startTime: string;
   endTime: string;
+  clientId?: string;
   clientName?: string;
   clientEmail?: string;
+  clientPhone?: string;
+  attendees?: any[];
   locationName?: string;
+  locationAddress?: string;
+  locationCoordinates?: string;
   basePrice?: number;
   depositAmount?: number;
   depositPaid: boolean;
+  finalPayment?: number;
+  finalPaymentPaid: boolean;
+  paymentStatus: string;
   equipmentList?: string[];
+  crewMembers?: string[];
+  conflictDetected: boolean;
   weatherDependent: boolean;
   goldenHourOptimized: boolean;
+  backupPlan?: string;
+  notes?: string;
   portfolioWorthy: boolean;
   editingStatus: string;
+  deliveryStatus: string;
+  deliveryDate?: string;
+  isRecurring: boolean;
+  recurrenceRule?: string;
+  parentEventId?: string;
+  googleCalendarEventId?: string;
+  icalUid?: string;
+  externalCalendarSync: boolean;
+  reminderSettings?: any;
+  reminderSent: boolean;
+  confirmationSent: boolean;
+  followUpSent: boolean;
+  isOnlineBookable: boolean;
+  bookingRequirements?: any;
+  availabilityStatus: string;
+  color?: string;
+  priority: string;
+  isPublic: boolean;
+  category?: string;
+  galleryId?: string;
+  photographerId?: string;
+  tags?: string[];
+  customFields?: any;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface DashboardStats {
@@ -363,140 +400,19 @@ const PhotographyCalendarPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Calendar Grid */}
-        <div className="bg-white p-6 rounded-lg border">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {format(currentMonth, 'MMMM yyyy')}
-              </h2>
-              <div className="flex space-x-1">
-                <button
-                  onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                  className="p-2 border rounded hover:bg-gray-50"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                  className="p-2 border rounded hover:bg-gray-50"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex space-x-2">
-              <button 
-                className={`px-3 py-1 rounded ${activeView === 'calendar' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100'}`}
-                onClick={() => setActiveView('calendar')}
-              >
-                Calendar
-              </button>
-              <button 
-                className={`px-3 py-1 rounded ${activeView === 'timeline' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100'}`}
-                onClick={() => setActiveView('timeline')}
-              >
-                Timeline
-              </button>
-              <button 
-                className={`px-3 py-1 rounded ${activeView === 'overview' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100'}`}
-                onClick={() => setActiveView('overview')}
-              >
-                Shoot Overview
-              </button>
-            </div>
-          </div>
-
-          {activeView === 'calendar' && (
-            <div className="grid grid-cols-7 gap-1">
-              {/* Day Headers */}
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="p-2 text-center text-sm font-medium text-gray-500 border-b">
-                  {day}
-                </div>
-              ))}
-
-              {/* Calendar Days */}
-              {daysInMonth.map(day => {
-                const daySession = getSessionsForDate(day);
-                const isCurrentMonth = isSameMonth(day, currentMonth);
-                const isSelected = selectedDate && isSameDay(day, selectedDate);
-                
-                return (
-                  <div
-                    key={day.toISOString()}
-                    className={`min-h-[120px] p-2 border-b border-r cursor-pointer hover:bg-gray-50 ${
-                      !isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''
-                    } ${isSelected ? 'bg-blue-50' : ''}`}
-                    onClick={() => setSelectedDate(day)}
-                  >
-                    <div className="text-sm font-medium mb-1">
-                      {format(day, 'd')}
-                    </div>
-                    
-                    {isCurrentMonth && (
-                      <div className="space-y-1">
-                        {daySession.slice(0, 3).map(session => (
-                          <div
-                            key={session.id}
-                            className={`text-xs p-1 rounded border cursor-pointer hover:shadow-sm ${getSessionTypeColor(session.sessionType)}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSessionClick(session);
-                            }}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="truncate flex-1">{session.title}</span>
-                              {getStatusIcon(session.status)}
-                            </div>
-                            <div className="flex items-center space-x-1 mt-1">
-                              {session.goldenHourOptimized && (
-                                <Sun className="w-2 h-2 text-yellow-600" />
-                              )}
-                              {session.weatherDependent && (
-                                <Cloud className="w-2 h-2 text-blue-600" />
-                              )}
-                              {session.portfolioWorthy && (
-                                <Star className="w-2 h-2 text-purple-600" />
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                        
-                        {daySession.length > 3 && (
-                          <div className="text-xs text-gray-500 p-1">
-                            +{daySession.length - 3} more
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {activeView === 'timeline' && (
-            <div className="text-center py-12">
-              <Camera className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Timeline View</h3>
-              <p className="text-gray-600">
-                Chronological session timeline with travel time optimization and equipment scheduling.
-              </p>
-            </div>
-          )}
-
-          {activeView === 'overview' && (
-            <div className="text-center py-12">
-              <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Shoot Overview</h3>
-              <p className="text-gray-600">
-                Equipment needs, crew coordination, and revenue pipeline dashboard for upcoming sessions.
-              </p>
-            </div>
-          )}
-        </div>
+        {/* Advanced Photography Calendar */}
+        <AdvancedPhotographyCalendar 
+          sessions={sessions}
+          clients={[]} // CRM clients will be loaded from API
+          onSessionClick={handleSessionClick}
+          onCreateSession={handleCreateSession}
+          onUpdateSession={() => {}} // Will be implemented
+          onDeleteSession={() => {}} // Will be implemented
+          onDuplicateSession={() => {}} // Will be implemented
+          onExportCalendar={() => {}} // Will be implemented
+          onImportCalendar={() => {}} // Will be implemented
+          onSyncExternalCalendar={() => {}} // Will be implemented
+        />
 
         {/* Session Legend */}
         <div className="bg-white p-4 rounded-lg border">

@@ -151,11 +151,11 @@ const AdvancedPhotographyCalendar: React.FC<CalendarProps> = ({
   });
 
   // Get unique values for filters
-  const sessionTypes = [...new Set(sessions.map(s => s.sessionType))];
-  const statuses = [...new Set(sessions.map(s => s.status))];
-  const clientNames = [...new Set(sessions.map(s => s.clientName).filter(Boolean))];
-  const paymentStatuses = [...new Set(sessions.map(s => s.paymentStatus))];
-  const priorities = [...new Set(sessions.map(s => s.priority))];
+  const sessionTypes = Array.from(new Set(sessions.map(s => s.sessionType)));
+  const statuses = Array.from(new Set(sessions.map(s => s.status)));
+  const clientNames = Array.from(new Set(sessions.map(s => s.clientName).filter(Boolean)));
+  const paymentStatuses = Array.from(new Set(sessions.map(s => s.paymentStatus)));
+  const priorities = Array.from(new Set(sessions.map(s => s.priority)));
 
   // Color coding for different session types
   const getSessionTypeColor = (sessionType: string) => {
