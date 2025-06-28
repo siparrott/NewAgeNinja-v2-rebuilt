@@ -82,11 +82,16 @@ const AdminDashboardPageDev: React.FC = () => {
         sum + (parseFloat(inv.total) || 0), 0);
       const avgOrderValue = invoices.length > 0 ? totalRevenue / invoices.length : 0;
       
-      // Generate trend data from recent sessions
-      const trendData = sessions.slice(0, 5).map((session: any, index: number) => ({
-        date: new Date(session.startTime).toISOString().split('T')[0],
-        value: Math.floor(Math.random() * 500) + 1000 // Revenue estimate per session
-      }));
+      // Generate trend data from recent sessions with safe date parsing
+      const trendData = sessions.slice(0, 5).map((session: any, index: number) => {
+        const dateStr = session.startTime || new Date().toISOString();
+        const date = new Date(dateStr);
+        
+        return {
+          date: isNaN(date.getTime()) ? new Date().toISOString().split('T')[0] : date.toISOString().split('T')[0],
+          value: Math.floor(Math.random() * 500) + 1000 // Revenue estimate per session
+        };
+      });
 
       setMetrics({
         avgOrderValue: avgOrderValue,

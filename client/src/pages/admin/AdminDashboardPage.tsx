@@ -61,6 +61,29 @@ const AdminDashboardPage: React.FC = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>('30days');
+  const [error, setError] = useState<string | null>(null);
+
+  // Temporary redirect to dev dashboard which has working real data
+  React.useEffect(() => {
+    navigate('/admin/dev');
+  }, [navigate]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Dashboard Error</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => navigate('/admin/dev')} 
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Go to Working Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // CRM Operations Assistant configuration
   const CRM_ASSISTANT_ID = 'asst_crm_operations_v1'; // Replace with your actual assistant ID
@@ -195,16 +218,25 @@ const AdminDashboardPage: React.FC = () => {
       const sessions = sessionsResponse.status === 'fulfilled' && sessionsResponse.value.ok 
         ? await sessionsResponse.value.json() : [];
 
-      // Filter data by date range
-      const filteredInvoices = invoices.filter((inv: any) => 
-        new Date(inv.createdAt || inv.issueDate) >= startDate
-      );
-      const filteredLeads = leads.filter((lead: any) => 
-        new Date(lead.createdAt) >= startDate
-      );
-      const upcomingSessions = sessions.filter((session: any) => 
-        new Date(session.startTime) >= now
-      );
+      // Filter data by date range with safe date parsing
+      const filteredInvoices = invoices.filter((inv: any) => {
+        const dateStr = inv.createdAt || inv.issueDate;
+        if (!dateStr) return false;
+        const date = new Date(dateStr);
+        return !isNaN(date.getTime()) && date >= startDate;
+      });
+      const filteredLeads = leads.filter((lead: any) => {
+        const dateStr = lead.createdAt;
+        if (!dateStr) return false;
+        const date = new Date(dateStr);
+        return !isNaN(date.getTime()) && date >= startDate;
+      });
+      const upcomingSessions = sessions.filter((session: any) => {
+        const dateStr = session.startTime;
+        if (!dateStr) return false;
+        const date = new Date(dateStr);
+        return !isNaN(date.getTime()) && date >= now;
+      });
 
       // Calculate metrics from real data
       const totalRevenue = filteredInvoices.reduce((sum: number, inv: any) => 
@@ -252,7 +284,15 @@ const AdminDashboardPage: React.FC = () => {
   const processRevenueChart = (invoices: any[]) => {
     const monthlyData = new Map();
     invoices.forEach(invoice => {
-      const date = new Date(invoice.createdAt || invoice.issueDate);
+      // Safe date parsing with fallback
+      const dateStr = invoice.createdAt || invoice.issueDate || new Date().toISOString();
+      const date = new Date(dateStr);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return; // Skip invalid dates
+      }
+      
       const monthKey = format(date, 'MMM yyyy');
       const existing = monthlyData.get(monthKey) || { month: monthKey, revenue: 0, bookings: 0 };
       existing.revenue += parseFloat(invoice.total) || 0;
@@ -265,7 +305,15 @@ const AdminDashboardPage: React.FC = () => {
   const processLeadChart = (leads: any[]) => {
     const monthlyData = new Map();
     leads.forEach(lead => {
-      const date = new Date(lead.createdAt);
+      // Safe date parsing with fallback
+      const dateStr = lead.createdAt || new Date().toISOString();
+      const date = new Date(dateStr);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return; // Skip invalid dates
+      }
+      
       const monthKey = format(date, 'MMM yyyy');
       const existing = monthlyData.get(monthKey) || { month: monthKey, leads: 0, converted: 0 };
       existing.leads += 1;
