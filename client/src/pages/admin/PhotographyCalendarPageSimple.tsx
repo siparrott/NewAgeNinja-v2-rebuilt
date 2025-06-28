@@ -535,6 +535,191 @@ const PhotographyCalendarPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Session Form Modal */}
+        {showSessionForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <h3 className="text-lg font-medium mb-4">Create New Photography Session</h3>
+              
+              <form onSubmit={handleSubmitSession} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Session Title</label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => handleInputChange('title', e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Session Type</label>
+                  <select
+                    value={formData.sessionType}
+                    onChange={(e) => handleInputChange('sessionType', e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="portrait">Portrait</option>
+                    <option value="wedding">Wedding</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="event">Event</option>
+                    <option value="family">Family</option>
+                    <option value="fashion">Fashion</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Start Time</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.startTime}
+                      onChange={(e) => handleInputChange('startTime', e.target.value)}
+                      className="w-full border rounded px-3 py-2"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">End Time</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.endTime}
+                      onChange={(e) => handleInputChange('endTime', e.target.value)}
+                      className="w-full border rounded px-3 py-2"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Client Name</label>
+                  <input
+                    type="text"
+                    value={formData.clientName}
+                    onChange={(e) => handleInputChange('clientName', e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={formData.locationName}
+                    onChange={(e) => handleInputChange('locationName', e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Base Price ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.basePrice}
+                      onChange={(e) => handleInputChange('basePrice', e.target.value)}
+                      className="w-full border rounded px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Deposit ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.depositAmount}
+                      onChange={(e) => handleInputChange('depositAmount', e.target.value)}
+                      className="w-full border rounded px-3 py-2"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Equipment List</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.equipmentList.map((item, index) => (
+                      <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm flex items-center">
+                        {item}
+                        <button
+                          type="button"
+                          onClick={() => removeEquipmentItem(index)}
+                          className="ml-2 text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addEquipmentItem}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    + Add Equipment
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.weatherDependent}
+                      onChange={(e) => handleInputChange('weatherDependent', e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Weather Dependent</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.goldenHourOptimized}
+                      onChange={(e) => handleInputChange('goldenHourOptimized', e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Golden Hour Optimized</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.portfolioWorthy}
+                      onChange={(e) => handleInputChange('portfolioWorthy', e.target.checked)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Portfolio Worthy</span>
+                  </label>
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+                  >
+                    Create Session
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowSessionForm(false)}
+                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

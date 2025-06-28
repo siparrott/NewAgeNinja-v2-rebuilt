@@ -154,28 +154,44 @@ export const galleryImages = pgTable("gallery_images", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Photography Session Management System
+// Photography Session Management System  
 export const photographySessions = pgTable("photography_sessions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  
-  // Basic Session Info
+  id: text("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
-  sessionType: text("session_type").notNull(), // portrait, wedding, commercial, event, family, etc.
-  status: text("status").default("scheduled"), // scheduled, in-progress, completed, cancelled, rescheduled
-  
-  // Timing & Scheduling
-  startTime: timestamp("start_time").notNull(),
-  endTime: timestamp("end_time").notNull(),
-  timezone: text("timezone").default("UTC"),
-  duration: integer("duration"), // in minutes
-  setupTime: integer("setup_time").default(30), // prep time in minutes
-  travelTime: integer("travel_time").default(0), // travel time in minutes
-  
-  // Client Information
-  clientId: uuid("client_id").references(() => crmClients.id),
+  sessionType: text("session_type").notNull(),
+  status: text("status").default("scheduled"),
+  startTime: timestamp("start_time", { withTimezone: true }).notNull(),
+  endTime: timestamp("end_time", { withTimezone: true }).notNull(),
   clientName: text("client_name"),
   clientEmail: text("client_email"),
+  clientPhone: text("client_phone"),
+  locationName: text("location_name"),
+  locationAddress: text("location_address"),
+  locationCoordinates: text("location_coordinates"),
+  basePrice: decimal("base_price", { precision: 10, scale: 2 }),
+  depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+  depositPaid: boolean("deposit_paid").default(false),
+  finalPayment: decimal("final_payment", { precision: 10, scale: 2 }),
+  finalPaymentPaid: boolean("final_payment_paid").default(false),
+  equipmentList: text("equipment_list").array(),
+  crewMembers: text("crew_members").array(),
+  weatherDependent: boolean("weather_dependent").default(false),
+  goldenHourOptimized: boolean("golden_hour_optimized").default(false),
+  backupPlan: text("backup_plan"),
+  notes: text("notes"),
+  portfolioWorthy: boolean("portfolio_worthy").default(false),
+  editingStatus: text("editing_status").default("not_started"),
+  deliveryStatus: text("delivery_status").default("pending"),
+  deliveryDate: timestamp("delivery_date", { withTimezone: true }),
+  galleryId: text("gallery_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  photographerId: text("photographer_id"),
+  tags: text("tags").array(),
+});
+
+export const sessionEquipment = pgTable("session_equipment", {
   clientPhone: text("client_phone"),
   guestCount: integer("guest_count").default(1),
   specialRequests: text("special_requests"),
