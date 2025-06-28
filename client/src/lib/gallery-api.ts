@@ -99,23 +99,23 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
     let coverImageUrl = null;
     if (galleryData.coverImage) {
       try {
-        const fileExt = galleryData.coverImage.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        // For now, convert the file to a data URL since Supabase storage is not configured
+        // This is a temporary solution until storage is properly set up
+        const reader = new FileReader();
+        const dataUrlPromise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(galleryData.coverImage!);
+        });
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('gallery-images')
-          .upload(`covers/${fileName}`, galleryData.coverImage);
-
-        if (uploadError) {
-          console.error('Cover image upload error:', uploadError);
-        } else {
-          const { data } = supabase.storage
-            .from('gallery-images')
-            .getPublicUrl(uploadData.path);
-          coverImageUrl = data.publicUrl;
+        try {
+          coverImageUrl = await dataUrlPromise;
+          console.log('Cover image converted to data URL successfully');
+        } catch (dataUrlError) {
+          console.error('Error converting cover image to data URL:', dataUrlError);
         }
       } catch (uploadError) {
-        console.error('Error uploading cover image:', uploadError);
+        console.error('Error processing cover image:', uploadError);
       }
     }
 
