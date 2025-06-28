@@ -124,6 +124,12 @@ Preferred communication style: Simple, everyday language.
   * External calendar sync functionality
   * Payment status tracking and conflict detection
   * Enhanced session management with all new fields
+- June 28, 2025. Fixed critical gallery image issues:
+  * Located real uploaded images in Supabase Storage (`images/galleries/images/`)
+  * Implemented gallery-specific image filtering to prevent all images appearing in every gallery
+  * Connected API to fetch images from correct storage location
+  * Pantling Family gallery now shows curated selection of user's uploaded landscape photos
+  * Resolved issue where all 19 uploaded images appeared in every gallery
 
 ## Changelog
 
