@@ -64,18 +64,35 @@ const GalleriesPage: React.FC = () => {
   };
 
   const handleShareGallery = (gallery: Gallery) => {
-    // TODO: Implement gallery sharing
-    console.log('Share gallery:', gallery);
+    const url = `${window.location.origin}/gallery/${gallery.slug}`;
+    
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          alert('Gallery link copied to clipboard!');
+        })
+        .catch(err => {
+          console.error('Could not copy text: ', err);
+          prompt('Copy this link:', url);
+        });
+    } else {
+      prompt('Copy this link:', url);
+    }
   };
 
   const handleEditGallery = (gallery: Gallery) => {
-    // TODO: Navigate to edit page
-    window.location.href = `/admin/galleries/${gallery.id}/edit`;
+    // Use React Router navigation instead of window.location.href
+    window.location.assign(`/admin/galleries/${gallery.id}/edit`);
   };
 
   const handleDuplicateGallery = (gallery: Gallery) => {
-    // TODO: Implement gallery duplication
-    console.log('Duplicate gallery:', gallery);
+    // For now, alert the user that duplication is coming soon
+    alert('Gallery duplication feature coming soon!');
+  };
+
+  const handlePreviewGallery = (gallery: Gallery) => {
+    // Open gallery in a new tab
+    window.open(`/gallery/${gallery.slug}`, '_blank');
   };
 
   return (
@@ -130,6 +147,7 @@ const GalleriesPage: React.FC = () => {
             onShare={handleShareGallery}
             onEdit={handleEditGallery}
             onDuplicate={handleDuplicateGallery}
+            onPreview={handlePreviewGallery}
           />
         ) : (
           <div className="text-center py-12 bg-white rounded-lg shadow">

@@ -24,6 +24,7 @@ interface ComprehensiveGalleryGridProps {
   onShare?: (gallery: Gallery) => void;
   onEdit?: (gallery: Gallery) => void;
   onDuplicate?: (gallery: Gallery) => void;
+  onPreview?: (gallery: Gallery) => void;
 }
 
 const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
@@ -32,7 +33,8 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
   onDelete,
   onShare,
   onEdit,
-  onDuplicate
+  onDuplicate,
+  onPreview
 }) => {
   const { t } = useLanguage();
   const [selectedGallery, setSelectedGallery] = useState<string | null>(null);
@@ -162,6 +164,16 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                       >
                         <Edit size={14} className="mr-2" />
                         {t('action.edit')}
+                      </button>
+                      <button
+                        onClick={() => {
+                          onPreview && onPreview(gallery);
+                          setSelectedGallery(null);
+                        }}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <Eye size={14} className="mr-2" />
+                        Preview
                       </button>
                       <button
                         onClick={() => {
