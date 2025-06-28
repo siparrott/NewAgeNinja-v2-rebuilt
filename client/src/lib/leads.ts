@@ -14,19 +14,27 @@ export interface Lead {
 
 export async function getLeads(status?: 'NEW' | 'CONTACTED' | 'CONVERTED') {
   try {
-    let query = supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const url = status ? `/api/crm/leads?status=${status.toLowerCase()}` : '/api/crm/leads';
+    const response = await fetch(url);
     
-    if (status) {
-      query = query.eq('status', status);
+    if (!response.ok) {
+      throw new Error('Failed to fetch leads');
     }
     
-    const { data, error } = await query;
+    const data = await response.json();
     
-    if (error) throw error;
-    return data || [];
+    // Transform the CRM lead data to match the expected Lead interface
+    return data.map((lead: any) => ({
+      id: lead.id,
+      first_name: lead.name ? lead.name.split(' ')[0] : '',
+      last_name: lead.name ? lead.name.split(' ').slice(1).join(' ') : '',
+      email: lead.email,
+      phone: lead.phone,
+      message: lead.message,
+      form_source: lead.source || 'MANUAL',
+      status: lead.status ? lead.status.toUpperCase() : 'NEW',
+      created_at: lead.createdAt
+    }));
   } catch (error) {
     console.error('Error fetching leads:', error);
     throw error;

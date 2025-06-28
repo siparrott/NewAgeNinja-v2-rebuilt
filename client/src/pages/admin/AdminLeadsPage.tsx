@@ -100,17 +100,26 @@ const AdminLeadsPage: React.FC = () => {
   };
   const handleCreateLead = async () => {
     try {
-      const { data, error } = await supabase
-        .from('leads')
-        .insert([{
-          ...newLeadData,
-          status: 'NEW',
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
+      const response = await fetch('/api/crm/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${newLeadData.first_name} ${newLeadData.last_name}`.trim(),
+          email: newLeadData.email,
+          phone: newLeadData.phone,
+          message: newLeadData.message,
+          source: newLeadData.form_source,
+          status: 'new'
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to create lead');
+      }
+
+      const data = await response.json();
 
       // Update local state
       setLeads(prevLeads => [data, ...prevLeads]);
