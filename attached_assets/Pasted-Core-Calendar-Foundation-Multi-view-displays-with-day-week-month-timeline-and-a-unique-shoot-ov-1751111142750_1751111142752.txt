@@ -1,0 +1,17 @@
+Core Calendar Foundation
+Multi-view displays with day, week, month, timeline, and a unique "shoot overview" view that shows equipment needs, travel requirements, and prep time for each session. Drag-and-drop scheduling with intelligent conflict detection and automatic travel time calculations between locations.
+Photography-Specific Features
+Session Management: Each calendar event should be a comprehensive shoot container with client details, shot lists, equipment requirements, crew assignments, location scouting notes, and weather monitoring. Include automated equipment conflict detection - if two shoots need the same lens or lighting setup, the system alerts you immediately.
+Intelligent Scheduling: Build in golden hour optimization that automatically suggests optimal shooting times based on location and season. Include weather integration with forecasts, alerts for problematic conditions, and automatic rescheduling suggestions. Add travel time intelligence that factors in traffic patterns, equipment load-in time, and location-specific access requirements.
+Client Experience Integration: Automated client communications with shoot reminders, preparation checklists, location details with maps, and outfit suggestions. Include a client portal where they can view their upcoming sessions, upload inspiration photos, and confirm details.
+Next-Generation Features
+AI-Powered Insights: Analyze your booking patterns to suggest optimal pricing windows, identify busy season trends, and recommend when to block time for administrative tasks. Revenue forecasting based on your booking pipeline and historical data.
+Equipment & Crew Orchestration: Smart resource management that tracks not just your gear but rental equipment, assistant availability, and vendor bookings (makeup artists, stylists). Include automated vendor coordination with shared calendars and booking confirmations.
+Location Intelligence: Integrate with permit databases, weather APIs, and sunrise/sunset calculations. Include a location library with access notes, parking information, backup indoor options, and crowd level predictions.
+Workflow Automation: Post-shoot pipeline integration that automatically creates editing tasks, sets delivery deadlines, and tracks project progress. Include automated invoicing triggers and contract milestone tracking.
+Advanced Professional Tools
+Multi-photographer coordination for studios with multiple shooters, seasonal campaign planning for fashion/commercial work, and portfolio gap analysis that identifies missing shot types or styles in your work.
+Financial intelligence with profitability analysis per shoot type, expense tracking integration, and tax preparation automation for equipment depreciation and business expenses.
+Mobile-first design with offline capability for location scouting, voice note integration for quick ideas during shoots, and emergency contact systems for crew and clients.
+The key is making it feel like a photographer's personal assistant rather than just a calendar - something that understands the unique complexity of photography business operations while remaining intuitive enough for daily use.
+What type of photography do your users primarily focus on? That would help me refine these suggestions further.

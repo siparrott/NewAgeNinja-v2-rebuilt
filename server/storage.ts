@@ -5,8 +5,7 @@ import {
   crmLeads,
   crmInvoices,
   galleries,
-  calendarEvents,
-  calendars,
+  photographySessions,
   messages,
   stripeCustomers,
   stripeOrders,
@@ -18,8 +17,8 @@ import {
   type InsertCrmClient,
   type CrmLead,
   type InsertCrmLead,
-  type CalendarEvent,
-  type InsertCalendarEvent,
+  type PhotographySession,
+  type InsertPhotographySession,
   type Gallery,
   type InsertGallery
 } from "@shared/schema";
@@ -56,12 +55,12 @@ export interface IStorage {
   updateCrmLead(id: string, updates: Partial<CrmLead>): Promise<CrmLead>;
   deleteCrmLead(id: string): Promise<void>;
 
-  // Calendar management
-  getCalendarEvents(calendarId?: string): Promise<CalendarEvent[]>;
-  getCalendarEvent(id: string): Promise<CalendarEvent | undefined>;
-  createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent>;
-  updateCalendarEvent(id: string, updates: Partial<CalendarEvent>): Promise<CalendarEvent>;
-  deleteCalendarEvent(id: string): Promise<void>;
+  // Photography Session management
+  getPhotographySessions(photographerId?: string): Promise<PhotographySession[]>;
+  getPhotographySession(id: string): Promise<PhotographySession | undefined>;
+  createPhotographySession(session: InsertPhotographySession): Promise<PhotographySession>;
+  updatePhotographySession(id: string, updates: Partial<PhotographySession>): Promise<PhotographySession>;
+  deletePhotographySession(id: string): Promise<void>;
 
   // Gallery management
   getGalleries(): Promise<Gallery[]>;
