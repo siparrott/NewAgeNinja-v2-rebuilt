@@ -341,50 +341,25 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
       setLoading(true);
       setError(null);
 
-      // Create the invoice
-      const { data: invoice, error: invoiceError } = await supabase
-        .from('crm_invoices')
-        .insert([{
-          client_id: formData.client_id,
-          due_date: formData.due_date,
-          payment_terms: formData.payment_terms,
-          currency: formData.currency,
-          notes: formData.notes,
-          discount_amount: formData.discount_amount,
-          status: 'draft'
-        }])
-        .select()
-        .single();
+      // Prepare the invoice data for the PostgreSQL API
+      const invoiceData: CreateInvoiceData = {
+        clientId: formData.client_id,
+        issueDate: new Date().toISOString().split('T')[0],
+        dueDate: formData.due_date,
+        currency: formData.currency,
+        paymentTerms: formData.payment_terms,
+        notes: formData.notes,
+        discountAmount: formData.discount_amount.toString(),
+        items: formData.items.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          tax_rate: item.tax_rate
+        }))
+      };
 
-      if (invoiceError) throw invoiceError;
-
-      // Create line items
-      const itemsToInsert = formData.items.map(item => ({
-        invoice_id: invoice.id,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        tax_rate: item.tax_rate
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('crm_invoice_items')
-        .insert(itemsToInsert);
-
-      if (itemsError) throw itemsError;
-
-      // Create audit log entry
-      await supabase
-        .from('crm_invoice_audit_log')
-        .insert([{
-          invoice_id: invoice.id,
-          action: 'created',
-          new_values: {
-            invoice_number: invoice.invoice_number,
-            client_id: formData.client_id,
-            total_amount: calculateTotals().total
-          }
-        }]);
+      // Create the invoice using PostgreSQL API
+      const invoice = await invoiceApi.createInvoice(invoiceData);
 
       onSuccess();
       onClose();

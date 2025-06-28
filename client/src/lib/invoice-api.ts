@@ -1,4 +1,4 @@
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest, queryClient } from './queryClient';
 
 export interface InvoiceItem {
   id?: string;
