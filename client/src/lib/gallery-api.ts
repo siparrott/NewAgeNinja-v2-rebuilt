@@ -175,16 +175,25 @@ export async function updateGallery(id: string, galleryData: GalleryFormData): P
 // Delete a gallery (admin only)
 export async function deleteGallery(id: string): Promise<void> {
   try {
+    console.log(`Attempting to delete gallery with ID: ${id}`);
+    
     const response = await fetch(`/api/galleries/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
+
+    console.log(`Delete response status: ${response.status}`);
 
     if (!response.ok) {
       const errorData = await response.text();
+      console.error(`Delete failed - Status: ${response.status}, Error: ${errorData}`);
       throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
     }
 
-    console.log('Gallery deleted successfully:', id);
+    const result = await response.json();
+    console.log('Gallery deleted successfully:', id, result);
   } catch (error) {
     console.error(`Error deleting gallery ${id}:`, error);
     throw error;
