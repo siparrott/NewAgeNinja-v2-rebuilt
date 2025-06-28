@@ -30,21 +30,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    // Initialize Masonry layout if available
-    try {
-      if (typeof window !== 'undefined' && window.Masonry) {
-        const grid = document.querySelector('.gallery-grid');
-        if (grid) {
-          new window.Masonry(grid, {
-            itemSelector: '.gallery-item',
-            columnWidth: '.gallery-sizer',
-            percentPosition: true
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error initializing Masonry:', error);
-    }
+    // Images updated - no additional layout initialization needed for CSS grid
   }, [images]);
 
   const openLightbox = (image: GalleryImage, index: number) => {
@@ -210,7 +196,6 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         </div>
       ) : (
         <div className="gallery-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          <div className="gallery-sizer w-1/4"></div>
           {images.map((image, index) => (
             <div 
               key={image.id} 
