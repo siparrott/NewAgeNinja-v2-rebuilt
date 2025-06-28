@@ -130,6 +130,14 @@ Preferred communication style: Simple, everyday language.
   * Connected API to fetch images from correct storage location
   * Pantling Family gallery now shows curated selection of user's uploaded landscape photos
   * Resolved issue where all 19 uploaded images appeared in every gallery
+- June 28, 2025. Fixed missing first image issue and enhanced lightbox experience:
+  * Removed conflicting Masonry layout system causing first image to be hidden
+  * Implemented clean CSS Grid layout for consistent image display
+  * Enhanced full-screen image display (95vw x 90vh) for optimal viewing
+  * Added prominent "Back to Gallery" button and enhanced close button with visual feedback
+  * Implemented keyboard support (ESC to close, arrow keys for navigation)
+  * Fixed download functionality with proper blob handling for CORS and authentication
+  * Enhanced user experience with clearer navigation options
 
 ## Changelog
 

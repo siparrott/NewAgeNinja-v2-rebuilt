@@ -33,6 +33,26 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     // Images updated - no additional layout initialization needed for CSS grid
   }, [images]);
 
+  // Keyboard support for lightbox
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isLightboxOpen) return;
+      
+      if (event.key === 'Escape') {
+        closeLightbox();
+      } else if (event.key === 'ArrowLeft') {
+        navigateImage('prev');
+      } else if (event.key === 'ArrowRight') {
+        navigateImage('next');
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isLightboxOpen]);
+
   const openLightbox = (image: GalleryImage, index: number) => {
     setSelectedImage(image);
     setCurrentIndex(index);
@@ -84,23 +104,51 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     }
   };
 
-  const handleDownload = (image: GalleryImage, e: React.MouseEvent) => {
+  const handleDownload = async (image: GalleryImage, e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (!downloadEnabled) return;
     
-    // Create a download link
-    const link = document.createElement('a');
-    link.href = image.displayUrl;
-    link.download = image.filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Log download action if public
-    if (isPublic && authToken) {
-      // This would be implemented to log a DOWNLOAD action
-      console.log('Download action logged for image', image.id);
+    try {
+      // Fetch the image blob to handle CORS and authentication issues
+      const response = await fetch(image.displayUrl, {
+        headers: authToken ? {
+          'Authorization': `Bearer ${authToken}`,
+        } : {}
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch image');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = image.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the blob URL
+      window.URL.revokeObjectURL(url);
+      
+      // Log download action if public
+      if (isPublic && authToken) {
+        console.log('Download action logged for image', image.id);
+      }
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      // Fallback to direct link if blob method fails
+      const link = document.createElement('a');
+      link.href = image.displayUrl;
+      link.download = image.filename;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -297,17 +345,31 @@ const ImageGrid: React.FC<ImageGridProps> = ({
       {/* Lightbox */}
       {isLightboxOpen && selectedImage && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+          className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center"
           onClick={closeLightbox}
         >
-          <div className="relative max-w-4xl max-h-screen p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full h-full flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+            {/* Enhanced Close Button */}
             <button
-              className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+              className="absolute top-4 right-4 text-white hover:text-gray-300 z-20 bg-black bg-opacity-50 rounded-full p-2"
               onClick={closeLightbox}
+              title="Close (ESC)"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
+            </button>
+            
+            {/* Back to Gallery Button */}
+            <button
+              className="absolute top-4 left-4 text-white hover:text-gray-300 z-20 bg-black bg-opacity-50 rounded-full p-2 flex items-center space-x-2"
+              onClick={closeLightbox}
+              title="Back to Gallery"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span className="text-sm hidden sm:block">Back to Gallery</span>
             </button>
             
             {/* Navigation buttons */}
@@ -341,7 +403,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
             <img 
               src={selectedImage.displayUrl} 
               alt={selectedImage.filename}
-              className="max-w-full max-h-[calc(100vh-8rem)] mx-auto object-contain"
+              className="max-w-[95vw] max-h-[90vh] mx-auto object-contain"
             />
             
             <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-4">
