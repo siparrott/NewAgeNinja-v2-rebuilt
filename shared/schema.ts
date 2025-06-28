@@ -487,6 +487,28 @@ export const insertGallerySchema = createInsertSchema(galleries).pick({
   password: true,
 });
 
+export const insertCrmInvoiceSchema = createInsertSchema(crmInvoices).pick({
+  invoiceNumber: true,
+  clientId: true,
+  issueDate: true,
+  dueDate: true,
+  subtotal: true,
+  taxAmount: true,
+  total: true,
+  status: true,
+  notes: true,
+  termsAndConditions: true,
+});
+
+export const insertCrmInvoiceItemSchema = createInsertSchema(crmInvoiceItems).pick({
+  invoiceId: true,
+  description: true,
+  quantity: true,
+  unitPrice: true,
+  taxRate: true,
+  sortOrder: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertPhotographySession = z.infer<typeof insertPhotographySessionSchema>;
@@ -498,6 +520,11 @@ export type CrmClient = typeof crmClients.$inferSelect;
 export type InsertCrmLead = z.infer<typeof insertCrmLeadSchema>;
 export type CrmLead = typeof crmLeads.$inferSelect;
 export type InsertGallery = z.infer<typeof insertGallerySchema>;
+export type Gallery = typeof galleries.$inferSelect;
+export type InsertCrmInvoice = z.infer<typeof insertCrmInvoiceSchema>;
+export type CrmInvoice = typeof crmInvoices.$inferSelect;
+export type InsertCrmInvoiceItem = z.infer<typeof insertCrmInvoiceItemSchema>;
+export type CrmInvoiceItem = typeof crmInvoiceItems.$inferSelect;
 export type Gallery = typeof galleries.$inferSelect;
 export type SessionEquipment = typeof sessionEquipment.$inferSelect;
 export type SessionTask = typeof sessionTasks.$inferSelect;
