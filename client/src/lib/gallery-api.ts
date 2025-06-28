@@ -75,28 +75,10 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
   try {
     console.log('createGallery called with:', galleryData);
     
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('Session user ID:', session?.user?.id);
-    
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
-    }
-
-    // Generate slug from title
-    const slug = galleryData.title
-      .toLowerCase()
-      .replace(/[^\w\s]/gi, '')
-      .replace(/\s+/g, '-')
-      .substring(0, 50); // Limit length
-
-    console.log('Generated slug:', slug);
-
-    // Handle cover image upload if provided
+    // Handle cover image conversion to data URL if provided
     let coverImageUrl = null;
     if (galleryData.coverImage) {
       try {
-        // For now, convert the file to a data URL since Supabase storage is not configured
-        // This is a temporary solution until storage is properly set up
         const reader = new FileReader();
         const dataUrlPromise = new Promise<string>((resolve, reject) => {
           reader.onload = () => resolve(reader.result as string);
@@ -104,56 +86,46 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
           reader.readAsDataURL(galleryData.coverImage!);
         });
         
-        try {
-          coverImageUrl = await dataUrlPromise;
-          console.log('Cover image converted to data URL successfully');
-        } catch (dataUrlError) {
-          console.error('Error converting cover image to data URL:', dataUrlError);
-        }
+        coverImageUrl = await dataUrlPromise;
+        console.log('Cover image converted to data URL successfully');
       } catch (uploadError) {
         console.error('Error processing cover image:', uploadError);
       }
     }
 
-    // Create the gallery with cover image
-    const insertData = {
+    // Generate slug from title
+    const slug = galleryData.title
+      .toLowerCase()
+      .replace(/[^\w\s]/gi, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 50);
+
+    // Prepare the data for the backend API
+    const apiData = {
       title: galleryData.title,
-      slug: slug,
       description: galleryData.description || null,
-      cover_image: coverImageUrl,
-      download_enabled: galleryData.downloadEnabled ?? true,
-      client_id: session.user.id
+      slug: slug,
+      coverImage: coverImageUrl,
     };
-    
-    console.log('Inserting data into galleries table:', insertData);
-    
-    const { data: gallery, error: galleryError } = await supabase
-      .from('galleries')
-      .insert(insertData)
-      .select()
-      .single();
 
-    console.log('Database response - data:', gallery, 'error:', galleryError);
+    console.log('Sending data to backend API:', apiData);
 
-    if (galleryError) {
-      console.error('Gallery creation error details:', galleryError);
-      throw galleryError;
+    const response = await fetch('/api/galleries', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(apiData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
     }
 
-    // Create a gallery object that matches our interface
-    const galleryResult: Gallery = {
-      id: gallery.id,
-      title: gallery.title,
-      slug: gallery.slug || slug,
-      coverImage: gallery.cover_image,
-      passwordHash: gallery.password_hash,
-      downloadEnabled: gallery.download_enabled,
-      clientId: gallery.client_id,
-      createdAt: gallery.created_at,
-      updatedAt: gallery.updated_at || gallery.created_at
-    };
-
-    return galleryResult;
+    const gallery = await response.json();
+    console.log('Gallery created successfully:', gallery);
+    return gallery;
   } catch (error) {
     console.error('Error creating gallery:', error);
     throw error;
