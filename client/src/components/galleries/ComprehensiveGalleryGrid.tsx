@@ -186,16 +186,6 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                         <Eye size={14} className="mr-2" />
                         Preview
                       </button>
-                      <button
-                        onClick={() => {
-                          onShare && onShare(gallery);
-                          setSelectedGallery(null);
-                        }}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <Share2 size={14} className="mr-2" />
-                        Share
-                      </button>
                       <hr className="my-2" />
                       <button
                         onClick={() => {
