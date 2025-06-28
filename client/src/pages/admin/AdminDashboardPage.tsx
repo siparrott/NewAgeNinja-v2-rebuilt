@@ -559,6 +559,50 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* CRM Operations Assistant - Moved to top */}
         <div className="mt-6">
+          {/* Quick Actions Section */}
+          <div className="bg-white rounded-lg shadow p-6 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleCRMAction('reply_to_emails')}
+                className="flex items-center space-x-3 text-sm p-4 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 rounded-lg text-left transition-all group"
+              >
+                <svg className="h-5 w-5 text-blue-600 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span className="text-gray-700 group-hover:text-gray-900 font-medium">Reply to emails</span>
+              </button>
+              <button
+                onClick={() => handleCRMAction('send_booking_confirmations')}
+                className="flex items-center space-x-3 text-sm p-4 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border border-green-200 rounded-lg text-left transition-all group"
+              >
+                <svg className="h-5 w-5 text-green-600 group-hover:text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-gray-700 group-hover:text-gray-900 font-medium">Send booking confirmations</span>
+              </button>
+              <button
+                onClick={() => handleCRMAction('add_new_client')}
+                className="flex items-center space-x-3 text-sm p-4 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border border-purple-200 rounded-lg text-left transition-all group"
+              >
+                <svg className="h-5 w-5 text-purple-600 group-hover:text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span className="text-gray-700 group-hover:text-gray-900 font-medium">Add new client</span>
+              </button>
+              <button
+                onClick={() => handleCRMAction('generate_invoice')}
+                className="flex items-center space-x-3 text-sm p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 border border-yellow-200 rounded-lg text-left transition-all group"
+              >
+                <svg className="h-5 w-5 text-yellow-600 group-hover:text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="text-gray-700 group-hover:text-gray-900 font-medium">Generate invoice</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Chat Interface */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
@@ -567,7 +611,7 @@ const AdminDashboardPage: React.FC = () => {
             <EmbeddedCRMChat
               assistantId={CRM_ASSISTANT_ID}
               onCRMAction={handleCRMAction}
-              height="750px"
+              height="600px"
               title="CRM Operations Assistant"
               className="w-full"
             />

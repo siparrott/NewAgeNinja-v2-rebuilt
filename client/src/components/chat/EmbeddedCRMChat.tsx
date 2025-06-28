@@ -246,26 +246,8 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
 
       {!isMinimized && (
         <>
-          {/* Quick Actions */}
-          <div className="p-4 border-b border-gray-100 bg-gray-50">
-            <p className="text-sm font-medium text-gray-700 mb-3 pt-4">Quick Actions:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {quickActions.map((action, index) => (
-                <button
-                  key={index}
-                  onClick={() => setInputValue(action.command)}
-                  className="flex items-center space-x-2 text-sm p-3 bg-white hover:bg-blue-50 border border-gray-200 rounded-lg text-left transition-colors group"
-                  title={action.label}
-                >
-                  <action.icon className="h-4 w-4 text-blue-600 group-hover:text-blue-700" />
-                  <span className="text-gray-700 group-hover:text-gray-900">{action.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ height: `calc(${height} - 280px)` }}>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ height: `calc(${height} - 140px)` }}>
             {messages.map((message) => (
               <div
                 key={message.id}
