@@ -265,7 +265,7 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ height: `calc(${height} - 240px)` }}>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ height: `calc(${height} - 200px)` }}>
             {messages.map((message) => (
               <div
                 key={message.id}

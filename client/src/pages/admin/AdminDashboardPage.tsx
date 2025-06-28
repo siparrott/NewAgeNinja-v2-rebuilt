@@ -567,7 +567,7 @@ const AdminDashboardPage: React.FC = () => {
             <EmbeddedCRMChat
               assistantId={CRM_ASSISTANT_ID}
               onCRMAction={handleCRMAction}
-              height="600px"
+              height="750px"
               title="CRM Operations Assistant"
               className="w-full"
             />
