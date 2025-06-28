@@ -248,7 +248,7 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
         <>
           {/* Quick Actions */}
           <div className="p-4 border-b border-gray-100 bg-gray-50">
-            <p className="text-sm font-medium text-gray-700 mb-3 pt-2">Quick Actions:</p>
+            <p className="text-sm font-medium text-gray-700 mb-3 pt-4">Quick Actions:</p>
             <div className="grid grid-cols-2 gap-2">
               {quickActions.map((action, index) => (
                 <button
@@ -265,7 +265,7 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ height: `calc(${height} - 200px)` }}>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ height: `calc(${height} - 280px)` }}>
             {messages.map((message) => (
               <div
                 key={message.id}
