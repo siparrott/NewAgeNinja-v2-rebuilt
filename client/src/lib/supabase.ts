@@ -1,23 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-// Validate URL format
-try {
-  new URL(supabaseUrl);
-} catch (error) {
-  throw new Error(`Invalid Supabase URL format: ${supabaseUrl}`);
-}
-
-// Validate anon key format (should be a JWT)
-if (!supabaseAnonKey.startsWith('eyJ')) {
-  throw new Error('Invalid Supabase anon key format - should be a JWT token');
-}
+const supabaseUrl = 'https://gtnwccyxwrevfnbkjvzm.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0bndjY3l4d3JldmZuYmtqdnptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNDgwMTgsImV4cCI6MjA2NTgyNDAxOH0.MiOeCq2NCD969D_SXQ1wAlheSvRY5h04cUnV0XNuOrc';
 
 console.log('Supabase configuration:', {
   url: supabaseUrl,
