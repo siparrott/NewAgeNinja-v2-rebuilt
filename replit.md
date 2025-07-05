@@ -138,6 +138,13 @@ Preferred communication style: Simple, everyday language.
   * Implemented keyboard support (ESC to close, arrow keys for navigation)
   * Fixed download functionality with proper blob handling for CORS and authentication
   * Enhanced user experience with clearer navigation options
+- July 5, 2025. Implemented Digital Files folder organization system:
+  * Added mandatory folder creation before file upload for better organization
+  * Enhanced upload modal with folder name input field and validation
+  * Modified file upload function to organize files into named folders in Supabase Storage
+  * Created digital_files database table with complete IPTC metadata support
+  * Added location field integration for folder-based file organization
+  * Enhanced user experience with file preview and upload progress tracking
 
 ## Changelog
 
