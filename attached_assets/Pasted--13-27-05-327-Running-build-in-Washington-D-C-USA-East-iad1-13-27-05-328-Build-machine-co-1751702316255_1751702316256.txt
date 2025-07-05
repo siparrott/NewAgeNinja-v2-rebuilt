@@ -1,0 +1,55 @@
+[13:27:05.327] Running build in Washington, D.C., USA (East) – iad1
+[13:27:05.328] Build machine configuration: 4 cores, 8 GB
+[13:27:05.343] Cloning github.com/JpegWriter/THISONESURELY (Branch: main, Commit: 5c35895)
+[13:27:05.528] Previous build caches not available
+[13:27:06.737] Cloning completed: 1.394s
+[13:27:07.063] Running "vercel build"
+[13:27:07.504] Vercel CLI 44.2.10
+[13:27:08.230] > Installing Builder: @vercel/node@3.0.24
+[13:27:15.468] Running "install" command: `npm install`...
+[13:27:19.598] npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+[13:27:19.621] npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+[13:27:25.208] 
+[13:27:25.208] added 516 packages, and audited 517 packages in 9s
+[13:27:25.209] 
+[13:27:25.209] 67 packages are looking for funding
+[13:27:25.209]   run `npm fund` for details
+[13:27:25.239] 
+[13:27:25.239] 8 vulnerabilities (1 low, 7 moderate)
+[13:27:25.239] 
+[13:27:25.239] To address issues that do not require attention, run:
+[13:27:25.239]   npm audit fix
+[13:27:25.239] 
+[13:27:25.239] To address all issues (including breaking changes), run:
+[13:27:25.239]   npm audit fix --force
+[13:27:25.239] 
+[13:27:25.239] Run `npm audit` for details.
+[13:27:25.508] 
+[13:27:25.508] > rest-express@1.0.0 build
+[13:27:25.509] > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+[13:27:25.509] 
+[13:27:25.770] [36mvite v5.4.14 [32mbuilding for production...[36m[39m
+[13:27:25.820] transforming...
+[13:27:26.118] Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+[13:27:26.118]   npx update-browserslist-db@latest
+[13:27:26.118]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[13:27:34.839] [32m✓[39m 3273 modules transformed.
+[13:27:35.783] rendering chunks...
+[13:27:35.831] computing gzip size...
+[13:27:35.875] [2m../dist/public/[22m[32mindex.html                 [39m[1m[2m    0.63 kB[22m[1m[22m[2m │ gzip:   0.38 kB[22m
+[13:27:35.876] [2m../dist/public/[22m[2massets/[22m[35mindex-bhjMLZdX.css  [39m[1m[2m   86.33 kB[22m[1m[22m[2m │ gzip:  12.83 kB[22m
+[13:27:35.876] [2m../dist/public/[22m[2massets/[22m[36mindex-DcP4JVNs.js   [39m[1m[33m1,736.82 kB[39m[22m[2m │ gzip: 435.51 kB[22m
+[13:27:35.876] [33m
+[13:27:35.876] (!) Some chunks are larger than 500 kB after minification. Consider:
+[13:27:35.876] - Using dynamic import() to code-split the application
+[13:27:35.877] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[13:27:35.877] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[13:27:35.877] [32m✓ built in 10.08s[39m
+[13:27:35.942] 
+[13:27:35.942]   dist/index.js  56.7kb
+[13:27:35.942] 
+[13:27:35.942] ⚡ Done in 6ms
+[13:27:35.983] Error: Found invalid Node.js Version: "22.x". Please set Node.js Version to 20.x in your Project Settings to use Node.js 20.
+[13:27:35.984] Learn More: http://vercel.link/node-version
+[13:27:36.278] 
+[13:27:38.777] Exiting build container

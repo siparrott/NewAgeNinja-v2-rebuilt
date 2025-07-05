@@ -4,7 +4,7 @@
   "outputDirectory": "dist/public",
   "functions": {
     "api/*.js": {
-      "runtime": "@vercel/node@3.0.24"
+      "runtime": "nodejs20.x"
     }
   },
   "routes": [
@@ -21,6 +21,9 @@
     }
   ],
   "installCommand": "npm install",
+  "engines": {
+    "node": "20.x"
+  },
   "env": {
     "NODE_ENV": "production"
   }
