@@ -21,9 +21,6 @@
     }
   ],
   "installCommand": "npm install",
-  "engines": {
-    "node": "20.x"
-  },
   "env": {
     "NODE_ENV": "production"
   }
