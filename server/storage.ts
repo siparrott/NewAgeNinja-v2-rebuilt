@@ -23,7 +23,7 @@ import {
   type InsertPhotographySession,
   type Gallery,
   type InsertGallery
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { db } from "./db";
 import { eq, and, desc, asc } from "drizzle-orm";
 
