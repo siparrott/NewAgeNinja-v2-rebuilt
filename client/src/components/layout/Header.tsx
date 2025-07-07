@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, Globe, Settings } from 'lucide-react';
+import { Menu, Globe } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -63,13 +63,7 @@ const Header: React.FC = () => {
             <span className="uppercase">{language}</span>
           </button>
           
-          {/* Admin Dev Access */}          <Link
-            to="/admin/dev"
-            className="text-gray-500 hover:text-purple-600 transition-colors flex items-center"
-            title={t('nav.admin')}
-          >
-            <Settings size={18} />
-          </Link>
+
         </nav>
 
         {/* Mobile Menu Button */}
@@ -97,14 +91,7 @@ const Header: React.FC = () => {
                 {item.label}
               </Link>
             ))}
-            <Link
-              to="/admin/dev"
-              className="py-2 text-gray-500 hover:text-purple-600 transition-colors flex items-center"
-              onClick={() => setMenuOpen(false)}
-            >
-              <Settings size={18} className="mr-2" />
-              {t('nav.admin')}
-            </Link>
+
             <button
               onClick={() => {
                 toggleLanguage();
