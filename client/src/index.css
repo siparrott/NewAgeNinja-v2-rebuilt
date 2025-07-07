@@ -32,11 +32,17 @@
 }
 
 /* Rich Text Editor Styles */
-[contenteditable="true"] {
+[contenteditable="true"], .ltr-editor {
   direction: ltr !important;
   unicode-bidi: embed !important;
   text-align: left !important;
   writing-mode: horizontal-tb !important;
+}
+
+.ltr-editor * {
+  direction: ltr !important;
+  unicode-bidi: embed !important;
+  text-align: left !important;
 }
 
 [contenteditable="true"]:empty::before {

@@ -128,6 +128,13 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
     }
   }, [value, isHtmlMode]);
 
+  // Initialize and update editor content
+  useEffect(() => {
+    if (editorRef.current && !isHtmlMode && !isPreviewMode) {
+      editorRef.current.innerHTML = value || '';
+    }
+  }, [value, isHtmlMode, isPreviewMode]);
+
   const saveToHistory = useCallback((content: string) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(content);
@@ -618,13 +625,18 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
             ref={editorRef}
             contentEditable
             suppressContentEditableWarning
-            dangerouslySetInnerHTML={{ __html: value }}
-            onInput={() => {
+            onInput={(e) => {
               if (editorRef.current) {
                 onChange(editorRef.current.innerHTML);
               }
             }}
-            onKeyUp={(e) => {
+            onKeyDown={(e) => {
+              // Handle text input direction explicitly
+              if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+                // Let the browser handle normal text input
+                return;
+              }
+              
               if (e.ctrlKey || e.metaKey) {
                 if (e.key === 'z' && !e.shiftKey) {
                   e.preventDefault();
@@ -635,7 +647,13 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
                 }
               }
             }}
-            className="min-h-96 p-6 outline-none prose max-w-none focus:ring-0"
+            onPaste={(e) => {
+              // Handle paste events to maintain text direction
+              e.preventDefault();
+              const text = e.clipboardData.getData('text/plain');
+              document.execCommand('insertText', false, text);
+            }}
+            className="min-h-96 p-6 outline-none prose max-w-none focus:ring-0 ltr-editor"
             style={{ 
               lineHeight: '1.7',
               fontSize: '16px',
