@@ -43,19 +43,19 @@ const BlogPostPage: React.FC = () => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .select(`
-          *,
-          author:author_id(email)
-        `)
-        .eq('slug', postSlug)
-        .eq('published', true)
-        .single();
+      const response = await fetch(`/api/blog/posts/${postSlug}`);
       
-      if (error) throw error;
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('Blog post not found');
+        } else {
+          setError('Failed to load blog post');
+        }
+        return;
+      }
       
-      setPost(data as BlogPost);
+      const data = await response.json();
+      setPost(data);
       
       // Fetch related posts
       fetchRelatedPosts(data.id);
@@ -69,16 +69,12 @@ const BlogPostPage: React.FC = () => {
 
   const fetchRelatedPosts = async (currentPostId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .select('id, title, slug, image_url')
-        .eq('published', true)
-        .neq('id', currentPostId)
-        .limit(3);
+      const response = await fetch(`/api/blog/posts?published=true&limit=3&exclude=${currentPostId}`);
       
-      if (error) throw error;
-      
-      setRelatedPosts(data || []);
+      if (response.ok) {
+        const data = await response.json();
+        setRelatedPosts(data.posts || []);
+      }
     } catch (err) {
       console.error('Error fetching related posts:', err);
     }

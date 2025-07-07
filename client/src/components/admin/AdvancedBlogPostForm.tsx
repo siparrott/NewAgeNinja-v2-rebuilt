@@ -196,48 +196,38 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
     setError(null);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('You must be logged in to create or edit posts');
-      }
-      
       const postData = {
         title: formData.title,
         slug: formData.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-'),
         excerpt: formData.excerpt,
         content: formData.content_html?.replace(/<[^>]*>/g, '') || '',
-        content_html: formData.content_html,
-        cover_image: formData.cover_image,
-        status: publish ? 'PUBLISHED' : formData.status,
-        author_id: user.id,
-        seo_title: formData.seo_title,
-        meta_description: formData.meta_description,
-        tags: formData.tags || [],
-        published_at: publish ? new Date().toISOString() : (formData.status === 'PUBLISHED' ? formData.published_at : null),
-        scheduled_for: formData.status === 'SCHEDULED' ? formData.scheduled_for : null,
-        view_count: 0
+        contentHtml: formData.content_html,
+        imageUrl: formData.cover_image,
+        published: publish || formData.status === 'PUBLISHED',
+        metaDescription: formData.meta_description,
+        seoTitle: formData.seo_title,
+        tags: formData.tags || []
       };
       
-      if (isEditing && post?.id) {
-        const { error } = await supabase
-          .from('blog_posts')
-          .update({
-            ...postData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', post.id);
-        
-        if (error) throw error;
-        setSuccessMessage('Post updated successfully!');
-      } else {
-        const { error } = await supabase
-          .from('blog_posts')
-          .insert(postData);
-        
-        if (error) throw error;
-        setSuccessMessage('Post created successfully!');
+      if (publish || formData.status === 'PUBLISHED') {
+        postData.publishedAt = new Date();
       }
+      
+      const response = await fetch(isEditing && post?.id ? `/api/blog/posts/${post.id}` : '/api/blog/posts', {
+        method: isEditing && post?.id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(postData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save post');
+      }
+      
+      setSuccessMessage(isEditing ? 'Post updated successfully!' : 'Post created successfully!');
       
       setTimeout(() => {
         navigate('/admin/blog');

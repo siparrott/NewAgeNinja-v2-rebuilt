@@ -49,51 +49,34 @@ const BlogPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch posts
-      let query = supabase
-        .from('blog_posts')
-        .select('*', { count: 'exact' });
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.append('published', 'true');
+      if (tag) params.append('tag', tag);
+      if (search) params.append('search', search);
+      params.append('page', page.toString());
+      params.append('limit', '10');
       
-      // Filter by published status
-      query = query.eq('published', true);
+      // Fetch posts from our backend API
+      const response = await fetch(`/api/blog/posts?${params.toString()}`);
       
-      // Filter by tag if specified
-      if (tag) {
-        query = query.contains('tags', [tag]);
+      if (!response.ok) {
+        throw new Error('Failed to fetch blog posts');
       }
       
-      // Filter by search term if specified
-      if (search) {
-        query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,excerpt.ilike.%${search}%`);
-      }
+      const data = await response.json();
+      const postsData = data.posts || [];
       
-      // Pagination
-      const pageSize = 10;
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
+      setPosts(postsData);
+      setTotalPosts(data.count || 0);
+      setTotalPages(Math.ceil((data.count || 0) / 10));
       
-      // Order by published date
-      query = query.order('published_at', { ascending: false });
-      
-      // Execute query with pagination
-      const { data: postsData, error: postsError, count } = await query.range(from, to);
-      
-      if (postsError) throw postsError;
-      
-      setPosts(postsData || []);
-      setTotalPosts(count || 0);
-      setTotalPages(Math.ceil((count || 0) / pageSize));
-      
-      // Fetch tags if not already loaded
-      if (tags.length === 0) {
-        const { data: tagsData, error: tagsError } = await supabase
-          .from('blog_tags')
-          .select('*')
-          .order('name');
-        
-        if (tagsError) throw tagsError;
-        
-        setTags(tagsData || []);
+      // For now, we'll handle tags separately since we don't have a tags API yet
+      if (tags.length === 0 && postsData.length > 0) {
+        // Extract unique tags from posts
+        const allTags = postsData.flatMap((post: any) => post.tags || []);
+        const uniqueTags = [...new Set(allTags)].map(tag => ({ id: tag, name: tag, slug: tag }));
+        setTags(uniqueTags);
       }
     } catch (err) {
       console.error('Error fetching blog data:', err);
