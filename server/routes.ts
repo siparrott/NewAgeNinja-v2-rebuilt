@@ -82,11 +82,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/blog/posts", authenticateUser, async (req: Request, res: Response) => {
     try {
       const postData = { 
-        ...req.body, 
-        authorId: null, // Set to null for now since user doesn't exist in database
+        ...req.body,
         // Convert publishedAt string to Date if present
         publishedAt: req.body.publishedAt ? new Date(req.body.publishedAt) : null
       };
+      // Remove authorId from validation data
+      delete postData.authorId;
       console.log("Received blog post data:", postData);
       const validatedData = insertBlogPostSchema.parse(postData);
       console.log("Validated blog post data:", validatedData);

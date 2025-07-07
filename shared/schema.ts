@@ -445,8 +445,6 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).pick({
   imageUrl: true,
   tags: true,
   publishedAt: true,
-}).extend({
-  authorId: z.string().optional(), // Make authorId optional and just a string for now
 });
 
 export const insertCrmClientSchema = createInsertSchema(crmClients).pick({
