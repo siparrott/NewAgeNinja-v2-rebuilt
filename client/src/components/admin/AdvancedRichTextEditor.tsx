@@ -46,7 +46,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
   onChange, 
   placeholder = "Start writing your blog post content..." 
 }) => {
-  const editorRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showBgColorPicker, setShowBgColorPicker] = useState(false);
   const [showFontFamilyPicker, setShowFontFamilyPicker] = useState(false);
@@ -131,7 +131,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
   // Initialize and update editor content
   useEffect(() => {
     if (editorRef.current && !isHtmlMode && !isPreviewMode) {
-      editorRef.current.innerHTML = value || '';
+      editorRef.current.value = value || '';
     }
   }, [value, isHtmlMode, isPreviewMode]);
 
@@ -161,7 +161,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
       setHistoryIndex(newIndex);
       onChange(content);
       if (editorRef.current) {
-        editorRef.current.innerHTML = content;
+        editorRef.current.value = content;
       }
     }
   }, [history, historyIndex, onChange]);
@@ -173,7 +173,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
       setHistoryIndex(newIndex);
       onChange(content);
       if (editorRef.current) {
-        editorRef.current.innerHTML = content;
+        editorRef.current.value = content;
       }
     }
   }, [history, historyIndex, onChange]);
@@ -621,22 +621,13 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
             placeholder="Edit HTML source..."
           />
         ) : (
-          <div
+          <textarea
             ref={editorRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={(e) => {
-              if (editorRef.current) {
-                onChange(editorRef.current.innerHTML);
-              }
+            value={value.replace(/<[^>]*>/g, '')} // Strip HTML for textarea
+            onChange={(e) => {
+              onChange(e.target.value);
             }}
             onKeyDown={(e) => {
-              // Handle text input direction explicitly
-              if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-                // Let the browser handle normal text input
-                return;
-              }
-              
               if (e.ctrlKey || e.metaKey) {
                 if (e.key === 'z' && !e.shiftKey) {
                   e.preventDefault();
@@ -647,13 +638,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
                 }
               }
             }}
-            onPaste={(e) => {
-              // Handle paste events to maintain text direction
-              e.preventDefault();
-              const text = e.clipboardData.getData('text/plain');
-              document.execCommand('insertText', false, text);
-            }}
-            className="min-h-96 p-6 outline-none prose max-w-none focus:ring-0 ltr-editor"
+            className="min-h-96 p-6 outline-none resize-none w-full border-0 focus:ring-0"
             style={{ 
               lineHeight: '1.7',
               fontSize: '16px',
@@ -661,9 +646,9 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
               textAlign: 'left',
               unicodeBidi: 'embed',
               writingMode: 'horizontal-tb',
-              WebkitWritingMode: 'horizontal-tb'
+              fontFamily: 'inherit'
             }}
-            data-placeholder={placeholder}
+            placeholder={placeholder}
           />
         )}
       </div>
