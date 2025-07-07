@@ -641,7 +641,9 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
               fontSize: '16px',
               direction: 'ltr',
               textAlign: 'left',
-              unicodeBidi: 'plaintext'
+              unicodeBidi: 'embed',
+              writingMode: 'horizontal-tb',
+              WebkitWritingMode: 'horizontal-tb'
             }}
             data-placeholder={placeholder}
           />
