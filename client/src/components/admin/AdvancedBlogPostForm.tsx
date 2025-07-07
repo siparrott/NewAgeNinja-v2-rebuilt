@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import RichTextEditor from './RichTextEditor';
+import AdvancedRichTextEditor from './AdvancedRichTextEditor';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -309,7 +309,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Content <span className="text-red-500">*</span>
         </label>
-        <RichTextEditor
+        <AdvancedRichTextEditor
           value={formData.content_html}
           onChange={(value) => handleChange('content_html', value)}
           placeholder="Start writing your blog post content..."
