@@ -46,7 +46,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
   onChange, 
   placeholder = "Start writing your blog post content..." 
 }) => {
-  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showBgColorPicker, setShowBgColorPicker] = useState(false);
   const [showFontFamilyPicker, setShowFontFamilyPicker] = useState(false);
@@ -131,9 +131,9 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
   // Initialize and update editor content
   useEffect(() => {
     if (editorRef.current && !isHtmlMode && !isPreviewMode) {
-      editorRef.current.value = value || '';
+      editorRef.current.innerHTML = value || `<p>${placeholder}</p>`;
     }
-  }, [value, isHtmlMode, isPreviewMode]);
+  }, [value, isHtmlMode, isPreviewMode, placeholder]);
 
   const saveToHistory = useCallback((content: string) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -621,11 +621,14 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
             placeholder="Edit HTML source..."
           />
         ) : (
-          <textarea
+          <div
             ref={editorRef}
-            value={value.replace(/<[^>]*>/g, '')} // Strip HTML for textarea
-            onChange={(e) => {
-              onChange(e.target.value);
+            contentEditable
+            suppressContentEditableWarning={true}
+            onInput={(e) => {
+              const newContent = e.currentTarget.innerHTML;
+              onChange(newContent);
+              saveToHistory(newContent);
             }}
             onKeyDown={(e) => {
               if (e.ctrlKey || e.metaKey) {
@@ -638,7 +641,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
                 }
               }
             }}
-            className="min-h-96 p-6 outline-none resize-none w-full border-0 focus:ring-0"
+            className="min-h-96 p-6 outline-none w-full border-0 focus:ring-0 prose max-w-none"
             style={{ 
               lineHeight: '1.7',
               fontSize: '16px',
@@ -648,7 +651,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
               writingMode: 'horizontal-tb',
               fontFamily: 'inherit'
             }}
-            placeholder={placeholder}
+            dangerouslySetInnerHTML={{ __html: value || `<p>${placeholder}</p>` }}
           />
         )}
       </div>
