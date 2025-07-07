@@ -83,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const postData = { 
         ...req.body, 
-        authorId: req.user?.id || null,
+        authorId: null, // Set to null for now since user doesn't exist in database
         // Convert publishedAt string to Date if present
         publishedAt: req.body.publishedAt ? new Date(req.body.publishedAt) : null
       };
