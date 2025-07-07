@@ -86,11 +86,6 @@ const Footer: React.FC = () => {
                   Fotoshootings
                 </Link>
               </li>
-              <li>
-                <Link to="/account" className="text-gray-300 hover:text-white transition-colors">
-                  Mein Account
-                </Link>
-              </li>
             </ul>
           </div>
           
