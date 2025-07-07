@@ -82,11 +82,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/blog/posts", authenticateUser, async (req: Request, res: Response) => {
     try {
       const postData = { ...req.body, authorId: req.user.id };
+      console.log("Received blog post data:", postData);
       const validatedData = insertBlogPostSchema.parse(postData);
+      console.log("Validated blog post data:", validatedData);
       const post = await storage.createBlogPost(validatedData);
       res.status(201).json(post);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Blog post validation error:", error.errors);
         return res.status(400).json({ error: "Validation error", details: error.errors });
       }
       console.error("Error creating blog post:", error);

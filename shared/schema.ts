@@ -441,10 +441,11 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).pick({
   content: true,
   slug: true,
   excerpt: true,
-  status: true,
-  featuredImage: true,
+  published: true,
+  imageUrl: true,
   tags: true,
   publishedAt: true,
+  authorId: true,
 });
 
 export const insertCrmClientSchema = createInsertSchema(crmClients).pick({

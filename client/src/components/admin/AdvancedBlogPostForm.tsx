@@ -200,12 +200,12 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
         title: formData.title,
         slug: formData.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-'),
         excerpt: formData.excerpt,
-        content: formData.content_html?.replace(/<[^>]*>/g, '') || '',
-        contentHtml: formData.content_html,
-        imageUrl: formData.cover_image,
+        content: formData.content_html || '',
+        contentHtml: formData.content_html || '',
+        imageUrl: formData.cover_image || '',
         published: publish || formData.status === 'PUBLISHED',
-        metaDescription: formData.meta_description,
-        seoTitle: formData.seo_title,
+        metaDescription: formData.meta_description || '',
+        seoTitle: formData.seo_title || '',
         tags: formData.tags || []
       };
       
@@ -224,6 +224,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Validation error details:', errorData);
         throw new Error(errorData.error || 'Failed to save post');
       }
       
