@@ -210,7 +210,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
       };
       
       if (publish || formData.status === 'PUBLISHED') {
-        postData.publishedAt = new Date();
+        postData.publishedAt = new Date().toISOString();
       }
       
       const response = await fetch(isEditing && post?.id ? `/api/blog/posts/${post.id}` : '/api/blog/posts', {

@@ -18,9 +18,9 @@ import { createClient } from '@supabase/supabase-js';
 
 // Authentication middleware placeholder - replace with actual auth
 const authenticateUser = async (req: Request, res: Response, next: Function) => {
-  // For now, skip authentication and set a default user
+  // For now, skip authentication and set a default user with valid UUID
   // In production, validate JWT token and get user from database
-  req.user = { id: "default-user-id", email: "admin@example.com", isAdmin: true };
+  req.user = { id: "550e8400-e29b-41d4-a716-446655440000", email: "admin@example.com", isAdmin: true };
   next();
 };
 
@@ -81,7 +81,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/blog/posts", authenticateUser, async (req: Request, res: Response) => {
     try {
-      const postData = { ...req.body, authorId: req.user.id };
+      const postData = { 
+        ...req.body, 
+        authorId: req.user?.id || null,
+        // Convert publishedAt string to Date if present
+        publishedAt: req.body.publishedAt ? new Date(req.body.publishedAt) : null
+      };
       console.log("Received blog post data:", postData);
       const validatedData = insertBlogPostSchema.parse(postData);
       console.log("Validated blog post data:", validatedData);
