@@ -52,42 +52,63 @@ const AdminBlogPostsPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      let query = supabase
-        .from('blog_posts')
-        .select('*', { count: 'exact' });      // Apply status filter
+      // Build query parameters
+      const params = new URLSearchParams();
       if (statusFilter !== 'all') {
         if (statusFilter === 'published') {
-          query = query.eq('status', 'PUBLISHED');
+          params.append('published', 'true');
         } else if (statusFilter === 'draft') {
-          query = query.eq('status', 'DRAFT');
-        } else if (statusFilter === 'scheduled') {
-          query = query.eq('status', 'SCHEDULED');
+          params.append('published', 'false');
         }
       }
       
-      // Apply search filter if present
-      if (searchTerm) {
-        query = query.or(`title.ilike.%${searchTerm}%,content_html.ilike.%${searchTerm}%,excerpt.ilike.%${searchTerm}%`);
+      const response = await fetch(`/api/blog/posts?${params.toString()}`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch blog posts');
       }
       
-      // Pagination
-      const pageSize = 10;
-      const from = (currentPage - 1) * pageSize;
-      const to = from + pageSize - 1;
+      const data = await response.json();
       
-      const { data, error, count } = await query
-        .order('created_at', { ascending: false })
-        .range(from, to);
+      // Map the API response to match the expected format
+      const mappedPosts = data.posts.map((post: any) => ({
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        excerpt: post.excerpt,
+        content_html: post.contentHtml || post.content,
+        cover_image: post.imageUrl,
+        status: post.published ? 'PUBLISHED' : 'DRAFT',
+        published: post.published,
+        author_id: post.authorId,
+        published_at: post.publishedAt,
+        created_at: post.createdAt,
+        updated_at: post.updatedAt,
+        seo_title: post.seoTitle,
+        meta_description: post.metaDescription,
+        tags: post.tags || []
+      }));
       
-      if (error) throw error;
+      // Filter by search term if present
+      const filteredPosts = searchTerm 
+        ? mappedPosts.filter((post: any) => 
+            post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            post.content_html.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (post.excerpt && post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()))
+          )
+        : mappedPosts;
       
-      setPosts(data || []);
-      setTotalPosts(count || 0);      setTotalPages(Math.ceil((count || 0) / pageSize));
+      setPosts(filteredPosts);
+      setTotalPosts(filteredPosts.length);
+      setTotalPages(Math.ceil(filteredPosts.length / 10));
     } catch (err) {
       console.error('Error fetching posts:', err);
       setError('Failed to load blog posts. Please try again.');
     } finally {
-      setLoading(false);    }
+      setLoading(false);
+    }
   }, [statusFilter, currentPage, searchTerm]);
 
   useEffect(() => {
@@ -103,12 +124,14 @@ const AdminBlogPostsPage: React.FC = () => {
     try {
       setLoading(true);
       
-      const { error } = await supabase
-        .from('blog_posts')
-        .delete()
-        .eq('id', postId);
+      const response = await fetch(`/api/blog/posts/${postId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to delete post');
+      }
       
       // Refresh posts after deletion
       fetchPosts();
@@ -123,23 +146,29 @@ const AdminBlogPostsPage: React.FC = () => {
     try {
       setLoading(true);
 
-      const newStatus = post.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+      const newPublished = !post.published;
       
-      const { error } = await supabase
-        .from('blog_posts')
-        .update({
-          status: newStatus,
-          published_at: newStatus === 'PUBLISHED' ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString()
+      const response = await fetch(`/api/blog/posts/${post.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          published: newPublished,
+          publishedAt: newPublished ? new Date().toISOString() : null
         })
-        .eq('id', post.id);
+      });
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to update post status');
+      }
       
       // Refresh posts to get updated data
       fetchPosts();
     } catch (err) {
-      console.error('Error updating post status:', err);      setError(t('message.error.failed_to_update_post_status'));
+      console.error('Error updating post status:', err);
+      setError('Failed to update post status. Please try again.');
       fetchPosts(); // Refresh to get correct state
     }
   };
