@@ -128,15 +128,6 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Galerie</h3>
             <ul className="space-y-2">
-              <li>
-                <Link 
-                  to="/galleries"
-                  className="text-gray-300 hover:text-white transition-colors flex items-center"
-                >
-                  <User size={18} className="mr-2" />
-                  Meine Galerie
-                </Link>
-              </li>
               {user ? (
                 <>
                   <li>
