@@ -314,7 +314,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
   );
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
+    <div className="border border-gray-300 rounded-lg overflow-hidden bg-white" style={{ direction: 'ltr' }}>
       {/* Main Toolbar */}
       <div className="bg-gray-50 border-b border-gray-300 p-2">
         <div className="flex flex-wrap items-center gap-1">
@@ -610,6 +610,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
             value={htmlContent}
             onChange={(e) => setHtmlContent(e.target.value)}
             className="w-full min-h-96 p-4 font-mono text-sm border-0 outline-none resize-none"
+            style={{ direction: 'ltr', textAlign: 'left' }}
             placeholder="Edit HTML source..."
           />
         ) : (
@@ -637,7 +638,10 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
             className="min-h-96 p-6 outline-none prose max-w-none focus:ring-0"
             style={{ 
               lineHeight: '1.7',
-              fontSize: '16px'
+              fontSize: '16px',
+              direction: 'ltr',
+              textAlign: 'left',
+              unicodeBidi: 'plaintext'
             }}
             data-placeholder={placeholder}
           />
