@@ -756,6 +756,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== INVOICE PAYMENT ROUTES ====================
+  app.get("/api/crm/invoices/:invoiceId/payments", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const payments = await storage.getCrmInvoicePayments(req.params.invoiceId);
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/crm/invoices/:invoiceId/payments", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const payment = await storage.createCrmInvoicePayment({
+        ...req.body,
+        invoiceId: req.params.invoiceId
+      });
+      res.json(payment);
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/crm/invoices/:invoiceId/payments/:paymentId", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteCrmInvoicePayment(req.params.paymentId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // ==================== HEALTH CHECK ====================
   app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });

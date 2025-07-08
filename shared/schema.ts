@@ -125,6 +125,19 @@ export const crmInvoiceItems = pgTable("crm_invoice_items", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// CRM Invoice Payments
+export const crmInvoicePayments = pgTable("crm_invoice_payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  invoiceId: uuid("invoice_id").references(() => crmInvoices.id, { onDelete: "cascade" }).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  paymentMethod: text("payment_method").default("bank_transfer"),
+  paymentReference: text("payment_reference"),
+  paymentDate: date("payment_date").notNull(),
+  notes: text("notes"),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Gallery Systems
 export const galleries = pgTable("galleries", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -525,6 +538,8 @@ export type InsertCrmInvoice = z.infer<typeof insertCrmInvoiceSchema>;
 export type CrmInvoice = typeof crmInvoices.$inferSelect;
 export type InsertCrmInvoiceItem = z.infer<typeof insertCrmInvoiceItemSchema>;
 export type CrmInvoiceItem = typeof crmInvoiceItems.$inferSelect;
+export type CrmInvoicePayment = typeof crmInvoicePayments.$inferSelect;
+export type InsertCrmInvoicePayment = typeof crmInvoicePayments.$inferInsert;
 export type Gallery = typeof galleries.$inferSelect;
 export type SessionEquipment = typeof sessionEquipment.$inferSelect;
 export type SessionTask = typeof sessionTasks.$inferSelect;

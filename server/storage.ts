@@ -5,6 +5,7 @@ import {
   crmLeads,
   crmInvoices,
   crmInvoiceItems,
+  crmInvoicePayments,
   galleries,
   photographySessions,
   type User, 
@@ -19,6 +20,8 @@ import {
   type InsertCrmInvoice,
   type CrmInvoiceItem,
   type InsertCrmInvoiceItem,
+  type CrmInvoicePayment,
+  type InsertCrmInvoicePayment,
   type PhotographySession,
   type InsertPhotographySession,
   type Gallery,
@@ -82,6 +85,11 @@ export interface IStorage {
   // Invoice Items management
   getCrmInvoiceItems(invoiceId: string): Promise<CrmInvoiceItem[]>;
   createCrmInvoiceItems(items: InsertCrmInvoiceItem[]): Promise<CrmInvoiceItem[]>;
+  
+  // Invoice Payments management
+  getCrmInvoicePayments(invoiceId: string): Promise<CrmInvoicePayment[]>;
+  createCrmInvoicePayment(payment: InsertCrmInvoicePayment): Promise<CrmInvoicePayment>;
+  deleteCrmInvoicePayment(paymentId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -292,6 +300,22 @@ export class DatabaseStorage implements IStorage {
   async createCrmInvoiceItems(items: InsertCrmInvoiceItem[]): Promise<CrmInvoiceItem[]> {
     const result = await db.insert(crmInvoiceItems).values(items).returning();
     return result;
+  }
+
+  async getCrmInvoicePayments(invoiceId: string): Promise<CrmInvoicePayment[]> {
+    const result = await db.select().from(crmInvoicePayments)
+      .where(eq(crmInvoicePayments.invoiceId, invoiceId))
+      .orderBy(desc(crmInvoicePayments.paymentDate));
+    return result;
+  }
+
+  async createCrmInvoicePayment(payment: InsertCrmInvoicePayment): Promise<CrmInvoicePayment> {
+    const result = await db.insert(crmInvoicePayments).values(payment).returning();
+    return result[0];
+  }
+
+  async deleteCrmInvoicePayment(paymentId: string): Promise<void> {
+    await db.delete(crmInvoicePayments).where(eq(crmInvoicePayments.id, paymentId));
   }
 }
 

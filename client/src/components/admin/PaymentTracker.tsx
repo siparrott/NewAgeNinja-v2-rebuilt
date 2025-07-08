@@ -51,13 +51,16 @@ const PaymentTracker: React.FC<PaymentTrackerProps> = ({
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('crm_invoice_payments')
-        .select('*')
-        .eq('invoice_id', invoiceId)
-        .order('payment_date', { ascending: false });
-
-      if (error) throw error;
+      
+      const response = await fetch(`/api/crm/invoices/${invoiceId}/payments`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch payments');
+      }
+      
+      const data = await response.json();
       setPayments(data || []);
     } catch (err) {
       console.error('Error fetching payments:', err);
@@ -72,7 +75,18 @@ const PaymentTracker: React.FC<PaymentTrackerProps> = ({
       setLoading(true);
       setError(null);
 
-      await addInvoicePayment(invoiceId, newPayment);
+      const response = await fetch(`/api/crm/invoices/${invoiceId}/payments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(newPayment)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add payment');
+      }
       
       // Reset form
       setNewPayment({
@@ -99,12 +113,15 @@ const PaymentTracker: React.FC<PaymentTrackerProps> = ({
 
     try {
       setLoading(true);
-      const { error } = await supabase
-        .from('crm_invoice_payments')
-        .delete()
-        .eq('id', paymentId);
-
-      if (error) throw error;
+      
+      const response = await fetch(`/api/crm/invoices/${invoiceId}/payments/${paymentId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete payment');
+      }
       
       await fetchPayments();
       onPaymentAdded();

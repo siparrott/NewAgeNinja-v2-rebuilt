@@ -116,9 +116,13 @@ const HomePage: React.FC = () => {
           </div>
           <div className="md:w-2/5">
             <img 
-              src="/attached_assets/photo-grid_1751952499995.jpg"
+              src="https://gtnwccyxwrevfnbkjvzm.supabase.co/storage/v1/object/public/images/photo-grid.jpg"
               alt="Photo grid of family portraits"
               className="w-full rounded-lg shadow-lg"
+              onError={(e) => {
+                // Fallback to the comprehensive family photo grid
+                e.currentTarget.src = "https://www.newagefotografie.com/wp-content/uploads/2025/03/photo-grid.jpg";
+              }}
             />
           </div>
         </div>

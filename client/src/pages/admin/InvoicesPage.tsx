@@ -59,39 +59,30 @@ const InvoicesPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase        .from('crm_invoices')
-        .select(`
-          id,
-          invoice_number,
-          client_id,
-          crm_clients(name),
-          amount,
-          tax_amount,
-          total_amount,
-          status,
-          due_date,
-          paid_date,
-          notes,
-          created_at
-        `)
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/crm/invoices', {
+        credentials: 'include'
+      });
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch invoices');
+      }
       
-      // Format the data
-      const formattedInvoices = data?.map(invoice => ({
+      const data = await response.json();
+      
+      // Format the data to match expected interface
+      const formattedInvoices = data.map((invoice: any) => ({
         id: invoice.id,
-        invoice_number: invoice.invoice_number,
-        client_id: invoice.client_id,
-        client_name: (invoice.crm_clients as any)?.name || 'Unknown Client',
+        invoice_number: invoice.invoiceNumber,
+        client_id: invoice.clientId,
+        client_name: invoice.clientName || 'Unknown Client',
         amount: invoice.amount,
-        tax_amount: invoice.tax_amount,
-        total_amount: invoice.total_amount,
+        tax_amount: invoice.taxAmount,
+        total_amount: invoice.totalAmount,
         status: invoice.status,
-        due_date: invoice.due_date,
-        paid_date: invoice.paid_date,
+        due_date: invoice.dueDate,
+        paid_date: invoice.paidDate,
         notes: invoice.notes,
-        created_at: invoice.created_at
+        created_at: invoice.createdAt
       }));
       
       setInvoices(formattedInvoices || []);
@@ -126,12 +117,14 @@ const InvoicesPage: React.FC = () => {
     try {
       setLoading(true);
       
-      const { error } = await supabase
-        .from('crm_invoices')
-        .delete()
-        .eq('id', id);
+      const response = await fetch(`/api/crm/invoices/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to delete invoice');
+      }
       
       // Remove from local state
       setInvoices(prevInvoices => prevInvoices.filter(invoice => invoice.id !== id));
