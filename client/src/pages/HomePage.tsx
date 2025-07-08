@@ -115,11 +115,33 @@ const HomePage: React.FC = () => {
             </button>
           </div>
           <div className="md:w-2/5">
-            <img 
-              src="https://www.newagefotografie.com/wp-content/uploads/2025/03/photo-grid.jpg"
-              alt="Photo grid of family portraits"
-              className="w-full rounded-lg shadow-lg"
-            />
+            {/* Photo Grid of Family Portraits */}
+            <div className="grid grid-cols-2 gap-2 rounded-lg overflow-hidden shadow-lg">
+              <div className="space-y-2">
+                <img 
+                  src="https://i.postimg.cc/V6TFF8rC/00508749.jpg"
+                  alt="Family portrait 1"
+                  className="w-full h-32 object-cover rounded-lg"
+                />
+                <img 
+                  src="https://i.postimg.cc/zGVgt500/Familienportrat-Wien-Krchnavy-Stolz-0105-1024x683-1.jpg"
+                  alt="Family portrait 2"
+                  className="w-full h-24 object-cover rounded-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <img 
+                  src="https://i.postimg.cc/D09JNp5m/00014518.jpg"
+                  alt="Family portrait 3"
+                  className="w-full h-24 object-cover rounded-lg"
+                />
+                <img 
+                  src="https://i.postimg.cc/W1Pq6KhH/00015672.jpg"
+                  alt="Family portrait 4"
+                  className="w-full h-32 object-cover rounded-lg"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
