@@ -174,11 +174,13 @@ const CheckoutPage: React.FC = () => {
                     <CreditCard size={20} className="mr-2" /> Payment Information
                   </h2>
                   
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <p className="text-blue-700 text-sm">
-                      <strong>Note:</strong> This is a demo application. No actual payment will be processed.
-                    </p>
-                  </div>
+                  {(!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.includes('test') || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.includes('pk_test')) && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <p className="text-blue-700 text-sm">
+                        <strong>Note:</strong> This is a demo application. No actual payment will be processed.
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="mb-6">
                     <label className="block text-gray-700 font-medium mb-2">
