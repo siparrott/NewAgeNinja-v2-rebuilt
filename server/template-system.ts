@@ -166,8 +166,87 @@ export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
     },
     isPremium: false
   }
-  // ... Add remaining 20 templates
+  // TODO: Import remaining 20 templates from Bolt.new
+  // Use the template-import-guide.md for step-by-step instructions
 ];
+
+// Template Import Helper
+export class TemplateImporter {
+  /**
+   * Import a template from Bolt.new export
+   * @param templateData - JSON config from Bolt.new
+   * @param components - React components extracted from Bolt
+   * @param assets - Images, CSS, fonts from template
+   */
+  static async importTemplate(
+    templateData: any,
+    components: Record<string, React.ComponentType>,
+    assets: Record<string, string>
+  ): Promise<TemplateConfig> {
+    
+    // Process template metadata
+    const templateConfig: TemplateConfig = {
+      id: templateData.id || `template-${Date.now()}`,
+      name: templateData.name,
+      description: templateData.description,
+      category: templateData.category || 'modern',
+      previewImage: `/templates/previews/${templateData.id}.jpg`,
+      demoUrl: `/demo/${templateData.id}`,
+      features: templateData.features || [],
+      colorScheme: templateData.colorScheme || {
+        primary: '#000000',
+        secondary: '#ffffff',
+        accent: '#007acc',
+        background: '#ffffff'
+      },
+      layout: templateData.layout || {
+        headerStyle: 'minimal',
+        navigationStyle: 'horizontal',
+        footerStyle: 'minimal'
+      },
+      components: templateData.components || {
+        heroSection: 'default-hero',
+        galleryLayout: 'default-grid',
+        contactForm: 'default-form',
+        aboutSection: 'default-about'
+      },
+      isPremium: templateData.isPremium || false
+    };
+
+    // Store components and assets
+    await this.storeTemplateFiles(templateConfig.id, components, assets);
+    
+    return templateConfig;
+  }
+
+  /**
+   * Store template files in the correct directory structure
+   */
+  static async storeTemplateFiles(
+    templateId: string,
+    components: Record<string, React.ComponentType>,
+    assets: Record<string, string>
+  ): Promise<void> {
+    // Implementation would store files in /templates/{templateId}/
+    console.log(`Storing template ${templateId} files...`);
+  }
+
+  /**
+   * Generate CSS variables for template
+   */
+  static generateTemplateCSS(templateConfig: TemplateConfig): string {
+    const { colorScheme } = templateConfig;
+    
+    return `
+      .template-${templateConfig.id} {
+        --primary-color: ${colorScheme.primary};
+        --secondary-color: ${colorScheme.secondary};
+        --accent-color: ${colorScheme.accent};
+        --background-color: ${colorScheme.background};
+      }
+    `;
+  }
+}
 
 export class TemplateManager {
   
