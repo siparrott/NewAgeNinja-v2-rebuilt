@@ -4,6 +4,7 @@ import Layout from '../components/layout/Layout';
 import { ChevronRight } from 'lucide-react';
 import Typewriter from 'typewriter-effect';
 import CountUp from 'react-countup';
+import photoGridImage from '@assets/photo-grid_1751952499995.jpg';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -116,13 +117,9 @@ const HomePage: React.FC = () => {
           </div>
           <div className="md:w-2/5">
             <img 
-              src="https://gtnwccyxwrevfnbkjvzm.supabase.co/storage/v1/object/public/images/photo-grid.jpg"
-              alt="Photo grid of family portraits"
+              src={photoGridImage}
+              alt="Comprehensive family portrait showcase featuring various photography styles including family groups, couples, newborns, maternity, and lifestyle sessions"
               className="w-full rounded-lg shadow-lg"
-              onError={(e) => {
-                // Fallback to the comprehensive family photo grid
-                e.currentTarget.src = "https://www.newagefotografie.com/wp-content/uploads/2025/03/photo-grid.jpg";
-              }}
             />
           </div>
         </div>
