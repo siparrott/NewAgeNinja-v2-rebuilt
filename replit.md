@@ -170,6 +170,14 @@ Preferred communication style: Simple, everyday language.
     - Hours: Fr-So: 09:00 - 17:00
     - Address: Schönbrunner Str. 25, 1050 Wien, Austria
     - Location: 5 minutes from Kettenbrückengasse, street parking available
+- July 9, 2025. Fixed CRM leads page and enhanced mobile display:
+  * Resolved "Failed to load leads" error by converting leads API functions from Supabase to PostgreSQL endpoints
+  * Fixed updateLeadStatus and deleteLead functions to use proper API authentication
+  * Enhanced mobile hero text sizing: reduced from text-4xl to text-2xl for better mobile fit
+  * Added responsive breakpoints: text-2xl (mobile) → text-3xl (small) → text-5xl (desktop)
+  * Fixed photo grid image display using reliable local assets instead of broken Supabase URL
+  * Added comprehensive error logging and authentication handling for CRM functionality
+  * All 9 leads from database now display correctly in admin panel
 
 ## Changelog
 
