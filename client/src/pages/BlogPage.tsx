@@ -43,6 +43,33 @@ const BlogPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [page, tag, search]);
+
+  useEffect(() => {
+    // SEO Meta Tags
+    document.title = 'Blog - Fotografie Tipps & Inspiration | New Age Fotografie Wien';
+    
+    // Update meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'Fotografie-Blog mit Tipps für Familienfotos, Neugeborenenbilder und Schwangerschaftsfotos. Inspiration und Beratung vom Wiener Familienfotograf.');
+
+    // Open Graph tags
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (!ogTitle) {
+      ogTitle = document.createElement('meta');
+      ogTitle.setAttribute('property', 'og:title');
+      document.head.appendChild(ogTitle);
+    }
+    ogTitle.setAttribute('content', 'Fotografie Blog - New Age Fotografie Wien');
+
+    return () => {
+      document.title = 'New Age Fotografie - Familienfotograf Wien';
+    };
+  }, []);
   
   const fetchData = async () => {
     try {
@@ -127,10 +154,10 @@ const BlogPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Our Photography Blog
+              Fotografie Blog - Tipps & Inspiration
             </h1>
             <p className="text-purple-100 text-lg">
-              Tips, inspirations, and insights into the world of professional photography
+              Entdecken Sie Fotografie-Tipps, Behind-the-Scenes und Inspiration für perfekte Familienfotos
             </p>
           </div>
         </div>

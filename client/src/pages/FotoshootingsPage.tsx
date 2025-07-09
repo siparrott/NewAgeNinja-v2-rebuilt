@@ -1,10 +1,37 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Users, Camera } from 'lucide-react';
 
 const FotoshootingsPage: React.FC = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // SEO Meta Tags
+    document.title = 'Fotoshootings Wien - Familien & Neugeborenen Fotografie | New Age Fotografie';
+    
+    // Update meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'Professionelle Fotoshootings in Wien: Familienporträts, Schwangerschaftsfotos, Neugeborenenbilder, Business-Headshots. Erfahrener Fotograf mit Studio in 1050 Wien.');
+
+    // Open Graph tags
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (!ogTitle) {
+      ogTitle = document.createElement('meta');
+      ogTitle.setAttribute('property', 'og:title');
+      document.head.appendChild(ogTitle);
+    }
+    ogTitle.setAttribute('content', 'Fotoshootings Wien - Professionelle Fotografie | New Age Fotografie');
+
+    return () => {
+      document.title = 'New Age Fotografie - Familienfotograf Wien';
+    };
+  }, []);
 
   const shootingTypes = [
     {
@@ -52,10 +79,10 @@ const FotoshootingsPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Professionelle Fotografie für jeden Anlass
+              Fotoshootings Wien - Familien & Neugeborenen Fotografie
             </h1>
             <p className="text-purple-100 text-lg">
-              Entdecken Sie unsere vielfältigen Fotografie-Dienstleistungen in Wien und Zürich
+              Professionelle Fotoshootings in Wien: Familienporträts, Schwangerschaftsfotos, Neugeborenenbilder & Business-Headshots
             </p>
           </div>
         </div>

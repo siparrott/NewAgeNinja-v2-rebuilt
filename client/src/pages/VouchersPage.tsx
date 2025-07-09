@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import VoucherCard from '../components/vouchers/VoucherCard';
 import CategoryFilter from '../components/vouchers/CategoryFilter';
@@ -8,6 +8,24 @@ import { Search } from 'lucide-react';
 const VouchersPage: React.FC = () => {
   const { filteredVouchers, selectedCategory } = useAppContext();
   const [searchTerm, setSearchTerm] = React.useState('');
+
+  useEffect(() => {
+    // SEO Meta Tags
+    document.title = 'Fotoshooting Gutscheine Wien - Geschenkideen | New Age Fotografie';
+    
+    // Update meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'Fotoshooting Gutscheine als perfekte Geschenkidee. Familien-, Schwangerschafts- und Neugeborenen-Fotoshootings in Wien zum Verschenken.');
+
+    return () => {
+      document.title = 'New Age Fotografie - Familienfotograf Wien';
+    };
+  }, []);
   
   // Filter vouchers based on search term
   const displayedVouchers = searchTerm 
@@ -21,7 +39,7 @@ const VouchersPage: React.FC = () => {
     <Layout>
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 text-gray-800">
-          {selectedCategory ? `${selectedCategory} Gutscheine` : 'Alle Gutscheine'}
+          {selectedCategory ? `${selectedCategory} Fotoshooting Gutscheine Wien` : 'Fotoshooting Gutscheine Wien - Familien & Baby'}
         </h1>
         
         <div className="lg:grid lg:grid-cols-4 lg:gap-8">

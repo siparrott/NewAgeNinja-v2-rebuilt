@@ -1,10 +1,28 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Heart, Baby } from 'lucide-react';
 
 const GutscheinPage: React.FC = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // SEO Meta Tags
+    document.title = 'Gutscheine für Fotoshootings Wien - Familien & Baby | New Age Fotografie';
+    
+    // Update meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'Fotoshooting-Gutscheine für Wien: Familienfotografie, Schwangerschaftsfotos, Neugeborenenbilder. Das perfekte Geschenk für besondere Momente.');
+
+    return () => {
+      document.title = 'New Age Fotografie - Familienfotograf Wien';
+    };
+  }, []);
 
   const packages = [
     {
@@ -34,7 +52,7 @@ const GutscheinPage: React.FC = () => {
     <Layout>
       <div className="container mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold text-purple-900 mb-8 text-center">
-          Fotoshooting Gutscheine
+          Fotoshooting Gutscheine Wien - Das perfekte Geschenk
         </h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

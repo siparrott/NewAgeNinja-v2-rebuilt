@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { Calendar, Mail, Phone, User } from 'lucide-react';
 import { submitWaitlistForm } from '../lib/forms';
@@ -14,6 +14,24 @@ const WartelistePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // SEO Meta Tags
+    document.title = 'Termin anfragen - Fotoshooting Wien buchen | New Age Fotografie';
+    
+    // Update meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'Fotoshooting-Termin in Wien anfragen. Verfügbare Termine an Wochenenden für Familien-, Schwangerschafts- und Neugeborenen-Fotografie.');
+
+    return () => {
+      document.title = 'New Age Fotografie - Familienfotograf Wien';
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,12 +61,12 @@ const WartelistePage: React.FC = () => {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-purple-600 mb-4">
-            Ihren Termin anfragen
+            Fotoshooting Termin in Wien anfragen
           </h1>
           <p className="text-xl text-gray-600">
-            Wir bieten Termine an Samstagen und Sonntagen an.
+            Professioneller <strong>Familienfotograf in Wien</strong> mit flexiblen Terminen.
             <br />
-            Kontaktieren Sie uns, um die Verfügbarkeit zu prüfen.
+            Wir bieten Fotoshootings an Wochenenden - kontaktieren Sie uns für die Verfügbarkeit.
           </p>
         </div>
 

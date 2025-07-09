@@ -34,6 +34,33 @@ const GalleryPage: React.FC = () => {
   }, [slug]);
 
   useEffect(() => {
+    // SEO Meta Tags
+    document.title = 'Foto-Galerie Wien - Familienfotos & Porträts | New Age Fotografie';
+    
+    // Update meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'Exklusive Foto-Galerie mit passwortgeschütztem Zugang. Familienfotos, Porträts und Hochzeitsbilder vom Wiener Familienfotograf.');
+
+    // Open Graph tags
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (!ogTitle) {
+      ogTitle = document.createElement('meta');
+      ogTitle.setAttribute('property', 'og:title');
+      document.head.appendChild(ogTitle);
+    }
+    ogTitle.setAttribute('content', 'Foto-Galerie - New Age Fotografie Wien');
+
+    return () => {
+      document.title = 'New Age Fotografie - Familienfotograf Wien';
+    };
+  }, []);
+
+  useEffect(() => {
     if (isAuthenticated && slug && authToken) {
       fetchGalleryImages(slug, authToken);
     }

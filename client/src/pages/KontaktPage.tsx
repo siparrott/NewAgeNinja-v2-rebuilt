@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { Mail, Phone, Clock, MapPin, Train, Car } from 'lucide-react';
 import { submitContactForm } from '../lib/forms';
@@ -13,6 +13,41 @@ const KontaktPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // SEO Meta Tags
+    document.title = 'Kontakt - Familienfotograf Wien | New Age Fotografie';
+    
+    // Update meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'Kontaktieren Sie unseren Familienfotograf in Wien. Studio in Schönbrunner Str. 25, Tel: +43 677 933 99210. Öffnungszeiten Fr-So 09:00-17:00.');
+
+    // Open Graph tags
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (!ogTitle) {
+      ogTitle = document.createElement('meta');
+      ogTitle.setAttribute('property', 'og:title');
+      document.head.appendChild(ogTitle);
+    }
+    ogTitle.setAttribute('content', 'Kontakt - Familienfotograf Wien | New Age Fotografie');
+
+    let ogDescription = document.querySelector('meta[property="og:description"]');
+    if (!ogDescription) {
+      ogDescription = document.createElement('meta');
+      ogDescription.setAttribute('property', 'og:description');
+      document.head.appendChild(ogDescription);
+    }
+    ogDescription.setAttribute('content', 'Kontaktieren Sie unseren Familienfotograf in Wien. Studio in Schönbrunner Str. 25, Tel: +43 677 933 99210.');
+
+    return () => {
+      document.title = 'New Age Fotografie - Familienfotograf Wien';
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +78,8 @@ const KontaktPage: React.FC = () => {
       <div className="bg-gray-50 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl">Kontakt</h1>
-            <p className="mt-4 text-xl text-gray-600">Ich freue mich auf Ihre Nachricht</p>
+            <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl">Kontakt - Familienfotograf Wien</h1>
+            <p className="mt-4 text-xl text-gray-600">Vereinbaren Sie Ihr persönliches Fotoshooting in Wien</p>
           </div>
         </div>
       </div>
@@ -54,7 +89,7 @@ const KontaktPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Contact Information */}
           <div className="space-y-8">
-            <h2 className="text-2xl font-semibold text-gray-900">Kontaktinformationen</h2>
+            <h2 className="text-2xl font-semibold text-gray-900">Fotostudio Wien - Kontaktinformationen</h2>
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
                 <Mail className="w-6 h-6 text-gray-600" />
