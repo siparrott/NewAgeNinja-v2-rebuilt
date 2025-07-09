@@ -7,6 +7,7 @@
 
 const { db } = require('../server/db');
 const { clients, crmLeads, photographySessions, crmInvoices, galleries, blogPosts } = require('../shared/schema');
+const { eq, like } = require('drizzle-orm');
 
 const DEMO_CLIENTS = [
   {
@@ -264,12 +265,12 @@ async function setupDemoData() {
     console.log('🎬 Setting up demo data...');
 
     // Clear existing demo data
-    await db.delete(clients).where(eq(clients.id, like('demo-%')));
-    await db.delete(crmLeads).where(eq(crmLeads.id, like('demo-%')));
-    await db.delete(photographySessions).where(eq(photographySessions.id, like('demo-%')));
-    await db.delete(crmInvoices).where(eq(crmInvoices.id, like('demo-%')));
-    await db.delete(galleries).where(eq(galleries.id, like('demo-%')));
-    await db.delete(blogPosts).where(eq(blogPosts.id, like('demo-%')));
+    await db.delete(clients).where(like(clients.id, 'demo-%'));
+    await db.delete(crmLeads).where(like(crmLeads.id, 'demo-%'));
+    await db.delete(photographySessions).where(like(photographySessions.id, 'demo-%'));
+    await db.delete(crmInvoices).where(like(crmInvoices.id, 'demo-%'));
+    await db.delete(galleries).where(like(galleries.id, 'demo-%'));
+    await db.delete(blogPosts).where(like(blogPosts.id, 'demo-%'));
 
     // Insert demo data
     console.log('📝 Inserting demo clients...');

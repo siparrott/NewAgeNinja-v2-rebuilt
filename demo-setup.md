@@ -1,77 +1,197 @@
-# Demo Site Setup Guide
+# Photography CRM Demo App - Complete Setup Guide
 
-## Overview
-Create a fully functional demo of your photography CRM that potential clients can interact with, showcasing the complete SaaS platform capabilities.
+## Step 1: Create New Replit Project
 
-## Option 1: Separate Demo Deployment (Recommended)
+1. Go to [Replit Dashboard](https://replit.com/~)
+2. Click "Create Repl"
+3. Choose "Import from GitHub"
+4. Repository URL: `https://github.com/JpegWriter/THISONESURELY`
+5. Repl Name: `photography-crm-demo`
+6. Set to Public visibility
 
-### Setup Process:
-1. **Fork/Clone this project** to a new Replit called "Photography-CRM-Demo"
-2. **Configure demo mode** with sample data and limited functionality
-3. **Deploy as separate application** with its own domain
-4. **Link from your main website** with clear "Try Demo" button
+## Step 2: Configure Demo Environment Variables
 
-### Demo Configuration:
-- Pre-populated with sample clients, galleries, invoices
-- Template selection works with all 25 templates
-- Non-functional payments (demo mode)
-- Limited admin access (no real data deletion)
-- Clear "This is a demo" branding
-- Contact form leads to your sales team
+Add these to the new demo project's Secrets:
 
-### Benefits:
-- Full functionality showcase
-- No impact on your main application
-- Easy to maintain and update
-- Professional presentation
-- SEO benefits from separate domain
+```
+DEMO_MODE=true
+NODE_ENV=production
 
-## Option 2: Demo Mode Toggle
+# Demo Studio Configuration
+VITE_DEMO_MODE=true
+VITE_DEMO_STUDIO_NAME=Photography CRM Demo
+VITE_DEMO_STUDIO_EMAIL=demo@photographycrm.com
+VITE_DEMO_STUDIO_PHONE=+1 (555) 123-DEMO
 
-### Implementation:
-- Add `DEMO_MODE=true` environment variable
-- Create demo data fixtures
-- Disable destructive operations in demo mode
-- Add demo banner/watermark
-- Separate demo user authentication
+# Database (Use Neon or Supabase for demo)
+DATABASE_URL=postgresql://demo_user:demo_password@demo-host/demo_db
 
-### Benefits:
-- Single codebase to maintain
-- Easier to keep in sync
-- Resource efficient
+# Supabase Demo Instance
+VITE_SUPABASE_URL=https://your-demo-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_demo_anon_key
 
-## Option 3: Video/Interactive Tour
+# Stripe Test Keys
+STRIPE_PUBLISHABLE_KEY=pk_test_demo_key
+STRIPE_SECRET_KEY=sk_test_demo_key
+STRIPE_WEBHOOK_SECRET=whsec_demo_webhook
+```
 
-### Create:
-- Screen recording of full platform walkthrough
-- Interactive Loom/tutorial videos
-- Step-by-step feature showcase
-- Before/after gallery examples
+## Step 3: Modify for Demo Mode
 
-### Benefits:
-- No server costs
-- Always available
-- Controlled narrative
-- Mobile-friendly
+Update these files for demo deployment:
 
-## Recommended Implementation
+### 1. Update .replit file:
+```
+modules = ["nodejs-18", "web"]
 
-**Best approach:** Option 1 (Separate Demo Deployment)
+[nix]
+channel = "stable-23_11"
 
-### Why this works best:
-1. **Real experience** - Clients can actually use the software
-2. **Template showcase** - They can switch between all 25 designs
-3. **Feature exploration** - Full CRM, calendar, invoicing demo
-4. **Lead generation** - Demo usage creates qualified leads
-5. **Trust building** - Shows the platform actually works
-6. **Sales tool** - Your team can walk prospects through live
+[deployment]
+deploymentTarget = "static"
+publicDir = "dist/public"
+build = "npm run build"
 
-### Technical Setup:
-- Deploy to `demo-photography-crm.replit.app`
-- Add prominent demo branding
-- Pre-fill with realistic sample data
-- Create demo user accounts
-- Implement usage analytics
-- Add "Get Started" conversion funnels
+[[ports]]
+localPort = 5000
+externalPort = 80
 
-Would you like me to implement the separate demo deployment approach?
+[env]
+DEMO_MODE = "true"
+```
+
+### 2. Update package.json name:
+```json
+{
+  "name": "photography-crm-demo",
+  "description": "Live demo of Photography CRM SaaS platform"
+}
+```
+
+## Step 4: Populate Demo Data
+
+Run these commands in the new project:
+
+```bash
+# Install dependencies
+npm install
+
+# Setup database schema
+npm run db:push
+
+# Populate demo data
+npm run demo:setup
+
+# Start demo app
+npm run dev
+```
+
+## Step 5: Demo Features Included
+
+✅ **25+ Realistic Photography Clients**
+- Families, weddings, newborns, corporate headshots
+- Complete contact information and session history
+- Realistic pricing and payment status
+
+✅ **Completed Photography Sessions**
+- Wedding ceremonies, family portraits, newborn sessions
+- Equipment tracking, weather conditions, location details
+- Professional session notes and client feedback
+
+✅ **Professional Invoicing System**
+- 15+ sample invoices with realistic pricing
+- Payment tracking and overdue notifications
+- Stripe integration for payment processing
+
+✅ **Client Gallery System**
+- Password-protected client galleries
+- High-quality sample photography
+- Download and sharing capabilities
+
+✅ **All 25 Website Templates**
+- Professional photography website designs
+- Template switching and customization
+- Mobile-responsive layouts
+
+✅ **AI Website Import Wizard**
+- Website scraping and content analysis
+- SEO optimization recommendations
+- Automated migration workflow
+
+## Step 6: Demo User Accounts
+
+### Admin Account (Full Access)
+- Email: `demo@newagefotografie.com`
+- Password: `demo2024`
+- Access: Complete admin dashboard, all features
+
+### Client Account (Portal Access)
+- Email: `client@demo.com`
+- Password: `client2024`
+- Access: Client portal, gallery viewing, appointment booking
+
+## Step 7: Deploy Demo App
+
+1. **Test locally first**: Ensure all features work
+2. **Deploy to Replit**: Use the Deploy button
+3. **Custom domain**: Configure `demo.photographycrm.com`
+4. **SSL certificate**: Automatically handled by Replit
+
+## Step 8: Integration with Main Website
+
+Add this to your main photography website:
+
+```html
+<!-- Demo CTA Button -->
+<a href="https://photography-crm-demo.replit.app" 
+   class="demo-cta-button"
+   target="_blank">
+  <span>Try Live Demo</span>
+  <span>See Your Photography Business Transformed</span>
+</a>
+
+<!-- Demo Features Section -->
+<section class="demo-features">
+  <h2>Experience the Complete Platform</h2>
+  <div class="demo-grid">
+    <div class="demo-feature">
+      <h3>Client Management</h3>
+      <p>Explore our advanced CRM with 25+ sample clients</p>
+      <a href="https://photography-crm-demo.replit.app/admin/clients">View Demo</a>
+    </div>
+    <div class="demo-feature">
+      <h3>Website Templates</h3>
+      <p>Browse all 25 professional photography designs</p>
+      <a href="https://photography-crm-demo.replit.app/admin/studio-templates">Browse Templates</a>
+    </div>
+    <div class="demo-feature">
+      <h3>Website Import Wizard</h3>
+      <p>Test our AI-powered website migration system</p>
+      <a href="https://photography-crm-demo.replit.app/admin/website-wizard">Try Wizard</a>
+    </div>
+  </div>
+</section>
+```
+
+## Step 9: Lead Capture Integration
+
+Demo includes conversion tracking for:
+- Template interactions
+- Feature exploration time
+- Contact form submissions
+- Trial signup requests
+
+## Step 10: Maintenance
+
+- **Data Reset**: Automatically resets daily at midnight
+- **Updates**: Sync with main repository weekly
+- **Monitoring**: Built-in analytics and error tracking
+
+## Expected Demo Performance
+
+- **Load Time**: < 3 seconds
+- **Template Switching**: < 1 second
+- **Data Queries**: < 500ms
+- **Image Loading**: Progressive with lazy loading
+
+This demo will showcase your complete photography CRM SaaS platform and convert visitors into qualified leads for your business.
