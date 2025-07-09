@@ -479,15 +479,14 @@ export const insertCrmLeadSchema = createInsertSchema(crmLeads).pick({
   name: true,
   email: true,
   phone: true,
+  company: true,
+  message: true,
   source: true,
   status: true,
   priority: true,
-  budget: true,
-  notes: true,
   tags: true,
-  eventDate: true,
-  eventType: true,
-  location: true,
+  followUpDate: true,
+  value: true,
 });
 
 export const insertGallerySchema = createInsertSchema(galleries).pick({

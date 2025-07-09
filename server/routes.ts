@@ -206,6 +206,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public endpoint for form submissions (no authentication required)
+  app.post("/api/public/leads", async (req: Request, res: Response) => {
+    try {
+      const leadData = insertCrmLeadSchema.parse(req.body);
+      const lead = await storage.createCrmLead(leadData);
+      res.status(201).json(lead);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      console.error("Error creating CRM lead:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.post("/api/crm/leads", authenticateUser, async (req: Request, res: Response) => {
     try {
       const leadData = insertCrmLeadSchema.parse(req.body);

@@ -65,47 +65,61 @@ export async function submitWaitlistForm(formData: WaitlistFormData) {
 
 // Fallback functions that insert directly into the database
 async function submitContactFormFallback(formData: ContactFormData) {
-  const { error } = await supabase
-    .from('leads')
-    .insert({
-      form_source: 'KONTAKT',
-      first_name: formData.fullName.split(' ')[0] || '',
-      last_name: formData.fullName.split(' ').slice(1).join(' ') || '',
-      email: formData.email,
-      phone: formData.phone || null,
-      message: formData.message,
-      status: 'NEW'
+  try {
+    const response = await fetch('/api/public/leads', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone || null,
+        message: formData.message,
+        source: 'KONTAKT',
+        status: 'new'
+      }),
     });
 
-  if (error) {
+    if (!response.ok) {
+      throw new Error('Failed to submit contact form');
+    }
+
+    return await response.json();
+  } catch (error) {
     console.error('Database error:', error);
     throw new Error('Failed to submit contact form');
   }
-
-  return { success: true, message: 'Contact form submitted successfully' };
 }
 
 async function submitWaitlistFormFallback(formData: WaitlistFormData) {
   const message = `Preferred Date: ${formData.preferredDate}${formData.message ? '\n\nMessage: ' + formData.message : ''}`;
 
-  const { error } = await supabase
-    .from('leads')
-    .insert({
-      form_source: 'WARTELISTE',
-      first_name: formData.fullName.split(' ')[0] || '',
-      last_name: formData.fullName.split(' ').slice(1).join(' ') || '',
-      email: formData.email,
-      phone: formData.phone || null,
-      message: message,
-      status: 'NEW'
+  try {
+    const response = await fetch('/api/public/leads', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone || null,
+        message: message,
+        source: 'WARTELISTE',
+        status: 'new'
+      }),
     });
 
-  if (error) {
+    if (!response.ok) {
+      throw new Error('Failed to submit waitlist form');
+    }
+
+    return await response.json();
+  } catch (error) {
     console.error('Database error:', error);
     throw new Error('Failed to submit waitlist form');
   }
-
-  return { success: true, message: 'Waitlist form submitted successfully' };
 }
 
 export async function submitNewsletterForm(email: string) {
