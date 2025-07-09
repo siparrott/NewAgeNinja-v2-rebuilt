@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -41,6 +41,7 @@ import ComprehensiveReportsPage from './pages/admin/ComprehensiveReportsPage';
 import CustomizationPage from './pages/admin/CustomizationPage';
 import StudioCustomization from './pages/admin/StudioCustomization';
 import WebsiteCustomizationWizard from './pages/admin/WebsiteCustomizationWizard';
+import DemoLandingPage from './pages/DemoLandingPage';
 import PhotographyCalendarPage from './pages/admin/PhotographyCalendarPageSimple';
 import SurveySystemDemoPage from './pages/SurveySystemDemoPage';
 import SurveyTakingPage from './pages/SurveyTakingPage';
@@ -291,6 +292,18 @@ function App() {
                     <ProtectedRoute>
                       <WebsiteCustomizationWizard />
                     </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/demo" 
+                  element={<DemoLandingPage />} 
+                />
+                <Route 
+                  path="/" 
+                  element={
+                    import.meta.env.DEV && import.meta.env.VITE_DEMO_MODE === 'true' 
+                      ? <DemoLandingPage /> 
+                      : <Navigate to="/home" replace />
                   } 
                 />                <Route 
                   path="/admin/calendar" 

@@ -1,3 +1,13 @@
+#!/bin/bash
+
+# Photography CRM Demo App Setup Script
+# This script prepares the current project for demo deployment
+
+echo "🎬 Setting up Photography CRM Demo App..."
+
+# 1. Update package.json for demo
+echo "📝 Updating package.json for demo mode..."
+cat > package.json << 'EOF'
 {
   "name": "photography-crm-demo",
   "version": "1.0.0",
@@ -110,3 +120,75 @@
     "vite": "^5.0.12"
   }
 }
+EOF
+
+# 2. Create demo environment file
+echo "🔧 Creating demo environment configuration..."
+cat > .env.demo << 'EOF'
+# Demo App Environment Variables
+DEMO_MODE=true
+NODE_ENV=production
+
+# Database (You'll need to add your demo database URL)
+DATABASE_URL=your_demo_database_url_here
+
+# Supabase (Demo instance)
+VITE_SUPABASE_URL=your_demo_supabase_url_here
+VITE_SUPABASE_ANON_KEY=your_demo_supabase_key_here
+
+# Stripe (Test mode)
+STRIPE_PUBLISHABLE_KEY=pk_test_demo_key_here
+STRIPE_SECRET_KEY=sk_test_demo_key_here
+STRIPE_WEBHOOK_SECRET=whsec_demo_webhook_here
+
+# Demo Configuration
+DEMO_STUDIO_NAME="Demo Photography Studio"
+DEMO_STUDIO_EMAIL="demo@photographycrm.com"
+DEMO_STUDIO_PHONE="+1 (555) 123-4567"
+EOF
+
+# 3. Update replit.nix for demo
+echo "⚙️ Updating Replit configuration..."
+cat > replit.nix << 'EOF'
+{ pkgs }: {
+  deps = [
+    pkgs.nodejs-18_x
+    pkgs.postgresql
+  ];
+}
+EOF
+
+# 4. Create demo-specific replit config
+cat > .replit << 'EOF'
+modules = ["nodejs-18", "web"]
+hidden = [".config", "tsconfig.json", "tsconfig.node.json", "vite.config.ts", ".gitignore"]
+
+[nix]
+channel = "stable-23_11"
+
+[unitTest]
+language = "nodejs"
+
+[deployment]
+deploymentTarget = "static"
+publicDir = "dist/public"
+build = "npm run build"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[env]
+DEMO_MODE = "true"
+NODE_ENV = "production"
+EOF
+
+echo "✅ Demo app configuration complete!"
+echo ""
+echo "📋 Next steps:"
+echo "1. Add your demo database URL to .env.demo"
+echo "2. Configure Supabase demo instance"
+echo "3. Run 'npm run demo:setup' to populate sample data"
+echo "4. Deploy to Replit with 'Deploy' button"
+echo ""
+echo "🔗 Demo will be available at: https://photography-crm-demo.replit.app"

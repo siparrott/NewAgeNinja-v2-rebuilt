@@ -1,6 +1,6 @@
 // Demo configuration and sample data
 export const DEMO_CONFIG = {
-  isDemoMode: process.env.NODE_ENV === 'development' || process.env.DEMO_MODE === 'true',
+  isDemoMode: import.meta.env.DEV || import.meta.env.VITE_DEMO_MODE === 'true',
   demoUser: {
     id: 'demo-user-1',
     email: 'demo@newagefotografie.com',
