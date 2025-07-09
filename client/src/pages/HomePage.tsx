@@ -87,7 +87,7 @@ const HomePage: React.FC = () => {
         <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between">
           <div className="max-w-2xl md:w-3/5 mb-8 md:mb-0">
             <h1 className="mb-4 leading-tight">
-              <span className="block text-4xl md:text-5xl font-bold mb-2 whitespace-nowrap bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
+              <span className="block text-2xl sm:text-3xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
                 <Typewriter
                   options={{
                     strings: ['Endlich ein Fotostudio...'],
@@ -100,11 +100,11 @@ const HomePage: React.FC = () => {
                   }}
                 />
               </span>
-              <span className="block text-3xl md:text-4xl font-bold text-gray-900 tracking-tighter animate-fade-in-up">
+              <span className="block text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 tracking-tighter animate-fade-in-up">
                 das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...
               </span>
             </h1>
-            <p className="text-lg mb-4 tracking-tighter text-gray-900">
+            <p className="text-base sm:text-lg mb-4 tracking-tighter text-gray-900">
               Selbst wenn Sie kamerascheu sind oder unberechenbare Kinder haben, keine Sorge, wir erstellen Familienporträts, die Sie für immer schätzen werden.
             </p>
             <button 
