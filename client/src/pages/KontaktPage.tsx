@@ -58,19 +58,19 @@ const KontaktPage: React.FC = () => {
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
                 <Mail className="w-6 h-6 text-gray-600" />
-                <span className="text-gray-700">info@example.com</span>
+                <span className="text-gray-700">hallo@newagefotografie.com</span>
               </div>
               <div className="flex items-center space-x-4">
                 <Phone className="w-6 h-6 text-gray-600" />
-                <span className="text-gray-700">+49 123 456789</span>
+                <span className="text-gray-700">+43 677 933 99210</span>
               </div>
               <div className="flex items-center space-x-4">
                 <Clock className="w-6 h-6 text-gray-600" />
-                <span className="text-gray-700">Mo-Fr: 9:00 - 18:00</span>
+                <span className="text-gray-700">Fr-So: 09:00 - 17:00</span>
               </div>
               <div className="flex items-center space-x-4">
                 <MapPin className="w-6 h-6 text-gray-600" />
-                <span className="text-gray-700">Musterstraße 123, 12345 Stadt</span>
+                <span className="text-gray-700">Schönbrunner Str. 25, 1050 Wien, Austria</span>
               </div>
             </div>
 
@@ -79,11 +79,11 @@ const KontaktPage: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Train className="w-5 h-5 text-gray-600" />
-                  <span className="text-gray-700">5 Minuten von Bahnhof Stadt</span>
+                  <span className="text-gray-700">5 Minuten von Kettenbrückengasse</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Car className="w-5 h-5 text-gray-600" />
-                  <span className="text-gray-700">Parkplätze vorhanden</span>
+                  <span className="text-gray-700">Street parking available</span>
                 </div>
               </div>
             </div>

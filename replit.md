@@ -164,6 +164,12 @@ Preferred communication style: Simple, everyday language.
   * Fixed blog featured image display by correcting field mapping (imageUrl vs image_url)
   * Improved error handling with elegant photography-themed placeholders for broken images
   * Verified all blog posts display with working thumbnails and pagination controls
+  * Updated studio contact information:
+    - Email: hallo@newagefotografie.com
+    - Phone: +43 677 933 99210
+    - Hours: Fr-So: 09:00 - 17:00
+    - Address: Schönbrunner Str. 25, 1050 Wien, Austria
+    - Location: 5 minutes from Kettenbrückengasse, street parking available
 
 ## Changelog
 
