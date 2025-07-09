@@ -10,13 +10,13 @@ interface BlogPost {
   slug: string;
   excerpt?: string;
   content: string;
-  content_html?: string;
-  image_url?: string;
+  contentHtml?: string;
+  imageUrl?: string;
   published: boolean;
-  author_id: string;
-  published_at?: string;
-  created_at: string;
-  updated_at: string;
+  authorId: string;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
   tags?: string[];
 }
 
@@ -66,6 +66,8 @@ const BlogPage: React.FC = () => {
       
       const data = await response.json();
       const postsData = data.posts || [];
+      
+
       
       setPosts(postsData);
       setTotalPosts(data.count || 0);
@@ -166,34 +168,43 @@ const BlogPage: React.FC = () => {
                     key={post.id}
                     className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1"
                   >
-                    {post.image_url && (
-                      <Link to={`/blog/${post.slug}`} className="block aspect-[16/9] overflow-hidden bg-gray-100">
+                    <Link to={`/blog/${post.slug}`} className="block aspect-[16/9] overflow-hidden bg-gray-100">
+                      {post.imageUrl ? (
                         <img 
-                          src={post.image_url} 
+                          src={post.imageUrl} 
                           alt={post.title}
                           className="w-full h-full object-cover transition-transform hover:scale-105"
                           loading="lazy"
                           onError={(e) => {
-                            console.error('Failed to load image:', post.image_url);
+                            console.error('Failed to load image:', post.imageUrl);
                             // Hide broken image and show placeholder
                             e.currentTarget.style.display = 'none';
                             const parent = e.currentTarget.parentElement;
-                            if (parent) {
+                            if (parent && !parent.querySelector('.placeholder-shown')) {
                               parent.innerHTML = `
-                                <div class="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                                <div class="placeholder-shown w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
                                   <div class="text-center">
                                     <svg class="w-12 h-12 text-purple-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                     </svg>
-                                    <p class="text-purple-600 text-sm font-medium">${post.title}</p>
+                                    <p class="text-purple-600 text-sm font-medium">${post.title.substring(0, 30)}...</p>
                                   </div>
                                 </div>
                               `;
                             }
                           }}
                         />
-                      </Link>
-                    )}
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                          <div className="text-center">
+                            <svg className="w-12 h-12 text-purple-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p className="text-purple-600 text-sm font-medium">{post.title.substring(0, 30)}...</p>
+                          </div>
+                        </div>
+                      )}
+                    </Link>
                     
                     <div className="p-6">
                       {post.tags && post.tags.length > 0 && (
@@ -230,10 +241,10 @@ const BlogPage: React.FC = () => {
                       )}
                       
                       <div className="flex flex-wrap items-center text-sm text-gray-500 mb-3 gap-4">
-                        {post.published_at && (
+                        {post.publishedAt && (
                           <div className="flex items-center">
                             <Calendar size={14} className="mr-1" />
-                            {formatDate(post.published_at)}
+                            {formatDate(post.publishedAt)}
                           </div>
                         )}
                       </div>

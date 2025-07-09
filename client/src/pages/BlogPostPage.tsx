@@ -10,9 +10,9 @@ interface BlogPost {
   title: string;
   slug: string;
   content: string;
-  content_html: string;
-  image_url: string | null;
-  published_at: string;
+  contentHtml: string;
+  imageUrl: string | null;
+  publishedAt: string;
   excerpt: string | null;
   author: {
     email: string;
@@ -23,7 +23,7 @@ interface RelatedPost {
   id: string;
   title: string;
   slug: string;
-  image_url: string | null;
+  imageUrl: string | null;
 }
 
 const BlogPostPage: React.FC = () => {
@@ -130,7 +130,7 @@ const BlogPostPage: React.FC = () => {
         <meta name="description" content={post.excerpt || `Read about ${post.title}`} />
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={post.excerpt || `Read about ${post.title}`} />
-        {post.image_url && <meta property="og:image" content={post.image_url} />}
+        {post.imageUrl && <meta property="og:image" content={post.imageUrl} />}
         <meta property="og:type" content="article" />
         <link rel="canonical" href={`https://newagefotografie.com/blog/${post.slug}`} />
         <script type="application/ld+json">
@@ -138,9 +138,9 @@ const BlogPostPage: React.FC = () => {
             "@context": "https://schema.org",
             "@type": "BlogPosting",
             "headline": post.title,
-            "image": post.image_url ? [post.image_url] : [],
-            "datePublished": post.published_at,
-            "dateModified": post.published_at,
+            "image": post.imageUrl ? [post.imageUrl] : [],
+            "datePublished": post.publishedAt,
+            "dateModified": post.publishedAt,
             "author": {
               "@type": "Person",
               "name": "New Age Fotografie"
@@ -177,7 +177,7 @@ const BlogPostPage: React.FC = () => {
             <div className="flex flex-wrap items-center text-gray-600 mb-6">
               <div className="flex items-center mr-6">
                 <Calendar size={16} className="mr-1" />
-                <span>{formatDate(post.published_at)}</span>
+                <span>{formatDate(post.publishedAt)}</span>
               </div>
               
               {post.author && (
@@ -189,22 +189,22 @@ const BlogPostPage: React.FC = () => {
           </div>
           
           {/* Cover Image */}
-          {post.image_url && (
+          {post.imageUrl && (
             <div className="mb-8">
               <img
-                src={post.image_url}
+                src={post.imageUrl}
                 alt={post.title}
                 className="w-full h-auto rounded-lg shadow-lg max-h-96 object-cover"
                 loading="lazy"
                 onError={(e) => {
-                  console.error('Failed to load image:', post.image_url);
+                  console.error('Failed to load image:', post.imageUrl);
                   const parent = e.currentTarget.parentElement;
                   if (parent) {
                     parent.innerHTML = `
                       <div class="w-full h-48 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg shadow-lg flex items-center justify-center">
                         <div class="text-center">
                           <svg class="w-16 h-16 text-purple-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                           </svg>
                           <p class="text-purple-600 font-medium">${post.title}</p>
                         </div>
@@ -220,7 +220,7 @@ const BlogPostPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-lg p-6 md:p-8 mb-8">
             <div 
               className="prose prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: post.content_html || post.content }}
+              dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content }}
             />
           </div>
           
@@ -236,14 +236,14 @@ const BlogPostPage: React.FC = () => {
                     className="bg-white rounded-lg shadow-lg overflow-hidden transform transition-transform hover:-translate-y-1"
                   >
                     <div className="h-40 overflow-hidden">
-                      {relatedPost.image_url ? (
+                      {relatedPost.imageUrl ? (
                         <img
-                          src={relatedPost.image_url}
+                          src={relatedPost.imageUrl}
                           alt={relatedPost.title}
                           className="w-full h-full object-cover"
                           loading="lazy"
                           onError={(e) => {
-                            console.error('Failed to load related post image:', relatedPost.image_url);
+                            console.error('Failed to load related post image:', relatedPost.imageUrl);
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement!.classList.add('bg-gray-200');
                             e.currentTarget.parentElement!.classList.add('flex');

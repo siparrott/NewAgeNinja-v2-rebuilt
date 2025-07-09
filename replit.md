@@ -157,6 +157,13 @@ Preferred communication style: Simple, everyday language.
   * Fixed all database schema exports and type definitions
   * Pushed 163 objects (9.80 MiB) to GitHub repository at https://github.com/JpegWriter/THISONESURELY
   * System now ready for live Stripe payment integration
+- July 9, 2025. Fixed form submission and blog display issues:
+  * Resolved contact/waitlist forms not saving messages by adding missing 'message' field to validation schema
+  * Created public API endpoint (/api/public/leads) for unauthenticated form submissions
+  * Enhanced blog API with proper pagination support (page, limit, search, tag filtering)
+  * Fixed blog featured image display by correcting field mapping (imageUrl vs image_url)
+  * Improved error handling with elegant photography-themed placeholders for broken images
+  * Verified all blog posts display with working thumbnails and pagination controls
 
 ## Changelog
 
