@@ -87,8 +87,11 @@ const HomePage: React.FC = () => {
       <section className="bg-white">
         <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between">
           <div className="max-w-2xl md:w-3/5 mb-8 md:mb-0">
-            <h1 className="mb-4 leading-tight">
-              <span className="block text-2xl sm:text-3xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
+            <h1 className="mb-4 leading-tight text-2xl sm:text-3xl md:text-5xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
+              Familien- & Neugeborenenfotograf in Wien, dem Sie vertrauen können
+            </h1>
+            <div className="mb-6">
+              <span className="block text-xl sm:text-2xl md:text-3xl font-medium text-gray-700 mb-2">
                 <Typewriter
                   options={{
                     strings: ['Endlich ein Fotostudio...'],
@@ -104,9 +107,9 @@ const HomePage: React.FC = () => {
               <span className="block text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 tracking-tighter animate-fade-in-up">
                 das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...
               </span>
-            </h1>
-            <p className="text-base sm:text-lg mb-4 tracking-tighter text-gray-900">
-              Selbst wenn Sie kamerascheu sind oder unberechenbare Kinder haben, keine Sorge, wir erstellen Familienporträts, die Sie für immer schätzen werden.
+            </div>
+            <p className="text-base sm:text-lg mb-6 tracking-tighter text-gray-900">
+              Als <strong>Familienfotograf in Wien</strong> und spezialisierter <strong>Neugeborenenfotograf in Wien</strong> schaffen wir zeitlose Erinnerungen in entspannter Studioatmosphäre. Selbst wenn Sie kamerascheu sind oder unberechenbare Kinder haben, erstellen wir Familienporträts, die Sie für immer schätzen werden.
             </p>
             <button 
               onClick={() => navigate('/fotoshootings')}
@@ -166,20 +169,21 @@ const HomePage: React.FC = () => {
               <div className="aspect-[4/3] overflow-hidden rounded-lg shadow-lg">
                 <img 
                   src="https://i.postimg.cc/zGVgt500/Familienportrat-Wien-Krchnavy-Stolz-0105-1024x683-1.jpg"
-                  alt="Family portrait session"
+                  alt="Familienfotografie Wien - Professionelle Familienporträts im Studio"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
             </div>
             <div className="md:w-2/3">
               <h2 className="text-2xl md:text-3xl font-bold text-purple-600 mb-4">
-                Ihr Moment, Ihr Zauber ✨
+                Babybauch-Shooting & Familienporträts
               </h2>
               <p className="text-gray-700 mb-4">
-                Wir schaffen eine komfortable Umgebung und führen Sie durch die gesamte Sitzung, damit Sie sich entspannt und selbstbewusst fühlen.
+                Wir schaffen eine komfortable Umgebung und führen Sie durch die gesamte Sitzung, damit Sie sich entspannt und selbstbewusst fühlen. Unsere <a href="/galerie" className="text-purple-600 font-semibold hover:underline">Galerie mit Beispielen Familienfotos</a> zeigt die Qualität unserer Arbeit.
               </p>
               <p className="text-gray-700 mb-4">
-                <span className="font-semibold">Unsere Expertise, schmeichelhafte Winkel zu finden und natürliche, authentische Ausdrücke einzufangen,</span> stellt sicher, dass Ihre Fotos echt aussehen und sich auch so anfühlen.
+                <span className="font-semibold">Unsere Expertise, schmeichelhafte Winkel zu finden und natürliche, authentische Ausdrücke einzufangen,</span> stellt sicher, dass Ihre Fotos echt aussehen und sich auch so anfühlen. <a href="https://www.wien.gv.at/stadtentwicklung/projekte/zielgebiete/donaustadt/seestadt-aspern/fotowalk.html" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Wien bietet einzigartige Fotospots</a> für Outdoor-Shootings.
               </p>
               <p className="text-gray-700">
                 <span className="font-semibold">Wir bieten flexible Terminplanung mit verfügbaren Terminen an Wochenenden, einschließlich Sonntagen.</span> Dadurch finden Sie leicht eine passende Zeit für Ihre Fotosession.
@@ -193,14 +197,15 @@ const HomePage: React.FC = () => {
               <div className="aspect-[4/3] overflow-hidden rounded-lg shadow-lg">
                 <img 
                   src="https://i.imgur.com/ITKEF8q.jpg"
-                  alt="Newborn photography session"
+                  alt="Neugeborenenfotos Wien - Einfühlsame Babyfotografie im Studio"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
             </div>
             <div className="md:w-2/3">
               <h2 className="text-2xl md:text-3xl font-bold text-purple-600 mb-4">
-                Flexible Termine – Kein Stress, nur Spaß! 🎯
+                Business-Headshots & Preise
               </h2>
               <p className="text-gray-700 mb-4">
                 Erleben Sie <span className="font-semibold">maßgeschneiderte Fotoshootings in unserem kundenorientierten Studio.</span> Wir legen großen Wert auf Details und schaffen eine komfortable Umgebung.
@@ -228,8 +233,9 @@ const HomePage: React.FC = () => {
               <div className="aspect-[4/3] overflow-hidden">
                 <img 
                   src="https://i.postimg.cc/V6TFF8rC/00508749.jpg"
-                  alt="Family portrait"
+                  alt="Familienporträts Wien - Natürliche Familienfotografie"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
               <div className="p-6">
@@ -248,8 +254,9 @@ const HomePage: React.FC = () => {
               <div className="aspect-[4/3] overflow-hidden">
                 <img 
                   src="https://i.imgur.com/AMnhw6w.jpg"
-                  alt="Pregnancy photography"
+                  alt="Babybauch Fotografie Wien - Schwangerschaftsfotos im Studio"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
               <div className="p-6">
@@ -268,8 +275,9 @@ const HomePage: React.FC = () => {
               <div className="aspect-[4/3] overflow-hidden">
                 <img 
                   src="https://i.imgur.com/VLYZQof.jpg"
-                  alt="Newborn photography"
+                  alt="Neugeborenenfotos im Studio Wien - Professionelle Babyfotografie"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
               <div className="p-6">
@@ -288,8 +296,9 @@ const HomePage: React.FC = () => {
               <div className="aspect-[4/3] overflow-hidden">
                 <img 
                   src="https://i.imgur.com/9RaPUSK.jpg"
-                  alt="Business photography"
+                  alt="Business Headshots Wien - Professionelle Businessfotografie"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
               <div className="p-6">
@@ -462,7 +471,7 @@ const HomePage: React.FC = () => {
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-purple-900">
-            Häufig gestellte Fragen
+            FAQs - Häufig gestellte Fragen
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {faqImages.map((faq, index) => (
