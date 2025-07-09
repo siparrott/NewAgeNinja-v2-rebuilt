@@ -15,16 +15,28 @@ export interface Lead {
 export async function getLeads(status?: 'NEW' | 'CONTACTED' | 'CONVERTED') {
   try {
     const url = status ? `/api/crm/leads?status=${status.toLowerCase()}` : '/api/crm/leads';
-    const response = await fetch(url);
+    console.log('Fetching leads from:', url);
+    
+    const response = await fetch(url, {
+      credentials: 'include', // Include cookies for authentication
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    console.log('Response status:', response.status);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch leads');
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to fetch leads: ${response.status} - ${errorText}`);
     }
     
     const data = await response.json();
+    console.log('Raw API data:', data);
     
     // Transform the CRM lead data to match the expected Lead interface
-    return data.map((lead: any) => ({
+    const transformedData = data.map((lead: any) => ({
       id: lead.id,
       first_name: lead.name ? lead.name.split(' ')[0] : '',
       last_name: lead.name ? lead.name.split(' ').slice(1).join(' ') : '',
@@ -35,6 +47,9 @@ export async function getLeads(status?: 'NEW' | 'CONTACTED' | 'CONVERTED') {
       status: lead.status ? lead.status.toUpperCase() : 'NEW',
       created_at: lead.createdAt
     }));
+    
+    console.log('Transformed data:', transformedData);
+    return transformedData;
   } catch (error) {
     console.error('Error fetching leads:', error);
     throw error;
@@ -43,15 +58,19 @@ export async function getLeads(status?: 'NEW' | 'CONTACTED' | 'CONVERTED') {
 
 export async function updateLeadStatus(id: string, status: 'NEW' | 'CONTACTED' | 'CONVERTED') {
   try {
-    const { data, error } = await supabase
-      .from('leads')
-      .update({ status })
-      .eq('id', id)
-      .select()
-      .single();
+    const response = await fetch(`/api/crm/leads/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: status.toLowerCase() }),
+    });
     
-    if (error) throw error;
-    return data;
+    if (!response.ok) {
+      throw new Error('Failed to update lead status');
+    }
+    
+    return await response.json();
   } catch (error) {
     console.error('Error updating lead status:', error);
     throw error;
@@ -60,12 +79,14 @@ export async function updateLeadStatus(id: string, status: 'NEW' | 'CONTACTED' |
 
 export async function deleteLead(id: string) {
   try {
-    const { error } = await supabase
-      .from('leads')
-      .delete()
-      .eq('id', id);
+    const response = await fetch(`/api/crm/leads/${id}`, {
+      method: 'DELETE',
+    });
     
-    if (error) throw error;
+    if (!response.ok) {
+      throw new Error('Failed to delete lead');
+    }
+    
     return true;
   } catch (error) {
     console.error('Error deleting lead:', error);
