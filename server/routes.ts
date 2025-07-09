@@ -58,8 +58,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/blog/posts", async (req: Request, res: Response) => {
     try {
       const published = req.query.published === 'true' ? true : req.query.published === 'false' ? false : undefined;
-      const posts = await storage.getBlogPosts(published);
-      res.json({ posts, count: posts.length });
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const search = req.query.search as string;
+      const tag = req.query.tag as string;
+      const exclude = req.query.exclude as string;
+      
+      let posts = await storage.getBlogPosts(published);
+      
+      // Filter by search
+      if (search) {
+        posts = posts.filter(post => 
+          post.title.toLowerCase().includes(search.toLowerCase()) ||
+          (post.excerpt && post.excerpt.toLowerCase().includes(search.toLowerCase())) ||
+          post.content.toLowerCase().includes(search.toLowerCase())
+        );
+      }
+      
+      // Filter by tag
+      if (tag && tag !== 'all') {
+        posts = posts.filter(post => 
+          post.tags && post.tags.includes(tag)
+        );
+      }
+      
+      // Exclude specific post
+      if (exclude) {
+        posts = posts.filter(post => post.id !== exclude);
+      }
+      
+      const totalPosts = posts.length;
+      const totalPages = Math.ceil(totalPosts / limit);
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedPosts = posts.slice(startIndex, endIndex);
+      
+      res.json({ 
+        posts: paginatedPosts,
+        count: totalPosts,
+        totalPages,
+        currentPage: page,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      });
     } catch (error) {
       console.error("Error fetching blog posts:", error);
       res.status(500).json({ error: "Internal server error" });
