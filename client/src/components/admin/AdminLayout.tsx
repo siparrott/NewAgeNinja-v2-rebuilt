@@ -18,6 +18,7 @@ import {
   BarChart3,
   Settings,
   Palette,
+  Wand2,
   LogOut,
   Menu,
   X,
@@ -60,6 +61,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
     { icon: Palette, label: 'Customization', path: '/admin/customization' },
     { icon: Palette, label: 'Studio Templates', path: '/admin/studio-templates' },
+    { icon: Wand2, label: 'Website Wizard', path: '/admin/website-wizard' },
   ];
 
   const handleSignOut = async () => {

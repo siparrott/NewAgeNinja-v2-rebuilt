@@ -851,6 +851,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  // Website scraping and customization routes
+  app.post("/api/scrape-website", async (req: Request, res: Response) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: "Website URL is required" });
+      }
+
+      const { WebsiteScraper } = await import('./scraping-agent');
+      const scrapedData = await WebsiteScraper.scrapeWebsite(url);
+      
+      res.json(scrapedData);
+    } catch (error) {
+      console.error('Error scraping website:', error);
+      res.status(500).json({ error: "Failed to scrape website" });
+    }
+  });
+
+  app.post("/api/generate-seo-recommendations", async (req: Request, res: Response) => {
+    try {
+      const { scrapedData, location } = req.body;
+      
+      if (!scrapedData) {
+        return res.status(400).json({ error: "Scraped data is required" });
+      }
+
+      const { SEOAgent } = await import('./scraping-agent');
+      const recommendations = SEOAgent.generateSEORecommendations(scrapedData, location);
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error generating SEO recommendations:', error);
+      res.status(500).json({ error: "Failed to generate SEO recommendations" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
