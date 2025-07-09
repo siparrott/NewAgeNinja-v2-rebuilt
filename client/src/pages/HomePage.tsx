@@ -4,7 +4,7 @@ import Layout from '../components/layout/Layout';
 import { ChevronRight } from 'lucide-react';
 import Typewriter from 'typewriter-effect';
 import CountUp from 'react-countup';
-import photoGridImage from '@assets/photo-grid_1751952499995.jpg';
+import photoGridImage from '../assets/photo-grid.jpg';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -120,6 +120,12 @@ const HomePage: React.FC = () => {
               src={photoGridImage}
               alt="Comprehensive family portrait showcase featuring various photography styles including family groups, couples, newborns, maternity, and lifestyle sessions"
               className="w-full rounded-lg shadow-lg"
+              onError={(e) => {
+                // Fallback for mobile/loading issues
+                console.log('Image failed to load, using fallback');
+                e.currentTarget.src = "https://i.postimg.cc/zGVgt500/Familienportrat-Wien-Krchnavy-Stolz-0105-1024x683-1.jpg";
+              }}
+              loading="lazy"
             />
           </div>
         </div>
