@@ -39,6 +39,7 @@ import AdminInboxPageV2 from './pages/admin/AdminInboxPageV2';
 import QuestionnairesPageV2 from './pages/admin/QuestionnairesPageV2';
 import ComprehensiveReportsPage from './pages/admin/ComprehensiveReportsPage';
 import CustomizationPage from './pages/admin/CustomizationPage';
+import StudioCustomization from './pages/admin/StudioCustomization';
 import PhotographyCalendarPage from './pages/admin/PhotographyCalendarPageSimple';
 import SurveySystemDemoPage from './pages/SurveySystemDemoPage';
 import SurveyTakingPage from './pages/SurveyTakingPage';
@@ -272,6 +273,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <CustomizationPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/studio-templates" 
+                  element={
+                    <ProtectedRoute>
+                      <StudioCustomization />
                     </ProtectedRoute>
                   } 
                 />                <Route 

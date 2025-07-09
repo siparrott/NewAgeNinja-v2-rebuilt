@@ -59,6 +59,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
     { icon: Palette, label: 'Customization', path: '/admin/customization' },
+    { icon: Palette, label: 'Studio Templates', path: '/admin/studio-templates' },
   ];
 
   const handleSignOut = async () => {

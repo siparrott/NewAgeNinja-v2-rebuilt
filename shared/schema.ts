@@ -24,8 +24,73 @@ export const users = pgTable("users", {
   lastName: text("last_name"),
   avatar: text("avatar"),
   isAdmin: boolean("is_admin").default(false),
+  studioId: uuid("studio_id"), // Links user to their studio
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Studio Configuration table (multi-tenant support)
+export const studioConfigs = pgTable("studio_configs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  studioName: text("studio_name").notNull(),
+  ownerEmail: text("owner_email").notNull(),
+  domain: text("domain"), // custom domain if any
+  subdomain: text("subdomain").unique(), // photographer1.yoursaas.com
+  activeTemplate: text("active_template").default("template-01-modern-minimal"),
+  
+  // Branding
+  logoUrl: text("logo_url"),
+  primaryColor: text("primary_color").default("#7C3AED"),
+  secondaryColor: text("secondary_color").default("#F59E0B"),
+  fontFamily: text("font_family").default("Inter"),
+  
+  // Business Info
+  businessName: text("business_name"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zip: text("zip"),
+  country: text("country").default("Austria"),
+  phone: text("phone"),
+  email: text("email"),
+  website: text("website"),
+  
+  // Social Media
+  facebookUrl: text("facebook_url"),
+  instagramUrl: text("instagram_url"),
+  twitterUrl: text("twitter_url"),
+  
+  // Operating Hours
+  openingHours: jsonb("opening_hours"),
+  
+  // Features
+  enabledFeatures: text("enabled_features").array().default(["gallery", "booking", "blog", "crm"]),
+  
+  // SEO
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  
+  // Status
+  isActive: boolean("is_active").default(true),
+  subscriptionStatus: text("subscription_status").default("trial"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Template Definitions table
+export const templateDefinitions = pgTable("template_definitions", {
+  id: text("id").primaryKey(), // template-01-modern-minimal
+  name: text("name").notNull(), // "Modern Minimal"
+  description: text("description"),
+  category: text("category"), // "minimal", "artistic", "classic", etc.
+  previewImage: text("preview_image"),
+  demoUrl: text("demo_url"),
+  features: text("features").array(),
+  colorScheme: jsonb("color_scheme"),
+  isActive: boolean("is_active").default(true),
+  isPremium: boolean("is_premium").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Admin Users table
@@ -545,3 +610,9 @@ export type SessionTask = typeof sessionTasks.$inferSelect;
 export type SessionCommunication = typeof sessionCommunications.$inferSelect;
 export type WeatherData = typeof weatherData.$inferSelect;
 export type BusinessInsight = typeof businessInsights.$inferSelect;
+
+// New types for template and studio management
+export type StudioConfig = typeof studioConfigs.$inferSelect;
+export type InsertStudioConfig = z.infer<typeof insertStudioConfigSchema>;
+export type TemplateDefinition = typeof templateDefinitions.$inferSelect;
+export type InsertTemplateDefinition = z.infer<typeof insertTemplateDefinitionSchema>;
