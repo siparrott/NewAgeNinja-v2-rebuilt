@@ -41,7 +41,6 @@ import ComprehensiveReportsPage from './pages/admin/ComprehensiveReportsPage';
 import CustomizationPage from './pages/admin/CustomizationPage';
 import StudioCustomization from './pages/admin/StudioCustomization';
 import WebsiteCustomizationWizard from './pages/admin/WebsiteCustomizationWizard';
-import DemoLandingPage from './pages/DemoLandingPage';
 import PhotographyCalendarPage from './pages/admin/PhotographyCalendarPageSimple';
 import SurveySystemDemoPage from './pages/SurveySystemDemoPage';
 import SurveyTakingPage from './pages/SurveyTakingPage';
@@ -295,17 +294,14 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/demo" 
-                  element={<DemoLandingPage />} 
+                  path="/" 
+                  element={<HomePage />} 
                 />
                 <Route 
-                  path="/" 
-                  element={
-                    import.meta.env.DEV && import.meta.env.VITE_DEMO_MODE === 'true' 
-                      ? <DemoLandingPage /> 
-                      : <Navigate to="/home" replace />
-                  } 
-                />                <Route 
+                  path="/home" 
+                  element={<HomePage />} 
+                />
+                <Route 
                   path="/admin/calendar" 
                   element={
                     <ProtectedRoute>
