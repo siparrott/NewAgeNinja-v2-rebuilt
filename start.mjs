@@ -1,47 +1,51 @@
 #!/usr/bin/env node
 
-// Root workspace startup script - handles working directory properly
-import { dirname, resolve } from 'path';
+// ES Module startup script with flexible path resolution
 import { fileURLToPath } from 'url';
-import process from 'process';
+import { dirname, resolve } from 'path';
+import { existsSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Set correct working directory for deployment
-const workspaceDir = resolve(__dirname);
-// Ensure we're in the workspace directory for Replit deployment
-if (process.env.REPL_ID) {
-  process.chdir('/home/runner/workspace');
-} else {
-  process.chdir(workspaceDir);
+// Try different possible locations for the application
+const possiblePaths = [
+  resolve(__dirname, 'index.js'),
+  resolve(__dirname, 'dist/index.js'),
+  resolve(process.cwd(), 'index.js'),
+  resolve(process.cwd(), 'dist/index.js'),
+  resolve('/home/runner/workspace/dist/index.js'),
+  resolve('/home/runner/workspace/index.js')
+];
+
+console.log('🎯 New Age Fotografie CRM - Starting Production Server');
+console.log('Working directory:', process.cwd());
+console.log('Script location:', __dirname);
+
+let serverPath = null;
+for (const path of possiblePaths) {
+  if (existsSync(path)) {
+    serverPath = path;
+    console.log('✅ Found server at:', serverPath);
+    break;
+  }
 }
 
-// Environment setup
-process.env.NODE_ENV = process.env.NODE_ENV || 'production';
-// This is the live production site, not a demo
-process.env.DEMO_MODE = 'false';
-
-console.log('🚀 Photography CRM - Workspace Startup');
-console.log('📁 Workspace directory:', workspaceDir);
-console.log('📂 Current working directory:', process.cwd());
-
-// Check if built server exists
-import { existsSync } from 'fs';
-const serverPath = resolve(workspaceDir, 'dist', 'index.js');
-
-if (!existsSync(serverPath)) {
-  console.error('❌ Server bundle not found at:', serverPath);
-  console.error('🔨 Please run: npm run build');
+if (!serverPath) {
+  console.error('❌ Could not locate server file. Tried paths:');
+  possiblePaths.forEach(path => console.error('  -', path));
   process.exit(1);
 }
 
-// Start the server from dist directory
-import('./dist/index.js')
-  .then(() => {
-    console.log('✅ Server started from workspace directory');
-  })
-  .catch((error) => {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
-  });
+// Ensure proper environment variables
+process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+process.env.PORT = process.env.PORT || '5000';
+
+// Start the server
+try {
+  await import(serverPath);
+} catch (error) {
+  console.error('❌ Failed to start server:', error.message);
+  console.error(error.stack);
+  process.exit(1);
+}
