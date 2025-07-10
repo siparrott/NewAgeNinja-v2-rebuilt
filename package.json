@@ -14,10 +14,15 @@
     "demo:setup": "node scripts/setup-demo-data.js",
     "demo:reset": "node scripts/reset-demo-data.js"
   },
-  "keywords": ["photography", "crm", "saas", "demo"],
+  "keywords": [
+    "photography",
+    "crm",
+    "saas",
+    "demo"
+  ],
   "dependencies": {
     "@fullcalendar/daygrid": "^6.1.10",
-    "@fullcalendar/interaction": "^6.1.10", 
+    "@fullcalendar/interaction": "^6.1.10",
     "@fullcalendar/react": "^6.1.10",
     "@fullcalendar/timegrid": "^6.1.10",
     "@hookform/resolvers": "^3.3.2",
@@ -49,6 +54,10 @@
     "@radix-ui/react-toggle": "^1.0.3",
     "@radix-ui/react-toggle-group": "^1.0.4",
     "@radix-ui/react-tooltip": "^1.0.7",
+    "@replit/vite-plugin-cartographer": "^0.2.7",
+    "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
+    "@supabase/supabase-js": "^2.50.4",
+    "@tailwindcss/typography": "^0.5.16",
     "@tanstack/react-query": "^5.17.9",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
