@@ -25,6 +25,10 @@ const authenticateUser = async (req: Request, res: Response, next: Function) => 
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for deployment
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
   
   // ==================== USER ROUTES ====================
   app.get("/api/users/:id", authenticateUser, async (req: Request, res: Response) => {
