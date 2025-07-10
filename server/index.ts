@@ -13,6 +13,14 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Domain redirect middleware - redirect root domain to www
+app.use((req, res, next) => {
+  if (req.headers.host === 'newagefotografie.com') {
+    return res.redirect(301, `https://www.newagefotografie.com${req.url}`);
+  }
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
