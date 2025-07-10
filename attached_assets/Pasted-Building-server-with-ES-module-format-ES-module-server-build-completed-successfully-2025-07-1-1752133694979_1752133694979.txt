@@ -1,0 +1,49 @@
+Building server with ES module format...
+
+✅ ES module server build completed successfully
+
+2025-07-10T07:45:55Z info: Pushing pid1 binary layer...
+2025-07-10T07:45:57Z info: Created pid1 binary layer
+2025-07-10T07:45:58Z info: Pushing Repl layer...
+2025-07-10T07:45:58Z info: Pushing hosting layer...
+2025-07-10T07:45:58Z info: Retrieved cached nix layer
+2025-07-10T07:45:58Z info: Created hosting layer
+2025-07-10T07:46:18Z info: Created Repl layer
+2025-07-10T07:46:19Z info: Pushed image manifest
+2025-07-10T07:46:19Z info: Pushed soci index manifest
+2025-07-10T07:46:23Z info: Creating Autoscale service
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+🎯 New Age Fotografie CRM - Live Production Site (Demo Mode Disabled)
+
+Error: Could not find the build directory: /home/runner/workspace/server/public, make sure to build the client first
+command finished with error [npm run start]: exit status 1
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+🎯 New Age Fotografie CRM - Live Production Site (Demo Mode Disabled)
+    at <anonymous> (/home/runner/workspace/server/index.ts:63:5)
+command finished with error [npm run start]: exit status 1
+Error: Could not find the build directory: /home/runner/workspace/server/public, make sure to build the client first
+
+    at serveStatic (/home/runner/workspace/server/vite.ts:74:11)
+Error: Could not find the build directory: /home/runner/workspace/server/public, make sure to build the client first
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+command finished with error [npm run start]: exit status 1
+
+    at serveStatic (/home/runner/workspace/server/vite.ts:74:11)
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+Error: Could not find the build directory: /home/runner/workspace/server/public, make sure to build the client first
+Node.js v20.18.1
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+> photography-crm-demo@1.0.0 start
+
+Error: Could not find the build directory: /home/runner/workspace/server/public, make sure to build the client first
+    throw new Error(
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+crash loop detected
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
