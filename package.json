@@ -8,11 +8,12 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "node scripts/build-server.js",
-    "start": "DEMO_MODE=true node dist/index.js",
+    "start": "NODE_ENV=production PORT=5000 tsx server/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "demo:setup": "node scripts/setup-demo-data.js",
-    "demo:reset": "node scripts/reset-demo-data.js"
+    "demo:reset": "node scripts/reset-demo-data.js",
+    "deploy:start": "NODE_ENV=production PORT=5000 tsx server/index.ts"
   },
   "keywords": [
     "photography",
@@ -92,7 +93,8 @@
     "typewriter-effect": "^2.21.0",
     "uuid": "^9.0.1",
     "vaul": "^0.8.9",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "tsx": "^4.7.0"
   },
   "devDependencies": {
     "@types/connect-pg-simple": "^7.0.3",

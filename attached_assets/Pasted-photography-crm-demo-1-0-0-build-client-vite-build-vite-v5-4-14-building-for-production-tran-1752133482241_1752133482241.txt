@@ -1,0 +1,79 @@
+photography-crm-demo@1.0.0 build:client
+> vite build
+
+
+vite v5.4.14 building for production...
+
+transforming...
+
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+✓ 3109 modules transformed.
+
+rendering chunks...
+
+computing gzip size...
+
+../dist/public/index.html                          4.40 kB │ gzip:   1.52 kB
+
+✓ built in 15.77s
+
+
+> photography-crm-demo@1.0.0 build:server
+> node scripts/build-server.js
+
+
+🔨 Building server with ES module format...
+
+✅ ES module server build completed successfully
+
+2025-07-10T07:41:34Z info: Pushing pid1 binary layer...
+2025-07-10T07:41:36Z info: Created pid1 binary layer
+2025-07-10T07:41:38Z info: Pushing Repl layer...
+2025-07-10T07:41:38Z info: Pushing hosting layer...
+2025-07-10T07:41:38Z info: Retrieved cached nix layer
+2025-07-10T07:41:38Z info: Created hosting layer
+2025-07-10T07:41:58Z info: Created Repl layer
+2025-07-10T07:41:59Z info: Pushed image manifest
+2025-07-10T07:42:00Z info: Pushed soci index manifest
+2025-07-10T07:42:00Z info: Pushed referrer manifest
+2025-07-10T07:42:03Z info: Creating Autoscale service
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+> DEMO_MODE=true node dist/index.js
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+node:fs:573
+Error: ENOENT: no such file or directory, open '/home/runner/package.json'
+    at ModuleJob.run (node:internal/modules/esm/module_job:234:25)
+
+> DEMO_MODE=true node dist/index.js
+> photography-crm-demo@1.0.0 start
+
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+node:fs:573
+    at file:///home/runner/workspace/dist/index.js:103:2154
+    at ModuleJob.run (node:internal/modules/esm/module_job:234:25)
+
+  return binding.open(
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+  path: '/home/runner/package.json'
+command finished with error [npm run start]: exit status 1
+    at file:///home/runner/workspace/dist/index.js:12:468
+  return binding.open(
+  path: '/home/runner/package.json'
+    at file:///home/runner/workspace/dist/index.js:12:468
+    at file:///home/runner/workspace/dist/index.js:1124:49970
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+    at ModuleJob.run (node:internal/modules/esm/module_job:234:25)
+    at readFileSync (node:fs:452:35)
+  code: 'ENOENT',
+    at async ModuleLoader.import (node:internal/modules/esm/loader:473:24)
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+crash loop detected
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
