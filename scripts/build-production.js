@@ -3,36 +3,29 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { buildServer } from '../esbuild.config.js';
-import fs from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 
 const execAsync = promisify(exec);
 
 async function ensureDirectories() {
-  try {
-    await fs.mkdir('dist', { recursive: true });
-    await fs.mkdir('dist/public', { recursive: true });
-    console.log('✅ Build directories created');
-  } catch (error) {
-    // Directories might already exist
+  const dirs = ['dist', 'dist/public'];
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`📁 Created directory: ${dir}`);
+    }
   }
 }
 
 async function buildClient() {
-  console.log('🔨 Building client with Vite...');
+  console.log('🔨 Building client application...');
   try {
-    // Set production environment
-    process.env.NODE_ENV = 'production';
-    
-    const { stdout, stderr } = await execAsync('npx vite build', {
-      timeout: 120000 // 2 minute timeout
-    });
-    
+    const { stdout, stderr } = await execAsync('vite build --config vite.production.config.ts');
     if (stderr && !stderr.includes('warning') && !stderr.includes('Browserslist')) {
-      console.warn('Client build warnings:', stderr);
+      throw new Error(stderr);
     }
-    
-    console.log('✅ Client build completed');
+    console.log('✅ Client build completed successfully');
     return true;
   } catch (error) {
     console.error('❌ Client build failed:', error.message);
@@ -41,10 +34,10 @@ async function buildClient() {
 }
 
 async function buildServerWithESM() {
-  console.log('🔨 Building server with ES modules...');
+  console.log('🔨 Building server with ES module configuration...');
   try {
     await buildServer();
-    console.log('✅ Server build completed');
+    console.log('✅ Server build completed successfully');
     return true;
   } catch (error) {
     console.error('❌ Server build failed:', error.message);
@@ -54,74 +47,65 @@ async function buildServerWithESM() {
 
 async function createStartScript() {
   const startScript = `#!/usr/bin/env node
-// Production start script for ES modules
-import('./index.js').catch(error => {
-  console.error('Failed to start server:', error);
-  process.exit(1);
-});`;
-
-  try {
-    await fs.writeFile('dist/start.js', startScript);
-    console.log('✅ Start script created');
-  } catch (error) {
-    console.error('❌ Failed to create start script:', error.message);
-  }
+import('dist/index.js').catch(console.error);
+`;
+  
+  fs.writeFileSync('start.mjs', startScript);
+  console.log('📝 Created ES module start script');
 }
 
 async function validateBuild() {
-  try {
-    const clientFiles = await fs.readdir('dist/public');
-    const serverExists = await fs.access('dist/index.js').then(() => true).catch(() => false);
-    
-    if (clientFiles.length > 0 && serverExists) {
-      console.log('✅ Build validation passed');
-      console.log(`📁 Client files: ${clientFiles.length} files in dist/public/`);
-      console.log('📁 Server file: dist/index.js');
-      return true;
-    } else {
-      console.error('❌ Build validation failed - missing files');
-      return false;
+  const requiredFiles = [
+    'dist/index.js',
+    'dist/public/index.html'
+  ];
+  
+  for (const file of requiredFiles) {
+    if (!fs.existsSync(file)) {
+      throw new Error(`Missing required file: ${file}`);
     }
-  } catch (error) {
-    console.error('❌ Build validation error:', error.message);
-    return false;
   }
+  
+  console.log('✅ Build validation successful');
 }
 
 async function buildProduction() {
-  console.log('🚀 Starting production build...');
+  console.log('🚀 Starting production build with ES module support...');
   
-  await ensureDirectories();
-  
-  const clientSuccess = await buildClient();
-  if (!clientSuccess) {
-    console.error('❌ Production build failed at client stage');
+  try {
+    await ensureDirectories();
+    
+    const clientSuccess = await buildClient();
+    if (!clientSuccess) {
+      console.error('❌ Build failed at client stage');
+      process.exit(1);
+    }
+    
+    const serverSuccess = await buildServerWithESM();
+    if (!serverSuccess) {
+      console.error('❌ Build failed at server stage');
+      process.exit(1);
+    }
+    
+    await createStartScript();
+    await validateBuild();
+    
+    console.log('🎉 Production build completed successfully!');
+    console.log('📁 Output:');
+    console.log('  - Client: dist/public/');
+    console.log('  - Server: dist/index.js');
+    console.log('  - Start: start.mjs (ES module compatible)');
+    
+  } catch (error) {
+    console.error('❌ Production build failed:', error.message);
     process.exit(1);
   }
-  
-  const serverSuccess = await buildServerWithESM();
-  if (!serverSuccess) {
-    console.error('❌ Production build failed at server stage');
-    process.exit(1);
-  }
-  
-  await createStartScript();
-  
-  const isValid = await validateBuild();
-  if (!isValid) {
-    console.error('❌ Production build validation failed');
-    process.exit(1);
-  }
-  
-  console.log('🎉 Production build completed successfully!');
-  console.log('📦 Ready for deployment with ES module support');
-  console.log('🚀 Start with: node dist/start.js');
 }
 
-// Run if executed directly
+// Run build if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   buildProduction().catch((error) => {
-    console.error('Production build failed:', error);
+    console.error('Production build process failed:', error);
     process.exit(1);
   });
 }

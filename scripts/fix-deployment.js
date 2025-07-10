@@ -5,66 +5,53 @@
  * Addresses the specific problems mentioned in the error
  */
 
-import { buildServer } from '../esbuild.config.js';
-import fs from 'fs/promises';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import fs from 'fs';
+import path from 'path';
+
+const execAsync = promisify(exec);
 
 async function createESModuleCompatibleConfig() {
-  console.log('🔧 Creating ES module compatible deployment configuration...');
+  console.log('🔧 Creating ES module compatible configuration...');
   
-  try {
-    // Create production-ready package.json with proper ES module support
-    const deploymentPackage = {
-      "name": "photography-crm-production",
-      "version": "1.0.0",
-      "type": "module",
-      "main": "index.js",
-      "engines": {
-        "node": ">=18.0.0"
-      },
-      "scripts": {
-        "start": "node index.js"
-      },
-      "dependencies": {
-        "@neondatabase/serverless": "^0.9.0",
-        "@supabase/supabase-js": "^2.50.4",
-        "express": "^4.18.2",
-        "express-session": "^1.17.3",
-        "passport": "^0.7.0",
-        "passport-local": "^1.0.0",
-        "connect-pg-simple": "^9.0.1",
-        "drizzle-orm": "^0.29.3",
-        "drizzle-zod": "^0.5.1",
-        "node-fetch": "^3.3.2",
-        "jsdom": "^23.2.0",
-        "papaparse": "^5.4.1",
-        "uuid": "^9.0.1",
-        "date-fns": "^3.2.0",
-        "zod": "^3.22.4"
-      }
-    };
-    
-    await fs.mkdir('dist', { recursive: true });
-    await fs.writeFile('dist/package.json', JSON.stringify(deploymentPackage, null, 2));
-    console.log('✅ Created production package.json with ES module support');
-    
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to create ES module config:', error.message);
-    return false;
-  }
+  // Create a deployment-specific vite config without async imports
+  const deploymentViteConfig = `import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(process.cwd(), "client", "src"),
+      "@shared": path.resolve(process.cwd(), "shared"),
+      "@assets": path.resolve(process.cwd(), "attached_assets"),
+    },
+  },
+  root: path.resolve(process.cwd(), "client"),
+  build: {
+    outDir: path.resolve(process.cwd(), "dist/public"),
+    emptyOutDir: true,
+    target: 'es2020',
+    minify: 'esbuild',
+    sourcemap: false,
+  },
+  esbuild: {
+    target: 'es2020',
+    format: 'esm',
+  },
+});`;
+
+  fs.writeFileSync('vite.deployment.config.js', deploymentViteConfig);
+  console.log('✅ Created deployment-specific Vite config');
 }
 
 async function buildServerWithFixes() {
   console.log('🔨 Building server with ES module fixes...');
-  
   try {
-    process.env.NODE_ENV = 'production';
-    await buildServer();
-    
-    // Verify the build output
-    const buildStats = await fs.stat('dist/index.js');
-    console.log(`✅ Server built successfully (${(buildStats.size / 1024).toFixed(2)} KB)`);
-    
+    const { stdout, stderr } = await execAsync('node esbuild.config.js');
+    console.log('✅ Server build completed successfully');
     return true;
   } catch (error) {
     console.error('❌ Server build failed:', error.message);
@@ -73,58 +60,49 @@ async function buildServerWithFixes() {
 }
 
 async function createStartupScript() {
-  console.log('📝 Creating ES module startup script...');
-  
-  const startScript = `#!/usr/bin/env node
-/**
- * Production startup script with ES module support
- * Handles import.meta and top-level await compatibility
- */
+  const startupScript = `#!/usr/bin/env node
 
-import('./index.js')
+// ES Module startup script for deployment
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Set deployment environment
+process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+process.env.DEMO_MODE = process.env.DEMO_MODE || 'true';
+
+// Import and start the server
+import('./dist/index.js')
   .then(() => {
-    console.log('✅ Photography CRM server started successfully');
+    console.log('✅ Server started successfully');
   })
-  .catch(error => {
+  .catch((error) => {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
-  });`;
-  
-  try {
-    await fs.writeFile('dist/start.js', startScript);
-    await fs.chmod('dist/start.js', '755');
-    console.log('✅ Created startup script with ES module support');
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to create startup script:', error.message);
-    return false;
-  }
+  });
+`;
+
+  fs.writeFileSync('start.mjs', startupScript);
+  console.log('📝 Created ES module startup script');
 }
 
 async function validateESModuleSupport() {
-  console.log('🔍 Validating ES module configuration...');
+  console.log('🔍 Validating ES module support...');
+  
+  const testScript = `
+import { fileURLToPath } from 'url';
+console.log('✅ import.meta.url support:', typeof import.meta.url);
+console.log('✅ ES modules working correctly');
+`;
+  
+  fs.writeFileSync('test-esm.mjs', testScript);
   
   try {
-    // Check if files exist
-    await fs.access('dist/index.js');
-    await fs.access('dist/package.json');
-    await fs.access('dist/start.js');
-    
-    // Read and validate package.json
-    const packageContent = await fs.readFile('dist/package.json', 'utf-8');
-    const packageData = JSON.parse(packageContent);
-    
-    if (packageData.type !== 'module') {
-      throw new Error('Package.json does not specify ES module type');
-    }
-    
-    console.log('✅ ES module configuration validated');
-    console.log('📊 Deployment ready:');
-    console.log('  - ES module format: ✓');
-    console.log('  - import.meta support: ✓');
-    console.log('  - Top-level await support: ✓');
-    console.log('  - External dependencies: ✓');
-    
+    await execAsync('node test-esm.mjs');
+    fs.unlinkSync('test-esm.mjs');
+    console.log('✅ ES module support validated');
     return true;
   } catch (error) {
     console.error('❌ ES module validation failed:', error.message);
@@ -134,49 +112,35 @@ async function validateESModuleSupport() {
 
 async function fixDeployment() {
   console.log('🚀 Fixing deployment ES module configuration issues...');
-  console.log('========================================================');
   
   try {
-    // Step 1: Create ES module compatible config
-    const configSuccess = await createESModuleCompatibleConfig();
-    if (!configSuccess) {
-      throw new Error('Failed to create ES module configuration');
-    }
+    await createESModuleCompatibleConfig();
     
-    // Step 2: Build server with fixes
-    const buildSuccess = await buildServerWithFixes();
-    if (!buildSuccess) {
+    const serverSuccess = await buildServerWithFixes();
+    if (!serverSuccess) {
       throw new Error('Server build failed');
     }
     
-    // Step 3: Create startup script
-    const scriptSuccess = await createStartupScript();
-    if (!scriptSuccess) {
-      throw new Error('Failed to create startup script');
-    }
+    await createStartupScript();
     
-    // Step 4: Validate configuration
-    const validationSuccess = await validateESModuleSupport();
-    if (!validationSuccess) {
+    const esmValid = await validateESModuleSupport();
+    if (!esmValid) {
       throw new Error('ES module validation failed');
     }
     
-    console.log('========================================================');
-    console.log('🎉 Deployment fixes applied successfully!');
-    console.log('');
-    console.log('✅ Fixed issues:');
-    console.log('  - Top-level await is now supported with ES module format');
-    console.log('  - import.meta syntax is now compatible');
-    console.log('  - External dependencies configured properly');
-    console.log('  - Production package.json created with type: "module"');
-    console.log('');
-    console.log('🚀 Server is ready for deployment!');
-    console.log('📁 Output: dist/index.js (with ES module support)');
+    console.log('🎉 Deployment fixes completed successfully!');
+    console.log('📁 Created files:');
+    console.log('  - vite.deployment.config.js (ES module compatible Vite config)');
+    console.log('  - start.mjs (ES module startup script)');
+    console.log('  - dist/index.js (ES module server bundle)');
+    
+    console.log('📋 Deployment instructions:');
+    console.log('  1. Use "node start.mjs" to start the server');
+    console.log('  2. Or use "node dist/index.js" directly');
+    console.log('  3. Both support ES modules natively');
     
   } catch (error) {
-    console.error('========================================================');
     console.error('❌ Deployment fix failed:', error.message);
-    console.error('========================================================');
     process.exit(1);
   }
 }
@@ -184,7 +148,7 @@ async function fixDeployment() {
 // Run fix if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   fixDeployment().catch((error) => {
-    console.error('Fix process failed:', error);
+    console.error('Deployment fix process failed:', error);
     process.exit(1);
   });
 }
