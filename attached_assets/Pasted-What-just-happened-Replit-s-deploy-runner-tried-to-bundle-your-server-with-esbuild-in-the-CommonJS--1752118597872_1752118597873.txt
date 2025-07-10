@@ -1,0 +1,77 @@
+What just happened?
+Replit’s deploy runner tried to bundle your server with esbuild in the CommonJS format.
+That breaks the moment it hits:
+
+import.meta references
+
+top-level await
+
+some ESM-only deps (@neondatabase/serverless, lightningcss, @babel/preset-typescript)
+
+Result → the red “top-level await in CommonJS” error you see. 
+GitHub
+answeroverflow.com
+
+5-step fix (takes 5 – 10 min)
+#	What to do	Why it works
+1	Tell Node you’re an ESM project <br/>Add "type": "module" to package.json.	Node ≥ 18 will now treat every .js/ts file as an ES-module by default.
+2	Bundle the server as ESM <br/>Create / edit esbuild.config.js:	CommonJS is gone, so import.meta and top-level await are legal.
+```js	
+import { build } from 'esbuild'		
+import { nodeExternalsPlugin } from 'esbuild-node-externals'		
+
+build({
+entryPoints: ['server/index.ts'],
+bundle: true,
+platform: 'node',
+target: ['node18'],
+format: 'esm', // ← critical line
+outfile: 'dist/index.js',
+plugins: [nodeExternalsPlugin({
+dependencies: true, peerDependencies: true,
+packagePaths: [
+'@neondatabase/serverless',
+'lightningcss',
+'@babel/preset-typescript'
+] // keeps them external
+})]
+}).catch(() => process.exit(1))
+
+|
+Kopieren
+Bearbeiten
+| **3** | **Wire the new build script** in `package.json`:  | Replit’s Deploy looks for `npm run build` + `npm start`. |
+| | ```json
+"scripts": {
+  "build": "node esbuild.config.js",
+  "start": "node dist/index.js"
+}
+``` | |
+| **4** | **Move async Vite config to a “deploy” variant** (optional but tidy):  <br/>`vite.deployment.config.ts` – keep it synchronous or wrap async parts in a function and export a promise.  Then, in `server/vite.ts`:  | Stops the builder tripping over async code in `vite.config.ts`. |
+| | ```ts
+import viteConfig from '../vite.deployment.config.js'
+export default viteConfig
+``` | |
+| **5** | **Pin Node 20 on Replit** (avoids odd edge-cases):  <br/>Add/modify `.replit`: | Guarantees the same runtime local & prod. |
+| | ```ini
+language = "nodejs"
+run      = "npm start"
+nixpkgs  = ["nodejs-20_x"]
+``` | |
+
+After those edits:
+
+```bash
+git add .
+git commit -m "fix: deploy with ESM"
+git push          # (if you’re using Git)
+Hit Deploy → Redeploy. Replit should:
+
+npm ci
+
+npm run build → esbuild.config.js
+
+npm start → node dist/index.js
+
+…and your Photography CRM goes live at https://<repl>.replit.app. 🎉
+
