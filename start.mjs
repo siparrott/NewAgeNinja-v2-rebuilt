@@ -10,7 +10,12 @@ const __dirname = dirname(__filename);
 
 // Set correct working directory for deployment
 const workspaceDir = resolve(__dirname);
-process.chdir(workspaceDir);
+// Ensure we're in the workspace directory for Replit deployment
+if (process.env.REPL_ID) {
+  process.chdir('/home/runner/workspace');
+} else {
+  process.chdir(workspaceDir);
+}
 
 // Environment setup
 process.env.NODE_ENV = process.env.NODE_ENV || 'production';
