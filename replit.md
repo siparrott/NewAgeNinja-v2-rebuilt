@@ -1,8 +1,8 @@
-# TogNinja CRM - Photography Studio Management System
+# New Age Fotografie CRM - Professional Photography Studio Management System
 
 ## Overview
 
-TogNinja CRM is a full-stack web application built as a comprehensive customer relationship management system for photography studios. The application enables photographers to manage clients, galleries, bookings, invoices, and various business operations through both customer-facing and administrative interfaces.
+New Age Fotografie CRM is a full-stack web application built as a comprehensive customer relationship management system for the New Age Fotografie photography studio in Vienna, Austria. The application enables professional photography business management including client management, galleries, bookings, invoices, and various business operations through both customer-facing and administrative interfaces.
 
 ## System Architecture
 
