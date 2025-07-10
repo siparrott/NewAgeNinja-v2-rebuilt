@@ -29,7 +29,6 @@ const external = [
   // Frontend dependencies (should not be in server bundle)
   'react',
   'react-dom',
-  'vite',
   'lucide-react',
   '@radix-ui/*',
   '@tanstack/react-query',
@@ -62,7 +61,7 @@ const external = [
 ];
 
 export const serverBuildConfig = {
-  entryPoints: ['server/index.ts'],
+  entryPoints: ['server/index.production.ts'],
   bundle: true,
   platform: 'node',
   target: 'node18',
@@ -96,8 +95,8 @@ export const serverBuildConfig = {
         return { path: 'production-vite', namespace: 'virtual' };
       });
       
-      // Ignore vite HMR and development utilities
-      build.onResolve({ filter: /refreshUtils|@react-refresh|react-refresh/ }, () => {
+      // Ignore all Vite-related dependencies
+      build.onResolve({ filter: /vite|@vitejs|refreshUtils|@react-refresh|react-refresh/ }, () => {
         return { path: 'empty-module', namespace: 'virtual' };
       });
       
@@ -126,7 +125,7 @@ export const serverBuildConfig = {
               }
               
               export function serveStatic(app) {
-                const distPath = path.resolve(process.cwd(), "public");
+                const distPath = path.resolve(process.cwd(), "dist", "public");
                 
                 if (!fs.existsSync(distPath)) {
                   throw new Error(\`Could not find the build directory: \${distPath}, make sure to build the client first\`);
