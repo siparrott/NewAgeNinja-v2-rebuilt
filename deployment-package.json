@@ -1,14 +1,14 @@
 {
-  "name": "photography-crm-demo",
+  "name": "newage-fotografie-crm",
   "version": "1.0.0",
-  "description": "Live demo of Photography CRM SaaS platform",
+  "description": "New Age Fotografie - Professional Photography Studio CRM System",
   "type": "module",
   "main": "dist/index.js",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "DEMO_MODE=true node dist/index.js",
+    "start": "NODE_ENV=production node dist/index.js",
     "build": "node scripts/build-production.js",
     "build:client": "vite build --config vite.production.config.ts",
     "build:server": "node esbuild.config.js"

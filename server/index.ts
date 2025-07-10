@@ -2,6 +2,13 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Override demo mode for production New Age Fotografie site
+// This is NOT a demo - it's the live business website
+if (!process.env.DEMO_MODE || process.env.DEMO_MODE === 'true') {
+  process.env.DEMO_MODE = 'false';
+  console.log('🎯 New Age Fotografie CRM - Live Production Site (Demo Mode Disabled)');
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

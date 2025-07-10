@@ -14,7 +14,8 @@ process.chdir(workspaceDir);
 
 // Environment setup
 process.env.NODE_ENV = process.env.NODE_ENV || 'production';
-process.env.DEMO_MODE = process.env.DEMO_MODE || 'true';
+// This is the live production site, not a demo
+process.env.DEMO_MODE = 'false';
 
 console.log('🚀 Photography CRM - Workspace Startup');
 console.log('📁 Workspace directory:', workspaceDir);

@@ -3,6 +3,10 @@ import { registerRoutes } from "./routes";
 import path from "path";
 import fs from "fs";
 
+// Override demo mode for New Age Fotografie production site
+process.env.DEMO_MODE = 'false';
+console.log('🎯 New Age Fotografie CRM - Live Production Site');
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
