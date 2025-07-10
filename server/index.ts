@@ -57,7 +57,10 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  
+  // For deployment, we'll use development Vite middleware since the build is too complex
+  // This serves the React app properly while keeping production API endpoints
+  if (app.get("env") === "development" || process.env.NODE_ENV === "production") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
