@@ -8,11 +8,13 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "node scripts/build-server.js",
-    "start": "DEMO_MODE=true node dist/index.js",
+    "start": "node start.mjs",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "demo:setup": "node scripts/setup-demo-data.js",
-    "demo:reset": "node scripts/reset-demo-data.js"
+    "demo:reset": "node scripts/reset-demo-data.js",
+    "start:fallback": "node start.js",
+    "start:direct": "NODE_ENV=production node dist/index.js"
   },
   "keywords": [
     "photography",
@@ -117,5 +119,8 @@
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.12"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
