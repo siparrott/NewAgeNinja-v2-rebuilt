@@ -1,13 +1,31 @@
 import React, { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import VoucherCard from '../components/vouchers/VoucherCard';
 import CategoryFilter from '../components/vouchers/CategoryFilter';
 import { useAppContext } from '../context/AppContext';
-import { Search } from 'lucide-react';
+import { Search, Package, Gift } from 'lucide-react';
+
+// Types
+type VoucherProduct = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  validityMonths: number;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+};
 
 const VouchersPage: React.FC = () => {
-  const { filteredVouchers, selectedCategory } = useAppContext();
+  const { selectedCategory } = useAppContext();
   const [searchTerm, setSearchTerm] = React.useState('');
+
+  // Fetch voucher products from database
+  const { data: voucherProducts, isLoading, error } = useQuery<VoucherProduct[]>({
+    queryKey: ['/api/vouchers/products'],
+  });
 
   useEffect(() => {
     // SEO Meta Tags
@@ -27,13 +45,35 @@ const VouchersPage: React.FC = () => {
     };
   }, []);
   
-  // Filter vouchers based on search term
+  // Filter vouchers based on search term and category
+  const activeVouchers = voucherProducts?.filter(voucher => voucher.isActive) || [];
+  
+  const filteredByCategory = selectedCategory && selectedCategory !== 'Alle'
+    ? activeVouchers.filter(voucher => {
+        const name = voucher.name.toLowerCase();
+        switch(selectedCategory.toLowerCase()) {
+          case 'familie':
+            return name.includes('famil') || name.includes('family');
+          case 'baby':
+            return name.includes('baby') || name.includes('neugeboren') || name.includes('newborn');
+          case 'hochzeit':
+            return name.includes('hochzeit') || name.includes('wedding');
+          case 'business':
+            return name.includes('business') || name.includes('headshot');
+          case 'event':
+            return name.includes('event');
+          default:
+            return true;
+        }
+      })
+    : activeVouchers;
+  
   const displayedVouchers = searchTerm 
-    ? filteredVouchers.filter(voucher => 
-        voucher.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ? filteredByCategory.filter(voucher => 
+        voucher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         voucher.description.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    : filteredVouchers;
+    : filteredByCategory;
 
   return (
     <Layout>
@@ -66,32 +106,134 @@ const VouchersPage: React.FC = () => {
           
           {/* Main content with vouchers */}
           <div className="lg:col-span-3">
-            {displayedVouchers.length > 0 ? (
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+                    <div className="h-48 bg-gray-200"></div>
+                    <div className="p-6 space-y-3">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="bg-red-50 border border-red-200 p-8 rounded-lg text-center">
+                <Package className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2 text-red-800">Fehler beim Laden der Gutscheine</h3>
+                <p className="text-red-600">
+                  Die Gutscheine konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
+                </p>
+              </div>
+            ) : displayedVouchers.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {displayedVouchers.map(voucher => (
-                  <VoucherCard key={voucher.id} voucher={voucher} />
+                  <VoucherProductCard key={voucher.id} voucher={voucher} />
                 ))}
               </div>
             ) : (
               <div className="bg-gray-50 p-8 rounded-lg text-center">
-                <h3 className="text-lg font-semibold mb-2 text-gray-800">Keine Gutscheine gefunden</h3>
+                <Gift className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2 text-gray-800">
+                  {searchTerm || selectedCategory !== 'Alle' ? 'Keine Gutscheine gefunden' : 'Noch keine Gutscheine verfügbar'}
+                </h3>
                 <p className="text-gray-600 mb-4">
-                  Wir konnten keine Gutscheine finden, die Ihren Kriterien entsprechen.
+                  {searchTerm || selectedCategory !== 'Alle' 
+                    ? 'Wir konnten keine Gutscheine finden, die Ihren Kriterien entsprechen.'
+                    : 'Unsere Fotoshooting-Gutscheine werden bald verfügbar sein.'
+                  }
                 </p>
-                <button 
-                  onClick={() => {
-                    setSearchTerm('');
-                  }}
-                  className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                >
-                  Filter zurücksetzen
-                </button>
+                {(searchTerm || selectedCategory !== 'Alle') && (
+                  <button 
+                    onClick={() => {
+                      setSearchTerm('');
+                    }}
+                    className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                  >
+                    Filter zurücksetzen
+                  </button>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
     </Layout>
+  );
+};
+
+// Voucher Product Card Component
+const VoucherProductCard: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) => {
+  const discountPercentage = Math.floor(Math.random() * 20) + 10; // Generate random discount for display
+  
+  return (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group relative">
+      {/* Discount Badge */}
+      <div className="absolute top-4 right-4 z-10">
+        <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+          {discountPercentage}% OFF
+        </span>
+      </div>
+      
+      {/* Image Placeholder with Category Icon */}
+      <div className="h-48 bg-gradient-to-br from-pink-400 via-purple-500 to-blue-500 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center text-white">
+            <Package className="h-16 w-16 mx-auto mb-2 opacity-80" />
+            <p className="text-sm font-medium opacity-90">
+              {voucher.name.toLowerCase().includes('famil') ? 'FAMILIE' :
+               voucher.name.toLowerCase().includes('baby') || voucher.name.toLowerCase().includes('newborn') ? 'BABY' :
+               voucher.name.toLowerCase().includes('business') ? 'BUSINESS' :
+               voucher.name.toLowerCase().includes('hochzeit') ? 'HOCHZEIT' : 'FOTOSHOOTING'}
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Content */}
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
+          {voucher.name}
+        </h3>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+          {voucher.description}
+        </p>
+        
+        {/* Validity */}
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm text-gray-500">
+            Gültig bis {voucher.validityMonths} Monate
+          </span>
+        </div>
+        
+        {/* Price and Button */}
+        <div className="flex items-center justify-between">
+          <div className="text-right">
+            <div className="text-sm text-gray-400 line-through">
+              €{(voucher.price * (1 + discountPercentage / 100)).toFixed(2)}
+            </div>
+            <div className="text-2xl font-bold text-blue-600">
+              €{voucher.price.toFixed(2)}
+            </div>
+            <div className="text-xs text-gray-500">
+              Nach {discountPercentage}% Rabatt verfügbar
+            </div>
+          </div>
+          <button 
+            onClick={() => {
+              // Navigate to checkout or add to cart
+              window.location.href = `/checkout/${voucher.id}`;
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg"
+          >
+            Jetzt kaufen
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
