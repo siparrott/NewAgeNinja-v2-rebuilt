@@ -1935,6 +1935,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== AUTOMATIC EMAIL IMPORT SERVICE ====================
+  // Background email import service
+  let emailImportInterval: NodeJS.Timeout | null = null;
+  let lastEmailImportTime = 0;
+  
+  const startBackgroundEmailImport = () => {
+    // Only start if not already running
+    if (emailImportInterval) {
+      clearInterval(emailImportInterval);
+    }
+    
+    emailImportInterval = setInterval(async () => {
+      try {
+        console.log('🔄 Background email import started...');
+        
+        const importedEmails = await importEmailsFromIMAP({
+          host: 'imap.easyname.com',
+          port: 993,
+          username: '30840mail10',
+          password: process.env.EMAIL_PASSWORD || 'HoveBN41!',
+          useTLS: true
+        });
+
+        // Store emails in database, avoid duplicates
+        let newEmailCount = 0;
+        const existingMessages = await storage.getCrmMessages();
+        
+        for (const email of importedEmails) {
+          // Check if email already exists (improved duplicate check)
+          const isDuplicate = existingMessages.some(msg => 
+            msg.subject === email.subject && 
+            msg.senderEmail === email.from &&
+            Math.abs(new Date(msg.createdAt).getTime() - new Date(email.date).getTime()) < 300000 // Within 5 minutes
+          );
+          
+          if (!isDuplicate) {
+            try {
+              await storage.createCrmMessage({
+                senderName: email.fromName,
+                senderEmail: email.from,
+                subject: email.subject,
+                content: email.body,
+                status: email.isRead ? 'read' : 'unread'
+              });
+              newEmailCount++;
+              console.log(`📧 Imported new email: ${email.subject} from ${email.from}`);
+            } catch (error) {
+              console.error('Failed to save email:', error);
+            }
+          }
+        }
+        
+        if (newEmailCount > 0) {
+          console.log(`✅ Background import completed: ${newEmailCount} new emails imported`);
+          lastEmailImportTime = Date.now();
+        }
+      } catch (error) {
+        console.error('❌ Background email import failed:', error);
+      }
+    }, 5 * 60 * 1000); // Run every 5 minutes
+    
+    console.log('🎯 Background email import service started (every 5 minutes)');
+  };
+
+  // Start background email import when server starts
+  startBackgroundEmailImport();
+
+  // Endpoint to get email import status
+  app.get("/api/email/import-status", authenticateUser, async (req: Request, res: Response) => {
+    res.json({ 
+      isRunning: emailImportInterval !== null,
+      lastImportTime: lastEmailImportTime,
+      nextImportIn: lastEmailImportTime ? (5 * 60 * 1000) - (Date.now() - lastEmailImportTime) : 0
+    });
+  });
+
   // ==================== HEALTH CHECK ====================
   app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });

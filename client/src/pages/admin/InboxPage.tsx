@@ -41,6 +41,8 @@ const InboxPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchMessages();
@@ -50,10 +52,23 @@ const InboxPage: React.FC = () => {
     filterMessages();
   }, [messages, searchTerm, statusFilter]);
 
-  const fetchMessages = async () => {
+  // Auto-refresh emails every 30 seconds
+  useEffect(() => {
+    if (!autoRefreshEnabled) return;
+    
+    const interval = setInterval(() => {
+      fetchMessages(true); // Silent refresh
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [autoRefreshEnabled]);
+
+  const fetchMessages = async (silent: boolean = false) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       
       // Clear cache and force fresh request
       const response = await fetch('/api/crm/messages?' + Date.now(), {
@@ -69,8 +84,25 @@ const InboxPage: React.FC = () => {
 
       const data = await response.json();
       console.log('Fetched messages:', data);
-      alert(`Fetched ${data.length} messages from API`);
+      
+      // Check if we got new messages
+      const newMessageCount = data.length - messages.length;
+      if (newMessageCount > 0 && messages.length > 0) {
+        console.log(`🔔 ${newMessageCount} new messages received!`);
+        // Show notification for new messages
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50';
+        notification.textContent = `${newMessageCount} new email${newMessageCount > 1 ? 's' : ''} received`;
+        document.body.appendChild(notification);
+        setTimeout(() => document.body.removeChild(notification), 3000);
+      }
+      
+      if (!silent) {
+        alert(`Fetched ${data.length} messages from API`);
+      }
+      
       setMessages(data || []);
+      setLastRefreshTime(new Date());
     } catch (err) {
       console.error('Error fetching messages:', err);
       setError('Failed to load messages. Please try again.');
@@ -233,6 +265,21 @@ const InboxPage: React.FC = () => {
             <p className="text-gray-600">Manage client messages and inquiries</p>
           </div>
           <div className="flex space-x-3">
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+              <span>Auto-refresh: {autoRefreshEnabled ? 'On' : 'Off'}</span>
+              {lastRefreshTime && (
+                <span className="text-xs text-gray-500">
+                  Last: {lastRefreshTime.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+            <button 
+              className={`px-3 py-1 rounded text-sm ${autoRefreshEnabled ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+              onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+            >
+              {autoRefreshEnabled ? 'Disable' : 'Enable'} Auto-refresh
+            </button>
             <button 
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center"
               onClick={() => {
