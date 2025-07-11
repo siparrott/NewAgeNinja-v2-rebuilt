@@ -13,9 +13,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { t } = useLanguage();
 
   return (
-    <div className="flex flex-col min-h-screen relative">
+    <div className="flex flex-col min-h-screen" style={{ position: 'static', overflow: 'visible' }}>
       <Header />
-      <main className="flex-grow relative">
+      <main className="flex-grow" style={{ position: 'static', overflow: 'visible' }}>
         {children}
       </main>
       <GoogleReviews />
