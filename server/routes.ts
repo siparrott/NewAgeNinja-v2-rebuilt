@@ -12,6 +12,9 @@ import {
   insertGallerySchema,
   insertCrmInvoiceSchema,
   insertCrmMessageSchema,
+  insertVoucherProductSchema,
+  insertDiscountCouponSchema,
+  insertVoucherSaleSchema,
   galleryImages
 } from "@shared/schema";
 import { z } from "zod";
@@ -1941,6 +1944,217 @@ New Age Fotografie CRM System
       console.error('Failed to save lead notification to database:', dbError);
     }
   }
+
+  // ==================== VOUCHER MANAGEMENT ROUTES ====================
+  
+  // Voucher Products Routes
+  app.get("/api/vouchers/products", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const products = await storage.getVoucherProducts();
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching voucher products:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/vouchers/products/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const product = await storage.getVoucherProduct(req.params.id);
+      if (!product) {
+        return res.status(404).json({ error: "Voucher product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      console.error("Error fetching voucher product:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/vouchers/products", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertVoucherProductSchema.parse(req.body);
+      const product = await storage.createVoucherProduct(validatedData);
+      res.status(201).json(product);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      console.error("Error creating voucher product:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/vouchers/products/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const product = await storage.updateVoucherProduct(req.params.id, req.body);
+      res.json(product);
+    } catch (error) {
+      console.error("Error updating voucher product:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/vouchers/products/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteVoucherProduct(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting voucher product:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Discount Coupons Routes
+  app.get("/api/vouchers/coupons", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const coupons = await storage.getDiscountCoupons();
+      res.json(coupons);
+    } catch (error) {
+      console.error("Error fetching discount coupons:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/vouchers/coupons", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertDiscountCouponSchema.parse(req.body);
+      const coupon = await storage.createDiscountCoupon(validatedData);
+      res.status(201).json(coupon);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      console.error("Error creating discount coupon:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/vouchers/coupons/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const coupon = await storage.updateDiscountCoupon(req.params.id, req.body);
+      res.json(coupon);
+    } catch (error) {
+      console.error("Error updating discount coupon:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/vouchers/coupons/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteDiscountCoupon(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting discount coupon:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Validate coupon code (public endpoint for frontend)
+  app.post("/api/vouchers/coupons/validate", async (req: Request, res: Response) => {
+    try {
+      const { code, orderAmount } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ error: "Coupon code is required" });
+      }
+
+      const coupon = await storage.getDiscountCouponByCode(code);
+      
+      if (!coupon) {
+        return res.status(404).json({ error: "Invalid coupon code" });
+      }
+
+      // Validate coupon
+      const now = new Date();
+      const errors = [];
+
+      if (!coupon.isActive) {
+        errors.push("Coupon is not active");
+      }
+
+      if (coupon.startDate && new Date(coupon.startDate) > now) {
+        errors.push("Coupon is not yet valid");
+      }
+
+      if (coupon.endDate && new Date(coupon.endDate) < now) {
+        errors.push("Coupon has expired");
+      }
+
+      if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) {
+        errors.push("Coupon usage limit reached");
+      }
+
+      if (coupon.minOrderAmount && orderAmount && parseFloat(orderAmount) < parseFloat(coupon.minOrderAmount)) {
+        errors.push(`Minimum order amount is €${coupon.minOrderAmount}`);
+      }
+
+      if (errors.length > 0) {
+        return res.status(400).json({ error: errors.join(", "), valid: false });
+      }
+
+      // Calculate discount
+      let discountAmount = 0;
+      if (coupon.discountType === "percentage") {
+        discountAmount = (parseFloat(orderAmount || "0") * parseFloat(coupon.discountValue)) / 100;
+        if (coupon.maxDiscountAmount) {
+          discountAmount = Math.min(discountAmount, parseFloat(coupon.maxDiscountAmount));
+        }
+      } else {
+        discountAmount = parseFloat(coupon.discountValue);
+      }
+
+      res.json({
+        valid: true,
+        coupon: {
+          id: coupon.id,
+          code: coupon.code,
+          name: coupon.name,
+          discountType: coupon.discountType,
+          discountValue: coupon.discountValue,
+          discountAmount: discountAmount.toFixed(2)
+        }
+      });
+    } catch (error) {
+      console.error("Error validating coupon:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Voucher Sales Routes
+  app.get("/api/vouchers/sales", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const sales = await storage.getVoucherSales();
+      res.json(sales);
+    } catch (error) {
+      console.error("Error fetching voucher sales:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/vouchers/sales", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertVoucherSaleSchema.parse(req.body);
+      const sale = await storage.createVoucherSale(validatedData);
+      res.status(201).json(sale);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      console.error("Error creating voucher sale:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/vouchers/sales/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const sale = await storage.updateVoucherSale(req.params.id, req.body);
+      res.json(sale);
+    } catch (error) {
+      console.error("Error updating voucher sale:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

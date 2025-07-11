@@ -203,6 +203,130 @@ export const crmInvoicePayments = pgTable("crm_invoice_payments", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Voucher Products (what customers can buy)
+export const voucherProducts = pgTable("voucher_products", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(), // "Familie Fotoshooting", "Neugeborenen Fotoshooting"
+  description: text("description"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  originalPrice: decimal("original_price", { precision: 10, scale: 2 }), // for showing discounts
+  category: text("category"), // "familie", "baby", "hochzeit", "business", "event"
+  sessionDuration: integer("session_duration").default(60), // minutes
+  sessionType: text("session_type"), // links to photography session types
+  
+  // Voucher details
+  validityPeriod: integer("validity_period").default(365), // days
+  redemptionInstructions: text("redemption_instructions"),
+  termsAndConditions: text("terms_and_conditions"),
+  
+  // Display settings
+  imageUrl: text("image_url"),
+  displayOrder: integer("display_order").default(0),
+  featured: boolean("featured").default(false),
+  badge: text("badge"), // "30% OFF", "BESTSELLER", etc.
+  
+  // Availability
+  isActive: boolean("is_active").default(true),
+  stockLimit: integer("stock_limit"), // null = unlimited
+  maxPerCustomer: integer("max_per_customer").default(5),
+  
+  // SEO
+  slug: text("slug").unique(),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Discount Coupons
+export const discountCoupons = pgTable("discount_coupons", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").unique().notNull(), // "WELCOME10", "SUMMER2024"
+  name: text("name").notNull(), // "Welcome Discount", "Summer Sale"
+  description: text("description"),
+  
+  // Discount settings
+  discountType: text("discount_type").notNull(), // "percentage", "fixed_amount"
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  minOrderAmount: decimal("min_order_amount", { precision: 10, scale: 2 }),
+  maxDiscountAmount: decimal("max_discount_amount", { precision: 10, scale: 2 }),
+  
+  // Usage limits
+  usageLimit: integer("usage_limit"), // null = unlimited
+  usageCount: integer("usage_count").default(0),
+  usageLimitPerCustomer: integer("usage_limit_per_customer").default(1),
+  
+  // Validity
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  isActive: boolean("is_active").default(true),
+  
+  // Restrictions
+  applicableProducts: text("applicable_products").array(), // product IDs or "all"
+  excludedProducts: text("excluded_products").array(),
+  firstTimeCustomersOnly: boolean("first_time_customers_only").default(false),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Voucher Sales (purchases)
+export const voucherSales = pgTable("voucher_sales", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productId: uuid("product_id").references(() => voucherProducts.id),
+  
+  // Customer info
+  purchaserName: text("purchaser_name").notNull(),
+  purchaserEmail: text("purchaser_email").notNull(),
+  purchaserPhone: text("purchaser_phone"),
+  
+  // Gift recipient (if different)
+  recipientName: text("recipient_name"),
+  recipientEmail: text("recipient_email"),
+  giftMessage: text("gift_message"),
+  
+  // Voucher details
+  voucherCode: text("voucher_code").unique().notNull(),
+  originalAmount: decimal("original_amount", { precision: 10, scale: 2 }).notNull(),
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).default('0'),
+  finalAmount: decimal("final_amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").default("EUR"),
+  
+  // Coupon applied
+  couponId: uuid("coupon_id").references(() => discountCoupons.id),
+  couponCode: text("coupon_code"),
+  
+  // Payment
+  paymentIntentId: text("payment_intent_id"),
+  paymentStatus: text("payment_status").default("pending"), // "pending", "paid", "failed", "refunded"
+  paymentMethod: text("payment_method"), // "stripe", "paypal", etc.
+  
+  // Fulfillment
+  isRedeemed: boolean("is_redeemed").default(false),
+  redeemedAt: timestamp("redeemed_at"),
+  redeemedBy: uuid("redeemed_by").references(() => crmClients.id),
+  sessionId: uuid("session_id"), // links to photography session when redeemed
+  
+  // Validity
+  validFrom: timestamp("valid_from").defaultNow(),
+  validUntil: timestamp("valid_until"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Coupon usage tracking
+export const couponUsage = pgTable("coupon_usage", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  couponId: uuid("coupon_id").references(() => discountCoupons.id),
+  customerEmail: text("customer_email").notNull(),
+  orderAmount: decimal("order_amount", { precision: 10, scale: 2 }).notNull(),
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).notNull(),
+  voucherSaleId: uuid("voucher_sale_id").references(() => voucherSales.id),
+  usedAt: timestamp("used_at").defaultNow(),
+});
+
 // CRM Messages
 export const crmMessages = pgTable("crm_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -643,3 +767,60 @@ export type StudioConfig = typeof studioConfigs.$inferSelect;
 export type InsertStudioConfig = z.infer<typeof insertStudioConfigSchema>;
 export type TemplateDefinition = typeof templateDefinitions.$inferSelect;
 export type InsertTemplateDefinition = z.infer<typeof insertTemplateDefinitionSchema>;
+
+// Voucher Product schemas
+export const insertVoucherProductSchema = createInsertSchema(voucherProducts, {
+  name: z.string().min(1, "Product name is required"),
+  price: z.string().min(1, "Price is required"),
+}).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export type InsertVoucherProduct = z.infer<typeof insertVoucherProductSchema>;
+export type VoucherProduct = typeof voucherProducts.$inferSelect;
+
+// Discount Coupon schemas
+export const insertDiscountCouponSchema = createInsertSchema(discountCoupons, {
+  code: z.string().min(1, "Coupon code is required"),
+  name: z.string().min(1, "Coupon name is required"),
+  discountType: z.enum(["percentage", "fixed_amount"]),
+  discountValue: z.string().min(1, "Discount value is required"),
+}).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export type InsertDiscountCoupon = z.infer<typeof insertDiscountCouponSchema>;
+export type DiscountCoupon = typeof discountCoupons.$inferSelect;
+
+// Voucher Sale schemas
+export const insertVoucherSaleSchema = createInsertSchema(voucherSales, {
+  purchaserName: z.string().min(1, "Purchaser name is required"),
+  purchaserEmail: z.string().email("Valid email is required"),
+  voucherCode: z.string().min(1, "Voucher code is required"),
+  originalAmount: z.string().min(1, "Original amount is required"),
+  finalAmount: z.string().min(1, "Final amount is required"),
+}).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export type InsertVoucherSale = z.infer<typeof insertVoucherSaleSchema>;
+export type VoucherSale = typeof voucherSales.$inferSelect;
+
+// Coupon Usage schemas
+export const insertCouponUsageSchema = createInsertSchema(couponUsage, {
+  customerEmail: z.string().email("Valid email is required"),
+  orderAmount: z.string().min(1, "Order amount is required"),
+  discountAmount: z.string().min(1, "Discount amount is required"),
+}).omit({ 
+  id: true, 
+  usedAt: true 
+});
+
+export type InsertCouponUsage = z.infer<typeof insertCouponUsageSchema>;
+export type CouponUsage = typeof couponUsage.$inferSelect;

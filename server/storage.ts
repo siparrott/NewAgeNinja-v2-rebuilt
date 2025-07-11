@@ -9,6 +9,10 @@ import {
   crmMessages,
   galleries,
   photographySessions,
+  voucherProducts,
+  discountCoupons,
+  voucherSales,
+  couponUsage,
   type User, 
   type InsertUser,
   type BlogPost,
@@ -28,7 +32,15 @@ import {
   type PhotographySession,
   type InsertPhotographySession,
   type Gallery,
-  type InsertGallery
+  type InsertGallery,
+  type VoucherProduct,
+  type InsertVoucherProduct,
+  type DiscountCoupon,
+  type InsertDiscountCoupon,
+  type VoucherSale,
+  type InsertVoucherSale,
+  type CouponUsage,
+  type InsertCouponUsage
 } from "../shared/schema.js";
 import { db } from "./db";
 import { eq, and, desc, asc } from "drizzle-orm";
@@ -100,6 +112,33 @@ export interface IStorage {
   getCrmInvoicePayments(invoiceId: string): Promise<CrmInvoicePayment[]>;
   createCrmInvoicePayment(payment: InsertCrmInvoicePayment): Promise<CrmInvoicePayment>;
   deleteCrmInvoicePayment(paymentId: string): Promise<void>;
+
+  // Voucher Products management
+  getVoucherProducts(): Promise<VoucherProduct[]>;
+  getVoucherProduct(id: string): Promise<VoucherProduct | undefined>;
+  createVoucherProduct(product: InsertVoucherProduct): Promise<VoucherProduct>;
+  updateVoucherProduct(id: string, updates: Partial<VoucherProduct>): Promise<VoucherProduct>;
+  deleteVoucherProduct(id: string): Promise<void>;
+
+  // Discount Coupons management
+  getDiscountCoupons(): Promise<DiscountCoupon[]>;
+  getDiscountCoupon(id: string): Promise<DiscountCoupon | undefined>;
+  getDiscountCouponByCode(code: string): Promise<DiscountCoupon | undefined>;
+  createDiscountCoupon(coupon: InsertDiscountCoupon): Promise<DiscountCoupon>;
+  updateDiscountCoupon(id: string, updates: Partial<DiscountCoupon>): Promise<DiscountCoupon>;
+  deleteDiscountCoupon(id: string): Promise<void>;
+
+  // Voucher Sales management
+  getVoucherSales(): Promise<VoucherSale[]>;
+  getVoucherSale(id: string): Promise<VoucherSale | undefined>;
+  getVoucherSaleByCode(code: string): Promise<VoucherSale | undefined>;
+  createVoucherSale(sale: InsertVoucherSale): Promise<VoucherSale>;
+  updateVoucherSale(id: string, updates: Partial<VoucherSale>): Promise<VoucherSale>;
+  deleteVoucherSale(id: string): Promise<void>;
+
+  // Coupon Usage management
+  getCouponUsage(couponId: string): Promise<CouponUsage[]>;
+  createCouponUsage(usage: InsertCouponUsage): Promise<CouponUsage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -353,6 +392,107 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCrmMessage(id: string): Promise<void> {
     await db.delete(crmMessages).where(eq(crmMessages.id, id));
+  }
+
+  // Voucher Products management
+  async getVoucherProducts(): Promise<VoucherProduct[]> {
+    return await db.select().from(voucherProducts).orderBy(asc(voucherProducts.displayOrder), desc(voucherProducts.createdAt));
+  }
+
+  async getVoucherProduct(id: string): Promise<VoucherProduct | undefined> {
+    const results = await db.select().from(voucherProducts).where(eq(voucherProducts.id, id));
+    return results[0];
+  }
+
+  async createVoucherProduct(product: InsertVoucherProduct): Promise<VoucherProduct> {
+    const results = await db.insert(voucherProducts).values(product).returning();
+    return results[0];
+  }
+
+  async updateVoucherProduct(id: string, updates: Partial<VoucherProduct>): Promise<VoucherProduct> {
+    const results = await db.update(voucherProducts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(voucherProducts.id, id))
+      .returning();
+    return results[0];
+  }
+
+  async deleteVoucherProduct(id: string): Promise<void> {
+    await db.delete(voucherProducts).where(eq(voucherProducts.id, id));
+  }
+
+  // Discount Coupons management
+  async getDiscountCoupons(): Promise<DiscountCoupon[]> {
+    return await db.select().from(discountCoupons).orderBy(desc(discountCoupons.createdAt));
+  }
+
+  async getDiscountCoupon(id: string): Promise<DiscountCoupon | undefined> {
+    const results = await db.select().from(discountCoupons).where(eq(discountCoupons.id, id));
+    return results[0];
+  }
+
+  async getDiscountCouponByCode(code: string): Promise<DiscountCoupon | undefined> {
+    const results = await db.select().from(discountCoupons).where(eq(discountCoupons.code, code));
+    return results[0];
+  }
+
+  async createDiscountCoupon(coupon: InsertDiscountCoupon): Promise<DiscountCoupon> {
+    const results = await db.insert(discountCoupons).values(coupon).returning();
+    return results[0];
+  }
+
+  async updateDiscountCoupon(id: string, updates: Partial<DiscountCoupon>): Promise<DiscountCoupon> {
+    const results = await db.update(discountCoupons)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(discountCoupons.id, id))
+      .returning();
+    return results[0];
+  }
+
+  async deleteDiscountCoupon(id: string): Promise<void> {
+    await db.delete(discountCoupons).where(eq(discountCoupons.id, id));
+  }
+
+  // Voucher Sales management
+  async getVoucherSales(): Promise<VoucherSale[]> {
+    return await db.select().from(voucherSales).orderBy(desc(voucherSales.createdAt));
+  }
+
+  async getVoucherSale(id: string): Promise<VoucherSale | undefined> {
+    const results = await db.select().from(voucherSales).where(eq(voucherSales.id, id));
+    return results[0];
+  }
+
+  async getVoucherSaleByCode(code: string): Promise<VoucherSale | undefined> {
+    const results = await db.select().from(voucherSales).where(eq(voucherSales.voucherCode, code));
+    return results[0];
+  }
+
+  async createVoucherSale(sale: InsertVoucherSale): Promise<VoucherSale> {
+    const results = await db.insert(voucherSales).values(sale).returning();
+    return results[0];
+  }
+
+  async updateVoucherSale(id: string, updates: Partial<VoucherSale>): Promise<VoucherSale> {
+    const results = await db.update(voucherSales)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(voucherSales.id, id))
+      .returning();
+    return results[0];
+  }
+
+  async deleteVoucherSale(id: string): Promise<void> {
+    await db.delete(voucherSales).where(eq(voucherSales.id, id));
+  }
+
+  // Coupon Usage management
+  async getCouponUsage(couponId: string): Promise<CouponUsage[]> {
+    return await db.select().from(couponUsage).where(eq(couponUsage.couponId, couponId)).orderBy(desc(couponUsage.usedAt));
+  }
+
+  async createCouponUsage(usage: InsertCouponUsage): Promise<CouponUsage> {
+    const results = await db.insert(couponUsage).values(usage).returning();
+    return results[0];
   }
 }
 
