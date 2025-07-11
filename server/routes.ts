@@ -867,7 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (username === "hallo@newagefotografie.com") {
         return res.json({
           success: true,
-          message: "Business email configuration ready. To enable full inbox functionality, configure the email provider settings with your hosting provider credentials."
+          message: "Business email configuration ready. Contact your hosting provider to set up SMTP authentication for hallo@newagefotografie.com to enable full inbox functionality."
         });
       }
 
