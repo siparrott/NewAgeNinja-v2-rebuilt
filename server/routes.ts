@@ -99,8 +99,8 @@ async function importEmailsFromIMAP(config: {
 
           console.log(`Found ${results.length} emails in inbox`);
           
-          // Fetch the last 5 emails to avoid timeout
-          const recentResults = results.slice(-5);
+          // Fetch the last 10 emails to get more recent messages
+          const recentResults = results.slice(-10);
           const f = imap.fetch(recentResults, { 
             bodies: '', 
             struct: true 
@@ -1043,16 +1043,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log(`Successfully fetched ${importedEmails.length} emails from business account`);
 
-        // Store emails in database
+        // Store emails in database, avoid duplicates
+        let newEmailCount = 0;
         for (const email of importedEmails) {
-          await storage.createCrmMessage({
-            senderName: email.fromName,
-            senderEmail: email.from,
-            subject: email.subject,
-            content: email.body,
-            status: email.isRead ? 'read' : 'unread'
-          });
+          // Check if email already exists (basic duplicate check by subject and sender)
+          const existingMessages = await storage.getCrmMessages();
+          const isDuplicate = existingMessages.some(msg => 
+            msg.subject === email.subject && 
+            msg.senderEmail === email.from &&
+            Math.abs(new Date(msg.createdAt).getTime() - new Date(email.date).getTime()) < 60000 // Within 1 minute
+          );
+          
+          if (!isDuplicate) {
+            await storage.createCrmMessage({
+              senderName: email.fromName,
+              senderEmail: email.from,
+              subject: email.subject,
+              content: email.body,
+              status: email.isRead ? 'read' : 'unread'
+            });
+            newEmailCount++;
+          }
         }
+        
+        console.log(`Imported ${newEmailCount} new emails out of ${importedEmails.length} fetched`);
 
         return res.json({
           success: true,
@@ -1146,11 +1160,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const unreadOnly = req.query.unread === 'true';
       const messages = await storage.getCrmMessages();
       
+      // Sort messages by creation date (newest first)
+      const sortedMessages = messages.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      
       if (unreadOnly) {
-        const unreadMessages = messages.filter(message => message.status === 'unread');
+        const unreadMessages = sortedMessages.filter(message => message.status === 'unread');
         res.json(unreadMessages);
       } else {
-        res.json(messages);
+        // Show all messages including sent ones for complete inbox view
+        res.json(sortedMessages);
       }
     } catch (error) {
       console.error("Error fetching inbox emails:", error);
@@ -1775,6 +1795,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Failed to save sent email to database:', dbError);
       }
       
+      // Trigger automatic email refresh after sending
+      try {
+        console.log('Triggering email refresh after send...');
+        // Import fresh emails to capture any replies or the sent email
+        setTimeout(async () => {
+          try {
+            const importEmailsFromIMAP = await import('./email-import');
+            await importEmailsFromIMAP.default({
+              host: 'imap.easyname.com',
+              port: 993,
+              username: '30840mail10',
+              password: process.env.EMAIL_PASSWORD || 'HoveBN41!',
+              useTLS: true
+            });
+            console.log('Automatic email refresh completed after send');
+          } catch (refreshError) {
+            console.error('Auto refresh failed:', refreshError);
+          }
+        }, 5000); // Wait 5 seconds for email to be processed by server
+      } catch (error) {
+        console.log('Auto refresh setup failed, continuing...');
+      }
+
       res.json({ 
         success: true, 
         message: 'Email sent successfully',

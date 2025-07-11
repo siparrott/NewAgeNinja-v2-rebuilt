@@ -102,7 +102,7 @@ const AdminInboxPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/crm/messages?' + Date.now(), {
+      const response = await fetch('/api/inbox/emails?' + Date.now(), {
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache',
@@ -130,7 +130,7 @@ const AdminInboxPage: React.FC = () => {
         isImportant: msg.status === 'unread',
         hasAttachments: false,
         labels: [],
-        folder: msg.subject.startsWith('[SENT]') ? 'sent' : 'inbox' as const,
+        folder: 'inbox' as const, // Show all messages in inbox for unified view
         threadId: msg.id
       }));
       
@@ -145,16 +145,31 @@ const AdminInboxPage: React.FC = () => {
 
   // Email folders with proper counts
   const folders: EmailFolder[] = [
-    { id: 'inbox', name: 'Inbox', count: messages.filter(m => m.folder === 'inbox').length, icon: <Mail size={16} /> },
-    { id: 'sent', name: 'Sent', count: messages.filter(m => m.folder === 'sent').length, icon: <Send size={16} /> },
-    { id: 'drafts', name: 'Drafts', count: 0, icon: <Clock size={16} /> },
+    { id: 'inbox', name: 'All Messages', count: messages.length, icon: <Mail size={16} /> },
+    { id: 'sent', name: 'Sent Only', count: messages.filter(m => m.subject.startsWith('[SENT]')).length, icon: <Send size={16} /> },
+    { id: 'received', name: 'Received Only', count: messages.filter(m => !m.subject.startsWith('[SENT]')).length, icon: <MailOpen size={16} /> },
     { id: 'archive', name: 'Archive', count: 0, icon: <Archive size={16} /> },
     { id: 'trash', name: 'Trash', count: 0, icon: <Trash2 size={16} /> }
   ];
 
   // Filter messages based on selected folder
   const filteredMessages = messages.filter(message => {
-    const matchesFolder = message.folder === selectedFolder;
+    let matchesFolder = false;
+    
+    switch (selectedFolder) {
+      case 'inbox':
+        matchesFolder = true; // Show all messages in inbox
+        break;
+      case 'sent':
+        matchesFolder = message.subject.startsWith('[SENT]');
+        break;
+      case 'received':
+        matchesFolder = !message.subject.startsWith('[SENT]');
+        break;
+      default:
+        matchesFolder = message.folder === selectedFolder;
+    }
+    
     const matchesSearch = searchTerm === '' || 
       message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.fromName.toLowerCase().includes(searchTerm.toLowerCase()) ||
