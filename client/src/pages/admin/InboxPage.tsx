@@ -19,17 +19,17 @@ import {
 
 interface Message {
   id: string;
-  sender_name: string;
-  sender_email: string;
+  senderName: string;
+  senderEmail: string;
   subject: string;
   content: string;
   status: 'unread' | 'read' | 'replied' | 'archived';
-  client_id?: string;
-  client_name?: string;
-  assigned_to?: string;
-  replied_at?: string;
-  created_at: string;
-  updated_at: string;
+  clientId?: string;
+  clientName?: string;
+  assignedTo?: string;
+  repliedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const InboxPage: React.FC = () => {
@@ -81,8 +81,8 @@ const InboxPage: React.FC = () => {
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(message => 
-        message.sender_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        message.sender_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        message.senderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        message.senderEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
         message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
         message.content.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -104,9 +104,9 @@ const InboxPage: React.FC = () => {
         status: newStatus,
       };
       
-      // If marking as replied, set the replied_at date
+      // If marking as replied, set the repliedAt date
       if (newStatus === 'replied') {
-        updateData.replied_at = new Date().toISOString();
+        updateData.repliedAt = new Date().toISOString();
       }
       
       const response = await fetch(`/api/crm/messages/${id}`, {
@@ -128,7 +128,7 @@ const InboxPage: React.FC = () => {
             ? { 
                 ...message, 
                 status: newStatus, 
-                replied_at: newStatus === 'replied' ? new Date().toISOString() : message.replied_at 
+                repliedAt: newStatus === 'replied' ? new Date().toISOString() : message.repliedAt 
               } 
             : message
         )
@@ -139,7 +139,7 @@ const InboxPage: React.FC = () => {
         setSelectedMessage({
           ...selectedMessage,
           status: newStatus,
-          replied_at: newStatus === 'replied' ? new Date().toISOString() : selectedMessage.replied_at
+          repliedAt: newStatus === 'replied' ? new Date().toISOString() : selectedMessage.repliedAt
         });
       }
     } catch (err) {
@@ -225,6 +225,27 @@ const InboxPage: React.FC = () => {
             <h1 className="text-2xl font-semibold text-gray-900">Inbox</h1>
             <p className="text-gray-600">Manage client messages and inquiries</p>
           </div>
+          <div className="flex space-x-3">
+            <button 
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center"
+              onClick={() => {
+                fetchMessages();
+              }}
+            >
+              <Loader2 className="h-4 w-4 mr-2" />
+              Refresh
+            </button>
+            <button 
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
+              onClick={() => {
+                // Add compose functionality here
+                alert('Compose feature coming soon!');
+              }}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Compose
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -258,6 +279,15 @@ const InboxPage: React.FC = () => {
               More Filters
             </button>
           </div>
+        </div>
+
+        {/* Debug Info */}
+        <div className="bg-blue-50 p-3 rounded-lg text-sm">
+          <div><strong>Messages loaded:</strong> {messages.length}</div>
+          <div><strong>Filtered messages:</strong> {filteredMessages.length}</div>
+          <div><strong>Status filter:</strong> {statusFilter}</div>
+          <div><strong>Search term:</strong> "{searchTerm}"</div>
+          <div><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</div>
         </div>
 
         {/* Error Message */}
@@ -308,10 +338,10 @@ const InboxPage: React.FC = () => {
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-1">
                           <div className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
-                            {message.sender_name}
+                            {message.senderName}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {formatDate(message.created_at)}
+                            {formatDate(message.createdAt)}
                           </div>
                         </div>
                         <div className="text-sm text-gray-900 font-medium truncate mb-1">
@@ -322,9 +352,9 @@ const InboxPage: React.FC = () => {
                         </div>
                         <div className="mt-2 flex justify-between items-center">
                           {getStatusBadge(message.status)}
-                          {message.client_name && (
+                          {message.clientName && (
                             <span className="text-xs text-gray-500">
-                              Client: {message.client_name}
+                              Client: {message.clientName}
                             </span>
                           )}
                         </div>
@@ -374,10 +404,10 @@ const InboxPage: React.FC = () => {
                           <User size={20} className="text-gray-600" />
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{selectedMessage.sender_name}</div>
-                          <div className="text-sm text-gray-500">{selectedMessage.sender_email}</div>
+                          <div className="text-sm font-medium text-gray-900">{selectedMessage.senderName}</div>
+                          <div className="text-sm text-gray-500">{selectedMessage.senderEmail}</div>
                           <div className="text-xs text-gray-500 mt-1">
-                            {new Date(selectedMessage.created_at).toLocaleString()}
+                            {new Date(selectedMessage.createdAt).toLocaleString()}
                           </div>
                         </div>
                       </div>
@@ -389,13 +419,13 @@ const InboxPage: React.FC = () => {
                     </div>
                     
                     {/* Client Information */}
-                    {selectedMessage.client_name && (
+                    {selectedMessage.clientName && (
                       <div className="mb-6">
                         <h3 className="text-sm font-medium text-gray-700 mb-2">Client Information</h3>
                         <div className="bg-blue-50 p-4 rounded-lg">
                           <div className="flex items-center">
                             <User size={16} className="text-blue-500 mr-2" />
-                            <span className="text-sm text-gray-700">{selectedMessage.client_name}</span>
+                            <span className="text-sm text-gray-700">{selectedMessage.clientName}</span>
                           </div>
                         </div>
                       </div>
