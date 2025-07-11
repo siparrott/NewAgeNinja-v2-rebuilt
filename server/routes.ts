@@ -84,7 +84,7 @@ async function importEmailsFromIMAP(config: {
           return reject(err);
         }
 
-        // Search for all emails in INBOX (simplified approach)
+        // Search for all emails in INBOX including recent ones
         imap.search(['ALL'], function(err: any, results: number[]) {
           if (err) {
             console.error('Error searching emails:', err);
@@ -99,8 +99,8 @@ async function importEmailsFromIMAP(config: {
 
           console.log(`Found ${results.length} emails in inbox`);
           
-          // Fetch the last 10 emails to get more recent messages
-          const recentResults = results.slice(-10);
+          // Fetch the last 50 emails to capture any new messages
+          const recentResults = results.slice(-50);
           const f = imap.fetch(recentResults, { 
             bodies: '', 
             struct: true 
@@ -1045,24 +1045,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Store emails in database, avoid duplicates
         let newEmailCount = 0;
+        const existingMessages = await storage.getCrmMessages();
+        
         for (const email of importedEmails) {
-          // Check if email already exists (basic duplicate check by subject and sender)
-          const existingMessages = await storage.getCrmMessages();
+          // Check if email already exists (improved duplicate check)
           const isDuplicate = existingMessages.some(msg => 
             msg.subject === email.subject && 
             msg.senderEmail === email.from &&
-            Math.abs(new Date(msg.createdAt).getTime() - new Date(email.date).getTime()) < 60000 // Within 1 minute
+            Math.abs(new Date(msg.createdAt).getTime() - new Date(email.date).getTime()) < 300000 // Within 5 minutes
           );
           
           if (!isDuplicate) {
-            await storage.createCrmMessage({
-              senderName: email.fromName,
-              senderEmail: email.from,
-              subject: email.subject,
-              content: email.body,
-              status: email.isRead ? 'read' : 'unread'
-            });
-            newEmailCount++;
+            try {
+              await storage.createCrmMessage({
+                senderName: email.fromName,
+                senderEmail: email.from,
+                subject: email.subject,
+                content: email.body,
+                status: email.isRead ? 'read' : 'unread'
+              });
+              newEmailCount++;
+              console.log(`Imported new email: ${email.subject} from ${email.from}`);
+            } catch (error) {
+              console.error('Failed to save email:', error);
+            }
           }
         }
         
@@ -1839,23 +1845,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Starting email refresh...');
       
-      const { importEmailsFromIMAP } = await import('./email-import');
-      
-      const config = {
-        user: '30840mail10',
-        password: process.env.EMAIL_PASSWORD || 'HoveBN41!',
+      const importedEmails = await importEmailsFromIMAP({
         host: 'imap.easyname.com',
         port: 993,
-        tls: true,
-        tlsOptions: { rejectUnauthorized: false }
-      };
+        username: '30840mail10',
+        password: process.env.EMAIL_PASSWORD || 'HoveBN41!',
+        useTLS: true
+      });
+
+      console.log(`Successfully fetched ${importedEmails.length} emails from business account`);
+
+      // Store emails in database, avoid duplicates
+      let newEmailCount = 0;
+      const existingMessages = await storage.getCrmMessages();
       
-      const results = await importEmailsFromIMAP(config);
+      for (const email of importedEmails) {
+        // Check if email already exists (improved duplicate check)
+        const isDuplicate = existingMessages.some(msg => 
+          msg.subject === email.subject && 
+          msg.senderEmail === email.from &&
+          Math.abs(new Date(msg.createdAt).getTime() - new Date(email.date).getTime()) < 300000 // Within 5 minutes
+        );
+        
+        if (!isDuplicate) {
+          try {
+            await storage.createCrmMessage({
+              senderName: email.fromName,
+              senderEmail: email.from,
+              subject: email.subject,
+              content: email.body,
+              status: email.isRead ? 'read' : 'unread'
+            });
+            newEmailCount++;
+            console.log(`Imported new email: ${email.subject} from ${email.from}`);
+          } catch (error) {
+            console.error('Failed to save email:', error);
+          }
+        }
+      }
+      
+      console.log(`Imported ${newEmailCount} new emails out of ${importedEmails.length} fetched`);
       
       res.json({ 
         success: true, 
-        message: `Email refresh completed: ${results.newEmails} new emails imported`,
-        ...results
+        message: `Email refresh completed: ${newEmailCount} new emails imported`,
+        newEmails: newEmailCount,
+        totalEmails: importedEmails.length,
+        processedEmails: newEmailCount
       });
     } catch (error) {
       console.error('Email refresh error:', error);

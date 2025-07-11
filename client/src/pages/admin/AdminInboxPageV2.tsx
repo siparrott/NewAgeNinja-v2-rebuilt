@@ -145,9 +145,8 @@ const AdminInboxPage: React.FC = () => {
 
   // Email folders with proper counts
   const folders: EmailFolder[] = [
-    { id: 'inbox', name: 'All Messages', count: messages.length, icon: <Mail size={16} /> },
-    { id: 'sent', name: 'Sent Only', count: messages.filter(m => m.subject.startsWith('[SENT]')).length, icon: <Send size={16} /> },
-    { id: 'received', name: 'Received Only', count: messages.filter(m => !m.subject.startsWith('[SENT]')).length, icon: <MailOpen size={16} /> },
+    { id: 'inbox', name: 'Inbox', count: messages.filter(m => !m.subject.startsWith('[SENT]')).length, icon: <Mail size={16} /> },
+    { id: 'sent', name: 'Sent', count: messages.filter(m => m.subject.startsWith('[SENT]')).length, icon: <Send size={16} /> },
     { id: 'archive', name: 'Archive', count: 0, icon: <Archive size={16} /> },
     { id: 'trash', name: 'Trash', count: 0, icon: <Trash2 size={16} /> }
   ];
@@ -158,13 +157,10 @@ const AdminInboxPage: React.FC = () => {
     
     switch (selectedFolder) {
       case 'inbox':
-        matchesFolder = true; // Show all messages in inbox
+        matchesFolder = !message.subject.startsWith('[SENT]'); // Show only received emails
         break;
       case 'sent':
-        matchesFolder = message.subject.startsWith('[SENT]');
-        break;
-      case 'received':
-        matchesFolder = !message.subject.startsWith('[SENT]');
+        matchesFolder = message.subject.startsWith('[SENT]'); // Show only sent emails
         break;
       default:
         matchesFolder = message.folder === selectedFolder;
