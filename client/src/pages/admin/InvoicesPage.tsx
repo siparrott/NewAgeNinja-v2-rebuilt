@@ -246,7 +246,7 @@ const InvoicesPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Paid Amount</p>
-                <p className="text-2xl font-semibold text-gray-900">€{stats.paidAmount.toFixed(2)}</p>
+                <p className="text-2xl font-semibold text-gray-900">€{(stats.paidAmount || 0).toFixed(2)}</p>
               </div>
             </div>
           </div>
@@ -258,7 +258,7 @@ const InvoicesPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Overdue Amount</p>
-                <p className="text-2xl font-semibold text-gray-900">€{stats.overdueAmount.toFixed(2)}</p>
+                <p className="text-2xl font-semibold text-gray-900">€{(stats.overdueAmount || 0).toFixed(2)}</p>
               </div>
             </div>
           </div>
