@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -83,6 +83,10 @@ export default function AdminVoucherSalesPageV3() {
 
   const queryClient = useQueryClient();
 
+  // State for image upload
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   // Forms
   const productForm = useForm<VoucherProductFormData>({
     resolver: zodResolver(voucherProductFormSchema),
@@ -161,6 +165,7 @@ export default function AdminVoucherSalesPageV3() {
           price: data.price,
           validityPeriod: parseInt(data.validityPeriod),
           displayOrder: parseInt(data.displayOrder || "0"),
+          imageUrl: uploadedImage,
         }),
       });
       if (!response.ok) throw new Error("Failed to create product");
@@ -194,6 +199,7 @@ export default function AdminVoucherSalesPageV3() {
           price: data.price,
           validityPeriod: parseInt(data.validityPeriod),
           displayOrder: parseInt(data.displayOrder || "0"),
+          imageUrl: uploadedImage,
         }),
       });
       if (!response.ok) throw new Error("Failed to update product");
@@ -240,15 +246,45 @@ export default function AdminVoucherSalesPageV3() {
     },
   });
 
+  // Image upload handler
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+    
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Image upload failed');
+      }
+      
+      const data = await response.json();
+      setUploadedImage(data.url);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Handlers
   const handleCreateProduct = () => {
     setSelectedProduct(null);
     productForm.reset();
+    setUploadedImage(null);
     setIsProductDialogOpen(true);
   };
 
   const handleEditProduct = (product: VoucherProduct) => {
     setSelectedProduct(product);
+    setUploadedImage(product.imageUrl);
     productForm.reset({
       name: product.name,
       description: product.description || "",
@@ -425,6 +461,9 @@ export default function AdminVoucherSalesPageV3() {
         product={selectedProduct}
         onSubmit={handleProductSubmit}
         form={productForm}
+        uploadedImage={uploadedImage}
+        onImageUpload={handleImageUpload}
+        isUploading={isUploading}
       />
       <CouponDialog 
         open={isCouponDialogOpen}
@@ -919,19 +958,34 @@ const ProductDialog: React.FC<{
   product: VoucherProduct | null;
   onSubmit: (data: VoucherProductFormData) => void;
   form: any;
-}> = ({ open, onOpenChange, product, onSubmit, form }) => {
+  uploadedImage: string | null;
+  onImageUpload: (file: File) => void;
+  isUploading: boolean;
+}> = ({ open, onOpenChange, product, onSubmit, form, uploadedImage, onImageUpload, isUploading }) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (uploadedImage) {
+      setImagePreview(uploadedImage);
+    } else {
+      setImagePreview(null);
+    }
+  }, [uploadedImage]);
+
+  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedImage(file);
+      // Create local preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+      
+      // Upload to server
+      await onImageUpload(file);
     }
   };
 
@@ -976,9 +1030,10 @@ const ProductDialog: React.FC<{
                     variant="outline"
                     onClick={() => document.getElementById('product-image')?.click()}
                     className="w-full"
+                    disabled={isUploading}
                   >
                     <Camera className="h-4 w-4 mr-2" />
-                    Change Image
+                    {isUploading ? 'Uploading...' : 'Change Image'}
                   </Button>
                 </div>
               ) : (
@@ -992,9 +1047,10 @@ const ProductDialog: React.FC<{
                     variant="outline"
                     onClick={() => document.getElementById('product-image')?.click()}
                     className="mt-4"
+                    disabled={isUploading}
                   >
                     <Camera className="h-4 w-4 mr-2" />
-                    Upload Image
+                    {isUploading ? 'Uploading...' : 'Upload Image'}
                   </Button>
                 </div>
               )}

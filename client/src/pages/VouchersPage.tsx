@@ -8,8 +8,8 @@ import { Search, Package, Gift } from 'lucide-react';
 
 import { type VoucherProduct } from '@shared/schema';
 
-// Helper function to get voucher image
-const getVoucherImage = (voucherName: string) => {
+// Helper function to get voucher image placeholder
+const getVoucherImagePlaceholder = (voucherName: string) => {
   const name = voucherName.toLowerCase();
   if (name.includes('famil')) {
     return 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&h=300&fit=crop';
@@ -217,9 +217,9 @@ const VoucherProductCard: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) 
           />
         ) : (
           <div className="h-full relative">
-            {/* Use photography-themed background images */}
+            {/* Use photography-themed background images as fallback */}
             <div className="absolute inset-0 bg-cover bg-center" style={{
-              backgroundImage: `url(${getVoucherImage(voucher.name)})`
+              backgroundImage: `url(${getVoucherImagePlaceholder(voucher.name)})`
             }}></div>
             <div className="absolute inset-0 bg-black bg-opacity-30"></div>
             <div className="absolute inset-0 flex items-center justify-center">

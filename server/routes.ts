@@ -21,6 +21,8 @@ import { z } from "zod";
 import { createClient } from '@supabase/supabase-js';
 import Imap from 'imap';
 import { simpleParser } from 'mailparser';
+import multer from 'multer';
+import path from 'path';
 
 // Authentication middleware placeholder - replace with actual auth
 const authenticateUser = async (req: Request, res: Response, next: Function) => {
@@ -29,6 +31,22 @@ const authenticateUser = async (req: Request, res: Response, next: Function) => 
   req.user = { id: "550e8400-e29b-41d4-a716-446655440000", email: "admin@example.com", isAdmin: true };
   next();
 };
+
+// Configure multer for image uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, and WebP images are allowed.'));
+    }
+  }
+});
 
 // IMAP Email Import Function
 async function importEmailsFromIMAP(config: {
@@ -2030,6 +2048,49 @@ New Age Fotografie CRM System
   // ==================== VOUCHER MANAGEMENT ROUTES ====================
   
   // Voucher Products Routes
+  // ==================== IMAGE UPLOAD ROUTES ====================
+  app.post("/api/upload/image", authenticateUser, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const supabase = createClient(
+        process.env.VITE_SUPABASE_URL!,
+        process.env.VITE_SUPABASE_ANON_KEY!
+      );
+
+      // Generate unique filename
+      const fileExt = path.extname(req.file.originalname);
+      const fileName = `voucher-${Date.now()}-${Math.random().toString(36).substring(2, 15)}${fileExt}`;
+      const filePath = `vouchers/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(filePath, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Supabase upload error:', error);
+        return res.status(500).json({ error: "Failed to upload image" });
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+      res.json({ url: publicUrl });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ==================== VOUCHER ROUTES ====================
   app.get("/api/vouchers/products", authenticateUser, async (req: Request, res: Response) => {
     try {
       const products = await storage.getVoucherProducts();
