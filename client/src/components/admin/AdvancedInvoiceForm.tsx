@@ -142,14 +142,21 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
 
       if (data && data.length > 0) {
         // Transform the CRM client data to match our Client interface
-        const transformedClients = data.map((client: any) => ({
-          id: client.id,
-          name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.company || 'Unnamed Client',
-          email: client.email || '',
-          address1: client.address,
-          city: client.city,
-          country: client.country
-        }));
+        const transformedClients = data.map((client: any) => {
+          const firstName = client.first_name || '';
+          const lastName = client.last_name || '';
+          const fullName = `${firstName} ${lastName}`.trim();
+          const displayName = fullName || client.email || client.company || 'Unnamed Client';
+          
+          return {
+            id: client.id,
+            name: displayName,
+            email: client.email || '',
+            address1: client.address,
+            city: client.city,
+            country: client.country
+          };
+        });
         setClients(transformedClients);
         setFilteredClients(transformedClients);
         console.log(`Loaded ${transformedClients.length} clients from CRM database`);
