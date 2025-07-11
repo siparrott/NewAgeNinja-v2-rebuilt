@@ -31,7 +31,20 @@ import {
   ArrowRight,
   CheckCircle,
   Users,
-  BarChart3
+  BarChart3,
+  Home,
+  UserPlus,
+  Mail,
+  Camera,
+  FileText,
+  Folder,
+  Image,
+  MessageSquare,
+  Calendar as CalendarIcon,
+  CreditCard,
+  PieChart,
+  Globe,
+  Palette
 } from "lucide-react";
 
 // Types
@@ -124,70 +137,181 @@ export default function AdminVoucherSalesPageV3() {
       {/* Left Sidebar - CRM Navigation */}
       <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Voucher System</h2>
-          <p className="text-sm text-gray-600 mt-1">Manage products & sales</p>
+          <h2 className="text-lg font-semibold text-gray-900">New Age Fotografie</h2>
+          <p className="text-sm text-gray-600 mt-1">CRM & Business Management</p>
         </div>
         
-        <nav className="flex-1 p-4 space-y-2">
-          <button
-            onClick={() => setActiveView("dashboard")}
-            className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
-              activeView === "dashboard" 
-                ? "bg-blue-50 text-blue-700 border border-blue-200" 
-                : "text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            <BarChart3 className="h-5 w-5 mr-3" />
-            <div>
-              <div className="font-medium">Dashboard</div>
-              <div className="text-xs text-gray-500">Overview & metrics</div>
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {/* Main CRM Navigation */}
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2">
+              Main
             </div>
-          </button>
+            <a
+              href="/admin/dashboard"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Home className="h-4 w-4 mr-3" />
+              Dashboard
+            </a>
+            <a
+              href="/admin/clients"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Users className="h-4 w-4 mr-3" />
+              Clients
+            </a>
+            <a
+              href="/admin/leads"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <UserPlus className="h-4 w-4 mr-3" />
+              Leads
+            </a>
+            <a
+              href="/admin/email"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Mail className="h-4 w-4 mr-3" />
+              Email & Inbox
+            </a>
+          </div>
 
-          <button
-            onClick={() => setActiveView("products")}
-            className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
-              activeView === "products" 
-                ? "bg-blue-50 text-blue-700 border border-blue-200" 
-                : "text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            <Package className="h-5 w-5 mr-3" />
-            <div>
-              <div className="font-medium">Voucher Products</div>
-              <div className="text-xs text-gray-500">{stats.activeProducts} active products</div>
+          {/* Photography Section */}
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 pt-4">
+              Photography
             </div>
-          </button>
+            <a
+              href="/admin/sessions"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Camera className="h-4 w-4 mr-3" />
+              Sessions
+            </a>
+            <a
+              href="/admin/calendar"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <CalendarIcon className="h-4 w-4 mr-3" />
+              Calendar
+            </a>
+            <a
+              href="/admin/galleries"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Image className="h-4 w-4 mr-3" />
+              Galleries
+            </a>
+            <a
+              href="/admin/files"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Folder className="h-4 w-4 mr-3" />
+              Digital Files
+            </a>
+          </div>
 
-          <button
-            onClick={() => setActiveView("coupons")}
-            className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
-              activeView === "coupons" 
-                ? "bg-blue-50 text-blue-700 border border-blue-200" 
-                : "text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            <Tag className="h-5 w-5 mr-3" />
-            <div>
-              <div className="font-medium">Discount Coupons</div>
-              <div className="text-xs text-gray-500">{stats.activeCoupons} active coupons</div>
+          {/* Business Section */}
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 pt-4">
+              Business
             </div>
-          </button>
+            <a
+              href="/admin/invoices"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <CreditCard className="h-4 w-4 mr-3" />
+              Invoices
+            </a>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center px-3 py-2 text-sm text-blue-700">
+                <Package className="h-4 w-4 mr-3" />
+                <span className="font-medium">Voucher System</span>
+              </div>
+              <div className="px-3 pb-2 space-y-1">
+                <button
+                  onClick={() => setActiveView("dashboard")}
+                  className={`w-full flex items-center px-2 py-1 text-xs text-left rounded transition-colors ${
+                    activeView === "dashboard" 
+                      ? "bg-blue-100 text-blue-800 font-medium" 
+                      : "text-blue-600 hover:bg-blue-100"
+                  }`}
+                >
+                  <BarChart3 className="h-3 w-3 mr-2" />
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => setActiveView("products")}
+                  className={`w-full flex items-center px-2 py-1 text-xs text-left rounded transition-colors ${
+                    activeView === "products" 
+                      ? "bg-blue-100 text-blue-800 font-medium" 
+                      : "text-blue-600 hover:bg-blue-100"
+                  }`}
+                >
+                  <Package className="h-3 w-3 mr-2" />
+                  Products
+                </button>
+                <button
+                  onClick={() => setActiveView("coupons")}
+                  className={`w-full flex items-center px-2 py-1 text-xs text-left rounded transition-colors ${
+                    activeView === "coupons" 
+                      ? "bg-blue-100 text-blue-800 font-medium" 
+                      : "text-blue-600 hover:bg-blue-100"
+                  }`}
+                >
+                  <Tag className="h-3 w-3 mr-2" />
+                  Coupons
+                </button>
+                <button
+                  onClick={() => setActiveView("sales")}
+                  className={`w-full flex items-center px-2 py-1 text-xs text-left rounded transition-colors ${
+                    activeView === "sales" 
+                      ? "bg-blue-100 text-blue-800 font-medium" 
+                      : "text-blue-600 hover:bg-blue-100"
+                  }`}
+                >
+                  <ShoppingCart className="h-3 w-3 mr-2" />
+                  Sales
+                </button>
+              </div>
+            </div>
+          </div>
 
-          <button
-            onClick={() => setActiveView("sales")}
-            className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
-              activeView === "sales" 
-                ? "bg-blue-50 text-blue-700 border border-blue-200" 
-                : "text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            <ShoppingCart className="h-5 w-5 mr-3" />
-            <div>
-              <div className="font-medium">Sales & Orders</div>
-              <div className="text-xs text-gray-500">{stats.totalSales} total sales</div>
+          {/* Website Section */}
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 pt-4">
+              Website
             </div>
-          </button>
+            <a
+              href="/admin/blog"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <MessageSquare className="h-4 w-4 mr-3" />
+              Blog Posts
+            </a>
+            <a
+              href="/admin/analytics"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <PieChart className="h-4 w-4 mr-3" />
+              Analytics
+            </a>
+            <a
+              href="/admin/studio-templates"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Palette className="h-4 w-4 mr-3" />
+              Studio Templates
+            </a>
+            <a
+              href="/admin/settings"
+              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Settings className="h-4 w-4 mr-3" />
+              Settings
+            </a>
+          </div>
         </nav>
 
         {/* Quick Actions */}
