@@ -72,17 +72,17 @@ const InvoicesPage: React.FC = () => {
       // Format the data to match expected interface
       const formattedInvoices = data.map((invoice: any) => ({
         id: invoice.id,
-        invoice_number: invoice.invoiceNumber,
-        client_id: invoice.clientId,
+        invoice_number: invoice.invoiceNumber || invoice.invoice_number,
+        client_id: invoice.clientId || invoice.client_id,
         client_name: invoice.clientName || 'Unknown Client',
-        amount: invoice.amount,
-        tax_amount: invoice.taxAmount,
-        total_amount: invoice.totalAmount,
+        amount: parseFloat(invoice.subtotal || invoice.amount || 0),
+        tax_amount: parseFloat(invoice.taxAmount || invoice.tax_amount || 0),
+        total_amount: parseFloat(invoice.total || invoice.totalAmount || invoice.total_amount || 0),
         status: invoice.status,
-        due_date: invoice.dueDate,
-        paid_date: invoice.paidDate,
+        due_date: invoice.dueDate || invoice.due_date,
+        paid_date: invoice.paidDate || invoice.paid_date,
         notes: invoice.notes,
-        created_at: invoice.createdAt
+        created_at: invoice.createdAt || invoice.created_at
       }));
       
       setInvoices(formattedInvoices || []);
