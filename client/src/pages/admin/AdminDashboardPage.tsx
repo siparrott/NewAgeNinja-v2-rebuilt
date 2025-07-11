@@ -172,27 +172,35 @@ const AdminDashboardPage: React.FC = () => {
           break;
       }
 
-      // Fetch all data in parallel
+      // Fetch all data in parallel from PostgreSQL API
       const [
-        invoicesResult,
-        clientsResult,
-        leadsResult,
-        bookingsResult,
-        previousInvoicesResult
+        invoicesResponse,
+        clientsResponse,
+        leadsResponse,
+        newLeadsResponse,
+        bookingsResponse
       ] = await Promise.allSettled([
-        supabase.from('crm_invoices').select('*').gte('created_at', startDate.toISOString()),
-        supabase.from('crm_clients').select('*'),
-        supabase.from('leads').select('*').gte('created_at', startDate.toISOString()),
-        supabase.from('crm_bookings').select('*').gte('booking_date', now.toISOString()),
-        supabase.from('crm_invoices').select('*').gte('created_at', previousPeriodStart.toISOString()).lt('created_at', startDate.toISOString())
+        fetch('/api/crm/invoices'),
+        fetch('/api/crm/clients'),
+        fetch('/api/crm/leads'),
+        fetch('/api/crm/leads?status=new'),
+        fetch('/api/photography/sessions')
       ]);
 
       // Process data
-      const invoices = invoicesResult.status === 'fulfilled' ? invoicesResult.value.data || [] : [];
-      const clients = clientsResult.status === 'fulfilled' ? clientsResult.value.data || [] : [];
-      const leads = leadsResult.status === 'fulfilled' ? leadsResult.value.data || [] : [];
-      const bookings = bookingsResult.status === 'fulfilled' ? bookingsResult.value.data || [] : [];
-      const previousInvoices = previousInvoicesResult.status === 'fulfilled' ? previousInvoicesResult.value.data || [] : [];
+      const invoices = invoicesResponse.status === 'fulfilled' && invoicesResponse.value.ok ? 
+        await invoicesResponse.value.json() : [];
+      const clients = clientsResponse.status === 'fulfilled' && clientsResponse.value.ok ? 
+        await clientsResponse.value.json() : [];
+      const allLeads = leadsResponse.status === 'fulfilled' && leadsResponse.value.ok ? 
+        await leadsResponse.value.json() : [];
+      const newLeads = newLeadsResponse.status === 'fulfilled' && newLeadsResponse.value.ok ? 
+        await newLeadsResponse.value.json() : [];
+      const bookings = bookingsResponse.status === 'fulfilled' && bookingsResponse.value.ok ? 
+        await bookingsResponse.value.json() : [];
+      
+      // Filter leads by date range for dashboard metrics
+      const leads = allLeads.filter((lead: any) => new Date(lead.createdAt) >= startDate);
 
       // Calculate metrics
       const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
@@ -213,13 +221,13 @@ const AdminDashboardPage: React.FC = () => {
         totalRevenue,
         monthlyRevenue: totalRevenue,
         totalClients: clients.length,
-        newLeads: leads.length,
-        pendingInvoices: invoices.filter(inv => inv.status === 'PENDING').length,
+        newLeads: newLeads.length, // Use actual new leads count
+        pendingInvoices: invoices.filter((inv: any) => inv.status === 'pending').length,
         upcomingBookings: bookings.length,
         revenueChart,
         leadConversionChart,
         serviceDistribution,
-        recentLeads: leads.slice(0, 5),
+        recentLeads: newLeads.slice(0, 5), // Show most recent new leads
         recentBookings: bookings.slice(0, 5),
         recentInvoices: invoices.slice(0, 5),
         monthlyGrowth,
@@ -391,19 +399,19 @@ const AdminDashboardPage: React.FC = () => {
               <div key={index} className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">
-                    {lead.first_name} {lead.last_name}
+                    {lead.name}
                   </p>
                   <p className="text-sm text-gray-600">{lead.email}</p>
                   <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                    lead.status === 'NEW' ? 'bg-blue-100 text-blue-800' :
-                    lead.status === 'CONTACTED' ? 'bg-yellow-100 text-yellow-800' :
+                    lead.status === 'new' ? 'bg-blue-100 text-blue-800' :
+                    lead.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
                     'bg-green-100 text-green-800'
                   }`}>
                     {lead.status}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500">
-                  {format(new Date(lead.created_at), 'MMM dd')}
+                  {lead.createdAt ? format(new Date(lead.createdAt), 'MMM dd') : 'Recent'}
                 </p>
               </div>
             ))}

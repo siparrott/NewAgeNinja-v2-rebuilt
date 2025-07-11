@@ -128,6 +128,28 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
         </div>
 
+        {/* New Leads Notification Section */}
+        {newLeadsCount > 0 && (
+          <div className="mx-4 mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center text-sm">
+              <Bell size={16} className="text-blue-600 mr-2 flex-shrink-0" />
+              {!sidebarCollapsed && (
+                <div>
+                  <p className="text-blue-900 font-medium">
+                    {newLeadsCount} unread leads waiting for your attention
+                  </p>
+                  <button
+                    onClick={() => navigate('/admin/leads')}
+                    className="text-blue-600 hover:text-blue-800 text-xs underline mt-1"
+                  >
+                    View all leads →
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 py-4">
           {sidebarItems.map((item) => {
