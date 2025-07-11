@@ -22,7 +22,7 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminDashboardPageDev from './pages/admin/AdminDashboardPageDev';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminLeadsPage from './pages/admin/AdminLeadsPage';
-import AdminVoucherSalesPage from './pages/admin/AdminVoucherSalesPage';
+import AdminVoucherSalesPageV3 from './pages/admin/AdminVoucherSalesPageV3';
 import AdminClientsPage from './pages/admin/ClientsPage';
 import ClientProfilePage from './pages/admin/ClientProfilePage';
 import ClientFormPage from './pages/admin/ClientFormPage';
@@ -127,7 +127,7 @@ function App() {
                   path="/admin/voucher-sales" 
                   element={
                     <ProtectedRoute>
-                      <AdminVoucherSalesPage />
+                      <AdminVoucherSalesPageV3 />
                     </ProtectedRoute>
                   } 
                 />
