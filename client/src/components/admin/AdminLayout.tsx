@@ -36,6 +36,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [language, setLanguage] = useState('en');
   const [newLeadsCount, setNewLeadsCount] = useState(0);
+  const [unreadEmailsCount, setUnreadEmailsCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -45,24 +46,32 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [location.pathname]);
 
-  // Fetch new leads count
+  // Fetch new leads count and unread emails count
   useEffect(() => {
-    const fetchNewLeadsCount = async () => {
+    const fetchCounts = async () => {
       try {
-        const response = await fetch('/api/crm/leads?status=new');
-        if (response.ok) {
-          const leads = await response.json();
+        // Fetch new leads count
+        const leadsResponse = await fetch('/api/crm/leads?status=new');
+        if (leadsResponse.ok) {
+          const leads = await leadsResponse.json();
           setNewLeadsCount(leads.length);
         }
+
+        // Fetch unread emails count
+        const emailsResponse = await fetch('/api/inbox/emails?unread=true');
+        if (emailsResponse.ok) {
+          const emails = await emailsResponse.json();
+          setUnreadEmailsCount(emails.length);
+        }
       } catch (error) {
-        console.error('Error fetching new leads count:', error);
+        console.error('Error fetching counts:', error);
       }
     };
 
-    fetchNewLeadsCount();
+    fetchCounts();
     
-    // Refresh count every 30 seconds
-    const interval = setInterval(fetchNewLeadsCount, 30000);
+    // Refresh counts every 30 seconds
+    const interval = setInterval(fetchCounts, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -78,7 +87,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: FolderOpen, label: 'Digital Files', path: '/admin/pro-files' },
     { icon: PenTool, label: 'Blog', path: '/admin/blog' },
     { icon: Mail, label: 'Email Campaigns', path: '/admin/campaigns' },
-    { icon: Inbox, label: 'Inbox', path: '/admin/inbox' },
+    { icon: Inbox, label: 'Inbox', path: '/admin/inbox', badge: unreadEmailsCount },
     { icon: ClipboardList, label: 'Questionnaires', path: '/admin/questionnaires' },
     { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
@@ -143,6 +152,28 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     className="text-blue-600 hover:text-blue-800 text-xs underline mt-1"
                   >
                     View all leads →
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* New Emails Notification Section */}
+        {unreadEmailsCount > 0 && (
+          <div className="mx-4 mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+            <div className="flex items-center text-sm">
+              <Mail size={16} className="text-green-600 mr-2 flex-shrink-0" />
+              {!sidebarCollapsed && (
+                <div>
+                  <p className="text-green-900 font-medium">
+                    {unreadEmailsCount} new emails received
+                  </p>
+                  <button
+                    onClick={() => navigate('/admin/inbox')}
+                    className="text-green-600 hover:text-green-800 text-xs underline mt-1"
+                  >
+                    View inbox →
                   </button>
                 </div>
               )}

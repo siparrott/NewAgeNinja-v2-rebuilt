@@ -1134,6 +1134,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== INBOX EMAIL ROUTES ====================
+  app.get("/api/inbox/emails", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const unreadOnly = req.query.unread === 'true';
+      const messages = await storage.getCrmMessages();
+      
+      if (unreadOnly) {
+        const unreadMessages = messages.filter(message => message.status === 'unread');
+        res.json(unreadMessages);
+      } else {
+        res.json(messages);
+      }
+    } catch (error) {
+      console.error("Error fetching inbox emails:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.post("/api/email/test-connection", authenticateUser, async (req: Request, res: Response) => {
     try {
       const { provider, smtpHost, smtpPort, username, password, useTLS } = req.body;
