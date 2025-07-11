@@ -1251,18 +1251,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Save sent email to database for tracking
       try {
-        await storage.createMessage({
-          sender_name: 'New Age Fotografie',
-          sender_email: 'hallo@newagefotografie.com',
-          subject: subject,
-          content: body,
-          type: 'sent',
-          message_id: info.messageId,
-          recipient_email: to,
-          status: 'sent',
-          sent_at: new Date().toISOString()
+        await storage.createCrmMessage({
+          senderName: 'New Age Fotografie (Sent)',
+          senderEmail: 'hallo@newagefotografie.com',
+          subject: `[SENT] ${subject}`,
+          content: `SENT TO: ${to}\n\n${body}`,
+          status: 'sent'
         });
-        console.log('Sent email saved to database');
+        console.log('Sent email saved to database successfully');
       } catch (dbError) {
         console.error('Failed to save sent email to database:', dbError);
       }
@@ -1279,6 +1275,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: 'Failed to send email: ' + (error as Error).message 
+      });
+    }
+  });
+
+  // ==================== AUTOMATIC EMAIL REFRESH ====================
+  app.post("/api/email/refresh", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      console.log('Starting email refresh...');
+      
+      const { importEmailsFromIMAP } = await import('./email-import');
+      
+      const config = {
+        user: '30840mail10',
+        password: process.env.EMAIL_PASSWORD || 'HoveBN41!',
+        host: 'imap.easyname.com',
+        port: 993,
+        tls: true,
+        tlsOptions: { rejectUnauthorized: false }
+      };
+      
+      const results = await importEmailsFromIMAP(config);
+      
+      res.json({ 
+        success: true, 
+        message: `Email refresh completed: ${results.newEmails} new emails imported`,
+        ...results
+      });
+    } catch (error) {
+      console.error('Email refresh error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to refresh emails: ' + (error as Error).message 
       });
     }
   });

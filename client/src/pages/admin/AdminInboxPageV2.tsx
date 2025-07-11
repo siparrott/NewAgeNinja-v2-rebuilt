@@ -66,6 +66,31 @@ const AdminInboxPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [replyMode, setReplyMode] = useState<'reply' | 'forward' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshEmails = async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await fetch('/api/email/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Email refresh result:', result);
+        await fetchMessages(); // Reload messages
+        alert(`Email refresh completed: ${result.newEmails} new emails imported`);
+      } else {
+        throw new Error('Failed to refresh emails');
+      }
+    } catch (error) {
+      console.error('Email refresh error:', error);
+      alert('Failed to refresh emails. Please try again.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Load messages from API
   useEffect(() => {
