@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import AdvancedPhotographyCalendar from '../../components/calendar/AdvancedPhotographyCalendar';
-import { Calendar, Camera, Clock, DollarSign, MapPin, TrendingUp, AlertTriangle, CheckCircle, Plus, Sun, Cloud, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import GoogleCalendarIntegration from '../../components/calendar/GoogleCalendarIntegration';
+import { Calendar, Camera, Clock, DollarSign, MapPin, TrendingUp, AlertTriangle, CheckCircle, Plus, Sun, Cloud, Star, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isAfter } from 'date-fns';
 
 interface PhotographySession {
@@ -73,6 +74,7 @@ interface DashboardStats {
 
 const PhotographyCalendarPage: React.FC = () => {
   const [sessions, setSessions] = useState<PhotographySession[]>([]);
+  const [showGoogleCalendarModal, setShowGoogleCalendarModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<PhotographySession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -269,13 +271,22 @@ const PhotographyCalendarPage: React.FC = () => {
               Advanced photography session management system with equipment tracking and client workflow tools
             </p>
           </div>
-          <button 
-            onClick={handleCreateSession}
-            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            <Camera className="w-4 h-4" />
-            <span>New Session</span>
-          </button>
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => setShowGoogleCalendarModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors"
+            >
+              <Settings size={18} />
+              <span>Google Calendar</span>
+            </button>
+            <button 
+              onClick={handleCreateSession}
+              className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+            >
+              <Camera className="w-4 h-4" />
+              <span>New Session</span>
+            </button>
+          </div>
         </div>
 
         {/* Key Business Metrics - Highlighted Section */}
@@ -855,6 +866,17 @@ const PhotographyCalendarPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Google Calendar Integration Modal */}
+        <GoogleCalendarIntegration
+          isOpen={showGoogleCalendarModal}
+          onClose={() => setShowGoogleCalendarModal(false)}
+          onConnectionSuccess={() => {
+            console.log('Google Calendar connected successfully');
+            // Refresh sessions to show synced events
+            fetchSessions();
+          }}
+        />
       </div>
     </AdminLayout>
   );

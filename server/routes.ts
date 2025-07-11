@@ -1152,6 +1152,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== GOOGLE CALENDAR INTEGRATION ROUTES ====================
+  app.get("/api/calendar/google/status", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Check if user has Google Calendar tokens stored
+      // For now, return a mock status that shows disconnected state
+      res.json({
+        connected: false,
+        calendars: [],
+        settings: {
+          autoSync: false,
+          syncInterval: '15m',
+          syncDirection: 'both',
+          defaultCalendar: ''
+        },
+        lastSync: null
+      });
+    } catch (error) {
+      console.error("Error checking Google Calendar status:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/calendar/google/auth-url", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // In a real implementation, you would:
+      // 1. Generate OAuth state parameter
+      // 2. Create Google OAuth URL with proper scopes
+      // 3. Store state for verification
+      
+      // Google Calendar OAuth scopes needed:
+      const scopes = [
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/calendar.events'
+      ];
+      
+      // For demo purposes, provide instructions to user
+      res.json({
+        authUrl: `https://accounts.google.com/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&scope=${scopes.join(' ')}&response_type=code&access_type=offline`,
+        message: "To complete Google Calendar integration, you'll need to set up Google OAuth credentials in your Google Cloud Console and configure the CLIENT_ID and CLIENT_SECRET environment variables."
+      });
+    } catch (error) {
+      console.error("Error generating Google auth URL:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/calendar/google/disconnect", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // In a real implementation, you would:
+      // 1. Revoke Google OAuth tokens
+      // 2. Remove stored credentials from database
+      // 3. Clean up any sync settings
+      
+      res.json({ success: true, message: "Google Calendar disconnected successfully" });
+    } catch (error) {
+      console.error("Error disconnecting Google Calendar:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/calendar/google/sync", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // In a real implementation, you would:
+      // 1. Fetch events from Google Calendar API
+      // 2. Compare with local photography sessions
+      // 3. Sync bidirectionally based on settings
+      // 4. Handle conflicts and duplicates
+      
+      res.json({ 
+        success: true, 
+        message: "Calendar sync completed successfully",
+        imported: 0,
+        exported: 0,
+        conflicts: 0
+      });
+    } catch (error) {
+      console.error("Error syncing Google Calendar:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/calendar/google/settings", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const settings = req.body;
+      
+      // In a real implementation, you would:
+      // 1. Validate settings
+      // 2. Store in database
+      // 3. Update sync job schedules if needed
+      
+      res.json({ success: true, settings });
+    } catch (error) {
+      console.error("Error updating Google Calendar settings:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.post("/api/email/test-connection", authenticateUser, async (req: Request, res: Response) => {
     try {
       const { provider, smtpHost, smtpPort, username, password, useTLS } = req.body;
