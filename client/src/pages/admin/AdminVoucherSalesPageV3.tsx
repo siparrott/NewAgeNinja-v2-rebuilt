@@ -296,6 +296,25 @@ export default function AdminVoucherSalesPageV3() {
     setIsProductDialogOpen(true);
   };
 
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/vouchers/products/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete product");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vouchers/products"] });
+    },
+  });
+
+  const handleDeleteProduct = (product: VoucherProduct) => {
+    if (confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
+      deleteProductMutation.mutate(product.id);
+    }
+  };
+
   const handleCreateCoupon = () => {
     setSelectedCoupon(null);
     couponForm.reset();
@@ -434,6 +453,7 @@ export default function AdminVoucherSalesPageV3() {
                 isLoading={isLoadingProducts}
                 onCreateProduct={handleCreateProduct}
                 onEditProduct={handleEditProduct}
+                onDeleteProduct={handleDeleteProduct}
               />
             )}
             {activeView === "coupons" && (
@@ -616,7 +636,8 @@ const ProductsView: React.FC<{
   isLoading: boolean;
   onCreateProduct: () => void;
   onEditProduct: (product: VoucherProduct) => void;
-}> = ({ products, isLoading, onCreateProduct, onEditProduct }) => {
+  onDeleteProduct: (product: VoucherProduct) => void;
+}> = ({ products, isLoading, onCreateProduct, onEditProduct, onDeleteProduct }) => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -673,14 +694,25 @@ const ProductsView: React.FC<{
               <CardContent>
                 <p className="text-gray-600 text-sm line-clamp-3 mb-4">{product.description}</p>
                 <div className="flex justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEditProduct(product)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEditProduct(product)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => onDeleteProduct(product)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
                   <Button variant="outline" size="sm">
                     <Eye className="h-4 w-4 mr-1" />
                     Preview
