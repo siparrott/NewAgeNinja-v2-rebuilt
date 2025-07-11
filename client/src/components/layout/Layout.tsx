@@ -13,13 +13,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { t } = useLanguage();
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen relative">
       <Header />
-      <main className="flex-grow">
+      <main className="flex-grow relative">
         {children}
       </main>
       <GoogleReviews />
-      <PartnerLogos />      <Footer />
+      <PartnerLogos />
+      <Footer />
     </div>
   );
 };
