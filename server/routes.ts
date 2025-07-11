@@ -1204,13 +1204,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await transporter.verify();
       console.log('SMTP connection verified successfully');
 
+      // Process attachments for nodemailer
+      const processedAttachments = (attachments || []).map((attachment: any) => ({
+        filename: attachment.filename,
+        content: attachment.content,
+        contentType: attachment.contentType,
+        encoding: attachment.encoding || 'base64'
+      }));
+
       const mailOptions = {
         from: '"New Age Fotografie" <hallo@newagefotografie.com>',
         to: to,
         subject: subject,
         text: body,
         html: body.replace(/\n/g, '<br>'),
-        attachments: attachments || []
+        attachments: processedAttachments
       };
 
       const info = await transporter.sendMail(mailOptions);

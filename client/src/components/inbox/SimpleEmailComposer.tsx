@@ -24,6 +24,25 @@ const SimpleEmailComposer: React.FC<SimpleEmailComposerProps> = ({
     try {
       console.log('Sending email:', { to, subject, body, attachments });
       
+      // Convert files to base64 for transmission
+      const attachmentPromises = attachments.map(async (file) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result?.toString().split(',')[1]; // Remove data URL prefix
+            resolve({
+              filename: file.name,
+              content: base64,
+              contentType: file.type,
+              encoding: 'base64'
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const processedAttachments = await Promise.all(attachmentPromises);
+
       const response = await fetch('/api/email/send', {
         method: 'POST',
         headers: {
@@ -33,11 +52,7 @@ const SimpleEmailComposer: React.FC<SimpleEmailComposerProps> = ({
           to,
           subject,
           body,
-          attachments: attachments.map(file => ({
-            filename: file.name,
-            content: file, // In a real implementation, you'd convert to base64
-            contentType: file.type
-          }))
+          attachments: processedAttachments
         })
       });
 
