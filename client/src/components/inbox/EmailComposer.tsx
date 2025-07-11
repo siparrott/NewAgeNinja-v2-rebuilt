@@ -358,7 +358,8 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
               <input
                 type="email"
                 placeholder="Add recipients..."
-                className="flex-1 min-w-0 border-none outline-none text-sm"
+                className="flex-1 min-w-0 border-none outline-none text-sm ltr-editor"
+                style={{ direction: 'ltr', textAlign: 'left' }}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' || e.key === ',') {
                     e.preventDefault();
@@ -409,7 +410,8 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
                 <input
                   type="email"
                   placeholder="Add CC recipients..."
-                  className="flex-1 min-w-0 border-none outline-none text-sm"
+                  className="flex-1 min-w-0 border-none outline-none text-sm ltr-editor"
+                  style={{ direction: 'ltr', textAlign: 'left' }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' || e.key === ',') {
                       e.preventDefault();
@@ -447,7 +449,8 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
                 <input
                   type="email"
                   placeholder="Add BCC recipients..."
-                  className="flex-1 min-w-0 border-none outline-none text-sm"
+                  className="flex-1 min-w-0 border-none outline-none text-sm ltr-editor"
+                  style={{ direction: 'ltr', textAlign: 'left' }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' || e.key === ',') {
                       e.preventDefault();
@@ -471,7 +474,8 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Email subject..."
-              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ltr-editor"
+              style={{ direction: 'ltr', textAlign: 'left' }}
             />
           </div>
         </div>
@@ -559,8 +563,13 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
               contentEditable
               dangerouslySetInnerHTML={{ __html: body }}
               onInput={(e) => setBody(e.currentTarget.innerHTML)}
-              className="w-full h-full border border-gray-300 rounded p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-auto"
-              style={{ minHeight: '200px' }}
+              className="w-full h-full border border-gray-300 rounded p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-auto ltr-editor"
+              style={{ 
+                minHeight: '200px',
+                direction: 'ltr',
+                textAlign: 'left',
+                unicodeBidi: 'embed'
+              }}
             />
           ) : (
             <textarea
@@ -568,8 +577,13 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Write your message..."
-              className="w-full h-full border border-gray-300 rounded p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              style={{ minHeight: '200px' }}
+              className="w-full h-full border border-gray-300 rounded p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ltr-editor"
+              style={{ 
+                minHeight: '200px',
+                direction: 'ltr',
+                textAlign: 'left',
+                unicodeBidi: 'embed'
+              }}
             />
           )}
         </div>
