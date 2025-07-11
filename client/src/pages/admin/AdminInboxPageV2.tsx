@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import InboxSettings from '../../components/admin/InboxSettings';
+import EmailComposer from '../../components/inbox/EmailComposer';
 import { 
   Plus, 
   Search, 
@@ -399,7 +400,7 @@ const AdminInboxPage: React.FC = () => {
                     {message.subject}
                   </div>
                   
-                  <div className="text-sm text-gray-500 truncate mt-1">
+                  <div className="text-sm text-gray-500 mt-1 line-clamp-2 max-w-lg">
                     {message.body}
                   </div>
 
@@ -489,8 +490,8 @@ const AdminInboxPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="prose max-w-none">
-            <p className="text-gray-700 whitespace-pre-wrap">
+          <div className="prose max-w-full overflow-hidden">
+            <p className="text-gray-700 whitespace-pre-wrap break-words max-w-full overflow-x-auto">
               {currentMessage.body}
             </p>
           </div>
@@ -645,6 +646,33 @@ const AdminInboxPage: React.FC = () => {
           // Here you would save the settings to your backend
         }}
       />
+
+      {/* Email Composer Modal */}
+      {showComposer && (
+        <EmailComposer
+          isOpen={showComposer}
+          onClose={() => {
+            setShowComposer(false);
+            setReplyMode(null);
+          }}
+          mode={replyMode || 'compose'}
+          replyToMessage={replyMode === 'reply' ? currentMessage : undefined}
+          forwardMessage={replyMode === 'forward' ? currentMessage : undefined}
+          account={{
+            id: '1',
+            email: 'hallo@newagefotografie.com',
+            name: 'New Age Fotografie',
+            signature_html: '<br><br>---<br>Best regards,<br>New Age Fotografie<br>Professional Photography Services<br>Vienna, Austria'
+          }}
+          onSent={(message) => {
+            console.log('Email sent:', message);
+            setShowComposer(false);
+            setReplyMode(null);
+            // Refresh messages after sending
+            fetchMessages();
+          }}
+        />
+      )}
     </AdminLayout>
   );
 };
