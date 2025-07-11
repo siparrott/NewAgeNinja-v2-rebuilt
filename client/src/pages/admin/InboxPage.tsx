@@ -55,9 +55,11 @@ const InboxPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/crm/messages', {
+      // Clear cache and force fresh request
+      const response = await fetch('/api/crm/messages?' + Date.now(), {
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
         },
       });
 
@@ -67,10 +69,12 @@ const InboxPage: React.FC = () => {
 
       const data = await response.json();
       console.log('Fetched messages:', data);
+      alert(`Fetched ${data.length} messages from API`);
       setMessages(data || []);
     } catch (err) {
       console.error('Error fetching messages:', err);
       setError('Failed to load messages. Please try again.');
+      alert(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -285,6 +289,16 @@ const InboxPage: React.FC = () => {
         </div>
 
 
+
+        {/* Debug Info */}
+        <div className="bg-blue-50 p-3 rounded-lg text-sm space-y-1">
+          <div><strong>Messages loaded:</strong> {messages.length}</div>
+          <div><strong>Filtered messages:</strong> {filteredMessages.length}</div>
+          <div><strong>Status filter:</strong> {statusFilter}</div>
+          <div><strong>Search term:</strong> "{searchTerm}"</div>
+          <div><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</div>
+          <div><strong>Sample message:</strong> {messages[0] ? `${messages[0].senderName} - ${messages[0].subject}` : 'None'}</div>
+        </div>
 
         {/* Error Message */}
         {error && (
