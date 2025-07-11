@@ -44,13 +44,24 @@ body {
   html {
     font-family: 'Poppins', sans-serif;
     direction: ltr;
-    overflow-x: hidden;
+    overflow: auto !important;
+    height: auto !important;
+    position: static !important;
   }
   
   body {
     direction: ltr;
-    overflow-x: hidden;
-    position: relative;
+    overflow: auto !important;
+    position: static !important;
+    height: auto !important;
+    min-height: 100vh !important;
+  }
+  
+  #root {
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 100vh !important;
   }
   
   * {
