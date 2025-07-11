@@ -996,7 +996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (username === 'hallo@newagefotografie.com') {
         return res.json({
           success: false,
-          message: "Business email (hallo@newagefotografie.com) requires proper IMAP/SMTP configuration from your hosting provider. Please contact your email hosting provider to:\n\n1. Enable IMAP access for hallo@newagefotografie.com\n2. Provide IMAP server settings (usually mail.newagefotografie.com:993)\n3. Set up proper authentication\n\nOnce configured, you can import real emails from your business account.",
+          message: "Business email setup required:\n\n📧 Your business email (hallo@newagefotografie.com) needs IMAP configuration from your hosting provider.\n\n🔧 Contact your email provider to enable:\n• IMAP access on port 993\n• Authentication for external apps\n• Server: mail.newagefotografie.com\n\n💡 Meanwhile, test the system with your personal Gmail/Outlook account using an App Password.",
           requiresSetup: true
         });
       }
