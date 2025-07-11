@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import InboxSettings from '../../components/admin/InboxSettings';
-import EmailComposer from '../../components/inbox/EmailComposer';
+import SimpleEmailComposer from '../../components/inbox/SimpleEmailComposer';
 import { 
   Plus, 
   Search, 
@@ -649,23 +649,14 @@ const AdminInboxPage: React.FC = () => {
 
       {/* Email Composer Modal */}
       {showComposer && (
-        <EmailComposer
+        <SimpleEmailComposer
           isOpen={showComposer}
           onClose={() => {
             setShowComposer(false);
             setReplyMode(null);
           }}
-          mode={replyMode || 'compose'}
-          replyToMessage={replyMode === 'reply' ? currentMessage : undefined}
-          forwardMessage={replyMode === 'forward' ? currentMessage : undefined}
-          account={{
-            id: '1',
-            email: 'hallo@newagefotografie.com',
-            name: 'New Age Fotografie',
-            signature_html: '<br><br>---<br>Best regards,<br>New Age Fotografie<br>Professional Photography Services<br>Vienna, Austria'
-          }}
-          onSent={(message) => {
-            console.log('Email sent:', message);
+          onSent={(data) => {
+            console.log('Email sent:', data);
             setShowComposer(false);
             setReplyMode(null);
             // Refresh messages after sending
