@@ -116,7 +116,7 @@ const AdminInboxPage: React.FC = () => {
       const data = await response.json();
       console.log('Fetched messages:', data);
       
-      // Convert API data to EmailMessage format
+      // Convert API data to EmailMessage format with proper folder separation
       const emailMessages: EmailMessage[] = data.map((msg: any) => ({
         id: msg.id,
         from: msg.senderEmail,
@@ -125,12 +125,12 @@ const AdminInboxPage: React.FC = () => {
         subject: msg.subject,
         body: msg.content,
         timestamp: msg.createdAt,
-        isRead: msg.status === 'read',
+        isRead: msg.status === 'read' || msg.status === 'archived',
         isStarred: false,
         isImportant: msg.status === 'unread',
         hasAttachments: false,
         labels: [],
-        folder: 'inbox' as const,
+        folder: msg.subject.startsWith('[SENT]') ? 'sent' : 'inbox' as const,
         threadId: msg.id
       }));
       
@@ -143,85 +143,16 @@ const AdminInboxPage: React.FC = () => {
     }
   };
 
-  // Email folders
+  // Email folders with proper counts
   const folders: EmailFolder[] = [
-    { id: 'inbox', name: 'Inbox', count: messages.length, icon: <Mail size={16} /> },
-    { id: 'sent', name: 'Sent', count: 0, icon: <Send size={16} /> },
+    { id: 'inbox', name: 'Inbox', count: messages.filter(m => m.folder === 'inbox').length, icon: <Mail size={16} /> },
+    { id: 'sent', name: 'Sent', count: messages.filter(m => m.folder === 'sent').length, icon: <Send size={16} /> },
     { id: 'drafts', name: 'Drafts', count: 0, icon: <Clock size={16} /> },
     { id: 'archive', name: 'Archive', count: 0, icon: <Archive size={16} /> },
     { id: 'trash', name: 'Trash', count: 0, icon: <Trash2 size={16} /> }
   ];
 
-  // Sample messages for demonstration
-  useEffect(() => {
-    setMessages([
-      {
-        id: '1',
-        from: 'john.smith@email.com',
-        fromName: 'John Smith',
-        to: 'you@yourcompany.com',
-        subject: 'Wedding Photography Inquiry',
-        body: 'Hi, I\'m interested in booking a wedding photography session for next summer. Could we discuss the packages you offer?',
-        timestamp: '2025-06-23T10:30:00Z',
-        isRead: false,
-        isStarred: true,
-        isImportant: true,
-        hasAttachments: false,
-        labels: ['clients', 'wedding'],
-        folder: 'inbox',
-        threadId: 'thread-1'
-      },
-      {
-        id: '2',
-        from: 'sarah.johnson@email.com',
-        fromName: 'Sarah Johnson',
-        to: 'you@yourcompany.com',
-        subject: 'Portrait Session Confirmation',
-        body: 'Thank you for the consultation yesterday. I\'d like to confirm the portrait session for next Friday at 2 PM.',
-        timestamp: '2025-06-22T15:45:00Z',
-        isRead: true,
-        isStarred: false,
-        isImportant: false,
-        hasAttachments: true,
-        labels: ['clients', 'portrait'],
-        folder: 'inbox',
-        threadId: 'thread-2'
-      },
-      {
-        id: '3',
-        from: 'mike.davis@company.com',
-        fromName: 'Mike Davis',
-        to: 'you@yourcompany.com',
-        subject: 'Corporate Event Photography',
-        body: 'We\'re planning a corporate event next month and would like to discuss photography coverage. Are you available on March 15th?',
-        timestamp: '2025-06-21T09:15:00Z',
-        isRead: true,
-        isStarred: false,
-        isImportant: false,
-        hasAttachments: false,
-        labels: ['corporate'],
-        folder: 'inbox',
-        threadId: 'thread-3'
-      },
-      {
-        id: '4',
-        from: 'emily.brown@email.com',
-        fromName: 'Emily Brown',
-        to: 'you@yourcompany.com',
-        subject: 'Photo Delivery and Payment',
-        body: 'The photos look amazing! I\'ve made the final payment. When can I expect the high-resolution files?',
-        timestamp: '2025-06-20T14:20:00Z',
-        isRead: false,
-        isStarred: true,
-        isImportant: false,
-        hasAttachments: false,
-        labels: ['clients', 'payment'],
-        folder: 'inbox',
-        threadId: 'thread-4'
-      }
-    ]);
-  }, []);
-
+  // Filter messages based on selected folder
   const filteredMessages = messages.filter(message => {
     const matchesFolder = message.folder === selectedFolder;
     const matchesSearch = searchTerm === '' || 
