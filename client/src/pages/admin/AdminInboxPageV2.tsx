@@ -64,14 +64,66 @@ const AdminInboxPage: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(false);
   const [replyMode, setReplyMode] = useState<'reply' | 'forward' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load messages from API
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/crm/messages?' + Date.now(), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
+      }
+
+      const data = await response.json();
+      console.log('Fetched messages:', data);
+      
+      // Convert API data to EmailMessage format
+      const emailMessages: EmailMessage[] = data.map((msg: any) => ({
+        id: msg.id,
+        from: msg.senderEmail,
+        fromName: msg.senderName,
+        to: 'hallo@newagefotografie.com',
+        subject: msg.subject,
+        body: msg.content,
+        timestamp: msg.createdAt,
+        isRead: msg.status === 'read',
+        isStarred: false,
+        isImportant: msg.status === 'unread',
+        hasAttachments: false,
+        labels: [],
+        folder: 'inbox' as const,
+        threadId: msg.id
+      }));
+      
+      setMessages(emailMessages);
+    } catch (err) {
+      console.error('Error fetching messages:', err);
+      setError('Failed to load messages. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Email folders
   const folders: EmailFolder[] = [
-    { id: 'inbox', name: 'Inbox', count: 12, icon: <Mail size={16} /> },
-    { id: 'sent', name: 'Sent', count: 45, icon: <Send size={16} /> },
-    { id: 'drafts', name: 'Drafts', count: 3, icon: <Clock size={16} /> },
-    { id: 'archive', name: 'Archive', count: 128, icon: <Archive size={16} /> },
-    { id: 'trash', name: 'Trash', count: 7, icon: <Trash2 size={16} /> }
+    { id: 'inbox', name: 'Inbox', count: messages.length, icon: <Mail size={16} /> },
+    { id: 'sent', name: 'Sent', count: 0, icon: <Send size={16} /> },
+    { id: 'drafts', name: 'Drafts', count: 0, icon: <Clock size={16} /> },
+    { id: 'archive', name: 'Archive', count: 0, icon: <Archive size={16} /> },
+    { id: 'trash', name: 'Trash', count: 0, icon: <Trash2 size={16} /> }
   ];
 
   // Sample messages for demonstration
@@ -525,6 +577,31 @@ const AdminInboxPage: React.FC = () => {
                 </button>
               ))}
             </nav>
+
+            {/* Debug Info */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">Debug Info</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Messages</span>
+                  <span className="font-medium">{messages.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Loading</span>
+                  <span className="font-medium">{loading ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Error</span>
+                  <span className="font-medium">{error ? 'Yes' : 'No'}</span>
+                </div>
+                <button
+                  onClick={fetchMessages}
+                  className="w-full mt-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Refresh Messages
+                </button>
+              </div>
+            </div>
 
             {/* Quick Stats */}
             <div className="mt-6 pt-6 border-t border-gray-200">
