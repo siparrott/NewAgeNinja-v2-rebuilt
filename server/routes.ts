@@ -1256,7 +1256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           senderEmail: 'hallo@newagefotografie.com',
           subject: `[SENT] ${subject}`,
           content: `SENT TO: ${to}\n\n${body}`,
-          status: 'sent'
+          status: 'archived' // Use valid status value
         });
         console.log('Sent email saved to database successfully');
       } catch (dbError) {

@@ -56,12 +56,13 @@ export async function importEmailsFromIMAP(config: any) {
                 try {
                   const parsed = await simpleParser(buffer);
                   
-                  // Check if email already exists
+                  // Check if email already exists (more precise matching)
                   const existingMessages = await storage.getCrmMessages();
+                  const fromEmail = parsed.from?.value[0]?.address || parsed.from?.text || 'unknown@unknown.com';
                   const exists = existingMessages.some(m => 
-                    m.senderEmail === parsed.from?.text && 
-                    m.subject === parsed.subject &&
-                    Math.abs(new Date(m.createdAt).getTime() - parsed.date?.getTime()) < 60000 // 1 minute tolerance
+                    m.senderEmail === fromEmail && 
+                    m.subject === (parsed.subject || 'No Subject') &&
+                    !m.subject.startsWith('[SENT]') // Don't duplicate sent items
                   );
                   
                   if (!exists) {
