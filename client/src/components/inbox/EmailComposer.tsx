@@ -277,12 +277,14 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      style={{ direction: 'ltr' }}
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-5/6 flex flex-col overflow-hidden"
+        style={{ direction: 'ltr' }}
       >
         {/* Header */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">

@@ -15,10 +15,16 @@
 @layer base {
   html {
     font-family: 'Poppins', sans-serif;
+    direction: ltr;
+  }
+  
+  body {
+    direction: ltr;
   }
   
   * {
     letter-spacing: -0.025em;
+    direction: ltr;
   }
 }
 
@@ -40,17 +46,42 @@
 }
 
 /* Rich Text Editor Styles */
-[contenteditable="true"], .ltr-editor {
+[contenteditable="true"], .ltr-editor, input, textarea {
   direction: ltr !important;
   unicode-bidi: embed !important;
   text-align: left !important;
   writing-mode: horizontal-tb !important;
 }
 
-.ltr-editor * {
+.ltr-editor *, input *, textarea * {
   direction: ltr !important;
   unicode-bidi: embed !important;
   text-align: left !important;
+}
+
+/* Force LTR for all form inputs */
+input[type="text"], 
+input[type="email"], 
+input[type="search"],
+textarea,
+[contenteditable="true"] {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: embed !important;
+}
+
+/* Email Composer Modal Force LTR */
+.fixed.inset-0 * {
+  direction: ltr !important;
+}
+
+.fixed.inset-0 input,
+.fixed.inset-0 textarea,
+.fixed.inset-0 [contenteditable="true"] {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: embed !important;
+  writing-mode: horizontal-tb !important;
 }
 
 [contenteditable="true"]:empty::before {
