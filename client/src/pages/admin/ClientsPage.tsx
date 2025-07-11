@@ -59,29 +59,31 @@ const ClientsPage: React.FC = () => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('crm_clients')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use the API endpoint instead of direct Supabase access
+      const response = await fetch('/api/crm/clients');
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
       
       // Map database fields to our client interface
-      const mappedClients = data?.map(client => ({
+      const mappedClients = data?.map((client: any) => ({
         id: client.id,
-        first_name: client.name.split(' ')[0] || '',
-        last_name: client.name.split(' ').slice(1).join(' ') || '',
-        client_id: client.id,
-        email: client.email,
+        first_name: client.first_name || '',
+        last_name: client.last_name || '',
+        client_id: client.client_id || client.id,
+        email: client.email || '',
         phone: client.phone || '',
         address1: client.address || '',
-        address2: '',
+        address2: client.address2 || '',
         city: client.city || '',
-        state: '',
-        zip: '',
-        country: '',
-        total_sales: 0, // These would come from related tables in a real implementation
-        outstanding_balance: 0,
+        state: client.state || '',
+        zip: client.zip || '',
+        country: client.country || '',
+        total_sales: client.total_sales || 0,
+        outstanding_balance: client.outstanding_balance || 0,
         created_at: client.created_at,
         updated_at: client.updated_at
       }));
