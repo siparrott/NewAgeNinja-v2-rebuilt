@@ -124,26 +124,31 @@ async function submitWaitlistFormFallback(formData: WaitlistFormData) {
 
 export async function submitNewsletterForm(email: string) {
   try {
-    // First try the Edge Function
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/newsletter-signup`, {
+    // Use the backend API endpoint
+    const response = await fetch('/api/public/leads', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({
+        name: 'Newsletter Subscriber',
+        email: email,
+        phone: null,
+        message: 'Newsletter signup - €50 Print Gutschein interest',
+        source: 'NEWSLETTER',
+        status: 'new'
+      }),
     });
 
     if (!response.ok) {
-      console.warn('Newsletter Edge Function failed, using fallback method');
-      return await submitNewsletterFormFallback(email);
+      throw new Error('Failed to submit newsletter signup');
     }
 
-    return await response.json();
+    const result = await response.json();
+    return { success: true, data: result, message: 'Newsletter signup successful!' };
   } catch (error) {
-    console.error('Error with newsletter Edge Function, trying fallback:', error);
-    // Fallback to direct database insert
-    return await submitNewsletterFormFallback(email);
+    console.error('Error with newsletter signup:', error);
+    throw new Error('Failed to process newsletter signup - please try again later');
   }
 }
 
