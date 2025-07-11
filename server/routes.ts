@@ -1447,7 +1447,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Process common properties
         const propName = property.split(';')[0].toLowerCase();
         if (propName === 'dtstart' || propName === 'dtend') {
-          currentEvent[propName] = parseICalDate(value);
+          try {
+            currentEvent[propName] = parseICalDate(value);
+          } catch (error) {
+            console.error(`Error parsing ${propName}: ${value}`, error);
+            currentEvent[propName] = new Date().toISOString();
+          }
         } else {
           currentEvent[propName] = decodeICalValue(value);
         }
@@ -1459,27 +1464,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper function to parse iCal dates
   function parseICalDate(dateString: string): string {
-    // Remove timezone info for simplicity and convert to ISO string
-    const cleanDate = dateString.replace(/[TZ]/g, '').replace(/\+\d{4}$/, '');
-    
-    if (cleanDate.length === 8) {
-      // YYYYMMDD format
-      const year = cleanDate.substring(0, 4);
-      const month = cleanDate.substring(4, 6);
-      const day = cleanDate.substring(6, 8);
-      return new Date(`${year}-${month}-${day}`).toISOString();
-    } else if (cleanDate.length >= 14) {
-      // YYYYMMDDTHHMMSS format
-      const year = cleanDate.substring(0, 4);
-      const month = cleanDate.substring(4, 6);
-      const day = cleanDate.substring(6, 8);
-      const hour = cleanDate.substring(9, 11) || '00';
-      const minute = cleanDate.substring(11, 13) || '00';
-      const second = cleanDate.substring(13, 15) || '00';
-      return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`).toISOString();
+    try {
+      console.log(`Parsing date: ${dateString}`);
+      
+      // Handle various iCal date formats
+      let cleanDate = dateString.trim();
+      
+      // Google Calendar format: 20131013T100000Z
+      if (cleanDate.includes('T') && cleanDate.endsWith('Z')) {
+        // Remove Z suffix
+        cleanDate = cleanDate.replace('Z', '');
+        
+        const datePart = cleanDate.split('T')[0];
+        const timePart = cleanDate.split('T')[1];
+        
+        if (datePart.length === 8 && timePart.length === 6) {
+          const year = datePart.substring(0, 4);
+          const month = datePart.substring(4, 6);
+          const day = datePart.substring(6, 8);
+          const hour = timePart.substring(0, 2);
+          const minute = timePart.substring(2, 4);
+          const second = timePart.substring(4, 6);
+          
+          // Create ISO string manually to avoid invalid date issues
+          const isoString = `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z`;
+          console.log(`Created ISO string: ${isoString}`);
+          
+          const dateObj = new Date(isoString);
+          if (!isNaN(dateObj.getTime())) {
+            return dateObj.toISOString();
+          }
+        }
+      }
+      
+      // Handle YYYYMMDD format (all-day events)
+      if (cleanDate.length === 8 && !cleanDate.includes('T')) {
+        const year = cleanDate.substring(0, 4);
+        const month = cleanDate.substring(4, 6);
+        const day = cleanDate.substring(6, 8);
+        
+        const isoString = `${year}-${month}-${day}T00:00:00.000Z`;
+        const dateObj = new Date(isoString);
+        if (!isNaN(dateObj.getTime())) {
+          return dateObj.toISOString();
+        }
+      }
+      
+      // Fallback: try parsing as-is
+      const fallbackDate = new Date(dateString);
+      if (!isNaN(fallbackDate.getTime())) {
+        return fallbackDate.toISOString();
+      }
+      
+      // If all else fails, return current time
+      console.warn(`Could not parse date: ${dateString}, using current time`);
+      return new Date().toISOString();
+      
+    } catch (error) {
+      console.error(`Error parsing date: ${dateString}`, error);
+      return new Date().toISOString();
     }
-    
-    return new Date().toISOString();
   }
 
   // Helper function to decode iCal values
