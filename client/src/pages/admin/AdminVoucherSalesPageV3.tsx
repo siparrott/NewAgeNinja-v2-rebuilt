@@ -109,9 +109,18 @@ export default function AdminVoucherSalesPageV3() {
   });
 
   // API calls
-  const { data: voucherProducts, isLoading: isLoadingProducts } = useQuery<VoucherProduct[]>({
+  const { data: voucherProducts, isLoading: isLoadingProducts, error: productsError } = useQuery<VoucherProduct[]>({
     queryKey: ['/api/vouchers/products'],
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache
   });
+  
+  // Debug log
+  console.log('Voucher products data:', voucherProducts);
+  console.log('Products loading:', isLoadingProducts);
+  console.log('Products error:', productsError);
 
   const { data: discountCoupons, isLoading: isLoadingCoupons } = useQuery<DiscountCoupon[]>({
     queryKey: ['/api/vouchers/coupons'],
