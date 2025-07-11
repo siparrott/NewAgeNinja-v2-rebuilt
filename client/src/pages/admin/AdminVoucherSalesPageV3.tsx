@@ -148,7 +148,9 @@ export default function AdminVoucherSalesPageV3() {
       return response.json();
     },
     onSuccess: () => {
+      // Force refresh all voucher-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/vouchers/products"] });
+      queryClient.refetchQueries({ queryKey: ["/api/vouchers/products"] });
       setIsProductDialogOpen(false);
       productForm.reset();
       alert("Voucher product created successfully!");
