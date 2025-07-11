@@ -151,9 +151,13 @@ export default function AdminVoucherSalesPageV3() {
       // Force refresh all voucher-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/vouchers/products"] });
       queryClient.refetchQueries({ queryKey: ["/api/vouchers/products"] });
+      // Reset query cache entirely for voucher products
+      queryClient.removeQueries({ queryKey: ["/api/vouchers/products"] });
       setIsProductDialogOpen(false);
       productForm.reset();
       alert("Voucher product created successfully!");
+      // Force page refresh to ensure data is loaded
+      window.location.reload();
     },
     onError: (error) => {
       console.error("Error creating product:", error);
