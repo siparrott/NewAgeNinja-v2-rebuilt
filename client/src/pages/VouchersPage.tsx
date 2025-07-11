@@ -6,17 +6,7 @@ import CategoryFilter from '../components/vouchers/CategoryFilter';
 import { useAppContext } from '../context/AppContext';
 import { Search, Package, Gift } from 'lucide-react';
 
-// Types
-type VoucherProduct = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  validityMonths: number;
-  isActive: boolean;
-  displayOrder: number;
-  createdAt: string;
-};
+import { type VoucherProduct } from '@shared/schema';
 
 const VouchersPage: React.FC = () => {
   const { selectedCategory } = useAppContext();
@@ -205,7 +195,7 @@ const VoucherProductCard: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) 
         {/* Validity */}
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm text-gray-500">
-            Gültig bis {voucher.validityMonths} Monate
+            Gültig bis {Math.floor(voucher.validityPeriod / 30)} Monate
           </span>
         </div>
         
@@ -213,10 +203,10 @@ const VoucherProductCard: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) 
         <div className="flex items-center justify-between">
           <div className="text-right">
             <div className="text-sm text-gray-400 line-through">
-              €{(voucher.price * (1 + discountPercentage / 100)).toFixed(2)}
+              €{(Number(voucher.price) * (1 + discountPercentage / 100)).toFixed(2)}
             </div>
             <div className="text-2xl font-bold text-blue-600">
-              €{voucher.price.toFixed(2)}
+              €{Number(voucher.price).toFixed(2)}
             </div>
             <div className="text-xs text-gray-500">
               Nach {discountPercentage}% Rabatt verfügbar
