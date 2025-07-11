@@ -397,6 +397,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const leadData = insertCrmLeadSchema.parse(req.body);
       const lead = await storage.createCrmLead(leadData);
+      
+      // Send email notification to business owner
+      try {
+        await sendNewLeadNotification(lead);
+      } catch (emailError) {
+        console.error("Failed to send lead notification email:", emailError);
+        // Don't fail the lead creation if email fails
+      }
+      
       res.status(201).json(lead);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -411,6 +420,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const leadData = insertCrmLeadSchema.parse(req.body);
       const lead = await storage.createCrmLead(leadData);
+      
+      // Send email notification to business owner
+      try {
+        await sendNewLeadNotification(lead);
+      } catch (emailError) {
+        console.error("Failed to send lead notification email:", emailError);
+        // Don't fail the lead creation if email fails
+      }
+      
       res.status(201).json(lead);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1352,6 +1370,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to generate SEO recommendations" });
     }
   });
+
+  // Email notification function for new leads
+  async function sendNewLeadNotification(lead: any) {
+    const transporter = nodemailer.createTransporter({
+      host: 'smtp.easyname.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: '30840mail10',
+        pass: 'HoveBN41!'
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+
+    const leadSource = lead.source || 'Website';
+    const leadMessage = lead.message || 'No message provided';
+    
+    const emailSubject = `🔔 New Lead: ${lead.name} from ${leadSource}`;
+    const emailBody = `
+New Lead Notification - New Age Fotografie
+
+📋 Lead Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Name: ${lead.name}
+Email: ${lead.email}
+Phone: ${lead.phone || 'Not provided'}
+Company: ${lead.company || 'Not provided'}
+Source: ${leadSource}
+Status: ${lead.status || 'New'}
+
+📝 Message:
+${leadMessage}
+
+🕐 Received: ${new Date().toLocaleString('de-DE', { 
+  timeZone: 'Europe/Vienna',
+  year: 'numeric',
+  month: '2-digit', 
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit'
+})} (Vienna time)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💼 Action Required:
+• Review the lead in your CRM dashboard
+• Contact the prospect within 24 hours
+• Update lead status after initial contact
+
+🔗 CRM Dashboard: https://www.newagefotografie.com/admin/leads
+
+Best regards,
+New Age Fotografie CRM System
+    `;
+
+    const mailOptions = {
+      from: 'hallo@newagefotografie.com',
+      to: 'hallo@newagefotografie.com',
+      subject: emailSubject,
+      text: emailBody,
+      html: emailBody.replace(/\n/g, '<br>').replace(/━/g, '─')
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('New lead notification sent:', info.messageId);
+    
+    // Save the notification email to the database for tracking
+    try {
+      await storage.createCrmMessage({
+        senderName: 'New Age Fotografie System',
+        senderEmail: 'system@newagefotografie.com',
+        subject: `[LEAD NOTIFICATION] ${emailSubject}`,
+        content: `Lead notification sent to hallo@newagefotografie.com\n\n${emailBody}`,
+        status: 'archived'
+      });
+    } catch (dbError) {
+      console.error('Failed to save lead notification to database:', dbError);
+    }
+  }
 
   const httpServer = createServer(app);
   return httpServer;
