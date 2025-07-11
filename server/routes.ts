@@ -2055,10 +2055,10 @@ New Age Fotografie CRM System
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const supabase = createClient(
-        process.env.VITE_SUPABASE_URL!,
-        process.env.VITE_SUPABASE_ANON_KEY!
-      );
+      // Create Supabase client (using hardcoded values from client config)
+      const supabaseUrl = 'https://gtnwccyxwrevfnbkjvzm.supabase.co';
+      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0bndjayx5eHd3cmV2Zm5ia2p2em0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczNDA2MjE1NiwiZXhwIjoyMDQ5NjM4MTU2fQ.4pCjOYLQlOOQbCDLGUyWJOgqzWYhXdlgF9ZbwmMfJIY';
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
       // Generate unique filename
       const fileExt = path.extname(req.file.originalname);
