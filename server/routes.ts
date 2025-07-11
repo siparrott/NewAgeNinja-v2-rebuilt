@@ -23,6 +23,7 @@ import Imap from 'imap';
 import { simpleParser } from 'mailparser';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 
 // Authentication middleware placeholder - replace with actual auth
 const authenticateUser = async (req: Request, res: Response, next: Function) => {
@@ -38,7 +39,6 @@ const upload = multer({
     destination: (req, file, cb) => {
       const uploadPath = path.join(process.cwd(), 'public', 'uploads', 'vouchers');
       // Create directory if it doesn't exist
-      const fs = require('fs');
       if (!fs.existsSync(uploadPath)) {
         fs.mkdirSync(uploadPath, { recursive: true });
       }
