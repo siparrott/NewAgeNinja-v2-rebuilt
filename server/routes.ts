@@ -1250,35 +1250,266 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== CALENDAR IMPORT ====================
-  app.post("/api/calendar/import/google", authenticateUser, async (req: Request, res: Response) => {
+  app.post("/api/calendar/import/ics", authenticateUser, async (req: Request, res: Response) => {
     try {
-      const { action } = req.body;
+      const { icsContent, fileName } = req.body;
       
-      if (action === 'import_existing') {
-        // In a real implementation, this would:
-        // 1. Use Google Calendar API to fetch existing events
-        // 2. Parse events and convert to photography sessions
-        // 3. Save to database
-        
-        // For now, return instructions for manual import
-        res.json({
-          success: false,
-          message: 'Automatic import requires OAuth setup',
-          instructions: [
-            'Go to Google Calendar',
-            'Click Settings > Export',
-            'Download your calendar as .ics file',
-            'Upload the file using the Manual Import option'
-          ]
-        });
-      } else {
-        res.status(400).json({ error: 'Invalid action' });
+      if (!icsContent) {
+        return res.status(400).json({ error: 'No iCal content provided' });
       }
+
+      // Parse iCal content and convert to photography sessions
+      const importedEvents = parseICalContent(icsContent);
+      let importedCount = 0;
+
+      for (const event of importedEvents) {
+        try {
+          // Create photography session from calendar event
+          const session = {
+            id: event.uid || `imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            title: event.summary || 'Imported Event',
+            description: event.description || '',
+            sessionType: 'imported',
+            status: 'confirmed',
+            startTime: event.dtstart,
+            endTime: event.dtend,
+            locationName: event.location || '',
+            locationAddress: event.location || '',
+            clientName: extractClientFromDescription(event.description || event.summary || ''),
+            clientEmail: '',
+            clientPhone: '',
+            basePrice: 0,
+            depositAmount: 0,
+            depositPaid: false,
+            finalPayment: 0,
+            finalPaymentPaid: false,
+            paymentStatus: 'pending',
+            conflictDetected: false,
+            weatherDependent: false,
+            goldenHourOptimized: false,
+            portfolioWorthy: false,
+            editingStatus: 'pending',
+            deliveryStatus: 'pending',
+            isRecurring: false,
+            reminderSent: false,
+            confirmationSent: false,
+            followUpSent: false,
+            isOnlineBookable: false,
+            availabilityStatus: 'booked',
+            priority: 'medium',
+            isPublic: false,
+            photographerId: 'imported',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          await storage.createPhotographySession(session);
+          importedCount++;
+        } catch (error) {
+          console.error('Error importing event:', event.summary, error);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        imported: importedCount,
+        message: `Successfully imported ${importedCount} events from ${fileName}`
+      });
+
     } catch (error) {
-      console.error("Error importing calendar:", error);
-      res.status(500).json({ error: "Internal server error" });
+      console.error("Error importing iCal file:", error);
+      res.status(500).json({ error: "Failed to parse iCal file" });
     }
   });
+
+  app.post("/api/calendar/import/ics-url", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { icsUrl } = req.body;
+      
+      if (!icsUrl) {
+        return res.status(400).json({ error: 'No iCal URL provided' });
+      }
+
+      // Fetch iCal content from URL
+      const fetch = (await import('node-fetch')).default;
+      const response = await fetch(icsUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch calendar: ${response.status}`);
+      }
+
+      const icsContent = await response.text();
+
+      // Parse iCal content and convert to photography sessions
+      const importedEvents = parseICalContent(icsContent);
+      let importedCount = 0;
+
+      for (const event of importedEvents) {
+        try {
+          // Create photography session from calendar event
+          const session = {
+            id: event.uid || `imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            title: event.summary || 'Imported Event',
+            description: event.description || '',
+            sessionType: 'imported',
+            status: 'confirmed',
+            startTime: event.dtstart,
+            endTime: event.dtend,
+            locationName: event.location || '',
+            locationAddress: event.location || '',
+            clientName: extractClientFromDescription(event.description || event.summary || ''),
+            clientEmail: '',
+            clientPhone: '',
+            basePrice: 0,
+            depositAmount: 0,
+            depositPaid: false,
+            finalPayment: 0,
+            finalPaymentPaid: false,
+            paymentStatus: 'pending',
+            conflictDetected: false,
+            weatherDependent: false,
+            goldenHourOptimized: false,
+            portfolioWorthy: false,
+            editingStatus: 'pending',
+            deliveryStatus: 'pending',
+            isRecurring: false,
+            reminderSent: false,
+            confirmationSent: false,
+            followUpSent: false,
+            isOnlineBookable: false,
+            availabilityStatus: 'booked',
+            priority: 'medium',
+            isPublic: false,
+            photographerId: 'imported',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          await storage.createPhotographySession(session);
+          importedCount++;
+        } catch (error) {
+          console.error('Error importing event:', event.summary, error);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        imported: importedCount,
+        message: `Successfully imported ${importedCount} events from calendar URL`
+      });
+
+    } catch (error) {
+      console.error("Error importing from iCal URL:", error);
+      res.status(500).json({ error: "Failed to fetch or parse iCal URL" });
+    }
+  });
+
+  // Helper function to parse iCal content
+  function parseICalContent(icsContent: string) {
+    const events: any[] = [];
+    const lines = icsContent.split('\n');
+    let currentEvent: any = null;
+    let multiLineValue = '';
+    let multiLineProperty = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i].trim();
+      
+      // Handle line continuation (lines starting with space or tab)
+      if (line.startsWith(' ') || line.startsWith('\t')) {
+        multiLineValue += line.substring(1);
+        continue;
+      }
+      
+      // Process the previous multi-line property if any
+      if (multiLineProperty && multiLineValue) {
+        if (currentEvent) {
+          currentEvent[multiLineProperty.toLowerCase()] = decodeICalValue(multiLineValue);
+        }
+        multiLineProperty = '';
+        multiLineValue = '';
+      }
+
+      if (line === 'BEGIN:VEVENT') {
+        currentEvent = {};
+      } else if (line === 'END:VEVENT' && currentEvent) {
+        events.push(currentEvent);
+        currentEvent = null;
+      } else if (currentEvent && line.includes(':')) {
+        const colonIndex = line.indexOf(':');
+        const property = line.substring(0, colonIndex);
+        const value = line.substring(colonIndex + 1);
+        
+        // Handle multi-line values
+        multiLineProperty = property;
+        multiLineValue = value;
+        
+        // Process common properties
+        const propName = property.split(';')[0].toLowerCase();
+        if (propName === 'dtstart' || propName === 'dtend') {
+          currentEvent[propName] = parseICalDate(value);
+        } else {
+          currentEvent[propName] = decodeICalValue(value);
+        }
+      }
+    }
+
+    return events;
+  }
+
+  // Helper function to parse iCal dates
+  function parseICalDate(dateString: string): string {
+    // Remove timezone info for simplicity and convert to ISO string
+    const cleanDate = dateString.replace(/[TZ]/g, '').replace(/\+\d{4}$/, '');
+    
+    if (cleanDate.length === 8) {
+      // YYYYMMDD format
+      const year = cleanDate.substring(0, 4);
+      const month = cleanDate.substring(4, 6);
+      const day = cleanDate.substring(6, 8);
+      return new Date(`${year}-${month}-${day}`).toISOString();
+    } else if (cleanDate.length >= 14) {
+      // YYYYMMDDTHHMMSS format
+      const year = cleanDate.substring(0, 4);
+      const month = cleanDate.substring(4, 6);
+      const day = cleanDate.substring(6, 8);
+      const hour = cleanDate.substring(9, 11) || '00';
+      const minute = cleanDate.substring(11, 13) || '00';
+      const second = cleanDate.substring(13, 15) || '00';
+      return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`).toISOString();
+    }
+    
+    return new Date().toISOString();
+  }
+
+  // Helper function to decode iCal values
+  function decodeICalValue(value: string): string {
+    return value
+      .replace(/\\n/g, '\n')
+      .replace(/\\,/g, ',')
+      .replace(/\\;/g, ';')
+      .replace(/\\\\/g, '\\');
+  }
+
+  // Helper function to extract client name from description or title
+  function extractClientFromDescription(text: string): string {
+    // Try to extract client name from common patterns
+    const patterns = [
+      /client[:\s]+([^,\n]+)/i,
+      /with[:\s]+([^,\n]+)/i,
+      /für[:\s]+([^,\n]+)/i, // German "for"
+      /([A-Z][a-z]+\s+[A-Z][a-z]+)/, // Name pattern
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+    
+    return 'Imported Client';
+  }
 
   // ==================== ICAL CALENDAR FEED ====================
   app.get("/api/calendar/photography-sessions.ics", async (req: Request, res: Response) => {
