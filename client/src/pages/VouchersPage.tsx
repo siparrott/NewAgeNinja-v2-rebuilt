@@ -8,9 +8,33 @@ import { Search, Package, Gift } from 'lucide-react';
 
 import { type VoucherProduct } from '@shared/schema';
 
+// Helper function to get voucher image
+const getVoucherImage = (voucherName: string) => {
+  const name = voucherName.toLowerCase();
+  if (name.includes('famil')) {
+    return 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&h=300&fit=crop';
+  } else if (name.includes('baby') || name.includes('newborn')) {
+    return 'https://images.unsplash.com/photo-1544298621-7ad5ac882d5d?w=400&h=300&fit=crop';
+  } else if (name.includes('business') || name.includes('headshot')) {
+    return 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop';
+  } else if (name.includes('hochzeit') || name.includes('wedding')) {
+    return 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=300&fit=crop';
+  } else {
+    return 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400&h=300&fit=crop';
+  }
+};
+
 const VouchersPage: React.FC = () => {
   const { selectedCategory } = useAppContext();
   const [searchTerm, setSearchTerm] = React.useState('');
+  
+  // Handle voucher purchase
+  const handlePurchaseVoucher = (voucher: VoucherProduct) => {
+    // For now, redirect to a simple purchase form
+    // In the future, this could integrate with Stripe or another payment processor
+    const purchaseUrl = `/gutschein?product=${voucher.id}&name=${encodeURIComponent(voucher.name)}&price=${voucher.price}`;
+    window.location.href = purchaseUrl;
+  };
 
   // Fetch voucher products from database
   const { data: voucherProducts, isLoading, error } = useQuery<VoucherProduct[]>({
@@ -183,20 +207,34 @@ const VoucherProductCard: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) 
         </span>
       </div>
       
-      {/* Image Placeholder with Category Icon */}
-      <div className="h-48 bg-gradient-to-br from-pink-400 via-purple-500 to-blue-500 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white">
-            <Package className="h-16 w-16 mx-auto mb-2 opacity-80" />
-            <p className="text-sm font-medium opacity-90">
-              {voucher.name.toLowerCase().includes('famil') ? 'FAMILIE' :
-               voucher.name.toLowerCase().includes('baby') || voucher.name.toLowerCase().includes('newborn') ? 'BABY' :
-               voucher.name.toLowerCase().includes('business') ? 'BUSINESS' :
-               voucher.name.toLowerCase().includes('hochzeit') ? 'HOCHZEIT' : 'FOTOSHOOTING'}
-            </p>
+      {/* Image - Use actual image if available, otherwise styled placeholder */}
+      <div className="h-48 relative overflow-hidden">
+        {voucher.imageUrl ? (
+          <img 
+            src={voucher.imageUrl} 
+            alt={voucher.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="h-full relative">
+            {/* Use photography-themed background images */}
+            <div className="absolute inset-0 bg-cover bg-center" style={{
+              backgroundImage: `url(${getVoucherImage(voucher.name)})`
+            }}></div>
+            <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-white">
+                <Package className="h-16 w-16 mx-auto mb-2 opacity-80" />
+                <p className="text-sm font-medium opacity-90">
+                  {voucher.name.toLowerCase().includes('famil') ? 'FAMILIE' :
+                   voucher.name.toLowerCase().includes('baby') || voucher.name.toLowerCase().includes('newborn') ? 'BABY' :
+                   voucher.name.toLowerCase().includes('business') ? 'BUSINESS' :
+                   voucher.name.toLowerCase().includes('hochzeit') ? 'HOCHZEIT' : 'FOTOSHOOTING'}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       {/* Content */}
@@ -230,8 +268,8 @@ const VoucherProductCard: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) 
           </div>
           <button 
             onClick={() => {
-              // Navigate to checkout or add to cart
-              window.location.href = `/checkout/${voucher.id}`;
+              // Add to cart or direct purchase
+              handlePurchaseVoucher(voucher);
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg"
           >
