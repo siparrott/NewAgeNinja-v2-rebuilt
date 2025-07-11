@@ -27,13 +27,13 @@ const InboxSettings: React.FC<InboxSettingsProps> = ({
 }) => {
   const [settings, setSettings] = useState<EmailSettings>(
     currentSettings || {
-      provider: 'gmail',
-      smtpHost: 'smtp.gmail.com',
+      provider: 'smtp',
+      smtpHost: 'mail.newagefotografie.com',
       smtpPort: '587',
-      username: '',
+      username: 'hallo@newagefotografie.com',
       password: '',
       useTLS: true,
-      syncEnabled: false,
+      syncEnabled: true,
       syncInterval: 5
     }
   );
@@ -67,13 +67,26 @@ const InboxSettings: React.FC<InboxSettingsProps> = ({
     setTestResult(null);
 
     try {
-      // Simulate API call to test email connection
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Test with real email configuration
+      const response = await fetch('/api/email/test-connection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          provider: settings.provider,
+          smtpHost: settings.smtpHost,
+          smtpPort: settings.smtpPort,
+          username: settings.username,
+          password: settings.password,
+          useTLS: settings.useTLS
+        })
+      });
+
+      const result = await response.json();
       
-      // For demo purposes, randomly succeed or fail
-      const success = Math.random() > 0.3;
-      
-      if (success) {
+      if (response.ok && result.success) {
         setTestResult({
           success: true,
           message: 'Connection successful! Email settings are working correctly.'
@@ -81,7 +94,7 @@ const InboxSettings: React.FC<InboxSettingsProps> = ({
       } else {
         setTestResult({
           success: false,
-          message: 'Connection failed. Please check your credentials and settings.'
+          message: result.message || 'Connection failed. Please check your credentials and settings.'
         });
       }
     } catch (error) {

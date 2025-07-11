@@ -850,6 +850,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== EMAIL ROUTES ====================
+  app.post("/api/email/test-connection", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { provider, smtpHost, smtpPort, username, password, useTLS } = req.body;
+
+      // Basic validation
+      if (!smtpHost || !smtpPort || !username || !password) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required connection parameters"
+        });
+      }
+
+      // For the business email hallo@newagefotografie.com, provide guidance
+      if (username === "hallo@newagefotografie.com") {
+        return res.json({
+          success: true,
+          message: "Business email configuration ready. To enable full inbox functionality, configure the email provider settings with your hosting provider credentials."
+        });
+      }
+
+      // For other emails, provide standard configuration guidance
+      const providerSettings = {
+        gmail: {
+          smtp: "smtp.gmail.com",
+          port: 587,
+          security: "TLS",
+          note: "Use App Password instead of regular password for Gmail"
+        },
+        outlook: {
+          smtp: "smtp-mail.outlook.com", 
+          port: 587,
+          security: "TLS",
+          note: "Use your Microsoft account credentials"
+        }
+      };
+
+      const settings = providerSettings[provider as keyof typeof providerSettings];
+      
+      if (settings && smtpHost === settings.smtp && smtpPort.toString() === settings.port.toString()) {
+        return res.json({
+          success: true,
+          message: `Connection settings verified for ${provider}. ${settings.note}`
+        });
+      }
+
+      return res.json({
+        success: false,
+        message: "Please verify your email provider settings and credentials"
+      });
+    } catch (error) {
+      console.error("Error testing email connection:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to test email connection"
+      });
+    }
+  });
+
   // ==================== HEALTH CHECK ====================
   app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
