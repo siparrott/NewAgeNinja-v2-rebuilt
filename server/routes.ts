@@ -904,21 +904,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== DASHBOARD METRICS ROUTE ====================
   app.get("/api/crm/dashboard/metrics", authenticateUser, async (req: Request, res: Response) => {
     try {
-      // Mock dashboard metrics - replace with actual calculations
+      // Get actual data from database
+      const [invoices, leads, sessions, clients] = await Promise.all([
+        storage.getCrmInvoices(),
+        storage.getCrmLeads(), 
+        storage.getPhotographySessions(),
+        storage.getCrmClients()
+      ]);
+
+      // Calculate revenue metrics from real invoices
+      const totalRevenue = invoices.reduce((sum, invoice) => {
+        const total = parseFloat(invoice.total?.toString() || '0');
+        return sum + total;
+      }, 0);
+
+      const paidInvoices = invoices.filter(inv => inv.status === 'paid');
+      const paidRevenue = paidInvoices.reduce((sum, invoice) => {
+        const total = parseFloat(invoice.total?.toString() || '0');
+        return sum + total;
+      }, 0);
+
+      const avgOrderValue = invoices.length > 0 ? totalRevenue / invoices.length : 0;
+
+      // Calculate trend data from invoices over last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const recentInvoices = invoices.filter(invoice => {
+        const createdDate = new Date(invoice.createdAt || invoice.created_at);
+        return createdDate >= sevenDaysAgo;
+      });
+
+      const trendData = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const dayInvoices = recentInvoices.filter(invoice => {
+          const invoiceDate = new Date(invoice.createdAt || invoice.created_at).toISOString().split('T')[0];
+          return invoiceDate === dateStr;
+        });
+        
+        const dayRevenue = dayInvoices.reduce((sum, invoice) => {
+          const total = parseFloat(invoice.total?.toString() || '0');
+          return sum + total;
+        }, 0);
+        
+        trendData.push({ date: dateStr, value: dayRevenue });
+      }
+
       const metrics = {
-        avgOrderValue: 150.00,
-        activeUsers: 25,
-        bookedRevenue: 5250.00,
-        trendData: [
-          { date: "2025-06-22", value: 750 },
-          { date: "2025-06-23", value: 920 },
-          { date: "2025-06-24", value: 1100 },
-          { date: "2025-06-25", value: 880 },
-          { date: "2025-06-26", value: 1200 },
-          { date: "2025-06-27", value: 950 },
-          { date: "2025-06-28", value: 1250 }
-        ]
+        totalRevenue: Number(totalRevenue.toFixed(2)),
+        paidRevenue: Number(paidRevenue.toFixed(2)),
+        avgOrderValue: Number(avgOrderValue.toFixed(2)),
+        totalInvoices: invoices.length,
+        paidInvoices: paidInvoices.length,
+        activeLeads: leads.filter(lead => lead.status === 'new' || lead.status === 'contacted').length,
+        totalClients: clients.length,
+        upcomingSessions: sessions.filter(session => 
+          new Date(session.sessionDate) > new Date()
+        ).length,
+        trendData
       };
+      
       res.json(metrics);
     } catch (error) {
       console.error("Error fetching dashboard metrics:", error);
