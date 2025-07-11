@@ -110,7 +110,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <div className={`bg-gray-900 text-white transition-all duration-300 ${
         sidebarCollapsed ? 'w-16' : 'w-64'
-      } flex flex-col`}>        {/* Logo */}
+      } flex flex-col max-h-screen`}>        {/* Logo */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center">
             {!sidebarCollapsed ? (
@@ -181,40 +181,42 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
         )}
 
-        {/* Navigation */}
-        <nav className="flex-1 py-4">
-          {sidebarItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path || 
-                            (item.path === '/admin/blog' && location.pathname.startsWith('/admin/blog/'));
-            
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center px-4 py-3 text-sm transition-colors relative ${
-                  isActive
-                    ? 'bg-purple-600 text-white border-r-2 border-purple-400'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
-              >
-                <Icon size={20} className="flex-shrink-0" />
-                {!sidebarCollapsed && (
-                  <span className="ml-3">{item.label}</span>
-                )}
-                {item.badge && item.badge > 0 && (
-                  <div className={`absolute ${sidebarCollapsed ? 'top-2 right-2' : 'top-3 right-4'} flex items-center justify-center`}>
-                    {!sidebarCollapsed && <Bell size={14} className="mr-1 text-red-400" />}
-                    <span className={`bg-red-500 text-white text-xs font-bold rounded-full ${
-                      sidebarCollapsed ? 'h-4 w-4 text-xs' : 'h-5 w-5 text-xs'
-                    } flex items-center justify-center`}>
-                      {item.badge > 99 ? '99+' : item.badge}
-                    </span>
-                  </div>
-                )}
-              </Link>
-            );
-          })}
+        {/* Navigation - Fixed scrolling */}
+        <nav className="flex-1 py-4 overflow-y-auto max-h-full sidebar-scrollbar">
+          <div className="space-y-1 pb-4">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path || 
+                              (item.path === '/admin/blog' && location.pathname.startsWith('/admin/blog/'));
+              
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center px-4 py-3 text-sm transition-colors relative ${
+                    isActive
+                      ? 'bg-purple-600 text-white border-r-2 border-purple-400'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`}
+                >
+                  <Icon size={20} className="flex-shrink-0" />
+                  {!sidebarCollapsed && (
+                    <span className="ml-3">{item.label}</span>
+                  )}
+                  {item.badge && item.badge > 0 && (
+                    <div className={`absolute ${sidebarCollapsed ? 'top-2 right-2' : 'top-3 right-4'} flex items-center justify-center`}>
+                      {!sidebarCollapsed && <Bell size={14} className="mr-1 text-red-400" />}
+                      <span className={`bg-red-500 text-white text-xs font-bold rounded-full ${
+                        sidebarCollapsed ? 'h-4 w-4 text-xs' : 'h-5 w-5 text-xs'
+                      } flex items-center justify-center`}>
+                        {item.badge > 99 ? '99+' : item.badge}
+                      </span>
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
           
           {/* Frontend Link */}
           <a
