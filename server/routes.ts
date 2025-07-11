@@ -1249,6 +1249,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== CALENDAR IMPORT ====================
+  app.post("/api/calendar/import/google", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { action } = req.body;
+      
+      if (action === 'import_existing') {
+        // In a real implementation, this would:
+        // 1. Use Google Calendar API to fetch existing events
+        // 2. Parse events and convert to photography sessions
+        // 3. Save to database
+        
+        // For now, return instructions for manual import
+        res.json({
+          success: false,
+          message: 'Automatic import requires OAuth setup',
+          instructions: [
+            'Go to Google Calendar',
+            'Click Settings > Export',
+            'Download your calendar as .ics file',
+            'Upload the file using the Manual Import option'
+          ]
+        });
+      } else {
+        res.status(400).json({ error: 'Invalid action' });
+      }
+    } catch (error) {
+      console.error("Error importing calendar:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // ==================== ICAL CALENDAR FEED ====================
   app.get("/api/calendar/photography-sessions.ics", async (req: Request, res: Response) => {
     try {

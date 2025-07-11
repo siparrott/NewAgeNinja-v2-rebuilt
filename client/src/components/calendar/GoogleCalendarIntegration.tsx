@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Settings, RotateCcw, Check, AlertCircle, ExternalLink, RefreshCw, Copy, Download } from 'lucide-react';
+import { Calendar, Settings, RotateCcw, Check, AlertCircle, ExternalLink, RefreshCw, Copy, Download, Upload } from 'lucide-react';
+import ImportCalendarEvents from './ImportCalendarEvents';
 
 interface GoogleCalendarIntegrationProps {
   isOpen: boolean;
@@ -12,7 +13,7 @@ const GoogleCalendarIntegration: React.FC<GoogleCalendarIntegrationProps> = ({
   onClose,
   onConnectionSuccess
 }) => {
-  const [activeTab, setActiveTab] = useState<'ical' | 'oauth'>('ical');
+  const [activeTab, setActiveTab] = useState<'ical' | 'oauth' | 'import'>('ical');
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -54,7 +55,17 @@ const GoogleCalendarIntegration: React.FC<GoogleCalendarIntegrationProps> = ({
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              iCal Subscription (Recommended)
+              iCal Subscription
+            </button>
+            <button
+              onClick={() => setActiveTab('import')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 ${
+                activeTab === 'import'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Import Existing Events
             </button>
             <button
               onClick={() => setActiveTab('oauth')}
@@ -147,6 +158,15 @@ const GoogleCalendarIntegration: React.FC<GoogleCalendarIntegrationProps> = ({
                   <li>• Automatic updates when you modify sessions</li>
                 </ul>
               </div>
+            </div>
+          )}
+
+          {/* Import Tab */}
+          {activeTab === 'import' && (
+            <div className="space-y-6">
+              <ImportCalendarEvents onImportComplete={(count) => {
+                alert(`Successfully imported ${count} events!`);
+              }} />
             </div>
           )}
 
