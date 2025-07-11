@@ -16,7 +16,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { createClient } from '@supabase/supabase-js';
-import * as Imap from 'imap';
+import Imap from 'imap';
 import { simpleParser } from 'mailparser';
 
 // Authentication middleware placeholder - replace with actual auth
@@ -49,8 +49,17 @@ async function importEmailsFromIMAP(config: {
       host: config.host,
       port: config.port,
       tls: config.useTLS,
-      tlsOptions: { rejectUnauthorized: false }
+      tlsOptions: { rejectUnauthorized: false },
+      connTimeout: 30000, // 30 seconds
+      authTimeout: 30000,
+      keepalive: false
     });
+
+    // Add timeout for the whole operation
+    const timeout = setTimeout(() => {
+      imap.end();
+      reject(new Error('IMAP connection timeout after 60 seconds'));
+    }, 60000);
 
     const emails: Array<{
       from: string;
@@ -75,8 +84,9 @@ async function importEmailsFromIMAP(config: {
         // Search for recent emails (last 30 days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const searchDate = thirtyDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
         
-        imap.search(['SINCE', thirtyDaysAgo], function(err: any, results: number[]) {
+        imap.search(['SINCE', searchDate], function(err: any, results: number[]) {
           if (err) {
             console.error('Error searching emails:', err);
             return reject(err);
@@ -90,7 +100,10 @@ async function importEmailsFromIMAP(config: {
 
           // Fetch the last 10 emails
           const recentResults = results.slice(-10);
-          const f = imap.fetch(recentResults, { bodies: '' });
+          const f = imap.fetch(recentResults, { 
+            bodies: '', 
+            struct: true 
+          });
 
           f.on('message', function(msg: any, seqno: number) {
             let emailData = {
@@ -131,6 +144,7 @@ async function importEmailsFromIMAP(config: {
 
           f.once('end', function() {
             console.log('Done fetching all messages!');
+            clearTimeout(timeout);
             imap.end();
             resolve(emails);
           });
@@ -140,11 +154,13 @@ async function importEmailsFromIMAP(config: {
 
     imap.once('error', function(err: any) {
       console.error('IMAP connection error:', err);
+      clearTimeout(timeout);
       reject(new Error(`IMAP connection failed: ${err.message}`));
     });
 
     imap.once('end', function() {
       console.log('IMAP connection ended');
+      clearTimeout(timeout);
     });
 
     imap.connect();
