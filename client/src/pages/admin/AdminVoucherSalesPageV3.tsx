@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import AdminLayout from "../../components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -133,218 +134,14 @@ export default function AdminVoucherSalesPageV3() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Left Sidebar - CRM Navigation */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">New Age Fotografie</h2>
-          <p className="text-sm text-gray-600 mt-1">CRM & Business Management</p>
-        </div>
-        
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {/* Main CRM Navigation */}
-          <div className="space-y-1">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2">
-              Main
-            </div>
-            <a
-              href="/admin/dashboard"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Home className="h-4 w-4 mr-3" />
-              Dashboard
-            </a>
-            <a
-              href="/admin/clients"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Users className="h-4 w-4 mr-3" />
-              Clients
-            </a>
-            <a
-              href="/admin/leads"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <UserPlus className="h-4 w-4 mr-3" />
-              Leads
-            </a>
-            <a
-              href="/admin/email"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Mail className="h-4 w-4 mr-3" />
-              Email & Inbox
-            </a>
-          </div>
-
-          {/* Photography Section */}
-          <div className="space-y-1">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 pt-4">
-              Photography
-            </div>
-            <a
-              href="/admin/sessions"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Camera className="h-4 w-4 mr-3" />
-              Sessions
-            </a>
-            <a
-              href="/admin/calendar"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <CalendarIcon className="h-4 w-4 mr-3" />
-              Calendar
-            </a>
-            <a
-              href="/admin/galleries"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Image className="h-4 w-4 mr-3" />
-              Galleries
-            </a>
-            <a
-              href="/admin/files"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Folder className="h-4 w-4 mr-3" />
-              Digital Files
-            </a>
-          </div>
-
-          {/* Business Section */}
-          <div className="space-y-1">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 pt-4">
-              Business
-            </div>
-            <a
-              href="/admin/invoices"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <CreditCard className="h-4 w-4 mr-3" />
-              Invoices
-            </a>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center px-3 py-2 text-sm text-blue-700">
-                <Package className="h-4 w-4 mr-3" />
-                <span className="font-medium">Voucher System</span>
-              </div>
-              <div className="px-3 pb-2 space-y-1">
-                <button
-                  onClick={() => setActiveView("dashboard")}
-                  className={`w-full flex items-center px-2 py-1 text-xs text-left rounded transition-colors ${
-                    activeView === "dashboard" 
-                      ? "bg-blue-100 text-blue-800 font-medium" 
-                      : "text-blue-600 hover:bg-blue-100"
-                  }`}
-                >
-                  <BarChart3 className="h-3 w-3 mr-2" />
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => setActiveView("products")}
-                  className={`w-full flex items-center px-2 py-1 text-xs text-left rounded transition-colors ${
-                    activeView === "products" 
-                      ? "bg-blue-100 text-blue-800 font-medium" 
-                      : "text-blue-600 hover:bg-blue-100"
-                  }`}
-                >
-                  <Package className="h-3 w-3 mr-2" />
-                  Products
-                </button>
-                <button
-                  onClick={() => setActiveView("coupons")}
-                  className={`w-full flex items-center px-2 py-1 text-xs text-left rounded transition-colors ${
-                    activeView === "coupons" 
-                      ? "bg-blue-100 text-blue-800 font-medium" 
-                      : "text-blue-600 hover:bg-blue-100"
-                  }`}
-                >
-                  <Tag className="h-3 w-3 mr-2" />
-                  Coupons
-                </button>
-                <button
-                  onClick={() => setActiveView("sales")}
-                  className={`w-full flex items-center px-2 py-1 text-xs text-left rounded transition-colors ${
-                    activeView === "sales" 
-                      ? "bg-blue-100 text-blue-800 font-medium" 
-                      : "text-blue-600 hover:bg-blue-100"
-                  }`}
-                >
-                  <ShoppingCart className="h-3 w-3 mr-2" />
-                  Sales
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Website Section */}
-          <div className="space-y-1">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2 pt-4">
-              Website
-            </div>
-            <a
-              href="/admin/blog"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <MessageSquare className="h-4 w-4 mr-3" />
-              Blog Posts
-            </a>
-            <a
-              href="/admin/analytics"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <PieChart className="h-4 w-4 mr-3" />
-              Analytics
-            </a>
-            <a
-              href="/admin/studio-templates"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Palette className="h-4 w-4 mr-3" />
-              Studio Templates
-            </a>
-            <a
-              href="/admin/settings"
-              className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Settings className="h-4 w-4 mr-3" />
-              Settings
-            </a>
-          </div>
-        </nav>
-
-        {/* Quick Actions */}
-        <div className="p-4 border-t border-gray-200 space-y-2">
-          <Button onClick={handleCreateProduct} className="w-full justify-start" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            New Product
-          </Button>
-          <Button onClick={handleCreateCoupon} variant="outline" className="w-full justify-start" size="sm">
-            <Tag className="h-4 w-4 mr-2" />
-            New Coupon
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {activeView === "dashboard" && "Voucher Dashboard"}
-                {activeView === "products" && "Voucher Products"}
-                {activeView === "coupons" && "Discount Coupons"}
-                {activeView === "sales" && "Sales & Orders"}
-              </h1>
-              <p className="text-gray-600 mt-1">
-                {activeView === "dashboard" && "Monitor your voucher business performance"}
-                {activeView === "products" && "Create and manage photography voucher packages"}
-                {activeView === "coupons" && "Set up promotional codes and special offers"}
-                {activeView === "sales" && "Track voucher sales and customer orders"}
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900">Voucher & Sales Management</h1>
+              <p className="text-gray-600 mt-1">Manage voucher products, discount codes, and track sales performance</p>
             </div>
             <div className="flex items-center space-x-3">
               <Button variant="outline" size="sm">
@@ -359,44 +156,104 @@ export default function AdminVoucherSalesPageV3() {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
-          {activeView === "dashboard" && (
-            <DashboardView 
-              stats={stats} 
-              onCreateProduct={handleCreateProduct}
-              onCreateCoupon={handleCreateCoupon}
-              recentSales={voucherSales?.slice(0, 5) || []}
-            />
-          )}
-          {activeView === "products" && (
-            <ProductsView 
-              products={voucherProducts || []} 
-              isLoading={isLoadingProducts}
-              onCreateProduct={handleCreateProduct}
-              onEditProduct={(product) => {
-                setSelectedProduct(product);
-                setIsProductDialogOpen(true);
-              }}
-            />
-          )}
-          {activeView === "coupons" && (
-            <CouponsView 
-              coupons={discountCoupons || []} 
-              isLoading={isLoadingCoupons}
-              onCreateCoupon={handleCreateCoupon}
-              onEditCoupon={(coupon) => {
-                setSelectedCoupon(coupon);
-                setIsCouponDialogOpen(true);
-              }}
-            />
-          )}
-          {activeView === "sales" && (
-            <SalesView 
-              sales={voucherSales || []} 
-              isLoading={isLoadingSales}
-            />
-          )}
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6" aria-label="Voucher Management">
+              <button
+                onClick={() => setActiveView("dashboard")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeView === "dashboard"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Dashboard
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveView("products")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeView === "products"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center">
+                  <Package className="h-4 w-4 mr-2" />
+                  Products ({stats.activeProducts})
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveView("coupons")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeView === "coupons"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center">
+                  <Tag className="h-4 w-4 mr-2" />
+                  Coupons ({stats.activeCoupons})
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveView("sales")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeView === "sales"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center">
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Sales ({stats.totalSales})
+                </div>
+              </button>
+            </nav>
+          </div>
+
+          {/* Content */}
+          <div className="p-6">
+            {activeView === "dashboard" && (
+              <DashboardView 
+                stats={stats} 
+                onCreateProduct={handleCreateProduct}
+                onCreateCoupon={handleCreateCoupon}
+                recentSales={voucherSales?.slice(0, 5) || []}
+              />
+            )}
+            {activeView === "products" && (
+              <ProductsView 
+                products={voucherProducts || []} 
+                isLoading={isLoadingProducts}
+                onCreateProduct={handleCreateProduct}
+                onEditProduct={(product) => {
+                  setSelectedProduct(product);
+                  setIsProductDialogOpen(true);
+                }}
+              />
+            )}
+            {activeView === "coupons" && (
+              <CouponsView 
+                coupons={discountCoupons || []} 
+                isLoading={isLoadingCoupons}
+                onCreateCoupon={handleCreateCoupon}
+                onEditCoupon={(coupon) => {
+                  setSelectedCoupon(coupon);
+                  setIsCouponDialogOpen(true);
+                }}
+              />
+            )}
+            {activeView === "sales" && (
+              <SalesView 
+                sales={voucherSales || []} 
+                isLoading={isLoadingSales}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -411,7 +268,7 @@ export default function AdminVoucherSalesPageV3() {
         onOpenChange={setIsCouponDialogOpen}
         coupon={selectedCoupon}
       />
-    </div>
+    </AdminLayout>
   );
 }
 
