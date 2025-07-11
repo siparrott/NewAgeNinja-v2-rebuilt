@@ -91,7 +91,7 @@ const HomePage: React.FC = () => {
               Familien- & Neugeborenenfotograf in Wien, dem Sie vertrauen können
             </h1>
             <div className="mb-6">
-              <span className="block text-xl sm:text-2xl md:text-3xl font-medium text-gray-700 mb-2">
+              <span className="block text-xl sm:text-2xl md:text-3xl font-medium mb-2 bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
                 <Typewriter
                   options={{
                     strings: ['Endlich ein Fotostudio...'],
