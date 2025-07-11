@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -61,11 +63,12 @@ import ChatBot from './components/chat/ChatBot';
 
 function App() {
   return (
-    <AuthProvider>
-      <AppProvider>
-        <CartProvider>
-          <LanguageProvider>
-            <Router>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppProvider>
+          <CartProvider>
+            <LanguageProvider>
+              <Router>
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/fotoshootings" element={<FotoshootingsPage />} />
@@ -356,6 +359,7 @@ function App() {
         </CartProvider>
       </AppProvider>
     </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
