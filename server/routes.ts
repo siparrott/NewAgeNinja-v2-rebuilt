@@ -919,6 +919,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/crm/invoices", authenticateUser, async (req: Request, res: Response) => {
     try {
+      console.log("Received invoice data:", JSON.stringify(req.body, null, 2));
+      
       // Validate the invoice data
       const invoiceData = insertCrmInvoiceSchema.parse(req.body);
       
@@ -951,6 +953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(invoice);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error details:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ error: "Validation error", details: error.errors });
       }
       console.error("Error creating invoice:", error);

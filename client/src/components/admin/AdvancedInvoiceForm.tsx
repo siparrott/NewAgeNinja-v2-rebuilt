@@ -375,8 +375,21 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
         }))
       };
 
-      // Create the invoice using PostgreSQL API
-      const invoice = await invoiceApi.createInvoice(invoiceData);
+      // Create the invoice using direct API call
+      const response = await fetch('/api/crm/invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invoiceData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create invoice');
+      }
+
+      const invoice = await response.json();
 
       onSuccess();
       onClose();
