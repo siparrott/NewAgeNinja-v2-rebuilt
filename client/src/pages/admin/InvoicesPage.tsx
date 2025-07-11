@@ -195,13 +195,13 @@ const InvoicesPage: React.FC = () => {
   };
 
   const getTotalStats = () => {
-    const totalAmount = filteredInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+    const totalAmount = filteredInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
     const paidAmount = filteredInvoices
       .filter(inv => inv.status === 'paid')
-      .reduce((sum, inv) => sum + inv.total_amount, 0);
+      .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
     const overdueAmount = filteredInvoices
       .filter(inv => inv.status === 'overdue')
-      .reduce((sum, inv) => sum + inv.total_amount, 0);
+      .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
 
     return { totalAmount, paidAmount, overdueAmount };
   };
@@ -355,9 +355,9 @@ const InvoicesPage: React.FC = () => {
                         {invoice.client_name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">€{invoice.total_amount.toFixed(2)}</div>
+                        <div className="text-sm font-medium text-gray-900">€{(invoice.total_amount || 0).toFixed(2)}</div>
                         <div className="text-sm text-gray-500">
-                          €{invoice.amount.toFixed(2)} + €{invoice.tax_amount.toFixed(2)} tax
+                          €{(invoice.amount || 0).toFixed(2)} + €{(invoice.tax_amount || 0).toFixed(2)} tax
                         </div>
                       </td>                      <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(invoice.status)}
@@ -390,7 +390,7 @@ const InvoicesPage: React.FC = () => {
                           <button 
                             onClick={() => setPaymentTrackingInvoice({ 
                               id: invoice.id, 
-                              total: invoice.total_amount, 
+                              total: invoice.total_amount || 0, 
                               currency: 'EUR' 
                             })}
                             className="text-purple-600 hover:text-purple-900" 
