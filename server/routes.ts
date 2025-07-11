@@ -32,9 +32,24 @@ const authenticateUser = async (req: Request, res: Response, next: Function) => 
   next();
 };
 
-// Configure multer for image uploads
+// Configure multer for image uploads to local storage
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadPath = path.join(process.cwd(), 'public', 'uploads', 'vouchers');
+      // Create directory if it doesn't exist
+      const fs = require('fs');
+      if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+      }
+      cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+      const fileExt = path.extname(file.originalname);
+      const fileName = `voucher-${Date.now()}-${Math.random().toString(36).substring(2, 15)}${fileExt}`;
+      cb(null, fileName);
+    }
+  }),
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
@@ -2055,35 +2070,16 @@ New Age Fotografie CRM System
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      // Create Supabase client (using hardcoded values from client config)
-      const supabaseUrl = 'https://gtnwccyxwrevfnbkjvzm.supabase.co';
-      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0bndjayx5eHd3cmV2Zm5ia2p2em0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczNDA2MjE1NiwiZXhwIjoyMDQ5NjM4MTU2fQ.4pCjOYLQlOOQbCDLGUyWJOgqzWYhXdlgF9ZbwmMfJIY';
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      // Return the local file URL
+      const fileUrl = `/uploads/vouchers/${req.file.filename}`;
+      
+      console.log("Image uploaded successfully:", {
+        filename: req.file.filename,
+        url: fileUrl,
+        size: req.file.size
+      });
 
-      // Generate unique filename
-      const fileExt = path.extname(req.file.originalname);
-      const fileName = `voucher-${Date.now()}-${Math.random().toString(36).substring(2, 15)}${fileExt}`;
-      const filePath = `vouchers/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('images')
-        .upload(filePath, req.file.buffer, {
-          contentType: req.file.mimetype,
-          upsert: false
-        });
-
-      if (error) {
-        console.error('Supabase upload error:', error);
-        return res.status(500).json({ error: "Failed to upload image" });
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('images')
-        .getPublicUrl(filePath);
-
-      res.json({ url: publicUrl });
+      res.json({ url: fileUrl });
     } catch (error) {
       console.error("Error uploading image:", error);
       res.status(500).json({ error: "Internal server error" });
