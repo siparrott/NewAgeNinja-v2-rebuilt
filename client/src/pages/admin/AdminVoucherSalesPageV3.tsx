@@ -158,7 +158,7 @@ export default function AdminVoucherSalesPageV3() {
 
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-200 bg-gray-50">
             <nav className="flex space-x-8 px-6" aria-label="Voucher Management">
               <button
                 onClick={() => setActiveView("dashboard")}
@@ -216,7 +216,7 @@ export default function AdminVoucherSalesPageV3() {
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="p-6 bg-white">
             {activeView === "dashboard" && (
               <DashboardView 
                 stats={stats} 
@@ -294,72 +294,72 @@ const DashboardView: React.FC<{
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white shadow-sm border border-gray-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-700">Active Products</CardTitle>
+            <Package className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeProducts}</div>
-            <p className="text-xs text-muted-foreground">Available for sale</p>
+            <div className="text-2xl font-bold text-gray-900">{stats.activeProducts}</div>
+            <p className="text-xs text-gray-600">Available for sale</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white shadow-sm border border-gray-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Coupons</CardTitle>
-            <Tag className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-700">Active Coupons</CardTitle>
+            <Tag className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeCoupons}</div>
-            <p className="text-xs text-muted-foreground">Currently valid</p>
+            <div className="text-2xl font-bold text-gray-900">{stats.activeCoupons}</div>
+            <p className="text-xs text-gray-600">Currently valid</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white shadow-sm border border-gray-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-700">Avg Order Value</CardTitle>
+            <TrendingUp className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">€{stats.avgOrderValue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Per voucher sale</p>
+            <div className="text-2xl font-bold text-gray-900">€{stats.avgOrderValue.toFixed(2)}</div>
+            <p className="text-xs text-gray-600">Per voucher sale</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors cursor-pointer" onClick={onCreateProduct}>
+        <Card className="bg-white border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors cursor-pointer hover:bg-blue-50" onClick={onCreateProduct}>
           <CardHeader className="text-center">
             <div className="mx-auto w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
               <Package className="h-6 w-6 text-blue-600" />
             </div>
-            <CardTitle>Create New Voucher Product</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-gray-900">Create New Voucher Product</CardTitle>
+            <CardDescription className="text-gray-700">
               Set up a new photography voucher package for customers to purchase
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Button onClick={onCreateProduct} className="w-full">
+            <Button onClick={onCreateProduct} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Create Voucher Product
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-dashed border-gray-300 hover:border-purple-500 transition-colors cursor-pointer" onClick={onCreateCoupon}>
+        <Card className="bg-white border-2 border-dashed border-purple-300 hover:border-purple-500 transition-colors cursor-pointer hover:bg-purple-50" onClick={onCreateCoupon}>
           <CardHeader className="text-center">
             <div className="mx-auto w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
               <Tag className="h-6 w-6 text-purple-600" />
             </div>
-            <CardTitle>Create Discount Coupon</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-gray-900">Create Discount Coupon</CardTitle>
+            <CardDescription className="text-gray-700">
               Generate promotional codes for special offers and campaigns
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Button onClick={onCreateCoupon} variant="secondary" className="w-full">
+            <Button onClick={onCreateCoupon} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Create Discount Coupon
             </Button>
@@ -753,21 +753,95 @@ const ProductDialog: React.FC<{
   onOpenChange: (open: boolean) => void;
   product: VoucherProduct | null;
 }> = ({ open, onOpenChange, product }) => {
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {product ? 'Edit Voucher Product' : 'Create New Voucher Product'}
           </DialogTitle>
           <DialogDescription>
             {product 
-              ? 'Update the details of this voucher product'
-              : 'Create a new voucher product that customers can purchase'
+              ? 'Update the details of this voucher product including promotional images'
+              : 'Create a new voucher product that customers can purchase with promotional imagery'
             }
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Product Image Upload */}
+          <div className="space-y-3">
+            <Label htmlFor="product-image" className="text-base font-medium">Product Image</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-gray-400 transition-colors">
+              {imagePreview ? (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Product preview" 
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={() => {
+                        setSelectedImage(null);
+                        setImagePreview(null);
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => document.getElementById('product-image')?.click()}
+                    className="w-full"
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Change Image
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">Upload a promotional image for this voucher</p>
+                    <p className="text-xs text-gray-500">Recommended: 400x300px, JPG or PNG, max 2MB</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => document.getElementById('product-image')?.click()}
+                    className="mt-4"
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Upload Image
+                  </Button>
+                </div>
+              )}
+              <input
+                id="product-image"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {/* Product Details */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Product Name</Label>
@@ -775,6 +849,7 @@ const ProductDialog: React.FC<{
                 id="name" 
                 placeholder="e.g., Family Photo Session Voucher"
                 defaultValue={product?.name || ''}
+                className="bg-white"
               />
             </div>
             <div className="space-y-2">
@@ -782,21 +857,27 @@ const ProductDialog: React.FC<{
               <Input 
                 id="price" 
                 type="number" 
+                step="0.01"
                 placeholder="199.00"
                 defaultValue={product?.price || ''}
+                className="bg-white"
               />
             </div>
           </div>
+          
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea 
               id="description" 
               placeholder="Describe what's included in this voucher package..."
-              rows={3}
+              rows={4}
               defaultValue={product?.description || ''}
+              className="bg-white resize-none"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          {/* Additional Settings */}
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="validity">Validity (Months)</Label>
               <Input 
@@ -804,6 +885,17 @@ const ProductDialog: React.FC<{
                 type="number" 
                 placeholder="12"
                 defaultValue={product?.validityMonths || ''}
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="display-order">Display Order</Label>
+              <Input 
+                id="display-order" 
+                type="number" 
+                placeholder="1"
+                defaultValue={product?.displayOrder || ''}
+                className="bg-white"
               />
             </div>
             <div className="space-y-2 flex items-center space-x-2 pt-6">
@@ -811,11 +903,38 @@ const ProductDialog: React.FC<{
                 id="active" 
                 defaultChecked={product?.isActive ?? true}
               />
-              <Label htmlFor="active">Active for sale</Label>
+              <Label htmlFor="active" className="font-medium">Active for sale</Label>
+            </div>
+          </div>
+
+          {/* Category and Target Audience */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select defaultValue="Familie">
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Familie">Familie</SelectItem>
+                  <SelectItem value="Baby">Baby & Newborn</SelectItem>
+                  <SelectItem value="Hochzeit">Hochzeit</SelectItem>
+                  <SelectItem value="Business">Business</SelectItem>
+                  <SelectItem value="Event">Event</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="target-audience">Target Audience</Label>
+              <Input 
+                id="target-audience" 
+                placeholder="e.g., Young families, Expecting parents"
+                className="bg-white"
+              />
             </div>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="pt-6">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
