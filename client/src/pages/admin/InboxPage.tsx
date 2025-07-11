@@ -66,6 +66,7 @@ const InboxPage: React.FC = () => {
       }
 
       const data = await response.json();
+      console.log('Fetched messages:', data);
       setMessages(data || []);
     } catch (err) {
       console.error('Error fetching messages:', err);
@@ -77,6 +78,7 @@ const InboxPage: React.FC = () => {
 
   const filterMessages = () => {
     let filtered = [...messages];
+    console.log('Filtering messages, total:', messages.length);
     
     // Apply search filter
     if (searchTerm) {
@@ -93,6 +95,7 @@ const InboxPage: React.FC = () => {
       filtered = filtered.filter(message => message.status === statusFilter);
     }
     
+    console.log('Filtered messages:', filtered.length);
     setFilteredMessages(filtered);
   };
 
@@ -281,14 +284,7 @@ const InboxPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Debug Info */}
-        <div className="bg-blue-50 p-3 rounded-lg text-sm">
-          <div><strong>Messages loaded:</strong> {messages.length}</div>
-          <div><strong>Filtered messages:</strong> {filteredMessages.length}</div>
-          <div><strong>Status filter:</strong> {statusFilter}</div>
-          <div><strong>Search term:</strong> "{searchTerm}"</div>
-          <div><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</div>
-        </div>
+
 
         {/* Error Message */}
         {error && (
