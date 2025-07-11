@@ -1213,22 +1213,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       const mailOptions = {
-        from: '"New Age Fotografie" <hallo@newagefotografie.com>',
+        from: 'hallo@newagefotografie.com', // Use simple format
         to: to,
         subject: subject,
         text: body,
         html: body.replace(/\n/g, '<br>'),
-        attachments: processedAttachments
+        attachments: processedAttachments,
+        // Add debugging headers
+        headers: {
+          'X-Mailer': 'New Age Fotografie CRM',
+          'X-Priority': '3'
+        }
       };
 
       const info = await transporter.sendMail(mailOptions);
       
       console.log('Email sent successfully:', info.messageId);
+      console.log('SMTP Response:', info.response);
+      console.log('Envelope:', info.envelope);
+      console.log('Message sent from:', info.envelope?.from, 'to:', info.envelope?.to);
       
       res.json({ 
         success: true, 
         message: 'Email sent successfully',
-        messageId: info.messageId
+        messageId: info.messageId,
+        response: info.response,
+        envelope: info.envelope
       });
     } catch (error) {
       console.error('Email send error:', error);
