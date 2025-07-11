@@ -277,7 +277,7 @@ const PhotographyCalendarPage: React.FC = () => {
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors"
             >
               <Settings size={18} />
-              <span>Google Calendar</span>
+              <span>Calendar Sync</span>
             </button>
             <button 
               onClick={handleCreateSession}

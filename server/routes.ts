@@ -1249,6 +1249,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== ICAL CALENDAR FEED ====================
+  app.get("/api/calendar/photography-sessions.ics", async (req: Request, res: Response) => {
+    try {
+      // Fetch all photography sessions
+      const sessions = await storage.getPhotographySessions();
+      
+      // Generate iCal content
+      const icalLines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//New Age Fotografie//Photography CRM//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'X-WR-CALNAME:Photography Sessions',
+        'X-WR-CALDESC:Photography sessions from New Age Fotografie CRM'
+      ];
+
+      // Add each session as an event
+      for (const session of sessions) {
+        if (session.startTime && session.endTime) {
+          const startDate = new Date(session.startTime);
+          const endDate = new Date(session.endTime);
+          
+          // Format dates for iCal (YYYYMMDDTHHMMSSZ)
+          const formatICalDate = (date: Date) => {
+            return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+          };
+          
+          const uid = `session-${session.id}@newagefotografie.com`;
+          const now = new Date();
+          const dtstamp = formatICalDate(now);
+          
+          icalLines.push(
+            'BEGIN:VEVENT',
+            `UID:${uid}`,
+            `DTSTAMP:${dtstamp}`,
+            `DTSTART:${formatICalDate(startDate)}`,
+            `DTEND:${formatICalDate(endDate)}`,
+            `SUMMARY:${session.title.replace(/[,;\\]/g, '\\$&')}`,
+            `DESCRIPTION:${(session.description || '').replace(/[,;\\]/g, '\\$&')}${session.clientName ? '\\nClient: ' + session.clientName : ''}${session.sessionType ? '\\nType: ' + session.sessionType : ''}`,
+            `LOCATION:${(session.locationName || session.locationAddress || '').replace(/[,;\\]/g, '\\$&')}`,
+            `STATUS:${session.status === 'completed' ? 'CONFIRMED' : session.status === 'cancelled' ? 'CANCELLED' : 'TENTATIVE'}`,
+            session.priority === 'high' ? 'PRIORITY:1' : session.priority === 'low' ? 'PRIORITY:9' : 'PRIORITY:5',
+            'END:VEVENT'
+          );
+        }
+      }
+
+      icalLines.push('END:VCALENDAR');
+      
+      const icalContent = icalLines.join('\r\n');
+      
+      // Set appropriate headers for iCal
+      res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="photography-sessions.ics"');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      res.send(icalContent);
+      
+    } catch (error) {
+      console.error("Error generating iCal feed:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.post("/api/email/test-connection", authenticateUser, async (req: Request, res: Response) => {
     try {
       const { provider, smtpHost, smtpPort, username, password, useTLS } = req.body;
