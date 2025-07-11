@@ -87,7 +87,7 @@ const HomePage: React.FC = () => {
       <section className="bg-white">
         <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between">
           <div className="max-w-2xl md:w-3/5 mb-8 md:mb-0">
-            <h1 className="mb-4 leading-tight text-2xl sm:text-3xl md:text-5xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
+            <h1 className="mb-4 leading-tight text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
               Familien- & Neugeborenenfotograf in Wien, dem Sie vertrauen können
             </h1>
             <div className="mb-6">
