@@ -14,6 +14,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { 
+  type VoucherProduct, 
+  type DiscountCoupon, 
+  type VoucherSale,
+  insertVoucherProductSchema,
+  insertDiscountCouponSchema
+} from "@shared/schema";
+import { 
   Plus, 
   Edit, 
   Trash2, 
@@ -48,48 +55,24 @@ import {
   Palette
 } from "lucide-react";
 
-// Types
-type VoucherProduct = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  validityMonths: number;
-  isActive: boolean;
-  displayOrder: number;
-  createdAt: string;
-};
+// Form schemas
+const voucherProductFormSchema = insertVoucherProductSchema.extend({
+  price: z.string().min(1, "Price is required"),
+  validityPeriod: z.string().min(1, "Validity period is required"),
+  displayOrder: z.string().optional(),
+});
 
-type DiscountCoupon = {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  discountType: 'percentage' | 'fixed_amount';
-  discountValue: number;
-  minOrderAmount?: number;
-  maxDiscountAmount?: number;
-  startDate?: string;
-  endDate?: string;
-  isActive: boolean;
-  usageLimit?: number;
-  usageCount: number;
-  createdAt: string;
-};
+const discountCouponFormSchema = insertDiscountCouponSchema.extend({
+  discountValue: z.string().min(1, "Discount value is required"),
+  minOrderAmount: z.string().optional(),
+  maxDiscountAmount: z.string().optional(),
+  usageLimit: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
 
-type VoucherSale = {
-  id: string;
-  voucherCode: string;
-  productId: string;
-  purchaserName: string;
-  purchaserEmail: string;
-  originalAmount: number;
-  discountAmount: number;
-  finalAmount: number;
-  paymentStatus: string;
-  status: string;
-  createdAt: string;
-};
+type VoucherProductFormData = z.infer<typeof voucherProductFormSchema>;
+type DiscountCouponFormData = z.infer<typeof discountCouponFormSchema>;
 
 export default function AdminVoucherSalesPageV3() {
   const [activeView, setActiveView] = useState("dashboard");
@@ -99,6 +82,31 @@ export default function AdminVoucherSalesPageV3() {
   const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
+
+  // Forms
+  const productForm = useForm<VoucherProductFormData>({
+    resolver: zodResolver(voucherProductFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      price: "",
+      validityPeriod: "",
+      isActive: true,
+      displayOrder: "0",
+    },
+  });
+
+  const couponForm = useForm<DiscountCouponFormData>({
+    resolver: zodResolver(discountCouponFormSchema),
+    defaultValues: {
+      code: "",
+      name: "",
+      description: "",
+      discountType: "percentage",
+      discountValue: "",
+      isActive: true,
+    },
+  });
 
   // API calls
   const { data: voucherProducts, isLoading: isLoadingProducts } = useQuery<VoucherProduct[]>({
@@ -123,14 +131,148 @@ export default function AdminVoucherSalesPageV3() {
     totalDiscountGiven: voucherSales?.reduce((sum, sale) => sum + Number(sale.discountAmount), 0) || 0
   };
 
+  // Mutations
+  const createProductMutation = useMutation({
+    mutationFn: async (data: VoucherProductFormData) => {
+      const response = await fetch("/api/vouchers/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          price: data.price,
+          validityPeriod: parseInt(data.validityPeriod),
+          displayOrder: parseInt(data.displayOrder || "0"),
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to create product");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vouchers/products"] });
+      setIsProductDialogOpen(false);
+      productForm.reset();
+      alert("Voucher product created successfully!");
+    },
+    onError: (error) => {
+      console.error("Error creating product:", error);
+      alert("Failed to create voucher product");
+    },
+  });
+
+  const updateProductMutation = useMutation({
+    mutationFn: async (data: VoucherProductFormData & { id: string }) => {
+      const response = await fetch(`/api/vouchers/products/${data.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          price: data.price,
+          validityPeriod: parseInt(data.validityPeriod),
+          displayOrder: parseInt(data.displayOrder || "0"),
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to update product");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vouchers/products"] });
+      setIsProductDialogOpen(false);
+      setSelectedProduct(null);
+      productForm.reset();
+      alert("Voucher product updated successfully!");
+    },
+    onError: (error) => {
+      console.error("Error updating product:", error);
+      alert("Failed to update voucher product");
+    },
+  });
+
+  const createCouponMutation = useMutation({
+    mutationFn: async (data: DiscountCouponFormData) => {
+      const response = await fetch("/api/vouchers/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          discountValue: data.discountValue,
+          minOrderAmount: data.minOrderAmount || undefined,
+          maxDiscountAmount: data.maxDiscountAmount || undefined,
+          usageLimit: data.usageLimit ? parseInt(data.usageLimit) : undefined,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to create coupon");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vouchers/coupons"] });
+      setIsCouponDialogOpen(false);
+      couponForm.reset();
+      alert("Discount coupon created successfully!");
+    },
+    onError: (error) => {
+      console.error("Error creating coupon:", error);
+      alert("Failed to create discount coupon");
+    },
+  });
+
+  // Handlers
   const handleCreateProduct = () => {
     setSelectedProduct(null);
+    productForm.reset();
+    setIsProductDialogOpen(true);
+  };
+
+  const handleEditProduct = (product: VoucherProduct) => {
+    setSelectedProduct(product);
+    productForm.reset({
+      name: product.name,
+      description: product.description || "",
+      price: product.price.toString(),
+      validityPeriod: product.validityPeriod?.toString() || "365",
+      isActive: product.isActive,
+      displayOrder: product.displayOrder?.toString() || "0",
+    });
     setIsProductDialogOpen(true);
   };
 
   const handleCreateCoupon = () => {
     setSelectedCoupon(null);
+    couponForm.reset();
     setIsCouponDialogOpen(true);
+  };
+
+  const handleEditCoupon = (coupon: DiscountCoupon) => {
+    setSelectedCoupon(coupon);
+    couponForm.reset({
+      code: coupon.code,
+      name: coupon.name,
+      description: coupon.description || "",
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue.toString(),
+      minOrderAmount: coupon.minOrderAmount?.toString() || "",
+      maxDiscountAmount: coupon.maxDiscountAmount?.toString() || "",
+      usageLimit: coupon.usageLimit?.toString() || "",
+      startDate: coupon.startDate || "",
+      endDate: coupon.endDate || "",
+      isActive: coupon.isActive,
+    });
+    setIsCouponDialogOpen(true);
+  };
+
+  const handleProductSubmit = (data: VoucherProductFormData) => {
+    if (selectedProduct) {
+      updateProductMutation.mutate({ ...data, id: selectedProduct.id });
+    } else {
+      createProductMutation.mutate(data);
+    }
+  };
+
+  const handleCouponSubmit = (data: DiscountCouponFormData) => {
+    if (selectedCoupon) {
+      // updateCouponMutation.mutate({ ...data, id: selectedCoupon.id });
+    } else {
+      createCouponMutation.mutate(data);
+    }
   };
 
   return (
@@ -230,10 +372,7 @@ export default function AdminVoucherSalesPageV3() {
                 products={voucherProducts || []} 
                 isLoading={isLoadingProducts}
                 onCreateProduct={handleCreateProduct}
-                onEditProduct={(product) => {
-                  setSelectedProduct(product);
-                  setIsProductDialogOpen(true);
-                }}
+                onEditProduct={handleEditProduct}
               />
             )}
             {activeView === "coupons" && (
@@ -241,10 +380,7 @@ export default function AdminVoucherSalesPageV3() {
                 coupons={discountCoupons || []} 
                 isLoading={isLoadingCoupons}
                 onCreateCoupon={handleCreateCoupon}
-                onEditCoupon={(coupon) => {
-                  setSelectedCoupon(coupon);
-                  setIsCouponDialogOpen(true);
-                }}
+                onEditCoupon={handleEditCoupon}
               />
             )}
             {activeView === "sales" && (
@@ -262,11 +398,15 @@ export default function AdminVoucherSalesPageV3() {
         open={isProductDialogOpen}
         onOpenChange={setIsProductDialogOpen}
         product={selectedProduct}
+        onSubmit={handleProductSubmit}
+        form={productForm}
       />
       <CouponDialog 
         open={isCouponDialogOpen}
         onOpenChange={setIsCouponDialogOpen}
         coupon={selectedCoupon}
+        onSubmit={handleCouponSubmit}
+        form={couponForm}
       />
     </AdminLayout>
   );
@@ -752,7 +892,9 @@ const ProductDialog: React.FC<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: VoucherProduct | null;
-}> = ({ open, onOpenChange, product }) => {
+  onSubmit: (data: VoucherProductFormData) => void;
+  form: any;
+}> = ({ open, onOpenChange, product, onSubmit, form }) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -846,32 +988,35 @@ const ProductDialog: React.FC<{
             <div className="space-y-2">
               <Label htmlFor="name">Product Name</Label>
               <Input 
-                id="name" 
+                {...form.register("name")}
                 placeholder="e.g., Family Photo Session Voucher"
-                defaultValue={product?.name || ''}
                 className="bg-white"
               />
+              {form.formState.errors.name && (
+                <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="price">Price (€)</Label>
               <Input 
-                id="price" 
+                {...form.register("price")}
                 type="number" 
                 step="0.01"
                 placeholder="199.00"
-                defaultValue={product?.price || ''}
                 className="bg-white"
               />
+              {form.formState.errors.price && (
+                <p className="text-sm text-red-600">{form.formState.errors.price.message}</p>
+              )}
             </div>
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea 
-              id="description" 
+              {...form.register("description")}
               placeholder="Describe what's included in this voucher package..."
               rows={4}
-              defaultValue={product?.description || ''}
               className="bg-white resize-none"
             />
           </div>
@@ -879,31 +1024,32 @@ const ProductDialog: React.FC<{
           {/* Additional Settings */}
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="validity">Validity (Months)</Label>
+              <Label htmlFor="validityPeriod">Validity (Days)</Label>
               <Input 
-                id="validity" 
+                {...form.register("validityPeriod")}
                 type="number" 
-                placeholder="12"
-                defaultValue={product?.validityMonths || ''}
+                placeholder="365"
                 className="bg-white"
               />
+              {form.formState.errors.validityPeriod && (
+                <p className="text-sm text-red-600">{form.formState.errors.validityPeriod.message}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="display-order">Display Order</Label>
+              <Label htmlFor="displayOrder">Display Order</Label>
               <Input 
-                id="display-order" 
+                {...form.register("displayOrder")}
                 type="number" 
                 placeholder="1"
-                defaultValue={product?.displayOrder || ''}
                 className="bg-white"
               />
             </div>
             <div className="space-y-2 flex items-center space-x-2 pt-6">
               <Switch 
-                id="active" 
-                defaultChecked={product?.isActive ?? true}
+                checked={form.watch("isActive")}
+                onCheckedChange={(checked) => form.setValue("isActive", checked)}
               />
-              <Label htmlFor="active" className="font-medium">Active for sale</Label>
+              <Label className="font-medium">Active for sale</Label>
             </div>
           </div>
 
@@ -911,24 +1057,27 @@ const ProductDialog: React.FC<{
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select defaultValue="Familie">
+              <Select 
+                onValueChange={(value) => form.setValue("category", value)} 
+                defaultValue={form.watch("category") || "familie"}
+              >
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Familie">Familie</SelectItem>
-                  <SelectItem value="Baby">Baby & Newborn</SelectItem>
-                  <SelectItem value="Hochzeit">Hochzeit</SelectItem>
-                  <SelectItem value="Business">Business</SelectItem>
-                  <SelectItem value="Event">Event</SelectItem>
+                  <SelectItem value="familie">Familie</SelectItem>
+                  <SelectItem value="baby">Baby & Newborn</SelectItem>
+                  <SelectItem value="hochzeit">Hochzeit</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                  <SelectItem value="event">Event</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="target-audience">Target Audience</Label>
+              <Label htmlFor="sessionType">Session Type</Label>
               <Input 
-                id="target-audience" 
-                placeholder="e.g., Young families, Expecting parents"
+                {...form.register("sessionType")}
+                placeholder="e.g., Familie Portrait, Business Headshots"
                 className="bg-white"
               />
             </div>
@@ -938,10 +1087,7 @@ const ProductDialog: React.FC<{
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={() => {
-            alert(product ? "Product updated successfully" : "Product created successfully");
-            onOpenChange(false);
-          }}>
+          <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
             {product ? 'Update Product' : 'Create Product'}
           </Button>
         </DialogFooter>
@@ -955,7 +1101,9 @@ const CouponDialog: React.FC<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
   coupon: DiscountCoupon | null;
-}> = ({ open, onOpenChange, coupon }) => {
+  onSubmit: (data: DiscountCouponFormData) => void;
+  form: any;
+}> = ({ open, onOpenChange, coupon, onSubmit, form }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
@@ -1053,10 +1201,7 @@ const CouponDialog: React.FC<{
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={() => {
-            alert(coupon ? "Coupon updated successfully" : "Coupon created successfully");
-            onOpenChange(false);
-          }}>
+          <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
             {coupon ? 'Update Coupon' : 'Create Coupon'}
           </Button>
         </DialogFooter>
