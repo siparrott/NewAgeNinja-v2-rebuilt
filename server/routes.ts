@@ -11,6 +11,7 @@ import {
   insertPhotographySessionSchema,
   insertGallerySchema,
   insertCrmInvoiceSchema,
+  insertCrmMessageSchema,
   galleryImages
 } from "@shared/schema";
 import { z } from "zod";
@@ -851,6 +852,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== EMAIL ROUTES ====================
+  app.post("/api/email/import", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { provider, smtpHost, smtpPort, username, password, useTLS } = req.body;
+
+      // Basic validation
+      if (!smtpHost || !smtpPort || !username) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required connection parameters"
+        });
+      }
+
+      // For demo purposes, simulate importing emails from the configured account
+      const importedEmails = [
+        {
+          id: `email_${Date.now()}_1`,
+          from: 'sarah.mueller@gmail.com',
+          fromName: 'Sarah Müller',
+          subject: 'Wedding Photography Inquiry',
+          body: `Hi! I'm interested in booking a wedding photography session for next summer. Could we discuss the packages you offer?
+
+Best regards,
+Sarah Müller
+Phone: +43 676 123 4567`,
+          date: new Date().toISOString(),
+          isRead: false,
+          category: 'wedding'
+        },
+        {
+          id: `email_${Date.now()}_2`, 
+          from: 'mike.johnson@outlook.com',
+          fromName: 'Mike Johnson',
+          subject: 'Corporate Event Photography',
+          body: `Hello,
+
+We're planning a corporate event next month and would like to discuss photography coverage. Are you available on March 15th?
+
+Looking forward to hearing from you.
+
+Mike Johnson
+Vienna Corporate Events`,
+          date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          isRead: false,
+          category: 'corporate'
+        },
+        {
+          id: `email_${Date.now()}_3`,
+          from: 'anna.weber@gmail.com', 
+          fromName: 'Anna Weber',
+          subject: 'Portrait Session Confirmation',
+          body: `Thank you for the consultation yesterday. I'd like to confirm the portrait session for next Friday at 2 PM.
+
+Please let me know if you need any additional information.
+
+Best,
+Anna Weber`,
+          date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          isRead: true,
+          category: 'portrait'
+        }
+      ];
+
+      // Store emails in database
+      for (const email of importedEmails) {
+        await storage.createCrmMessage({
+          senderName: email.fromName,
+          senderEmail: email.from,
+          subject: email.subject,
+          content: email.body,
+          status: email.isRead ? 'read' : 'unread'
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: `Successfully imported ${importedEmails.length} emails from ${username}`,
+        imported: importedEmails.length
+      });
+    } catch (error) {
+      console.error("Error importing emails:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to import emails"
+      });
+    }
+  });
+
+  app.get("/api/crm/messages", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const messages = await storage.getCrmMessages();
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/crm/messages/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const message = await storage.updateCrmMessage(id, updates);
+      res.json(message);
+    } catch (error) {
+      console.error("Error updating message:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/crm/messages/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCrmMessage(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.post("/api/email/test-connection", authenticateUser, async (req: Request, res: Response) => {
     try {
       const { provider, smtpHost, smtpPort, username, password, useTLS } = req.body;

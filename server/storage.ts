@@ -6,6 +6,7 @@ import {
   crmInvoices,
   crmInvoiceItems,
   crmInvoicePayments,
+  crmMessages,
   galleries,
   photographySessions,
   type User, 
@@ -22,6 +23,8 @@ import {
   type InsertCrmInvoiceItem,
   type CrmInvoicePayment,
   type InsertCrmInvoicePayment,
+  type CrmMessage,
+  type InsertCrmMessage,
   type PhotographySession,
   type InsertPhotographySession,
   type Gallery,
@@ -74,6 +77,13 @@ export interface IStorage {
   createGallery(gallery: InsertGallery): Promise<Gallery>;
   updateGallery(id: string, updates: Partial<Gallery>): Promise<Gallery>;
   deleteGallery(id: string): Promise<void>;
+
+  // CRM Message management
+  getCrmMessages(): Promise<CrmMessage[]>;
+  getCrmMessage(id: string): Promise<CrmMessage | undefined>;
+  createCrmMessage(message: InsertCrmMessage): Promise<CrmMessage>;
+  updateCrmMessage(id: string, updates: Partial<CrmMessage>): Promise<CrmMessage>;
+  deleteCrmMessage(id: string): Promise<void>;
 
   // Invoice management
   getCrmInvoices(): Promise<CrmInvoice[]>;
@@ -316,6 +326,33 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCrmInvoicePayment(paymentId: string): Promise<void> {
     await db.delete(crmInvoicePayments).where(eq(crmInvoicePayments.id, paymentId));
+  }
+
+  // CRM Message methods
+  async getCrmMessages(): Promise<CrmMessage[]> {
+    return await db.select().from(crmMessages).orderBy(desc(crmMessages.createdAt));
+  }
+
+  async getCrmMessage(id: string): Promise<CrmMessage | undefined> {
+    const results = await db.select().from(crmMessages).where(eq(crmMessages.id, id));
+    return results[0];
+  }
+
+  async createCrmMessage(message: InsertCrmMessage): Promise<CrmMessage> {
+    const results = await db.insert(crmMessages).values(message).returning();
+    return results[0];
+  }
+
+  async updateCrmMessage(id: string, updates: Partial<CrmMessage>): Promise<CrmMessage> {
+    const results = await db.update(crmMessages)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(crmMessages.id, id))
+      .returning();
+    return results[0];
+  }
+
+  async deleteCrmMessage(id: string): Promise<void> {
+    await db.delete(crmMessages).where(eq(crmMessages.id, id));
   }
 }
 

@@ -55,33 +55,18 @@ const InboxPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase
-        .from('crm_messages')
-        .select(`
-          *,
-          crm_clients(name)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Format the data
-      const formattedMessages = data?.map(message => ({
-        id: message.id,
-        sender_name: message.sender_name,
-        sender_email: message.sender_email,
-        subject: message.subject,
-        content: message.content,
-        status: message.status,
-        client_id: message.client_id,
-        client_name: message.crm_clients?.name || null,
-        assigned_to: message.assigned_to,
-        replied_at: message.replied_at,
-        created_at: message.created_at,
-        updated_at: message.updated_at
-      }));
-      
-      setMessages(formattedMessages || []);
+      const response = await fetch('/api/crm/messages', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
+      }
+
+      const data = await response.json();
+      setMessages(data || []);
     } catch (err) {
       console.error('Error fetching messages:', err);
       setError('Failed to load messages. Please try again.');
@@ -124,12 +109,17 @@ const InboxPage: React.FC = () => {
         updateData.replied_at = new Date().toISOString();
       }
       
-      const { error } = await supabase
-        .from('crm_messages')
-        .update(updateData)
-        .eq('id', id);
-      
-      if (error) throw error;
+      const response = await fetch(`/api/crm/messages/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update message status');
+      }
       
       // Update local state
       setMessages(prevMessages => 
@@ -164,12 +154,16 @@ const InboxPage: React.FC = () => {
     try {
       setLoading(true);
       
-      const { error } = await supabase
-        .from('crm_messages')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      const response = await fetch(`/api/crm/messages/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete message');
+      }
       
       // Remove from local state
       setMessages(prevMessages => prevMessages.filter(message => message.id !== id));

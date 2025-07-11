@@ -38,6 +38,7 @@ const InboxSettings: React.FC<InboxSettingsProps> = ({
     }
   );
   const [testing, setTesting] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -118,6 +119,40 @@ const InboxSettings: React.FC<InboxSettingsProps> = ({
       console.error('Error saving settings:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const importEmails = async () => {
+    setImporting(true);
+    try {
+      const response = await fetch('/api/email/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setTestResult({ 
+          success: true, 
+          message: `Successfully imported ${result.count} emails` 
+        });
+      } else {
+        setTestResult({ 
+          success: false, 
+          message: result.message || 'Failed to import emails' 
+        });
+      }
+    } catch (error) {
+      setTestResult({ 
+        success: false, 
+        message: 'Failed to import emails: Connection error' 
+      });
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -289,16 +324,27 @@ const InboxSettings: React.FC<InboxSettingsProps> = ({
             )}
           </div>
 
-          {/* Test Connection */}
-          <div className="border-t border-gray-200 pt-4">
-            <button
-              onClick={testConnection}
-              disabled={testing || !settings.username || !settings.smtpHost}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <TestTube2 className={`h-4 w-4 ${testing ? 'animate-spin' : ''}`} />
-              <span>{testing ? 'Testing...' : 'Test Connection'}</span>
-            </button>
+          {/* Test Connection & Import */}
+          <div className="border-t border-gray-200 pt-4 space-y-3">
+            <div className="flex space-x-3">
+              <button
+                onClick={testConnection}
+                disabled={testing || !settings.username || !settings.smtpHost}
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <TestTube2 className={`h-4 w-4 ${testing ? 'animate-spin' : ''}`} />
+                <span>{testing ? 'Testing...' : 'Test Connection'}</span>
+              </button>
+              
+              <button
+                onClick={importEmails}
+                disabled={importing || !settings.username || !settings.smtpHost}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Mail className={`h-4 w-4 ${importing ? 'animate-spin' : ''}`} />
+                <span>{importing ? 'Importing...' : 'Import Emails'}</span>
+              </button>
+            </div>
 
             {testResult && (
               <div className={`mt-3 p-3 rounded-lg flex items-start space-x-2 ${

@@ -203,6 +203,21 @@ export const crmInvoicePayments = pgTable("crm_invoice_payments", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// CRM Messages
+export const crmMessages = pgTable("crm_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  senderName: text("sender_name").notNull(),
+  senderEmail: text("sender_email").notNull(),
+  subject: text("subject").notNull(),
+  content: text("content").notNull(),
+  status: text("status").default("unread"),
+  clientId: uuid("client_id").references(() => crmClients.id),
+  assignedTo: uuid("assigned_to").references(() => users.id),
+  repliedAt: timestamp("replied_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Gallery Systems
 export const galleries = pgTable("galleries", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -586,6 +601,16 @@ export const insertCrmInvoiceItemSchema = createInsertSchema(crmInvoiceItems).pi
   sortOrder: true,
 });
 
+export const insertCrmMessageSchema = createInsertSchema(crmMessages).pick({
+  senderName: true,
+  senderEmail: true,
+  subject: true,
+  content: true,
+  status: true,
+  clientId: true,
+  assignedTo: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertPhotographySession = z.infer<typeof insertPhotographySessionSchema>;
@@ -604,6 +629,8 @@ export type InsertCrmInvoiceItem = z.infer<typeof insertCrmInvoiceItemSchema>;
 export type CrmInvoiceItem = typeof crmInvoiceItems.$inferSelect;
 export type CrmInvoicePayment = typeof crmInvoicePayments.$inferSelect;
 export type InsertCrmInvoicePayment = typeof crmInvoicePayments.$inferInsert;
+export type CrmMessage = typeof crmMessages.$inferSelect;
+export type InsertCrmMessage = z.infer<typeof insertCrmMessageSchema>;
 export type Gallery = typeof galleries.$inferSelect;
 export type SessionEquipment = typeof sessionEquipment.$inferSelect;
 export type SessionTask = typeof sessionTasks.$inferSelect;
