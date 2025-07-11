@@ -940,8 +940,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           invoiceId: invoice.id,
           description: item.description,
           quantity: item.quantity.toString(),
-          unitPrice: item.unit_price.toString(),
-          taxRate: item.tax_rate ? item.tax_rate.toString() : "0",
+          unitPrice: (item.unitPrice || item.unit_price).toString(),
+          taxRate: (item.taxRate || item.tax_rate || 0).toString(),
           sortOrder: index
         }));
         

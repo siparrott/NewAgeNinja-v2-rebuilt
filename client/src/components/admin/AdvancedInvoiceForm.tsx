@@ -348,20 +348,30 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
       setLoading(true);
       setError(null);
 
+      // Calculate totals
+      const subtotal = formData.items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+      const taxAmount = formData.items.reduce((sum, item) => {
+        const itemTax = (item.quantity * item.unit_price) * (item.tax_rate / 100);
+        return sum + itemTax;
+      }, 0);
+      const total = subtotal + taxAmount - formData.discount_amount;
+
       // Prepare the invoice data for the PostgreSQL API
-      const invoiceData: CreateInvoiceData = {
+      const invoiceData = {
         clientId: formData.client_id,
         issueDate: new Date().toISOString().split('T')[0],
         dueDate: formData.due_date,
-        currency: formData.currency,
-        paymentTerms: formData.payment_terms,
+        subtotal: subtotal.toString(),
+        taxAmount: taxAmount.toString(),
+        total: total.toString(),
+        status: 'draft',
         notes: formData.notes,
-        discountAmount: formData.discount_amount.toString(),
+        termsAndConditions: formData.payment_terms,
         items: formData.items.map(item => ({
           description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          tax_rate: item.tax_rate
+          quantity: item.quantity.toString(),
+          unitPrice: item.unit_price.toString(),
+          taxRate: item.tax_rate.toString()
         }))
       };
 

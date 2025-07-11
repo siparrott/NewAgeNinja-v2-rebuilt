@@ -327,6 +327,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCrmInvoice(invoice: InsertCrmInvoice): Promise<CrmInvoice> {
+    // Generate invoice number if not provided
+    if (!invoice.invoiceNumber) {
+      const currentYear = new Date().getFullYear();
+      const existingInvoices = await db.select().from(crmInvoices);
+      const nextNumber = existingInvoices.length + 1;
+      invoice.invoiceNumber = `${currentYear}-${String(nextNumber).padStart(4, '0')}`;
+    }
+    
     const result = await db.insert(crmInvoices).values(invoice).returning();
     return result[0];
   }

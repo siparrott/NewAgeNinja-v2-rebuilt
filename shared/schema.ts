@@ -714,7 +714,7 @@ export const insertCrmInvoiceSchema = createInsertSchema(crmInvoices).pick({
   status: true,
   notes: true,
   termsAndConditions: true,
-});
+}).partial({ invoiceNumber: true }); // Make invoiceNumber optional for automatic generation
 
 export const insertCrmInvoiceItemSchema = createInsertSchema(crmInvoiceItems).pick({
   invoiceId: true,
