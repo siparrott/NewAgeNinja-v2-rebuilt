@@ -1181,8 +1181,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Email send request:', { to, subject, body: body?.substring(0, 100) + '...' });
       
-      // Import nodemailer
-      const nodemailer = await import('nodemailer');
+      // Import nodemailer - fix for ES module compatibility
+      const nodemailer = require('nodemailer');
       
       // Get email settings - using EasyName business email configuration
       const emailConfig = {
@@ -1198,7 +1198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      const transporter = nodemailer.default.createTransporter(emailConfig);
+      const transporter = nodemailer.createTransporter(emailConfig);
 
       // Verify connection
       await transporter.verify();
