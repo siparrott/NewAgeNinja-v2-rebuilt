@@ -81,25 +81,23 @@ async function importEmailsFromIMAP(config: {
           return reject(err);
         }
 
-        // Search for recent emails (last 30 days)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const searchDate = thirtyDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-        
-        imap.search(['SINCE', searchDate], function(err: any, results: number[]) {
+        // Search for all emails in INBOX (simplified approach)
+        imap.search(['ALL'], function(err: any, results: number[]) {
           if (err) {
             console.error('Error searching emails:', err);
             return reject(err);
           }
 
           if (!results || results.length === 0) {
-            console.log('No emails found in the last 30 days');
+            console.log('No emails found in inbox');
             imap.end();
             return resolve([]);
           }
 
-          // Fetch the last 10 emails
-          const recentResults = results.slice(-10);
+          console.log(`Found ${results.length} emails in inbox`);
+          
+          // Fetch the last 5 emails to avoid timeout
+          const recentResults = results.slice(-5);
           const f = imap.fetch(recentResults, { 
             bodies: '', 
             struct: true 
