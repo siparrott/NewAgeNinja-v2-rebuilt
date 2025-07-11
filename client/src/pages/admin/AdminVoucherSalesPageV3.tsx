@@ -111,10 +111,20 @@ export default function AdminVoucherSalesPageV3() {
   // API calls
   const { data: voucherProducts, isLoading: isLoadingProducts, error: productsError } = useQuery<VoucherProduct[]>({
     queryKey: ['/api/vouchers/products'],
+    queryFn: async () => {
+      console.log('Making API call to /api/vouchers/products');
+      const response = await fetch('/api/vouchers/products');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('API response data:', data);
+      return data;
+    },
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     staleTime: 0, // Always consider data stale
-    cacheTime: 0, // Don't cache
+    gcTime: 0, // Don't cache (updated from cacheTime)
   });
   
   // Debug log
