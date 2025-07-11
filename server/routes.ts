@@ -1174,6 +1174,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== EMAIL SENDING ====================
+  app.post("/api/email/send", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { to, subject, body, attachments } = req.body;
+      
+      console.log('Email send request:', { to, subject, body: body?.substring(0, 100) + '...' });
+      
+      // Import nodemailer
+      const nodemailer = await import('nodemailer');
+      
+      // Get email settings - using EasyName business email configuration
+      const emailConfig = {
+        host: 'smtp.easyname.com',
+        port: 465,
+        secure: true, // Use SSL
+        auth: {
+          user: '30840mail10',
+          pass: process.env.EMAIL_PASSWORD || 'HoveBN41!'
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      };
+
+      const transporter = nodemailer.default.createTransporter(emailConfig);
+
+      // Verify connection
+      await transporter.verify();
+      console.log('SMTP connection verified successfully');
+
+      const mailOptions = {
+        from: '"New Age Fotografie" <hallo@newagefotografie.com>',
+        to: to,
+        subject: subject,
+        text: body,
+        html: body.replace(/\n/g, '<br>'),
+        attachments: attachments || []
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      
+      console.log('Email sent successfully:', info.messageId);
+      
+      res.json({ 
+        success: true, 
+        message: 'Email sent successfully',
+        messageId: info.messageId
+      });
+    } catch (error) {
+      console.error('Email send error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to send email: ' + (error as Error).message 
+      });
+    }
+  });
+
   // ==================== HEALTH CHECK ====================
   app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });

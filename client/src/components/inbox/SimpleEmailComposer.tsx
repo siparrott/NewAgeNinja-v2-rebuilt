@@ -20,10 +20,46 @@ const SimpleEmailComposer: React.FC<SimpleEmailComposerProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSend = () => {
-    console.log('Email sent:', { to, subject, body, attachments });
-    onSent?.({ to, subject, body, attachments });
-    onClose();
+  const handleSend = async () => {
+    try {
+      console.log('Sending email:', { to, subject, body, attachments });
+      
+      const response = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to,
+          subject,
+          body,
+          attachments: attachments.map(file => ({
+            filename: file.name,
+            content: file, // In a real implementation, you'd convert to base64
+            contentType: file.type
+          }))
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Email sent successfully:', result.messageId);
+        onSent?.({ to, subject, body, attachments, messageId: result.messageId });
+        onClose();
+        // Reset form
+        setTo('');
+        setSubject('');
+        setBody('');
+        setAttachments([]);
+      } else {
+        console.error('Failed to send email:', result.error);
+        alert('Failed to send email: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert('Error sending email. Please try again.');
+    }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
