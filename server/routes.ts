@@ -1184,18 +1184,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import nodemailer - ES module compatible
       const nodemailer = await import('nodemailer');
       
-      // Get email settings - using EasyName business email configuration
+      // Get email settings - using EasyName business email configuration with STARTTLS
       const emailConfig = {
         host: 'smtp.easyname.com',
-        port: 465,
-        secure: true, // Use SSL
+        port: 587, // Better compatibility with STARTTLS
+        secure: false, // Use STARTTLS instead of SSL
         auth: {
           user: '30840mail10',
           pass: process.env.EMAIL_PASSWORD || 'HoveBN41!'
         },
         tls: {
-          rejectUnauthorized: false
-        }
+          rejectUnauthorized: false,
+          ciphers: 'SSLv3'
+        },
+        // Enhanced debugging and reliability
+        debug: true,
+        logger: true,
+        // Add delivery status tracking
+        pool: true,
+        maxConnections: 5,
+        rateDelta: 20000,
+        rateLimit: 10
       };
 
       const transporter = nodemailer.createTransport(emailConfig);
@@ -1213,17 +1222,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       const mailOptions = {
-        from: 'hallo@newagefotografie.com', // Use simple format
+        from: 'hallo@newagefotografie.com',
         to: to,
         subject: subject,
         text: body,
         html: body.replace(/\n/g, '<br>'),
         attachments: processedAttachments,
-        // Add debugging headers
+        // Enhanced headers for better deliverability
         headers: {
           'X-Mailer': 'New Age Fotografie CRM',
-          'X-Priority': '3'
-        }
+          'X-Priority': '3',
+          'Reply-To': 'hallo@newagefotografie.com',
+          'Return-Path': 'hallo@newagefotografie.com',
+          'X-Auto-Response-Suppress': 'All',
+          'Precedence': 'bulk'
+        },
+        // Add message tracking
+        messageId: undefined, // Let server generate
+        date: new Date()
       };
 
       const info = await transporter.sendMail(mailOptions);
@@ -1232,6 +1248,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('SMTP Response:', info.response);
       console.log('Envelope:', info.envelope);
       console.log('Message sent from:', info.envelope?.from, 'to:', info.envelope?.to);
+      
+      // Save sent email to database for tracking
+      try {
+        await storage.createMessage({
+          sender_name: 'New Age Fotografie',
+          sender_email: 'hallo@newagefotografie.com',
+          subject: subject,
+          content: body,
+          type: 'sent',
+          message_id: info.messageId,
+          recipient_email: to,
+          status: 'sent',
+          sent_at: new Date().toISOString()
+        });
+        console.log('Sent email saved to database');
+      } catch (dbError) {
+        console.error('Failed to save sent email to database:', dbError);
+      }
       
       res.json({ 
         success: true, 
