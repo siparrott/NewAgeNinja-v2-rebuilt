@@ -24,7 +24,8 @@ import {
   X,
   Globe,
   User,
-  ExternalLink
+  ExternalLink,
+  Bell
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -34,6 +35,7 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [language, setLanguage] = useState('en');
+  const [newLeadsCount, setNewLeadsCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -43,9 +45,30 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [location.pathname]);
 
+  // Fetch new leads count
+  useEffect(() => {
+    const fetchNewLeadsCount = async () => {
+      try {
+        const response = await fetch('/api/crm/leads?status=new');
+        if (response.ok) {
+          const leads = await response.json();
+          setNewLeadsCount(leads.length);
+        }
+      } catch (error) {
+        console.error('Error fetching new leads count:', error);
+      }
+    };
+
+    fetchNewLeadsCount();
+    
+    // Refresh count every 30 seconds
+    const interval = setInterval(fetchNewLeadsCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const sidebarItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
-    { icon: UserPlus, label: 'New Leads', path: '/admin/leads' },
+    { icon: UserPlus, label: 'New Leads', path: '/admin/leads', badge: newLeadsCount },
     { icon: ShoppingCart, label: 'Online Voucher Sales', path: '/admin/voucher-sales' },
     { icon: Users, label: 'Clients', path: '/admin/clients' },
     { icon: Crown, label: 'Top Clients', path: '/admin/high-value-clients' },
@@ -116,7 +139,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center px-4 py-3 text-sm transition-colors ${
+                className={`flex items-center px-4 py-3 text-sm transition-colors relative ${
                   isActive
                     ? 'bg-purple-600 text-white border-r-2 border-purple-400'
                     : 'text-gray-300 hover:bg-gray-700 hover:text-white'
@@ -125,6 +148,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <Icon size={20} className="flex-shrink-0" />
                 {!sidebarCollapsed && (
                   <span className="ml-3">{item.label}</span>
+                )}
+                {item.badge && item.badge > 0 && (
+                  <div className={`absolute ${sidebarCollapsed ? 'top-2 right-2' : 'top-3 right-4'} flex items-center justify-center`}>
+                    {!sidebarCollapsed && <Bell size={14} className="mr-1 text-red-400" />}
+                    <span className={`bg-red-500 text-white text-xs font-bold rounded-full ${
+                      sidebarCollapsed ? 'h-4 w-4 text-xs' : 'h-5 w-5 text-xs'
+                    } flex items-center justify-center`}>
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  </div>
                 )}
               </Link>
             );

@@ -1373,7 +1373,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Email notification function for new leads
   async function sendNewLeadNotification(lead: any) {
-    const transporter = nodemailer.createTransporter({
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.default.createTransporter({
       host: 'smtp.easyname.com',
       port: 587,
       secure: false,
