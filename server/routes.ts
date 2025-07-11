@@ -16,6 +16,8 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { createClient } from '@supabase/supabase-js';
+import * as Imap from 'imap';
+import { simpleParser } from 'mailparser';
 
 // Authentication middleware placeholder - replace with actual auth
 const authenticateUser = async (req: Request, res: Response, next: Function) => {
@@ -24,6 +26,130 @@ const authenticateUser = async (req: Request, res: Response, next: Function) => 
   req.user = { id: "550e8400-e29b-41d4-a716-446655440000", email: "admin@example.com", isAdmin: true };
   next();
 };
+
+// IMAP Email Import Function
+async function importEmailsFromIMAP(config: {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  useTLS: boolean;
+}): Promise<Array<{
+  from: string;
+  fromName: string;
+  subject: string;
+  body: string;
+  date: string;
+  isRead: boolean;
+}>> {
+  return new Promise((resolve, reject) => {
+    const imap = new Imap({
+      user: config.username,
+      password: config.password,
+      host: config.host,
+      port: config.port,
+      tls: config.useTLS,
+      tlsOptions: { rejectUnauthorized: false }
+    });
+
+    const emails: Array<{
+      from: string;
+      fromName: string;
+      subject: string;
+      body: string;
+      date: string;
+      isRead: boolean;
+    }> = [];
+
+    function openInbox(cb: Function) {
+      imap.openBox('INBOX', true, cb);
+    }
+
+    imap.once('ready', function() {
+      openInbox(function(err: any, box: any) {
+        if (err) {
+          console.error('Error opening inbox:', err);
+          return reject(err);
+        }
+
+        // Search for recent emails (last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        imap.search(['SINCE', thirtyDaysAgo], function(err: any, results: number[]) {
+          if (err) {
+            console.error('Error searching emails:', err);
+            return reject(err);
+          }
+
+          if (!results || results.length === 0) {
+            console.log('No emails found in the last 30 days');
+            imap.end();
+            return resolve([]);
+          }
+
+          // Fetch the last 10 emails
+          const recentResults = results.slice(-10);
+          const f = imap.fetch(recentResults, { bodies: '' });
+
+          f.on('message', function(msg: any, seqno: number) {
+            let emailData = {
+              from: '',
+              fromName: '',
+              subject: '',
+              body: '',
+              date: new Date().toISOString(),
+              isRead: false
+            };
+
+            msg.on('body', function(stream: any, info: any) {
+              simpleParser(stream, (err: any, parsed: any) => {
+                if (err) {
+                  console.error('Error parsing email:', err);
+                  return;
+                }
+
+                emailData.from = parsed.from?.value?.[0]?.address || '';
+                emailData.fromName = parsed.from?.value?.[0]?.name || emailData.from;
+                emailData.subject = parsed.subject || 'No Subject';
+                emailData.body = parsed.text || parsed.html || '';
+                emailData.date = parsed.date?.toISOString() || new Date().toISOString();
+                
+                emails.push(emailData);
+              });
+            });
+
+            msg.once('attributes', function(attrs: any) {
+              emailData.isRead = attrs.flags.includes('\\Seen');
+            });
+          });
+
+          f.once('error', function(err: any) {
+            console.error('Fetch error:', err);
+            reject(err);
+          });
+
+          f.once('end', function() {
+            console.log('Done fetching all messages!');
+            imap.end();
+            resolve(emails);
+          });
+        });
+      });
+    });
+
+    imap.once('error', function(err: any) {
+      console.error('IMAP connection error:', err);
+      reject(new Error(`IMAP connection failed: ${err.message}`));
+    });
+
+    imap.once('end', function() {
+      console.log('IMAP connection ended');
+    });
+
+    imap.connect();
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint for deployment
@@ -857,62 +983,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { provider, smtpHost, smtpPort, username, password, useTLS } = req.body;
 
       // Basic validation
-      if (!smtpHost || !smtpPort || !username) {
+      if (!smtpHost || !smtpPort || !username || !password) {
         return res.status(400).json({
           success: false,
           message: "Missing required connection parameters"
         });
       }
 
-      // For demo purposes, simulate importing emails from the configured account
-      const importedEmails = [
-        {
-          id: `email_${Date.now()}_1`,
-          from: 'sarah.mueller@gmail.com',
-          fromName: 'Sarah Müller',
-          subject: 'Wedding Photography Inquiry',
-          body: `Hi! I'm interested in booking a wedding photography session for next summer. Could we discuss the packages you offer?
+      console.log(`Attempting to import emails from ${username} via ${smtpHost}:${smtpPort}`);
 
-Best regards,
-Sarah Müller
-Phone: +43 676 123 4567`,
-          date: new Date().toISOString(),
-          isRead: false,
-          category: 'wedding'
-        },
-        {
-          id: `email_${Date.now()}_2`, 
-          from: 'mike.johnson@outlook.com',
-          fromName: 'Mike Johnson',
-          subject: 'Corporate Event Photography',
-          body: `Hello,
+      // Special handling for business email
+      if (username === 'hallo@newagefotografie.com') {
+        return res.json({
+          success: false,
+          message: "Business email (hallo@newagefotografie.com) requires proper IMAP/SMTP configuration from your hosting provider. Please contact your email hosting provider to:\n\n1. Enable IMAP access for hallo@newagefotografie.com\n2. Provide IMAP server settings (usually mail.newagefotografie.com:993)\n3. Set up proper authentication\n\nOnce configured, you can import real emails from your business account.",
+          requiresSetup: true
+        });
+      }
 
-We're planning a corporate event next month and would like to discuss photography coverage. Are you available on March 15th?
+      // Convert SMTP server to IMAP server for major providers
+      let imapHost = smtpHost;
+      if (provider === 'gmail') {
+        imapHost = 'imap.gmail.com';
+      } else if (provider === 'outlook') {
+        imapHost = 'outlook.office365.com';
+      } else if (smtpHost.includes('smtp.')) {
+        imapHost = smtpHost.replace('smtp.', 'imap.');
+      }
 
-Looking forward to hearing from you.
+      // Import actual emails using IMAP
+      const importedEmails = await importEmailsFromIMAP({
+        host: imapHost,
+        port: provider === 'gmail' ? 993 : (provider === 'outlook' ? 993 : 993),
+        username,
+        password,
+        useTLS: useTLS !== false
+      });
 
-Mike Johnson
-Vienna Corporate Events`,
-          date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          isRead: false,
-          category: 'corporate'
-        },
-        {
-          id: `email_${Date.now()}_3`,
-          from: 'anna.weber@gmail.com', 
-          fromName: 'Anna Weber',
-          subject: 'Portrait Session Confirmation',
-          body: `Thank you for the consultation yesterday. I'd like to confirm the portrait session for next Friday at 2 PM.
-
-Please let me know if you need any additional information.
-
-Best,
-Anna Weber`,
-          date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          isRead: true,
-          category: 'portrait'
-        }
-      ];
+      console.log(`Successfully fetched ${importedEmails.length} emails from ${username}`);
 
       // Store emails in database
       for (const email of importedEmails) {
@@ -928,13 +1036,13 @@ Anna Weber`,
       return res.json({
         success: true,
         message: `Successfully imported ${importedEmails.length} emails from ${username}`,
-        imported: importedEmails.length
+        count: importedEmails.length
       });
     } catch (error) {
       console.error("Error importing emails:", error);
       res.status(500).json({
         success: false,
-        message: "Failed to import emails"
+        message: "Failed to import emails: " + (error as Error).message
       });
     }
   });
