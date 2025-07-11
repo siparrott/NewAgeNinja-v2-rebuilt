@@ -27,10 +27,10 @@ const InboxSettings: React.FC<InboxSettingsProps> = ({
 }) => {
   const [settings, setSettings] = useState<EmailSettings>(
     currentSettings || {
-      provider: 'gmail',
-      smtpHost: 'smtp.gmail.com',
+      provider: 'smtp',
+      smtpHost: 'smtp.easyname.com',
       smtpPort: '587',
-      username: '',
+      username: 'hallo@newagefotografie.com',
       password: '',
       useTLS: true,
       syncEnabled: true,

@@ -992,12 +992,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Attempting to import emails from ${username} via ${smtpHost}:${smtpPort}`);
 
-      // Special handling for business email
+      // Special handling for business email with EasyName IMAP settings
       if (username === 'hallo@newagefotografie.com') {
+        console.log('Using EasyName IMAP settings for business email');
+        const importedEmails = await importEmailsFromIMAP({
+          host: 'imap.easyname.com',
+          port: 993,
+          username,
+          password,
+          useTLS: true
+        });
+
+        console.log(`Successfully fetched ${importedEmails.length} emails from business account`);
+
+        // Store emails in database
+        for (const email of importedEmails) {
+          await storage.createCrmMessage({
+            senderName: email.fromName,
+            senderEmail: email.from,
+            subject: email.subject,
+            content: email.body,
+            status: email.isRead ? 'read' : 'unread'
+          });
+        }
+
         return res.json({
-          success: false,
-          message: "Business email setup required:\n\n📧 Your business email (hallo@newagefotografie.com) needs IMAP configuration from your hosting provider.\n\n🔧 Contact your email provider to enable:\n• IMAP access on port 993\n• Authentication for external apps\n• Server: mail.newagefotografie.com\n\n💡 Meanwhile, test the system with your personal Gmail/Outlook account using an App Password.",
-          requiresSetup: true
+          success: true,
+          message: `Successfully imported ${importedEmails.length} emails from ${username}`,
+          count: importedEmails.length
         });
       }
 
