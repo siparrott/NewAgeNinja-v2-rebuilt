@@ -118,14 +118,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <img 
                   src="/crm-logo.png"
                   alt="TogNinja CRM"
-                  className="h-8 w-auto mr-2"
+                  className="h-16 w-auto mr-2"
                 />
               </div>
             ) : (
               <img 
                 src="/crm-logo.png"
                 alt="TogNinja CRM"
-                className="h-8 w-auto mx-auto"
+                className="h-16 w-auto mx-auto"
               />
             )}
             <button
