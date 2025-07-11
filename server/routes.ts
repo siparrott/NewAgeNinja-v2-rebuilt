@@ -963,10 +963,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         invoiceData.invoiceNumber = `INV-${timestamp}`;
       }
       
-      // Create the invoice
+      // Create the invoice (make createdBy optional since users table may not be populated)
       const invoice = await storage.createCrmInvoice({
         ...invoiceData,
-        createdBy: req.user!.id
+        createdBy: req.user?.id || null
       });
 
       // Create invoice items if provided
