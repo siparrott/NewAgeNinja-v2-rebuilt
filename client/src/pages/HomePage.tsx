@@ -108,9 +108,6 @@ const HomePage: React.FC = () => {
                 das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...
               </span>
             </div>
-            <p className="text-base sm:text-lg mb-6 tracking-tighter text-gray-900">
-              Als <strong>Familienfotograf in Wien</strong> und spezialisierter <strong>Neugeborenenfotograf in Wien</strong> schaffen wir zeitlose Erinnerungen in entspannter Studioatmosphäre. Selbst wenn Sie kamerascheu sind oder unberechenbare Kinder haben, erstellen wir Familienporträts, die Sie für immer schätzen werden.
-            </p>
             <button 
               onClick={() => navigate('/fotoshootings')}
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
@@ -130,6 +127,17 @@ const HomePage: React.FC = () => {
               }}
               loading="lazy"
             />
+          </div>
+        </div>
+      </section>
+
+      {/* Description Section */}
+      <section className="py-12 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <p className="text-base sm:text-lg text-gray-700 leading-relaxed">
+              Als <strong>Familienfotograf in Wien</strong> und spezialisierter <strong>Neugeborenenfotograf in Wien</strong> schaffen wir zeitlose Erinnerungen in entspannter Studioatmosphäre. Selbst wenn Sie kamerascheu sind oder unberechenbare Kinder haben, erstellen wir Familienporträts, die Sie für immer schätzen werden.
+            </p>
           </div>
         </div>
       </section>
