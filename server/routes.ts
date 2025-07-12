@@ -222,7 +222,7 @@ function generateInvoiceHTML(invoice: any, client: any): string {
       <div class="header">
         <div class="company-info">
           <div class="logo-section">
-            <img src="${req.protocol}://${req.get('host')}/logo.png" alt="New Age Fotografie" class="company-logo" onerror="this.style.display='none'" />
+            <!-- Logo removed for PDF generation -->
             <h1>New Age Fotografie</h1>
           </div>
           <div class="company-details">
