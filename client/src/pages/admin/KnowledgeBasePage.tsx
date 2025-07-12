@@ -171,24 +171,34 @@ const KnowledgeBasePage: React.FC = () => {
     }
 
     try {
-      const newEntry: KnowledgeBaseEntry = {
-        id: Date.now().toString(),
-        title: formData.title,
-        content: formData.content,
-        category: formData.category || 'General FAQ',
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'admin'
-      };
+      setLoading(true);
+      const response = await fetch('/api/knowledge-base', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: formData.title,
+          content: formData.content,
+          category: formData.category || 'General FAQ',
+          tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+          isActive: true
+        })
+      });
 
-      // API call would go here
-      setKnowledgeEntries([...knowledgeEntries, newEntry]);
-      setShowCreateModal(false);
-      resetForm();
+      if (response.ok) {
+        const newEntry = await response.json();
+        setKnowledgeEntries([...knowledgeEntries, newEntry]);
+        setShowCreateModal(false);
+        resetForm();
+      } else {
+        setError('Failed to create knowledge base entry');
+      }
     } catch (error) {
       setError('Failed to create knowledge base entry');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -199,31 +209,53 @@ const KnowledgeBasePage: React.FC = () => {
     }
 
     try {
-      const updatedEntry: KnowledgeBaseEntry = {
-        ...editingEntry,
-        title: formData.title,
-        content: formData.content,
-        category: formData.category || editingEntry.category,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        updatedAt: new Date().toISOString()
-      };
+      setLoading(true);
+      const response = await fetch(`/api/knowledge-base/${editingEntry.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: formData.title,
+          content: formData.content,
+          category: formData.category || editingEntry.category,
+          tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+          isActive: true
+        })
+      });
 
-      const updatedEntries = knowledgeEntries.map(entry => 
-        entry.id === editingEntry.id ? updatedEntry : entry
-      );
-      
-      setKnowledgeEntries(updatedEntries);
-      setEditingEntry(null);
-      resetForm();
+      if (response.ok) {
+        const updatedEntry = await response.json();
+        const updatedEntries = knowledgeEntries.map(entry => 
+          entry.id === editingEntry.id ? updatedEntry : entry
+        );
+        setKnowledgeEntries(updatedEntries);
+        setEditingEntry(null);
+        resetForm();
+      } else {
+        setError('Failed to update knowledge base entry');
+      }
     } catch (error) {
       setError('Failed to update knowledge base entry');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeleteEntry = async (id: string) => {
     if (confirm('Are you sure you want to delete this knowledge base entry?')) {
       try {
-        setKnowledgeEntries(knowledgeEntries.filter(entry => entry.id !== id));
+        const response = await fetch(`/api/knowledge-base/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          setKnowledgeEntries(knowledgeEntries.filter(entry => entry.id !== id));
+        } else {
+          setError('Failed to delete knowledge base entry');
+        }
       } catch (error) {
         setError('Failed to delete knowledge base entry');
       }
