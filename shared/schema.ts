@@ -840,7 +840,8 @@ export const knowledgeBase = pgTable("knowledge_base", {
 
 // OpenAI Assistants table
 export const openaiAssistants = pgTable("openai_assistants", {
-  id: text("id").primaryKey(), // OpenAI assistant ID
+  id: uuid("id").primaryKey().defaultRandom(), // Database ID
+  openaiAssistantId: text("openai_assistant_id"), // OpenAI assistant ID from API
   name: text("name").notNull(),
   description: text("description"),
   model: text("model").default("gpt-4o"),
@@ -871,6 +872,7 @@ export const insertOpenaiAssistantSchema = createInsertSchema(openaiAssistants, 
   name: z.string().min(1, "Assistant name is required"),
   instructions: z.string().min(1, "Instructions are required"),
 }).omit({ 
+  id: true, // Let the database generate the OpenAI assistant ID
   createdAt: true, 
   updatedAt: true 
 });

@@ -2515,8 +2515,39 @@ New Age Fotografie CRM System
         return res.status(400).json({ error: result.error.issues });
       }
 
+      // Create OpenAI Assistant via API if API key is available
+      let openaiAssistantId = null;
+      if (process.env.OPENAI_API_KEY) {
+        try {
+          const openaiResponse = await fetch('https://api.openai.com/v1/assistants', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+              'OpenAI-Beta': 'assistants=v2'
+            },
+            body: JSON.stringify({
+              name: result.data.name,
+              description: result.data.description,
+              model: result.data.model || 'gpt-4o',
+              instructions: result.data.instructions,
+            })
+          });
+
+          if (openaiResponse.ok) {
+            const openaiAssistant = await openaiResponse.json();
+            openaiAssistantId = openaiAssistant.id;
+          } else {
+            console.error("OpenAI API error:", await openaiResponse.text());
+          }
+        } catch (openaiError) {
+          console.error("Failed to create OpenAI assistant:", openaiError);
+        }
+      }
+
       const [assistant] = await db.insert(openaiAssistants).values({
         ...result.data,
+        openaiAssistantId,
         createdBy: req.user.id,
       }).returning();
 
