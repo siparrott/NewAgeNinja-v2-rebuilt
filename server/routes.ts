@@ -2530,8 +2530,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Background email import service started (every 5 minutes)
   };
 
-  // Start background email import when server starts
-  startBackgroundEmailImport();
+  // DISABLED: Background email import completely disabled to prevent duplicate imports
+  // startBackgroundEmailImport();
 
   // Endpoint to get email import status
   app.get("/api/email/import-status", authenticateUser, async (req: Request, res: Response) => {
