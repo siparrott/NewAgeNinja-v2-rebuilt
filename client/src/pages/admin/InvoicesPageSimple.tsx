@@ -9,7 +9,9 @@ import {
   DollarSign,
   Calendar,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  X,
+  Save
 } from 'lucide-react';
 
 interface Invoice {
@@ -30,10 +32,28 @@ const InvoicesPageSimple: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
 
   useEffect(() => {
     fetchInvoices();
+    fetchClients();
   }, []);
+
+  const fetchClients = async () => {
+    try {
+      const response = await fetch('/api/crm/clients', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch clients:', err);
+    }
+  };
 
   const fetchInvoices = async () => {
     try {
@@ -109,6 +129,28 @@ const InvoicesPageSimple: React.FC = () => {
 
   const stats = getTotalStats();
 
+  const createInvoice = async (formData: any) => {
+    try {
+      const response = await fetch('/api/crm/invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        setShowCreateModal(false);
+        fetchInvoices(); // Refresh the list
+      } else {
+        throw new Error('Failed to create invoice');
+      }
+    } catch (err) {
+      setError('Failed to create invoice. Please try again.');
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -118,7 +160,10 @@ const InvoicesPageSimple: React.FC = () => {
             <h1 className="text-2xl font-semibold text-gray-900">Invoices Management</h1>
             <p className="text-gray-600">Create, send, and track client invoices</p>
           </div>
-          <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center">
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
+          >
             <Plus size={20} className="mr-2" />
             Create Invoice
           </button>
@@ -266,8 +311,236 @@ const InvoicesPageSimple: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Create Invoice Modal */}
+        {showCreateModal && (
+          <CreateInvoiceModal
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            onSubmit={createInvoice}
+            clients={clients}
+          />
+        )}
       </div>
     </AdminLayout>
+  );
+};
+
+// Simple Create Invoice Modal Component
+interface CreateInvoiceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: any) => void;
+  clients: any[];
+}
+
+const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  clients
+}) => {
+  const [formData, setFormData] = useState({
+    clientId: '',
+    issueDate: new Date().toISOString().split('T')[0],
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    subtotal: '',
+    taxAmount: '',
+    total: '',
+    status: 'draft',
+    notes: '',
+    items: [{
+      description: '',
+      quantity: 1,
+      unitPrice: 0
+    }]
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const submitData = {
+      clientId: formData.clientId,
+      issueDate: formData.issueDate,
+      dueDate: formData.dueDate,
+      subtotal: parseFloat(formData.subtotal || '0'),
+      taxAmount: parseFloat(formData.taxAmount || '0'),
+      total: parseFloat(formData.total || '0'),
+      status: formData.status,
+      notes: formData.notes,
+      items: formData.items.map((item, index) => ({
+        description: item.description,
+        quantity: item.quantity.toString(),
+        unitPrice: item.unitPrice.toString(),
+        taxRate: '0',
+        sortOrder: index
+      }))
+    };
+
+    onSubmit(submitData);
+  };
+
+  const updateTotal = () => {
+    const subtotal = parseFloat(formData.subtotal || '0');
+    const taxAmount = parseFloat(formData.taxAmount || '0');
+    const total = subtotal + taxAmount;
+    setFormData(prev => ({ ...prev, total: total.toString() }));
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">Create New Invoice</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Client *
+              </label>
+              <select
+                value={formData.clientId}
+                onChange={(e) => setFormData(prev => ({ ...prev, clientId: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+              >
+                <option value="">Select a client</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.firstName} {client.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              >
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Issue Date *
+              </label>
+              <input
+                type="date"
+                value={formData.issueDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, issueDate: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Due Date *
+              </label>
+              <input
+                type="date"
+                value={formData.dueDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Subtotal (€) *
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.subtotal}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, subtotal: e.target.value }));
+                  setTimeout(updateTotal, 100);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tax Amount (€)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.taxAmount}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, taxAmount: e.target.value }));
+                  setTimeout(updateTotal, 100);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Total Amount (€)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.total}
+              readOnly
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Notes
+            </label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              placeholder="Additional notes or terms..."
+            />
+          </div>
+
+          <div className="flex items-center justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center"
+            >
+              <Save size={16} className="mr-2" />
+              Create Invoice
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 
