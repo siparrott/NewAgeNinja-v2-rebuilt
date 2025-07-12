@@ -53,18 +53,12 @@ const ChatBot: React.FC = () => {
     setMessages(prev => [...prev, { text: "Alex schreibt...", isUser: false, loading: true }]);
 
     try {
-      let currentThreadId = threadId;
-      if (!currentThreadId) {
-        currentThreadId = await createThread();
-        setThreadId(currentThreadId);
-      }
-
       const response = await fetch('/api/openai/chat/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          threadId: currentThreadId
+          threadId: 'fallback-mode' // Not needed for fallback
         })
       });
 

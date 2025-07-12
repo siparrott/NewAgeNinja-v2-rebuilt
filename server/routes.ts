@@ -2633,12 +2633,27 @@ New Age Fotografie CRM System
     try {
       const { message, threadId, assistantId } = req.body;
 
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(400).json({ error: "OpenAI API key not configured" });
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
       }
 
-      if (!message || !threadId) {
-        return res.status(400).json({ error: "Message and threadId required" });
+      // Get knowledge base articles for context
+      const knowledgeArticles = await db.select().from(knowledgeBase)
+        .where(eq(knowledgeBase.isActive, true));
+
+      // Always use fallback for now since OpenAI API key has issues
+      const response = generateFallbackResponse(message, knowledgeArticles);
+      return res.json({ response });
+
+      // Original OpenAI logic (commented out until API key is fixed)
+      /*
+      if (!process.env.OPENAI_API_KEY) {
+        const response = generateFallbackResponse(message, knowledgeArticles);
+        return res.json({ response });
+      }
+
+      if (!threadId) {
+        return res.status(400).json({ error: "ThreadId required for OpenAI" });
       }
 
       // Get the assistant from database
@@ -2647,18 +2662,10 @@ New Age Fotografie CRM System
         .limit(1);
 
       if (!assistant) {
-        return res.status(404).json({ error: "No active assistant found" });
-      }
-
-      // Get knowledge base articles for context
-      const knowledgeArticles = await db.select().from(knowledgeBase)
-        .where(eq(knowledgeBase.isActive, true));
-
-      // Fallback if OpenAI API is not working - use knowledge base enhanced responses
-      if (!assistant.openaiAssistantId) {
         const response = generateFallbackResponse(message, knowledgeArticles);
         return res.json({ response });
       }
+      */
 
       // Add message to thread
       await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
@@ -2735,8 +2742,8 @@ New Age Fotografie CRM System
         throw new Error('No assistant response found');
       }
 
-      const response = assistantMessage.content[0]?.text?.value || 'Sorry, I could not process your request.';
-      res.json({ response });
+      const aiResponse = assistantMessage.content[0]?.text?.value || 'Sorry, I could not process your request.';
+      res.json({ response: aiResponse });
 
     } catch (error) {
       console.error("Error sending message:", error);
@@ -2746,7 +2753,7 @@ New Age Fotografie CRM System
         .where(eq(knowledgeBase.isActive, true));
       
       // Fallback response
-      const fallbackResponse = generateFallbackResponse(message, knowledgeArticles);
+      const fallbackResponse = generateFallbackResponse(req.body.message, knowledgeArticles);
       res.json({ response: fallbackResponse });
     }
   });
@@ -2813,6 +2820,25 @@ Ich bin Alex von New Age Fotografie Wien. Wir sind spezialisiert auf:
 Wie kann ich Ihnen heute helfen? Haben Sie Fragen zu unseren Preisen, möchten Sie einen Termin vereinbaren oder brauchen Sie andere Informationen?
 
 WhatsApp: 0677 633 99210`;
+    }
+
+    if (lowerMessage.includes('familien') || lowerMessage.includes('family') || lowerMessage.includes('familie')) {
+      return `Familienfotografie ist unsere Spezialität! 👨‍👩‍👧‍👦
+
+**Familienfotos Pakete:**
+• Kleines Paket: 1 Foto + Datei + 40x30cm Leinwand: €95
+• Mittleres Paket: 5 Fotos + Dateien + 60x40cm Leinwand: €195  
+• Großes Paket: 10 Fotos + Dateien + 70x50cm Leinwand: €295
+• 10er Paket (nur digitale Bilder): €250 - **BESTSELLER!**
+
+**Inklusive:**
+• 60 Min professionelles Fotoshooting
+• Willkommensgetränk & Beratung
+• Outfit-Wechsel möglich
+• Bis zu 12 Erwachsene + 4 Kinder
+• Haustiere willkommen! 🐕
+
+Termin buchen: WhatsApp 0677 633 99210`;
     }
     
     if (lowerMessage.includes('location') || lowerMessage.includes('adresse') || lowerMessage.includes('wo')) {
