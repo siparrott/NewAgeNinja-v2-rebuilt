@@ -49,8 +49,8 @@ const authenticateUser = async (req: Request, res: Response, next: Function) => 
 // Generate HTML template for invoice PDF
 function generateInvoiceHTML(invoice: any, client: any): string {
   const today = new Date().toLocaleDateString('de-DE');
-  const issueDate = new Date(invoice.issueDate).toLocaleDateString('de-DE');
-  const dueDate = new Date(invoice.dueDate).toLocaleDateString('de-DE');
+  const issueDate = new Date(invoice.issueDate || invoice.issue_date || new Date()).toLocaleDateString('de-DE');
+  const dueDate = new Date(invoice.dueDate || invoice.due_date || new Date()).toLocaleDateString('de-DE');
   
   return `
     <!DOCTYPE html>
@@ -1435,8 +1435,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Invoice not found" });
       }
 
-      // Get client details
-      const client = await storage.getCrmClient(invoice.clientId);
+      // Get client details using correct field name
+      const clientId = invoice.clientId || invoice.client_id;
+      const client = await storage.getCrmClient(clientId);
       if (!client) {
         return res.status(404).json({ error: "Client not found" });
       }
@@ -1467,7 +1468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="Rechnung-${invoice.invoiceNumber}.pdf"`);
+      res.setHeader('Content-Disposition', `attachment; filename="Rechnung-${invoice.invoiceNumber || invoice.invoice_number || invoice.id}.pdf"`);
       res.send(pdfBuffer);
 
     } catch (error) {

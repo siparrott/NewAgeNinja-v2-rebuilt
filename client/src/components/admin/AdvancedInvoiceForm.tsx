@@ -461,22 +461,40 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
     if (!createdInvoice) return;
     
     try {
-      const response = await fetch(`/api/crm/invoices/${createdInvoice.id}/pdf`);
-      if (!response.ok) throw new Error('Failed to generate PDF');
+      setLoading(true);
+      const response = await fetch(`/api/crm/invoices/${createdInvoice.id}/pdf`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/pdf'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`PDF generation failed: ${response.status}`);
+      }
       
       const blob = await response.blob();
+      
+      // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `Rechnung-${createdInvoice.invoiceNumber}.pdf`;
+      a.download = `Rechnung-${createdInvoice.invoiceNumber || createdInvoice.id}.pdf`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // Cleanup
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
+      
     } catch (error) {
-      // console.error removed
-      setError('Failed to download PDF. Please try again.');
+      setError('PDF download failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

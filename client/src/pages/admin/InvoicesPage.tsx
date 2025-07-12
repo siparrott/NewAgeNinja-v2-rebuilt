@@ -198,6 +198,42 @@ const InvoicesPage: React.FC = () => {
     return status !== 'paid' && new Date(dueDate) < new Date();
   };
 
+  const downloadInvoicePDF = async (invoiceId: string) => {
+    try {
+      const response = await fetch(`/api/crm/invoices/${invoiceId}/pdf`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/pdf'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`PDF generation failed: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `Invoice-${invoiceId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
+      
+    } catch (error) {
+      alert('PDF download failed. Please try again.');
+    }
+  };
+
   const getTotalStats = () => {
     if (!filteredInvoices || filteredInvoices.length === 0) {
       return { totalAmount: 0, paidAmount: 0, overdueAmount: 0 };
@@ -406,7 +442,11 @@ const InvoicesPage: React.FC = () => {
                           >
                             <DollarSign size={16} />
                           </button>
-                          <button className="text-indigo-600 hover:text-indigo-900" title="Download PDF">
+                          <button 
+                            onClick={() => downloadInvoicePDF(invoice.id)}
+                            className="text-indigo-600 hover:text-indigo-900" 
+                            title="Download PDF"
+                          >
                             <Download size={16} />
                           </button>
                           {invoice.status === 'draft' && (
