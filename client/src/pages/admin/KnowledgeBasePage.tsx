@@ -52,7 +52,9 @@ const KnowledgeBasePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateAssistantModal, setShowCreateAssistantModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<KnowledgeBaseEntry | null>(null);
+  const [editingAssistant, setEditingAssistant] = useState<OpenAIAssistant | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +64,15 @@ const KnowledgeBasePage: React.FC = () => {
     content: '',
     category: '',
     tags: '',
+  });
+
+  // Assistant form states
+  const [assistantFormData, setAssistantFormData] = useState({
+    name: '',
+    description: '',
+    model: 'gpt-4o',
+    instructions: '',
+    knowledgeBaseIds: [] as string[],
   });
 
   const categories = [
@@ -222,6 +233,75 @@ const KnowledgeBasePage: React.FC = () => {
   const resetForm = () => {
     setFormData({ title: '', content: '', category: '', tags: '' });
     setError(null);
+  };
+
+  const resetAssistantForm = () => {
+    setAssistantFormData({ 
+      name: '', 
+      description: '', 
+      model: 'gpt-4o', 
+      instructions: '', 
+      knowledgeBaseIds: [] 
+    });
+    setError(null);
+  };
+
+  const handleCreateAssistant = async () => {
+    if (!assistantFormData.name || !assistantFormData.instructions) {
+      setError('Name and instructions are required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch('/api/openai/assistants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: assistantFormData.name,
+          description: assistantFormData.description,
+          model: assistantFormData.model,
+          instructions: assistantFormData.instructions,
+          knowledgeBaseIds: assistantFormData.knowledgeBaseIds,
+          isActive: true
+        })
+      });
+
+      if (response.ok) {
+        const newAssistant = await response.json();
+        setAssistants([...assistants, newAssistant]);
+        setShowCreateAssistantModal(false);
+        resetAssistantForm();
+      } else {
+        setError('Failed to create assistant');
+      }
+    } catch (error) {
+      setError('Failed to create assistant');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAssistant = async (id: string) => {
+    if (confirm('Are you sure you want to delete this assistant?')) {
+      try {
+        const response = await fetch(`/api/openai/assistants/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          setAssistants(assistants.filter(assistant => assistant.id !== id));
+        } else {
+          setError('Failed to delete assistant');
+        }
+      } catch (error) {
+        setError('Failed to delete assistant');
+      }
+    }
   };
 
   const startEdit = (entry: KnowledgeBaseEntry) => {
@@ -410,7 +490,10 @@ const KnowledgeBasePage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">AI Assistants</h1>
           <p className="text-gray-600 mt-1">Manage OpenAI assistants and their knowledge base connections</p>
         </div>
-        <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2">
+        <button 
+          onClick={() => setShowCreateAssistantModal(true)}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2"
+        >
           <Plus size={20} />
           Create Assistant
         </button>
@@ -437,6 +520,12 @@ const KnowledgeBasePage: React.FC = () => {
                 </span>
                 <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded">
                   <Settings size={16} />
+                </button>
+                <button 
+                  onClick={() => handleDeleteAssistant(assistant.id)}
+                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                >
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>
@@ -606,6 +695,148 @@ const KnowledgeBasePage: React.FC = () => {
                   >
                     <Save size={16} />
                     {editingEntry ? 'Update' : 'Create'} Article
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Assistant Modal */}
+        {showCreateAssistantModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">Create AI Assistant</h2>
+                  <button
+                    onClick={() => {
+                      setShowCreateAssistantModal(false);
+                      resetAssistantForm();
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Assistant Name *
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      value={assistantFormData.name}
+                      onChange={(e) => setAssistantFormData({ ...assistantFormData, name: e.target.value })}
+                      placeholder="e.g., Support Chat Assistant"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      value={assistantFormData.description}
+                      onChange={(e) => setAssistantFormData({ ...assistantFormData, description: e.target.value })}
+                      placeholder="Brief description of the assistant's purpose"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      AI Model
+                    </label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      value={assistantFormData.model}
+                      onChange={(e) => setAssistantFormData({ ...assistantFormData, model: e.target.value })}
+                    >
+                      <option value="gpt-4o">GPT-4o (Latest, Recommended)</option>
+                      <option value="gpt-4">GPT-4</option>
+                      <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      System Instructions *
+                    </label>
+                    <textarea
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      value={assistantFormData.instructions}
+                      onChange={(e) => setAssistantFormData({ ...assistantFormData, instructions: e.target.value })}
+                      placeholder="Define how the assistant should behave and respond to users..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Knowledge Base Articles
+                    </label>
+                    <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-lg p-3 space-y-2">
+                      {knowledgeEntries.map((entry) => (
+                        <label key={entry.id} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                            checked={assistantFormData.knowledgeBaseIds.includes(entry.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setAssistantFormData({
+                                  ...assistantFormData,
+                                  knowledgeBaseIds: [...assistantFormData.knowledgeBaseIds, entry.id]
+                                });
+                              } else {
+                                setAssistantFormData({
+                                  ...assistantFormData,
+                                  knowledgeBaseIds: assistantFormData.knowledgeBaseIds.filter(id => id !== entry.id)
+                                });
+                              }
+                            }}
+                          />
+                          <span className="ml-2 text-sm text-gray-700">{entry.title}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Select which knowledge base articles this assistant can access
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={handleCreateAssistant}
+                    disabled={loading}
+                    className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {loading ? 'Creating...' : (
+                      <>
+                        <Save size={16} />
+                        Create Assistant
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCreateAssistantModal(false);
+                      resetAssistantForm();
+                    }}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
                   </button>
                 </div>
               </div>
