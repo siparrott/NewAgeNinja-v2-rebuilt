@@ -1,18 +1,20 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, Check, ArrowRight, AlertCircle, Loader2, FileText } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { apiRequest } from '../../lib/queryClient';
 import * as Papa from 'papaparse';
 
 // Client interface for mapping
 interface ClientData {
   id?: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
   address?: string;
   company?: string;
   notes?: string;
   status?: string;
+  clientId?: string;
 }
 
 interface ColumnMappingState {
@@ -41,12 +43,15 @@ const SmartCSVImporter: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Available client fields for mapping
   const clientFields = [
-    { key: 'name', label: 'Full Name', required: true },
+    { key: 'firstName', label: 'First Name', required: true },
+    { key: 'lastName', label: 'Last Name', required: true },
+    { key: 'name', label: 'Full Name (auto-split)', required: false },
     { key: 'email', label: 'Email', required: true },
     { key: 'phone', label: 'Phone', required: false },
     { key: 'address', label: 'Address', required: false },
     { key: 'company', label: 'Company', required: false },
     { key: 'notes', label: 'Notes', required: false },
+    { key: 'clientId', label: 'Client ID', required: false },
   ];  // Smart column matching - suggests mappings based on column names
   const suggestColumnMapping = (headers: string[]): ColumnMappingState => {
     const suggestions: ColumnMappingState = {};
@@ -68,9 +73,9 @@ const SmartCSVImporter: React.FC = () => {
       
       // Smart matching patterns
       if (lowerHeader.includes('first') && lowerHeader.includes('name')) {
-        suggestions[header] = 'name'; // Will be combined with last name
+        suggestions[header] = 'firstName';
       } else if (lowerHeader.includes('last') && lowerHeader.includes('name')) {
-        suggestions[header] = 'name'; // Will be combined with first name
+        suggestions[header] = 'lastName';
       } else if (lowerHeader.includes('name') && !hasFirstName && !hasLastName) {
         // Full name field when no separate first/last name
         suggestions[header] = 'name';
@@ -195,58 +200,67 @@ const SmartCSVImporter: React.FC = () => {
               if (row.every(cell => !cell || cell.trim() === '')) {
                 continue;
               }              // Map CSV row to client data
-              const clientData: Partial<ClientData> = {};
-              let firstName = '';
-              let lastName = '';
+              const clientData: any = {};
+              let tempFirstName = '';
+              let tempLastName = '';
+              let fullName = '';
               
               headers.forEach((header, index) => {
                 const clientField = columnMapping[header];
                 if (clientField && row[index]) {
-                  let value: any = row[index].trim();
+                  let value = row[index].trim();
                   
-                  // Handle first/last name separately to combine them
-                  if (header.toLowerCase().includes('first') && header.toLowerCase().includes('name')) {
-                    firstName = value;
-                    return;
+                  if (clientField === 'name') {
+                    fullName = value;
+                  } else if (clientField === 'firstName') {
+                    tempFirstName = value;
+                    clientData.firstName = value;
+                  } else if (clientField === 'lastName') {
+                    tempLastName = value;
+                    clientData.lastName = value;
+                  } else {
+                    clientData[clientField] = value;
                   }
-                  if (header.toLowerCase().includes('last') && header.toLowerCase().includes('name')) {
-                    lastName = value;
-                    return;
-                  }
-                  
-                  clientData[clientField as keyof ClientData] = value;
                 }
               });
 
-              // Combine first and last name if they exist separately
-              if (firstName && lastName) {
-                clientData.name = `${firstName} ${lastName}`;
-              } else if (firstName && !clientData.name) {
-                clientData.name = firstName;
-              } else if (lastName && !clientData.name) {
-                clientData.name = lastName;
+              // Handle name splitting if full name is provided
+              if (fullName && !tempFirstName && !tempLastName) {
+                const nameParts = fullName.trim().split(' ');
+                if (nameParts.length >= 2) {
+                  clientData.firstName = nameParts[0];
+                  clientData.lastName = nameParts.slice(1).join(' ');
+                } else {
+                  clientData.firstName = fullName;
+                  clientData.lastName = '';
+                }
+              } else if (tempFirstName || tempLastName) {
+                clientData.firstName = tempFirstName || '';
+                clientData.lastName = tempLastName || '';
               }
 
               // Validate required fields
-              if (!clientData.name || !clientData.email) {
-                errors.push(`Row ${i + 2}: Missing required fields (name or email)`);
+              if (!clientData.firstName || !clientData.email) {
+                errors.push(`Row ${i + 2}: Missing required fields (firstName or email)`);
                 failed++;
                 continue;
+              }
+
+              // Set default lastName if empty
+              if (!clientData.lastName) {
+                clientData.lastName = '';
               }
 
               // Set default status
               clientData.status = 'active';
 
-              // Insert into database
-              const { error: insertError } = await supabase
-                .from('crm_clients')
-                .insert([clientData]);
-
-              if (insertError) {
-                errors.push(`Row ${i + 2}: ${insertError.message}`);
-                failed++;
-              } else {
+              // Insert into database using API
+              try {
+                await apiRequest('POST', '/api/crm/clients', clientData);
                 successful++;
+              } catch (insertError: any) {
+                errors.push(`Row ${i + 2}: ${insertError.message || 'Failed to create client'}`);
+                failed++;
               }
 
             } catch (err: any) {
