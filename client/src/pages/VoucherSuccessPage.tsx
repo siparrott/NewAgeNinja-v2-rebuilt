@@ -13,7 +13,9 @@ const VoucherSuccessPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <img src="/logo.jpg" alt="New Age Fotografie" className="h-8 w-auto" />
+              <div className="h-8 w-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded flex items-center justify-center">
+                <span className="text-white font-bold text-xs">NAF</span>
+              </div>
               <span className="ml-3 text-xl font-bold text-gray-900">NEW AGE FOTOGRAFIE</span>
             </div>
             <Button

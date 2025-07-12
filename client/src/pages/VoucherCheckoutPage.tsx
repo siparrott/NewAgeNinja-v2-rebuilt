@@ -314,7 +314,9 @@ const VoucherCheckoutPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <img src="/logo.jpg" alt="New Age Fotografie" className="h-8 w-auto" />
+              <div className="h-8 w-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded flex items-center justify-center">
+                <span className="text-white font-bold text-xs">NAF</span>
+              </div>
               <span className="ml-3 text-xl font-bold text-gray-900">NEW AGE FOTOGRAFIE</span>
             </div>
             <Button
@@ -392,6 +394,36 @@ const VoucherCheckoutPage: React.FC = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Studio Location */}
+            <div className="mt-6 bg-white rounded-lg shadow-sm border p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Studio Standort</h3>
+              <div className="space-y-2 mb-4">
+                <p className="text-gray-600">
+                  <strong>Eingang Ecke Schönbrunnerstraße</strong><br />
+                  Wehrgasse 11A/2+5<br />
+                  1050 Wien, Austria
+                </p>
+                <p className="text-sm text-gray-500">
+                  5 Minuten von Kettenbrückengasse<br />
+                  Street parking available
+                </p>
+              </div>
+              
+              {/* Embedded Google Map */}
+              <div className="rounded-lg overflow-hidden border">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2659.8!2d16.3608!3d48.1865!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x476d0774b3d4e1ab%3A0x123456789abcdef0!2sWehrgasse%2011A%2C%201050%20Wien%2C%20Austria!5e0!3m2!1sen!2sat!4v1625075400000!5m2!1sen!2sat"
+                  width="100%"
+                  height="200"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="New Age Fotografie Studio Location"
+                />
               </div>
             </div>
           </div>
