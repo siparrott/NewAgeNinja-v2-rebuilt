@@ -1,5 +1,5 @@
-// COMPLETE CONSOLE SILENCE - Must be first import
-import '../silence-console.js';
+// Console silencing temporarily disabled for debugging
+// import '../silence-console.js';
 
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
@@ -80,13 +80,34 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Listen on the port provided by the environment or default to 5000
-  const port = parseInt(process.env.PORT || '5000', 10);
+  // Dynamically find available port starting from 5000
+  const findPort = async (startPort: number): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const testServer = server.listen(startPort, '0.0.0.0', (err?: Error) => {
+        if (err) {
+          // Port is busy, try next one
+          testServer.close();
+          if (startPort < 5010) {
+            findPort(startPort + 1).then(resolve).catch(reject);
+          } else {
+            reject(new Error('No available ports found between 5000-5010'));
+          }
+        } else {
+          testServer.close(() => {
+            resolve(startPort);
+          });
+        }
+      });
+    });
+  };
+
+  const port = await findPort(parseInt(process.env.PORT || '5000', 10));
   const host = "0.0.0.0";
   
   server.listen(port, host, () => {
-    log(`serving on ${host}:${port}`);
+    log(`✅ New Age Fotografie CRM successfully started on ${host}:${port}`);
     log(`Environment: ${process.env.NODE_ENV}`);
     log(`Working directory: ${process.cwd()}`);
+    log(`Demo mode: ${process.env.DEMO_MODE}`);
   });
 })();
