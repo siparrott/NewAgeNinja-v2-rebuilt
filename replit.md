@@ -398,6 +398,13 @@ Preferred communication style: Simple, everyday language.
   * Fixed client-side .toFixed() errors in InvoiceForm.tsx (5 instances), AdvancedInvoiceForm.tsx (10 instances), and OrderCard.tsx (1 instance)
   * Implemented comprehensive null safety checks across all currency formatting operations
   * All invoice functionality now works without JavaScript runtime errors in both server and client components
+- July 12, 2025. Restored complete price list from official New Age Fotografie price guide:
+  * Converted broken Supabase price list service to proper PostgreSQL API endpoint (/api/crm/price-list)
+  * Implemented complete price catalog with 22 items across 5 categories: PRINTS, LEINWAND, LUXUSRAHMEN, DIGITAL, EXTRAS
+  * Price range: €35 (single items) to €595 (complete digital packages)
+  * Includes all authentic pricing: prints (€35-€300), canvas prints (€75-€185), luxury frames (€145-€190), digital packages (€35-€595)
+  * Added special package notes for canvas bonuses and shipping details
+  * Invoice creation price list modal now displays complete professional photography service catalog
 - July 10, 2025. Resolved deployment blank screen issue with comprehensive client build fix:
   * Identified root cause: Vite build process was timing out due to application complexity, resulting in missing JavaScript/CSS assets
   * Created scripts/quick-deployment-fix.js to bypass slow Vite builds and create minimal working client bundle

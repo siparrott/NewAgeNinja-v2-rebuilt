@@ -3049,51 +3049,192 @@ New Age Fotografie CRM System
   // ==================== PRICE LIST ROUTES ====================
   app.get("/api/crm/price-list", async (req: Request, res: Response) => {
     try {
-      // Return static price list data for now
+      // Complete New Age Fotografie price list based on official price guide
       const priceList = [
+        // PRINTS Section
         {
-          id: 'family-portrait',
-          category: 'Photography',
-          name: 'Family Portrait Session',
-          description: 'Professional family photography session',
+          id: 'print-15x10',
+          category: 'PRINTS',
+          name: '15 x 10cm',
+          description: 'Print 15 x 10cm',
+          price: 35.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'print-10er-box',
+          category: 'PRINTS',
+          name: '10er 15 x 10cm + Gift Box',
+          description: '10er 15 x 10cm + Geschenkbox',
+          price: 300.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'print-20x30-a4',
+          category: 'PRINTS',
+          name: '20 x 30cm (A4)',
+          description: 'Print 20 x 30cm (A4 Format)',
+          price: 59.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'print-30x40-a3',
+          category: 'PRINTS',
+          name: '30 x 40cm (A3)',
+          description: 'Print 30 x 40cm (A3 Format)',
+          price: 79.00,
+          currency: 'EUR',
+          is_active: true
+        },
+
+        // LEINWAND Section
+        {
+          id: 'canvas-30x20-a4',
+          category: 'LEINWAND',
+          name: '30 x 20cm (A4)',
+          description: 'Leinwand 30 x 20cm (A4 Format)',
+          price: 75.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'canvas-40x30-a3',
+          category: 'LEINWAND',
+          name: '40 x 30cm (A3)',
+          description: 'Leinwand 40 x 30cm (A3 Format)',
+          price: 105.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'canvas-60x40-a2',
+          category: 'LEINWAND',
+          name: '60 x 40cm (A2)',
+          description: 'Leinwand 60 x 40cm (A2 Format)',
+          price: 145.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'canvas-70x50',
+          category: 'LEINWAND',
+          name: '70 x 50cm',
+          description: 'Leinwand 70 x 50cm',
+          price: 185.00,
+          currency: 'EUR',
+          is_active: true
+        },
+
+        // LUXUSRAHMEN Section
+        {
+          id: 'luxury-frame-a2-black',
+          category: 'LUXUSRAHMEN',
+          name: 'A2 (60 x 40cm) Leinwand in schwarzem Holzrahmen',
+          description: 'A2 (60 x 40cm) Leinwand in schwarzem Holzrahmen',
+          price: 190.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'luxury-frame-40x40',
+          category: 'LUXUSRAHMEN',
+          name: '40 x 40cm Bildrahmen',
+          description: '40 x 40cm Bildrahmen',
+          price: 145.00,
+          currency: 'EUR',
+          is_active: true
+        },
+
+        // DIGITAL Section
+        {
+          id: 'digital-1-bild',
+          category: 'DIGITAL',
+          name: '1 Bild',
+          description: '1 Digitales Bild',
+          price: 35.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'digital-10x-paket',
+          category: 'DIGITAL',
+          name: '10x Paket',
+          description: '10 Digitale Bilder Paket',
           price: 295.00,
           currency: 'EUR',
           is_active: true
         },
         {
-          id: 'digital-photo-package',
-          category: 'Digital',
-          name: 'Digital Photo Package',
-          description: '10 high-resolution edited photos',
-          price: 180.00,
+          id: 'digital-15x-paket',
+          category: 'DIGITAL',
+          name: '15x Paket',
+          description: '15 Digitale Bilder Paket',
+          price: 365.00,
           currency: 'EUR',
           is_active: true
         },
         {
-          id: 'newborn-session',
-          category: 'Photography',
-          name: 'Newborn Session',
-          description: 'Newborn photography session',
-          price: 350.00,
+          id: 'digital-20x-paket',
+          category: 'DIGITAL',
+          name: '20x Paket',
+          description: '20 Digitale Bilder Paket',
+          price: 395.00,
           currency: 'EUR',
+          notes: 'Leinwände Format A2 & 70x50cm 1 + 1 gratis',
           is_active: true
         },
         {
-          id: 'maternity-session',
-          category: 'Photography',
-          name: 'Maternity Session',
-          description: 'Maternity photography session',
-          price: 250.00,
+          id: 'digital-25x-paket',
+          category: 'DIGITAL',
+          name: '25x Paket',
+          description: '25 Digitale Bilder Paket',
+          price: 445.00,
           currency: 'EUR',
+          notes: 'Leinwände Format A2 & 70x50cm 1 + 1 gratis',
           is_active: true
         },
         {
-          id: 'business-headshots',
-          category: 'Business',
-          name: 'Business Headshots',
-          description: 'Professional business headshots',
-          price: 150.00,
+          id: 'digital-30x-paket',
+          category: 'DIGITAL',
+          name: '30x Paket',
+          description: '30 Digitale Bilder Paket',
+          price: 490.00,
           currency: 'EUR',
+          notes: 'Leinwände Format A2 & 70x50cm 1 + 1 gratis',
+          is_active: true
+        },
+        {
+          id: 'digital-35x-paket',
+          category: 'DIGITAL',
+          name: '35x Paket',
+          description: '35 Digitale Bilder Paket',
+          price: 525.00,
+          currency: 'EUR',
+          notes: 'Leinwände Format A2 & 70x50cm 1 + 1 gratis',
+          is_active: true
+        },
+        {
+          id: 'digital-alle-portraits',
+          category: 'DIGITAL',
+          name: 'Alle Porträts Insgesamt',
+          description: 'Alle Porträts Insgesamt',
+          price: 595.00,
+          currency: 'EUR',
+          notes: 'Leinwände Format A2 & 70x50cm 1 + 1 gratis',
+          is_active: true
+        },
+
+        // EXTRAS Section
+        {
+          id: 'shooting-ohne-gutschein',
+          category: 'EXTRAS',
+          name: 'Shooting ohne Gutschein',
+          description: 'Shooting ohne Gutschein',
+          price: 95.00,
+          currency: 'EUR',
+          notes: 'Kostenlose Versand',
           is_active: true
         }
       ];
