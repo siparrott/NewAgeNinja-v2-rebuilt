@@ -159,7 +159,7 @@ const VouchersPage: React.FC = () => {
             ) : displayedVouchers.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {displayedVouchers.map(voucher => (
-                  <VoucherProductCard key={voucher.id} voucher={voucher} />
+                  <VoucherProductCard key={voucher.id} voucher={voucher} onPurchase={handlePurchaseVoucher} />
                 ))}
               </div>
             ) : (
@@ -194,7 +194,7 @@ const VouchersPage: React.FC = () => {
 };
 
 // Voucher Product Card Component
-const VoucherProductCard: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) => {
+const VoucherProductCard: React.FC<{ voucher: VoucherProduct; onPurchase: (voucher: VoucherProduct) => void }> = ({ voucher, onPurchase }) => {
   const discountPercentage = Math.floor(Math.random() * 20) + 10; // Generate random discount for display
   
   return (
@@ -268,7 +268,7 @@ const VoucherProductCard: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) 
           <button 
             onClick={() => {
               // Add to cart or direct purchase
-              handlePurchaseVoucher(voucher);
+              onPurchase(voucher);
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg"
           >
