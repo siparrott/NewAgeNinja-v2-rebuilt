@@ -369,7 +369,14 @@ const AdminDashboardPage: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-gray-500">
-                  {lead.createdAt ? format(new Date(lead.createdAt), 'MMM dd') : 'Recent'}
+                  {(() => {
+                    try {
+                      const date = new Date(lead.createdAt || lead.created_at);
+                      return isNaN(date.getTime()) ? 'Recent' : format(date, 'MMM dd');
+                    } catch (error) {
+                      return 'Recent';
+                    }
+                  })()}
                 </p>
               </div>
             ))}
@@ -399,7 +406,14 @@ const AdminDashboardPage: React.FC = () => {
                   <p className="text-sm text-gray-600">{booking.service_type}</p>
                   <div className="flex items-center text-xs text-gray-500 mt-1">
                     <Clock className="h-3 w-3 mr-1" />
-                    {format(new Date(booking.booking_date), 'MMM dd, HH:mm')}
+                    {(() => {
+                      try {
+                        const date = new Date(booking.booking_date || booking.sessionDate || booking.created_at);
+                        return isNaN(date.getTime()) ? 'No date' : format(date, 'MMM dd, HH:mm');
+                      } catch (error) {
+                        return 'No date';
+                      }
+                    })()}
                   </div>
                 </div>
               </div>
@@ -427,7 +441,7 @@ const AdminDashboardPage: React.FC = () => {
               <div key={index} className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">Invoice #{invoice.id?.substring(0, 8)}</p>
-                  <p className="text-sm text-gray-600">€{invoice.total_amount?.toFixed(2)}</p>
+                  <p className="text-sm text-gray-600">€{(parseFloat(invoice.total) || 0).toFixed(2)}</p>
                   <span className={`inline-block px-2 py-1 text-xs rounded-full ${
                     invoice.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                     invoice.status === 'PAID' ? 'bg-green-100 text-green-800' :
@@ -437,7 +451,14 @@ const AdminDashboardPage: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-gray-500">
-                  {format(new Date(invoice.created_at), 'MMM dd')}
+                  {(() => {
+                    try {
+                      const date = new Date(invoice.createdAt || invoice.created_at);
+                      return isNaN(date.getTime()) ? 'Recent' : format(date, 'MMM dd');
+                    } catch (error) {
+                      return 'Recent';
+                    }
+                  })()}
                 </p>
               </div>
             ))}
