@@ -25,7 +25,7 @@ const KontaktPage: React.FC = () => {
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-    metaDescription.setAttribute('content', 'Kontaktieren Sie unseren Familienfotograf in Wien. Studio in Schönbrunner Str. 25, Tel: +43 677 933 99210. Öffnungszeiten Fr-So 09:00-17:00.');
+    metaDescription.setAttribute('content', 'Kontaktieren Sie unseren Familienfotograf in Wien. Studio: Eingang Ecke Schönbrunnerstraße, Wehrgasse 11A/2+5, 1050 Wien. Tel: +43 677 933 99210. Öffnungszeiten Fr-So 09:00-17:00.');
 
     // Open Graph tags
     let ogTitle = document.querySelector('meta[property="og:title"]');
@@ -42,7 +42,7 @@ const KontaktPage: React.FC = () => {
       ogDescription.setAttribute('property', 'og:description');
       document.head.appendChild(ogDescription);
     }
-    ogDescription.setAttribute('content', 'Kontaktieren Sie unseren Familienfotograf in Wien. Studio in Schönbrunner Str. 25, Tel: +43 677 933 99210.');
+    ogDescription.setAttribute('content', 'Kontaktieren Sie unseren Familienfotograf in Wien. Studio: Eingang Ecke Schönbrunnerstraße, Wehrgasse 11A/2+5, 1050 Wien. Tel: +43 677 933 99210.');
 
     return () => {
       document.title = 'New Age Fotografie - Familienfotograf Wien';
@@ -105,7 +105,10 @@ const KontaktPage: React.FC = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <MapPin className="w-6 h-6 text-gray-600" />
-                <span className="text-gray-700">Schönbrunner Str. 25, 1050 Wien, Austria</span>
+                <div className="text-gray-700">
+                  <div className="font-medium">Eingang Ecke Schönbrunnerstraße</div>
+                  <div>Wehrgasse 11A/2+5, 1050 Wien, Austria</div>
+                </div>
               </div>
             </div>
 
@@ -120,6 +123,23 @@ const KontaktPage: React.FC = () => {
                   <Car className="w-5 h-5 text-gray-600" />
                   <span className="text-gray-700">Street parking available</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Google Maps Embed */}
+            <div className="mt-8">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Studio Location</h3>
+              <div className="rounded-lg overflow-hidden shadow-sm border">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2659.8!2d16.3608!3d48.1865!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x476d0774b3d4e1ab%3A0x123456789abcdef0!2sWehrgasse%2011A%2C%201050%20Wien%2C%20Austria!5e0!3m2!1sen!2sat!4v1625075400000!5m2!1sen!2sat"
+                  width="100%"
+                  height="300"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="New Age Fotografie Studio Location - Wehrgasse 11A/2+5, 1050 Wien"
+                />
               </div>
             </div>
           </div>
