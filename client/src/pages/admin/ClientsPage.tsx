@@ -129,12 +129,13 @@ const ClientsPage: React.FC = () => {
     }
     
     try {
-      const { error } = await supabase
-        .from('crm_clients')
-        .delete()
-        .eq('id', client.id);
+      const response = await fetch(`/api/crm/clients/${client.id}`, {
+        method: 'DELETE',
+      });
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to delete client');
+      }
       
       // Remove from local state
       setClients(prev => prev.filter(c => c.id !== client.id));

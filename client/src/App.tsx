@@ -26,6 +26,7 @@ import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminLeadsPage from './pages/admin/AdminLeadsPage';
 import AdminVoucherSalesPageV3 from './pages/admin/AdminVoucherSalesPageV3';
 import AdminClientsPage from './pages/admin/ClientsPage';
+import ClientDetailPage from './pages/admin/ClientDetailPage';
 import ClientProfilePage from './pages/admin/ClientProfilePage';
 import ClientFormPage from './pages/admin/ClientFormPage';
 import AdminClientsImportPage from './pages/admin/ClientsImportPage';
@@ -156,7 +157,7 @@ function App() {
                   path="/admin/clients/:id"
                   element={
                     <ProtectedRoute>
-                      <ClientProfilePage />
+                      <ClientDetailPage />
                     </ProtectedRoute>
                   }
                 />

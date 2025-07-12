@@ -678,17 +678,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all clients
-  app.get("/api/crm/clients", authenticateUser, async (req: Request, res: Response) => {
-    try {
-      const clients = await storage.getCrmClients();
-      res.json(clients);
-    } catch (error) {
-      console.error("Error fetching CRM clients:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
   app.get("/api/crm/clients/:id", authenticateUser, async (req: Request, res: Response) => {
     try {
       const client = await storage.getCrmClient(req.params.id);
