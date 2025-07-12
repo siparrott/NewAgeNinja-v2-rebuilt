@@ -34,7 +34,10 @@ import nodemailer from 'nodemailer';
 import { jsPDF } from 'jspdf';
 
 // Modern PDF invoice generator using jsPDF
-function generateModernInvoicePDF(invoice: any, client: any): Buffer {
+async function generateModernInvoicePDF(invoice: any, client: any): Promise<Buffer> {
+  // Load invoice items from database
+  const invoiceItems = await storage.getCrmInvoiceItems(invoice.id);
+  
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
@@ -44,15 +47,26 @@ function generateModernInvoicePDF(invoice: any, client: any): Buffer {
   doc.setFillColor(147, 51, 234); // Purple accent
   doc.rect(0, 0, pageWidth, 25, 'F');
   
-  // Company logo area (text-based for now)
+  // Company logo design (inspired by the actual logo)
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
-  doc.setFont('helvetica', 'bold');
-  doc.text('NEW AGE FOTOGRAFIE', 20, 17);
   
-  // Camera icon (simple text representation)
+  // Create logo frame elements
+  doc.setLineWidth(2);
+  doc.setDrawColor(255, 0, 155); // Bright magenta/pink
+  doc.line(15, 8, 25, 8); // Top left horizontal
+  doc.line(15, 8, 15, 18); // Top left vertical
+  doc.line(pageWidth - 40, 8, pageWidth - 15, 8); // Top right horizontal
+  doc.line(pageWidth - 15, 8, pageWidth - 15, 18); // Top right vertical
+  
+  // Company name
   doc.setFontSize(16);
-  doc.text('📸', pageWidth - 30, 17);
+  doc.setFont('helvetica', 'bold');
+  doc.text('NEW AGE', 30, 13);
+  doc.text('FOTOGRAFIE', 30, 20);
+  
+  // Camera text indicator
+  doc.setFontSize(10);
+  doc.text('PHOTOGRAPHY STUDIO', pageWidth - 35, 17, { align: 'right' });
 
   // Reset text color and position
   doc.setTextColor(0, 0, 0);
@@ -140,11 +154,11 @@ function generateModernInvoicePDF(invoice: any, client: any): Buffer {
   doc.setFont('helvetica', 'normal');
   yPosition += 15;
   
-  if (invoice.items && Array.isArray(invoice.items)) {
-    invoice.items.forEach((item: any, index: number) => {
+  if (invoiceItems && Array.isArray(invoiceItems) && invoiceItems.length > 0) {
+    invoiceItems.forEach((item: any, index: number) => {
       const description = item.description || 'Fotografie-Leistung';
-      const quantity = item.quantity || 1;
-      const unitPrice = parseFloat(item.unitPrice?.toString() || item.price?.toString() || '0');
+      const quantity = parseFloat(item.quantity?.toString() || '1');
+      const unitPrice = parseFloat(item.unitPrice?.toString() || item.unit_price?.toString() || '0');
       const amount = quantity * unitPrice;
       
       // Alternating row colors
@@ -159,6 +173,16 @@ function generateModernInvoicePDF(invoice: any, client: any): Buffer {
       doc.text(`€${amount.toFixed(2)}`, pageWidth - 25, yPosition + 2, { align: 'right' });
       yPosition += 12;
     });
+  } else {
+    // Fallback if no items found
+    doc.setTextColor(100, 100, 100);
+    doc.text('Alle Porträts Insgesamt', 25, yPosition + 2);
+    doc.text('1', 120, yPosition + 2, { align: 'center' });
+    const subtotal = parseFloat(invoice.subtotal?.toString() || '0');
+    doc.text(`€${subtotal.toFixed(2)}`, 140, yPosition + 2, { align: 'right' });
+    doc.text(`€${subtotal.toFixed(2)}`, pageWidth - 25, yPosition + 2, { align: 'right' });
+    yPosition += 12;
+    doc.setTextColor(0, 0, 0);
   }
 
   // Totals section with styling
@@ -204,7 +228,7 @@ function generateModernInvoicePDF(invoice: any, client: any): Buffer {
   yPosition += 20;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.text('📸 Model Release / Einverständniserklärung zur Bildverwendung', 20, yPosition);
+  doc.text('[CAMERA] Model Release / Einverständniserklärung zur Bildverwendung', 20, yPosition);
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
@@ -1698,7 +1722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate modern PDF using centralized function
-      const pdfBuffer = generateModernInvoicePDF(invoice, client);
+      const pdfBuffer = await generateModernInvoicePDF(invoice, client);
       
       // Set proper PDF headers
       const invoiceNumber = invoice.invoiceNumber || invoice.invoice_number || invoice.id;
@@ -1734,7 +1758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate modern PDF attachment if requested using centralized function
       let attachments = [];
       if (includeAttachment) {
-        const pdfBuffer = generateModernInvoicePDF(invoice, client);
+        const pdfBuffer = await generateModernInvoicePDF(invoice, client);
         const invoiceNumber = invoice.invoiceNumber || invoice.invoice_number || invoice.id;
 
         attachments.push({

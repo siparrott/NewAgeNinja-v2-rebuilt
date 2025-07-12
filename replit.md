@@ -407,14 +407,16 @@ Preferred communication style: Simple, everyday language.
   * Eliminated all "Failed to generate PDF" errors and dependency issues for immediate functionality
 - July 12, 2025. Enhanced invoice design with modern, professional styling and company branding:
   * Implemented sleek modern PDF design using jsPDF with purple accent colors matching company branding
-  * Added professional header with NEW AGE FOTOGRAFIE logo area and camera icon (📸)
+  * Created professional logo design inspired by actual company logo with magenta frame elements
+  * Fixed missing invoice items by properly loading from crm_invoice_items database table via getCrmInvoiceItems function
+  * Added professional header with stylized NEW AGE FOTOGRAFIE logo including geometric frame design
   * Included complete studio information: address (Schönbrunner Str. 25, 1050 Wien), phone (+43 677 933 99210), email, website
   * Created modern styled sections with purple backgrounds for invoice header and table headers
   * Added comprehensive payment information section with N26 bank details (IBAN: DE46 1001 1001 2620 9741 97, BIC: NTSBDEB1XXX)
   * Integrated complete German model release consent text as required for photography business compliance
   * Implemented alternating row colors in item tables and professional footer with company tagline
-  * Created centralized PDF generation function to ensure consistency between direct downloads and email attachments
-  * PDF size increased to 8,251 bytes reflecting enhanced professional design elements
+  * Created centralized async PDF generation function ensuring proper invoice item loading and consistency
+  * PDF size increased to 9,163 bytes reflecting enhanced logo design and proper item rendering
 - July 12, 2025. Restored complete price list from official New Age Fotografie price guide:
   * Converted broken Supabase price list service to proper PostgreSQL API endpoint (/api/crm/price-list)
   * Implemented complete price catalog with 22 items across 5 categories: PRINTS, LEINWAND, LUXUSRAHMEN, DIGITAL, EXTRAS
