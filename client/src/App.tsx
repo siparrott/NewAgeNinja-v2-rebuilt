@@ -36,7 +36,7 @@ import AdminGalleriesPage from './pages/admin/GalleriesPage';
 import AdminGalleryCreatePage from './pages/admin/GalleryCreatePage';
 import AdminGalleryEditPage from './pages/admin/GalleryEditPage';
 import AdminGalleryDetailPage from './pages/admin/GalleryDetailPage';
-import InvoicesPageSimple from './pages/admin/InvoicesPageSimple';
+import InvoicesPage from './pages/admin/InvoicesPage';
 import FilesPage from './pages/admin/FilesPage';
 import ProDigitalFilesPage from './pages/admin/ProDigitalFilesPage';
 import CampaignsPage from './pages/admin/CampaignsPage';
@@ -229,7 +229,7 @@ function App() {
                   path="/admin/invoices" 
                   element={
                     <ProtectedRoute>
-                      <InvoicesPageSimple />
+                      <InvoicesPage />
                     </ProtectedRoute>
                   } 
                 />

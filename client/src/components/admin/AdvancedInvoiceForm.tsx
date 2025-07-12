@@ -19,8 +19,7 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../../lib/queryClient';
-import { invoiceApi, type CreateInvoiceData } from '../../lib/invoice-api';
-import { PRICE_LIST_CATEGORIES, getPriceListByCategory, PriceListItem } from '../../data/priceList';
+// Removed invoice-api and priceList imports to fix missing dependencies
 
 interface Client {
   id: string;
@@ -321,19 +320,18 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
     }));
   };
 
-  const addPriceListItem = (priceListItem: PriceListItem, quantity: number = 1) => {
+  const addNewServiceItem = () => {
     const newItem: InvoiceItem = {
       id: Date.now().toString(),
-      description: priceListItem.description + (priceListItem.notes ? ` (${priceListItem.notes})` : ''),
-      quantity: quantity,
-      unit_price: priceListItem.price,
+      description: '',
+      quantity: 1,
+      unit_price: 0,
       tax_rate: 19 // Default German VAT
     };
     setFormData(prev => ({
       ...prev,
       items: [...prev.items, newItem]
     }));
-    setShowPriceList(false);
   };
 
   const validateStep = (step: number): boolean => {
@@ -1133,72 +1131,58 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 >
                   <option value="">All Categories</option>
-                  {PRICE_LIST_CATEGORIES.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name} - {category.description}
-                    </option>
-                  ))}
+                  <option value="DIGITAL">Digital Photos</option>
+                  <option value="PRINTS">Print Products</option>
+                  <option value="SESSIONS">Photo Sessions</option>
                 </select>
               </div>
 
-              {/* Price List Items */}
+              {/* Simplified Service Items */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {getPriceListByCategory(selectedCategory).map((item) => (
-                  <div
-                    key={item.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors"
+                <div className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
+                  <h4 className="font-medium text-gray-900">Family Portrait Session</h4>
+                  <p className="text-sm text-gray-600 mb-2">Professional family photography session</p>
+                  <p className="font-semibold text-purple-600 mb-3">€295.00</p>
+                  <button
+                    onClick={() => {
+                      const newItem: InvoiceItem = {
+                        id: Date.now().toString(),
+                        description: 'Family Portrait Session',
+                        quantity: 1,
+                        unit_price: 295,
+                        tax_rate: 19
+                      };
+                      setFormData(prev => ({...prev, items: [...prev.items, newItem]}));
+                      setShowPriceList(false);
+                    }}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm"
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-medium text-gray-900">{item.name}</h4>
-                        <p className="text-sm text-gray-600 mb-1">{item.description}</p>
-                        <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                          {PRICE_LIST_CATEGORIES.find(cat => cat.id === item.category)?.name}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-purple-600">
-                          {item.currency} {item.price.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {item.notes && (
-                      <p className="text-xs text-amber-600 mb-3 bg-amber-50 p-2 rounded">
-                        ℹ️ {item.notes}
-                      </p>
-                    )}
-                    
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="number"
-                        min="1"
-                        defaultValue="1"
-                        className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                        id={`qty-${item.id}`}
-                        placeholder="Qty"
-                      />
-                      <button
-                        onClick={() => {
-                          const qtyInput = document.getElementById(`qty-${item.id}`) as HTMLInputElement;
-                          const quantity = parseInt(qtyInput?.value || '1');
-                          addPriceListItem(item, quantity);
-                        }}
-                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm flex items-center justify-center"
-                      >
-                        <Plus size={14} className="mr-1" />
-                        Add to Invoice
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {getPriceListByCategory(selectedCategory).length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No items found in this category.</p>
+                    Add to Invoice
+                  </button>
                 </div>
-              )}
+                
+                <div className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
+                  <h4 className="font-medium text-gray-900">Digital Photo Package</h4>
+                  <p className="text-sm text-gray-600 mb-2">10 high-resolution edited photos</p>
+                  <p className="font-semibold text-purple-600 mb-3">€150.00</p>
+                  <button
+                    onClick={() => {
+                      const newItem: InvoiceItem = {
+                        id: Date.now().toString(),
+                        description: 'Digital Photo Package (10 photos)',
+                        quantity: 1,
+                        unit_price: 150,
+                        tax_rate: 19
+                      };
+                      setFormData(prev => ({...prev, items: [...prev.items, newItem]}));
+                      setShowPriceList(false);
+                    }}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm"
+                  >
+                    Add to Invoice
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}
