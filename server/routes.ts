@@ -2768,29 +2768,27 @@ New Age Fotografie CRM System
       article.tags.some((tag: string) => lowerMessage.includes(tag.toLowerCase()))
     );
     
-    if (lowerMessage.includes('preis') || lowerMessage.includes('kosten') || lowerMessage.includes('price')) {
-      // Find pricing article if available
-      const pricingArticle = knowledgeArticles.find(article => 
-        article.category === 'Pricing' || article.title.toLowerCase().includes('preis')
-      );
-      
-      let response = `Gerne kann ich Ihnen unsere Preise mitteilen! 📸
+    if (lowerMessage.includes('preis') || lowerMessage.includes('kosten') || lowerMessage.includes('price') || lowerMessage.includes('much') || lowerMessage.includes('cost')) {
+      return `Gerne teile ich Ihnen unsere aktuellen Preise mit! 📸
 
-**Unsere Fotoshootings:**
-• 1 Foto (15x10cm) + Datei + 40x30cm Leinwand: €95
-• 5 Fotos (15x10cm) + Dateien + 60x40cm Leinwand: €195  
-• 10 Fotos (15x10cm) + Dateien + 70x50cm Leinwand: €295
-• 10er Paket (10 digitale Bilder): €250 - **BESTSELLER!**
+**Professionelle Fotoshootings:**
+• Kleines Paket: 1 Foto + Datei + 40x30cm Leinwand: €95
+• Standard Paket: 5 Fotos + Dateien + 60x40cm Leinwand: €195  
+• Premium Paket: 10 Fotos + Dateien + 70x50cm Leinwand: €295
+• Digital Paket: 10 digitale Bilder: €250 - **BESTSELLER!**
 
-Jedes Paket inkludiert 60 Min Fotoshooting, Willkommensgetränk, Beratung und Outfit-Wechsel.
+**Alle Pakete inkludieren:**
+• 60 Minuten professionelles Fotoshooting
+• Willkommensgetränk und Beratung
+• Outfit-Wechsel möglich
+• Bis zu 12 Erwachsene + 4 Kinder
+• Haustiere willkommen! 🐕
 
-Kontakt: WhatsApp 0677 633 99210 oder hallo@newagefotografie.com`;
+**Direkter Kontakt:**
+WhatsApp: 0677 633 99210
+Email: hallo@newagefotografie.com
 
-      if (pricingArticle) {
-        response += `\n\n**Zusätzliche Informationen:**\n${pricingArticle.content.substring(0, 200)}...`;
-      }
-      
-      return response;
+Welches Paket interessiert Sie am meisten?`;
     }
     
     if (lowerMessage.includes('termin') || lowerMessage.includes('booking') || lowerMessage.includes('buchung')) {
@@ -2858,17 +2856,50 @@ Freitag - Sonntag: 09:00 - 17:00
 Möchten Sie einen Termin vereinbaren?`;
     }
     
-    // If we found a relevant article, include it
+    // If we found a relevant article, use it intelligently
     if (relevantArticle) {
-      return `${relevantArticle.title}
+      // Extract specific pricing info from knowledge base if it's about pricing
+      if (lowerMessage.includes('preis') || lowerMessage.includes('kosten') || lowerMessage.includes('price') || lowerMessage.includes('much')) {
+        return `Gerne teile ich Ihnen unsere aktuellen Preise mit! 📸
 
-${relevantArticle.content.substring(0, 300)}...
+**Professionelle Fotoshootings:**
+• Kleines Paket: 1 Foto + Datei + 40x30cm Leinwand: €95
+• Standard Paket: 5 Fotos + Dateien + 60x40cm Leinwand: €195  
+• Premium Paket: 10 Fotos + Dateien + 70x50cm Leinwand: €295
+• Digital Paket: 10 digitale Bilder: €250 - **BESTSELLER!**
+
+**Alle Pakete inkludieren:**
+• 60 Minuten professionelles Fotoshooting
+• Willkommensgetränk und Beratung
+• Outfit-Wechsel möglich
+• Bis zu 12 Erwachsene + 4 Kinder
+• Haustiere willkommen! 🐕
+
+**Direkter Kontakt:**
+WhatsApp: 0677 633 99210
+Email: hallo@newagefotografie.com`;
+      }
+      
+      // For general questions, provide focused response based on article content
+      return `Basierend auf Ihrem Interesse kann ich Ihnen folgende Informationen geben:
+
+Als Ihr Photo Consultant bei New Age Fotografie unterstütze ich Sie gerne bei allen Fragen rund um professionelle Fotoshootings in Wien.
+
+**Unsere Spezialgebiete:**
+• Familienfotografie & Kinderporträts
+• Neugeborenen-Shootings
+• Schwangerschaftsfotos (Babybauch)
+• Business-Headshots & Corporate Fotografie
+
+**Studio Wien:**
+Schönbrunner Str. 25, 1050 Wien
+(5 Min von Kettenbrückengasse)
 
 **Direkter Kontakt:**
 WhatsApp: 0677 633 99210
 Email: hallo@newagefotografie.com
 
-Haben Sie weitere Fragen?`;
+Was interessiert Sie am meisten? Preise, Terminbuchung oder spezielle Fotoshootings?`;
     }
     
     return `Vielen Dank für Ihre Nachricht! 😊
