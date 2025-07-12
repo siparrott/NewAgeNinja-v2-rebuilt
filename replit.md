@@ -392,6 +392,12 @@ Preferred communication style: Simple, everyday language.
   * Fixed invoice page crashes by ensuring all numeric operations handle undefined/null values properly
   * Enhanced error resilience across invoice display components with proper fallback values
   * Application now handles malformed invoice data gracefully without runtime errors
+- July 12, 2025. Fixed additional JavaScript runtime errors across invoice components:
+  * Resolved "Cannot read properties of undefined (reading 'bg')" error in InvoicesPage.tsx getStatusBadge function
+  * Added fallback status configuration for undefined or unknown invoice statuses
+  * Fixed client-side .toFixed() errors in InvoiceForm.tsx (5 instances), AdvancedInvoiceForm.tsx (10 instances), and OrderCard.tsx (1 instance)
+  * Implemented comprehensive null safety checks across all currency formatting operations
+  * All invoice functionality now works without JavaScript runtime errors in both server and client components
 - July 10, 2025. Resolved deployment blank screen issue with comprehensive client build fix:
   * Identified root cause: Vite build process was timing out due to application complexity, resulting in missing JavaScript/CSS assets
   * Created scripts/quick-deployment-fix.js to bypass slow Vite builds and create minimal working client bundle
