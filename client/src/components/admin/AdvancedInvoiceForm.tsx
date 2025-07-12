@@ -6,6 +6,9 @@ import {
   Trash2, 
   FileText,
   User,
+  Download,
+  Send,
+  Mail,
   CreditCard,
   Eye,
   ChevronLeft,
@@ -104,6 +107,15 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
     payment_method: 'cash',
     payment_reference: '',
     payment_notes: ''
+  });
+
+  // PDF and Email functionality states
+  const [createdInvoice, setCreatedInvoice] = useState<any>(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailData, setEmailData] = useState({
+    subject: '',
+    message: '',
+    includeAttachment: true
   });
 
   const steps = [
@@ -398,6 +410,7 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
       }
 
       const invoice = await response.json();
+      setCreatedInvoice(invoice); // Store created invoice for PDF/email functions
 
       // If marked as paid, create payment record
       if (markAsPaid) {
@@ -433,6 +446,58 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
       setLoading(false);
     }
   };
+
+  // PDF Download Function
+  const downloadPDF = async () => {
+    if (!createdInvoice) return;
+    
+    try {
+      const response = await fetch(`/api/crm/invoices/${createdInvoice.id}/pdf`);
+      if (!response.ok) throw new Error('Failed to generate PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `Rechnung-${createdInvoice.invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      setError('Failed to download PDF. Please try again.');
+    }
+  };
+
+  // Email Send Function
+  const sendEmail = async () => {
+    if (!createdInvoice) return;
+    
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/crm/invoices/${createdInvoice.id}/email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData),
+      });
+      
+      if (!response.ok) throw new Error('Failed to send email');
+      
+      const result = await response.json();
+      setShowEmailModal(false);
+      alert('Invoice successfully sent by email!');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      setError('Failed to send email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1: {
@@ -980,23 +1045,52 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
                 <ChevronRight size={16} className="ml-1" />
               </button>
             ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {loading ? (
+              <div className="flex space-x-2">
+                {createdInvoice ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Creating...
+                    <button
+                      onClick={downloadPDF}
+                      className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      <Download size={16} className="mr-2" />
+                      Download PDF
+                    </button>
+                    <button
+                      onClick={() => {
+                        const client = clients.find(c => c.id === formData.client_id);
+                        setEmailData({
+                          subject: `Rechnung ${createdInvoice.invoiceNumber} - New Age Fotografie`,
+                          message: `Liebe/r ${client?.name},\n\nanbei senden wir Ihnen Ihre Rechnung zu.\n\nMit freundlichen Grüßen,\nNew Age Fotografie Team`,
+                          includeAttachment: true
+                        });
+                        setShowEmailModal(true);
+                      }}
+                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    >
+                      <Send size={16} className="mr-2" />
+                      Send Email
+                    </button>
                   </>
                 ) : (
-                  <>
-                    <Check size={16} className="mr-2" />
-                    Create Invoice
-                  </>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Check size={16} className="mr-2" />
+                        Create Invoice
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
+              </div>
             )}          </div>
         </div>
       </motion.div>
@@ -1105,6 +1199,97 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
                   <p className="text-gray-500">No items found in this category.</p>
                 </div>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Email Modal */}
+      <AnimatePresence>
+        {showEmailModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-md"
+            >
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Mail className="mr-2" size={20} />
+                  Send Invoice by Email
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subject
+                    </label>
+                    <input
+                      type="text"
+                      value={emailData.subject}
+                      onChange={(e) => setEmailData(prev => ({ ...prev, subject: e.target.value }))}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Message
+                    </label>
+                    <textarea
+                      value={emailData.message}
+                      onChange={(e) => setEmailData(prev => ({ ...prev, message: e.target.value }))}
+                      rows={4}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="includeAttachment"
+                      checked={emailData.includeAttachment}
+                      onChange={(e) => setEmailData(prev => ({ ...prev, includeAttachment: e.target.checked }))}
+                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="includeAttachment" className="ml-2 text-sm text-gray-700">
+                      Include PDF attachment
+                    </label>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={() => setShowEmailModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={sendEmail}
+                    disabled={loading}
+                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} className="mr-2" />
+                        Send Email
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}

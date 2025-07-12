@@ -29,6 +29,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import Stripe from 'stripe';
+import puppeteer from 'puppeteer';
+import nodemailer from 'nodemailer';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -42,6 +44,315 @@ const authenticateUser = async (req: Request, res: Response, next: Function) => 
   req.user = { id: "550e8400-e29b-41d4-a716-446655440000", email: "admin@example.com", isAdmin: true };
   next();
 };
+
+// Generate HTML template for invoice PDF
+function generateInvoiceHTML(invoice: any, client: any): string {
+  const today = new Date().toLocaleDateString('de-DE');
+  const issueDate = new Date(invoice.issueDate).toLocaleDateString('de-DE');
+  const dueDate = new Date(invoice.dueDate).toLocaleDateString('de-DE');
+  
+  return `
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Rechnung ${invoice.invoiceNumber}</title>
+      <style>
+        body {
+          font-family: 'Arial', sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 40px;
+          border-bottom: 2px solid #9333ea;
+          padding-bottom: 20px;
+        }
+        .logo-section {
+          display: flex;
+          align-items: center;
+          margin-bottom: 15px;
+        }
+        .company-logo {
+          width: 200px;
+          height: auto;
+          margin-right: 15px;
+          margin-bottom: 10px;
+          max-height: 80px;
+          object-fit: contain;
+        }
+        .company-info h1 {
+          color: #9333ea;
+          margin: 0;
+          font-size: 28px;
+          font-weight: bold;
+        }
+        .company-details p {
+          margin: 3px 0;
+          font-size: 13px;
+          color: #555;
+        }
+        .company-details strong {
+          color: #333;
+        }
+        .invoice-info {
+          text-align: right;
+        }
+        .invoice-info h2 {
+          color: #333;
+          margin: 0;
+          font-size: 24px;
+        }
+        .client-section {
+          margin: 30px 0;
+        }
+        .client-section h3 {
+          color: #9333ea;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 5px;
+        }
+        .invoice-details {
+          display: flex;
+          justify-content: space-between;
+          margin: 30px 0;
+        }
+        .details-box {
+          background: #f8f9fa;
+          padding: 15px;
+          border-radius: 8px;
+          width: 45%;
+        }
+        .details-box h4 {
+          margin: 0 0 10px 0;
+          color: #333;
+        }
+        .items-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 30px 0;
+        }
+        .items-table th,
+        .items-table td {
+          border: 1px solid #ddd;
+          padding: 12px;
+          text-align: left;
+        }
+        .items-table th {
+          background-color: #9333ea;
+          color: white;
+          font-weight: bold;
+        }
+        .items-table tr:nth-child(even) {
+          background-color: #f9f9f9;
+        }
+        .totals {
+          margin-top: 20px;
+          text-align: right;
+        }
+        .totals table {
+          margin-left: auto;
+          border-collapse: collapse;
+        }
+        .totals td {
+          padding: 8px 15px;
+          border: none;
+        }
+        .totals .total-row {
+          font-weight: bold;
+          font-size: 18px;
+          border-top: 2px solid #9333ea;
+          color: #9333ea;
+        }
+        .footer {
+          margin-top: 40px;
+          padding-top: 20px;
+          border-top: 2px solid #9333ea;
+          font-size: 11px;
+          color: #666;
+        }
+        .footer-content {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 15px;
+        }
+        .footer-section {
+          flex: 1;
+          margin-right: 20px;
+        }
+        .footer-section:last-child {
+          margin-right: 0;
+        }
+        .footer-section h4 {
+          color: #9333ea;
+          font-size: 12px;
+          margin: 0 0 8px 0;
+          font-weight: bold;
+        }
+        .footer-section p {
+          margin: 2px 0;
+          line-height: 1.3;
+        }
+        .footer-bottom {
+          text-align: center;
+          padding-top: 15px;
+          border-top: 1px solid #eee;
+          color: #9333ea;
+          font-style: italic;
+        }
+        .payment-terms {
+          background: #e7f3ff;
+          padding: 15px;
+          border-radius: 8px;
+          margin: 20px 0;
+          border-left: 4px solid #9333ea;
+        }
+        .number {
+          text-align: right;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="company-info">
+          <div class="logo-section">
+            <img src="${req.protocol}://${req.get('host')}/logo.png" alt="New Age Fotografie" class="company-logo" onerror="this.style.display='none'" />
+            <h1>New Age Fotografie</h1>
+          </div>
+          <div class="company-details">
+            <p><strong>Adresse:</strong> Eingang Ecke Schönbrunnerstraße</p>
+            <p>Wehrgasse 11A/2+5, 1050 Wien, Austria</p>
+            <p><strong>Telefon:</strong> +43 677 933 99210</p>
+            <p><strong>Email:</strong> hallo@newagefotografie.com</p>
+            <p><strong>Website:</strong> www.newagefotografie.com</p>
+            <p><strong>UID:</strong> ATU12345678 | <strong>FN:</strong> 123456a</p>
+          </div>
+        </div>
+        <div class="invoice-info">
+          <h2>RECHNUNG</h2>
+          <p><strong>Nr.: ${invoice.invoiceNumber}</strong></p>
+          <p>Datum: ${today}</p>
+        </div>
+      </div>
+
+      <div class="client-section">
+        <h3>Rechnungsempfänger</h3>
+        <p><strong>${client.firstName || ''} ${client.lastName || ''}</strong></p>
+        <p>${client.email || ''}</p>
+        ${client.address ? `<p>${client.address}</p>` : ''}
+        ${client.city ? `<p>${client.city}, ${client.country || ''}</p>` : ''}
+      </div>
+
+      <div class="invoice-details">
+        <div class="details-box">
+          <h4>Rechnungsdetails</h4>
+          <p><strong>Rechnungsdatum:</strong> ${issueDate}</p>
+          <p><strong>Fälligkeitsdatum:</strong> ${dueDate}</p>
+          <p><strong>Zahlungsbedingungen:</strong> ${invoice.paymentTerms || 'Net 30'}</p>
+        </div>
+        <div class="details-box">
+          <h4>Zahlungsinformationen</h4>
+          <p><strong>Status:</strong> ${invoice.status === 'paid' ? 'Bezahlt' : 'Offen'}</p>
+          <p><strong>Währung:</strong> ${invoice.currency || 'EUR'}</p>
+        </div>
+      </div>
+
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Beschreibung</th>
+            <th>Menge</th>
+            <th>Einzelpreis</th>
+            <th>MwSt. %</th>
+            <th>Gesamtpreis</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(invoice.items || []).map((item: any) => `
+            <tr>
+              <td>${item.description || 'Leistung'}</td>
+              <td class="number">${item.quantity || 1}</td>
+              <td class="number">€${parseFloat(item.unitPrice?.toString() || item.unit_price?.toString() || '0').toFixed(2)}</td>
+              <td class="number">${item.taxRate || item.tax_rate || 0}%</td>
+              <td class="number">€${(parseFloat(item.unitPrice?.toString() || item.unit_price?.toString() || '0') * (item.quantity || 1)).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <table>
+          <tr>
+            <td>Zwischensumme:</td>
+            <td class="number">€${parseFloat(invoice.subtotal?.toString() || '0').toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td>MwSt.:</td>
+            <td class="number">€${parseFloat(invoice.taxAmount?.toString() || invoice.tax_amount?.toString() || '0').toFixed(2)}</td>
+          </tr>
+          ${invoice.discountAmount ? `
+          <tr>
+            <td>Rabatt:</td>
+            <td class="number">-€${parseFloat(invoice.discountAmount.toString()).toFixed(2)}</td>
+          </tr>
+          ` : ''}
+          <tr class="total-row">
+            <td><strong>Gesamtbetrag:</strong></td>
+            <td class="number"><strong>€${parseFloat(invoice.total?.toString() || '0').toFixed(2)}</strong></td>
+          </tr>
+        </table>
+      </div>
+
+      ${invoice.notes ? `
+      <div class="payment-terms">
+        <h4>Anmerkungen</h4>
+        <p>${invoice.notes}</p>
+      </div>
+      ` : ''}
+
+      <div class="payment-terms">
+        <h4>Zahlungsbedingungen</h4>
+        <p>Bitte überweisen Sie den Rechnungsbetrag bis zum Fälligkeitsdatum auf unser Konto. Bei Fragen wenden Sie sich gerne an uns.</p>
+      </div>
+
+      <div class="footer">
+        <div class="footer-content">
+          <div class="footer-section">
+            <h4>Kontakt</h4>
+            <p><strong>New Age Fotografie</strong></p>
+            <p>Eingang Ecke Schönbrunnerstraße</p>
+            <p>Wehrgasse 11A/2+5, 1050 Wien</p>
+            <p>Tel: +43 677 933 99210</p>
+            <p>Email: hallo@newagefotografie.com</p>
+          </div>
+          <div class="footer-section">
+            <h4>Geschäftsinformationen</h4>
+            <p>UID-Nr.: ATU12345678</p>
+            <p>Firmenbuchnummer: FN 123456a</p>
+            <p>Gerichtsstand: Wien</p>
+            <p>Website: www.newagefotografie.com</p>
+          </div>
+          <div class="footer-section">
+            <h4>Bankverbindung</h4>
+            <p>Bank: Erste Bank Austria</p>
+            <p>IBAN: AT12 2011 1000 0000 1234</p>
+            <p>BIC: GIBAATWWXXX</p>
+            <p>Verwendungszweck: Rechnung ${invoice.invoiceNumber}</p>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p><em>Vielen Dank für Ihr Vertrauen! Professionelle Fotografie mit Leidenschaft seit 2020.</em></p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
 
 // Configure multer for image uploads to local storage
 const upload = multer({
@@ -356,6 +667,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== CRM CLIENT ROUTES ====================
+  app.get("/api/crm/clients", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const clients = await storage.getCrmClients();
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching CRM clients:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get all clients
   app.get("/api/crm/clients", authenticateUser, async (req: Request, res: Response) => {
     try {
       const clients = await storage.getCrmClients();
@@ -1101,6 +1423,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting payment:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ==================== INVOICE PDF & EMAIL ROUTES ====================
+  // Generate PDF for invoice
+  app.get("/api/crm/invoices/:id/pdf", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.getCrmInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      // Get client details
+      const client = await storage.getCrmClient(invoice.clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      // Create HTML template for PDF
+      const htmlContent = generateInvoiceHTML(invoice, client);
+
+      // Generate PDF using puppeteer
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      const page = await browser.newPage();
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20px',
+          right: '20px',
+          bottom: '20px',
+          left: '20px'
+        }
+      });
+      
+      await browser.close();
+
+      // Set headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Rechnung-${invoice.invoiceNumber}.pdf"`);
+      res.send(pdfBuffer);
+
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      res.status(500).json({ error: "Failed to generate PDF" });
+    }
+  });
+
+  // Email invoice to client
+  app.post("/api/crm/invoices/:id/email", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { subject, message, includeAttachment = true } = req.body;
+      
+      const invoice = await storage.getCrmInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      const client = await storage.getCrmClient(invoice.clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      if (!client.email) {
+        return res.status(400).json({ error: "Client has no email address" });
+      }
+
+      // Generate PDF attachment if requested
+      let attachments = [];
+      if (includeAttachment) {
+        const htmlContent = generateInvoiceHTML(invoice, client);
+        const browser = await puppeteer.launch({
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        const page = await browser.newPage();
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        
+        const pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' }
+        });
+        
+        await browser.close();
+
+        attachments.push({
+          filename: `Rechnung-${invoice.invoiceNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        });
+      }
+
+      // Create email transporter (using EasyName SMTP)
+      const transporter = nodemailer.createTransporter({
+        host: 'smtp.easyname.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: '30840mail10', // Business email credentials
+          pass: process.env.EMAIL_PASSWORD || 'your-email-password'
+        }
+      });
+
+      // Send email
+      const emailOptions = {
+        from: 'hallo@newagefotografie.com',
+        to: client.email,
+        subject: subject || `Rechnung ${invoice.invoiceNumber} - New Age Fotografie`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Rechnung ${invoice.invoiceNumber}</h2>
+            <p>Liebe/r ${client.firstName} ${client.lastName},</p>
+            <p>${message || 'anbei senden wir Ihnen Ihre Rechnung zu.'}</p>
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #333; margin: 0 0 10px 0;">Rechnungsdetails:</h3>
+              <p><strong>Rechnungsnummer:</strong> ${invoice.invoiceNumber}</p>
+              <p><strong>Datum:</strong> ${new Date(invoice.issueDate).toLocaleDateString('de-DE')}</p>
+              <p><strong>Fälligkeitsdatum:</strong> ${new Date(invoice.dueDate).toLocaleDateString('de-DE')}</p>
+              <p><strong>Gesamtbetrag:</strong> €${parseFloat(invoice.total?.toString() || '0').toFixed(2)}</p>
+            </div>
+            <p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px;">
+              <p><strong>New Age Fotografie</strong><br>
+              Schönbrunner Str. 25<br>
+              1050 Wien, Austria<br>
+              Tel: +43 677 933 99210<br>
+              Email: hallo@newagefotografie.com</p>
+            </div>
+          </div>
+        `,
+        attachments
+      };
+
+      await transporter.sendMail(emailOptions);
+
+      res.json({ 
+        success: true, 
+        message: `Invoice successfully sent to ${client.email}` 
+      });
+
+    } catch (error) {
+      console.error("Error sending invoice email:", error);
+      res.status(500).json({ error: "Failed to send email" });
     }
   });
 
