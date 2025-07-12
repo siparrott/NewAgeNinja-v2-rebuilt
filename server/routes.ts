@@ -1372,6 +1372,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/crm/invoices/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const invoice = await storage.updateCrmInvoice(req.params.id, req.body);
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.delete("/api/crm/invoices/:id", authenticateUser, async (req: Request, res: Response) => {
     try {
       await storage.deleteCrmInvoice(req.params.id);

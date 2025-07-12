@@ -43,7 +43,7 @@ import {
   type InsertCouponUsage
 } from "../shared/schema.js";
 import { db } from "./db";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User management
@@ -316,8 +316,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Invoice management
-  async getCrmInvoices(): Promise<CrmInvoice[]> {
-    const result = await db.select().from(crmInvoices).orderBy(desc(crmInvoices.createdAt));
+  async getCrmInvoices(): Promise<any[]> {
+    const result = await db.select({
+      id: crmInvoices.id,
+      invoice_number: crmInvoices.invoiceNumber,
+      client_id: crmInvoices.clientId,
+      issue_date: crmInvoices.issueDate,
+      due_date: crmInvoices.dueDate,
+      subtotal: crmInvoices.subtotal,
+      tax_amount: crmInvoices.taxAmount,
+      total: crmInvoices.total,
+      status: crmInvoices.status,
+      notes: crmInvoices.notes,
+      created_at: crmInvoices.createdAt,
+      client_name: sql`CONCAT(${crmClients.firstName}, ' ', ${crmClients.lastName})`,
+      client_email: crmClients.email
+    })
+    .from(crmInvoices)
+    .leftJoin(crmClients, eq(crmInvoices.clientId, crmClients.id))
+    .orderBy(desc(crmInvoices.createdAt));
     return result;
   }
 

@@ -3,7 +3,6 @@ import AdminLayout from '../../components/admin/AdminLayout';
 import AdvancedInvoiceForm from '../../components/admin/AdvancedInvoiceForm';
 import InvoiceViewer from '../../components/admin/InvoiceViewer';
 import PaymentTracker from '../../components/admin/PaymentTracker';
-import { supabase } from '../../lib/supabase';
 import { 
   Plus, 
   Search, 
@@ -69,20 +68,20 @@ const InvoicesPage: React.FC = () => {
       
       const data = await response.json();
       
-      // Format the data to match expected interface
+      // Format the data to match expected interface based on database schema
       const formattedInvoices = data.map((invoice: any) => ({
         id: invoice.id,
-        invoice_number: invoice.invoiceNumber || invoice.invoice_number,
-        client_id: invoice.clientId || invoice.client_id,
-        client_name: invoice.clientName || 'Unknown Client',
-        amount: parseFloat(invoice.subtotal || invoice.amount || 0),
-        tax_amount: parseFloat(invoice.taxAmount || invoice.tax_amount || 0),
-        total_amount: parseFloat(invoice.total || invoice.totalAmount || invoice.total_amount || 0),
-        status: invoice.status,
-        due_date: invoice.dueDate || invoice.due_date,
-        paid_date: invoice.paidDate || invoice.paid_date,
-        notes: invoice.notes,
-        created_at: invoice.createdAt || invoice.created_at
+        invoice_number: invoice.invoice_number,
+        client_id: invoice.client_id,
+        client_name: invoice.client_name || 'Unknown Client',
+        amount: parseFloat(invoice.subtotal || 0),
+        tax_amount: parseFloat(invoice.tax_amount || 0), 
+        total_amount: parseFloat(invoice.total || 0),
+        status: invoice.status?.toLowerCase() || 'pending',
+        due_date: invoice.due_date,
+        paid_date: null, // Not in current schema
+        notes: invoice.notes || '',
+        created_at: invoice.created_at
       }));
       
       setInvoices(formattedInvoices || []);
@@ -98,10 +97,10 @@ const InvoicesPage: React.FC = () => {
     let filtered = [...invoices];
     
     // Apply search filter
-    if (searchTerm) {
+    if (searchTerm && invoices.length > 0) {
       filtered = filtered.filter(invoice => 
-        invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.client_name.toLowerCase().includes(searchTerm.toLowerCase())
+        (invoice.invoice_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (invoice.client_name || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -150,12 +149,18 @@ const InvoicesPage: React.FC = () => {
         updateData.paid_date = new Date().toISOString().split('T')[0];
       }
       
-      const { error } = await supabase
-        .from('crm_invoices')
-        .update(updateData)
-        .eq('id', id);
+      const response = await fetch(`/api/crm/invoices/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(updateData),
+      });
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to update invoice status');
+      }
       
       // Update local state
       setInvoices(prevInvoices => 
@@ -166,7 +171,6 @@ const InvoicesPage: React.FC = () => {
         )
       );
     } catch (err) {
-      // console.error removed
       setError('Failed to update invoice status. Please try again.');
     } finally {
       setLoading(false);
@@ -195,6 +199,10 @@ const InvoicesPage: React.FC = () => {
   };
 
   const getTotalStats = () => {
+    if (!filteredInvoices || filteredInvoices.length === 0) {
+      return { totalAmount: 0, paidAmount: 0, overdueAmount: 0 };
+    }
+    
     const totalAmount = filteredInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
     const paidAmount = filteredInvoices
       .filter(inv => inv.status === 'paid')
