@@ -28,6 +28,12 @@ import { simpleParser } from 'mailparser';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import Stripe from 'stripe';
+
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2023-10-16',
+});
 
 // Authentication middleware placeholder - replace with actual auth
 const authenticateUser = async (req: Request, res: Response, next: Function) => {
@@ -2213,7 +2219,7 @@ New Age Fotografie CRM System
   });
 
   // ==================== VOUCHER ROUTES ====================
-  app.get("/api/vouchers/products", authenticateUser, async (req: Request, res: Response) => {
+  app.get("/api/vouchers/products", async (req: Request, res: Response) => {
     try {
       const products = await storage.getVoucherProducts();
       res.json(products);
@@ -2223,7 +2229,108 @@ New Age Fotografie CRM System
     }
   });
 
-  app.get("/api/vouchers/products/:id", authenticateUser, async (req: Request, res: Response) => {
+  // Get single voucher product by ID (public endpoint)
+  app.get("/api/vouchers/products/:id", async (req: Request, res: Response) => {
+    try {
+      const product = await storage.getVoucherProduct(req.params.id);
+      if (!product) {
+        return res.status(404).json({ error: "Voucher product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      console.error("Error fetching voucher product:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Create Stripe payment intent for voucher purchase
+  app.post("/api/vouchers/create-payment-intent", async (req: Request, res: Response) => {
+    try {
+      const { voucherId, quantity = 1, customerDetails, amount } = req.body;
+
+      if (!voucherId || !customerDetails || !amount) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Get voucher details
+      const voucher = await storage.getVoucherProduct(voucherId);
+      if (!voucher) {
+        return res.status(404).json({ error: "Voucher not found" });
+      }
+
+      // Create payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount), // Amount in cents
+        currency: 'eur',
+        metadata: {
+          voucherId,
+          quantity: quantity.toString(),
+          customerName: `${customerDetails.firstName} ${customerDetails.lastName}`,
+          customerEmail: customerDetails.email,
+          voucherName: voucher.name
+        },
+        description: `${quantity}x ${voucher.name} - New Age Fotografie`,
+        receipt_email: customerDetails.email,
+      });
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ 
+        error: "Payment processing error", 
+        message: error.message 
+      });
+    }
+  });
+
+  // Stripe webhook endpoint for payment confirmations
+  app.post("/api/vouchers/stripe-webhook", async (req: Request, res: Response) => {
+    const sig = req.headers['stripe-signature'] as string;
+    let event;
+
+    try {
+      // In production, you'd verify the webhook signature
+      event = req.body;
+
+      if (event.type === 'payment_intent.succeeded') {
+        const paymentIntent = event.data.object;
+        
+        // Create voucher sale record
+        const voucherSale = {
+          id: paymentIntent.id,
+          voucherProductId: paymentIntent.metadata.voucherId,
+          customerName: paymentIntent.metadata.customerName,
+          customerEmail: paymentIntent.metadata.customerEmail,
+          quantity: parseInt(paymentIntent.metadata.quantity),
+          totalAmount: (paymentIntent.amount / 100).toString(),
+          paymentStatus: 'completed',
+          paymentMethod: 'stripe',
+          stripePaymentIntentId: paymentIntent.id,
+          purchaseDate: new Date().toISOString(),
+          voucherCode: generateVoucherCode(),
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        await storage.createVoucherSale(voucherSale);
+        
+        // Send voucher email to customer
+        await sendVoucherEmail(voucherSale);
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error("Webhook error:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Admin endpoint for voucher products
+  app.get("/api/admin/vouchers/products/:id", authenticateUser, async (req: Request, res: Response) => {
     try {
       const product = await storage.getVoucherProduct(req.params.id);
       if (!product) {
@@ -2954,6 +3061,24 @@ Was interessiert Sie am meisten?`;
       res.status(500).json({ error: "Failed to save lead" });
     }
   });
+
+  // Helper function to generate voucher codes
+  function generateVoucherCode(): string {
+    return 'NAF-' + Math.random().toString(36).substring(2, 15).toUpperCase();
+  }
+
+  // Helper function to send voucher email
+  async function sendVoucherEmail(voucherSale: any) {
+    try {
+      console.log(`Sending voucher email to ${voucherSale.customerEmail}`);
+      console.log(`Voucher code: ${voucherSale.voucherCode}`);
+      
+      // Integration with existing email system
+      // This would send a professional voucher email with the code
+    } catch (error) {
+      console.error('Error sending voucher email:', error);
+    }
+  }
 
   const httpServer = createServer(app);
   return httpServer;

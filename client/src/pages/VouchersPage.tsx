@@ -30,9 +30,8 @@ const VouchersPage: React.FC = () => {
   
   // Handle voucher purchase
   const handlePurchaseVoucher = (voucher: VoucherProduct) => {
-    // For now, redirect to a simple purchase form
-    // In the future, this could integrate with Stripe or another payment processor
-    const purchaseUrl = `/gutschein?product=${voucher.id}&name=${encodeURIComponent(voucher.name)}&price=${voucher.price}`;
+    // Redirect to Stripe checkout page
+    const purchaseUrl = `/vouchers/checkout/${voucher.id}`;
     window.location.href = purchaseUrl;
   };
 

@@ -14,6 +14,8 @@ import WartelistePage from './pages/WartelistePage';
 import KontaktPage from './pages/KontaktPage';
 import VouchersPage from './pages/VouchersPage';
 import VoucherDetailPage from './pages/VoucherDetailPage';
+import VoucherCheckoutPage from './pages/VoucherCheckoutPage';
+import VoucherSuccessPage from './pages/VoucherSuccessPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderCompletePage from './pages/OrderCompletePage';
 import AccountPage from './pages/AccountPage';
@@ -86,6 +88,8 @@ function App() {
                 <Route path="/kontakt" element={<KontaktPage />} />
                 <Route path="/vouchers" element={<VouchersPage />} />
                 <Route path="/voucher/:slug" element={<VoucherDetailPage />} />
+                <Route path="/vouchers/checkout/:id" element={<VoucherCheckoutPage />} />
+                <Route path="/vouchers/success" element={<VoucherSuccessPage />} />
                 <Route path="/checkout/:id" element={<CheckoutPage />} />
                 <Route path="/order-complete/:id" element={<OrderCompletePage />} />                <Route path="/account" element={<AccountPage />} />
                 <Route path="/account/profile" element={<AccountProfilePage />} />
