@@ -2650,10 +2650,13 @@ New Age Fotografie CRM System
         return res.status(404).json({ error: "No active assistant found" });
       }
 
-      // Fallback if OpenAI API is not working
+      // Get knowledge base articles for context
+      const knowledgeArticles = await db.select().from(knowledgeBase)
+        .where(eq(knowledgeBase.isActive, true));
+
+      // Fallback if OpenAI API is not working - use knowledge base enhanced responses
       if (!assistant.openaiAssistantId) {
-        // Simple rule-based response for testing
-        const response = generateFallbackResponse(message);
+        const response = generateFallbackResponse(message, knowledgeArticles);
         return res.json({ response });
       }
 
@@ -2738,17 +2741,33 @@ New Age Fotografie CRM System
     } catch (error) {
       console.error("Error sending message:", error);
       
+      // Get knowledge base for fallback
+      const knowledgeArticles = await db.select().from(knowledgeBase)
+        .where(eq(knowledgeBase.isActive, true));
+      
       // Fallback response
-      const fallbackResponse = generateFallbackResponse(message);
+      const fallbackResponse = generateFallbackResponse(message, knowledgeArticles);
       res.json({ response: fallbackResponse });
     }
   });
 
-  function generateFallbackResponse(message: string): string {
+  function generateFallbackResponse(message: string, knowledgeArticles: any[] = []): string {
     const lowerMessage = message.toLowerCase();
     
+    // Search knowledge base for relevant content
+    const relevantArticle = knowledgeArticles.find(article => 
+      lowerMessage.includes(article.title.toLowerCase()) ||
+      article.content.toLowerCase().includes(lowerMessage) ||
+      article.tags.some((tag: string) => lowerMessage.includes(tag.toLowerCase()))
+    );
+    
     if (lowerMessage.includes('preis') || lowerMessage.includes('kosten') || lowerMessage.includes('price')) {
-      return `Gerne kann ich Ihnen unsere Preise mitteilen! 📸
+      // Find pricing article if available
+      const pricingArticle = knowledgeArticles.find(article => 
+        article.category === 'Pricing' || article.title.toLowerCase().includes('preis')
+      );
+      
+      let response = `Gerne kann ich Ihnen unsere Preise mitteilen! 📸
 
 **Unsere Fotoshootings:**
 • 1 Foto (15x10cm) + Datei + 40x30cm Leinwand: €95
@@ -2759,6 +2778,12 @@ New Age Fotografie CRM System
 Jedes Paket inkludiert 60 Min Fotoshooting, Willkommensgetränk, Beratung und Outfit-Wechsel.
 
 Kontakt: WhatsApp 0677 633 99210 oder hallo@newagefotografie.com`;
+
+      if (pricingArticle) {
+        response += `\n\n**Zusätzliche Informationen:**\n${pricingArticle.content.substring(0, 200)}...`;
+      }
+      
+      return response;
     }
     
     if (lowerMessage.includes('termin') || lowerMessage.includes('booking') || lowerMessage.includes('buchung')) {
@@ -2807,6 +2832,19 @@ Freitag - Sonntag: 09:00 - 17:00
 Möchten Sie einen Termin vereinbaren?`;
     }
     
+    // If we found a relevant article, include it
+    if (relevantArticle) {
+      return `${relevantArticle.title}
+
+${relevantArticle.content.substring(0, 300)}...
+
+**Direkter Kontakt:**
+WhatsApp: 0677 633 99210
+Email: hallo@newagefotografie.com
+
+Haben Sie weitere Fragen?`;
+    }
+    
     return `Vielen Dank für Ihre Nachricht! 😊
 
 Ich bin Alex von New Age Fotografie Wien. Gerne helfe ich Ihnen bei:
@@ -2820,6 +2858,48 @@ Email: hallo@newagefotografie.com
 
 Was interessiert Sie am meisten?`;
   }
+
+  // ==================== CHAT LEADS TRACKING ====================
+  app.post("/api/chat/save-lead", async (req: Request, res: Response) => {
+    try {
+      const { name, email, phone, message, conversation } = req.body;
+      
+      const [lead] = await db.insert(crmLeads).values({
+        name: name || 'Chat Visitor',
+        email: email || '',
+        phone: phone || '',
+        message: message || '',
+        source: 'Website Chat',
+        status: 'new',
+        priority: 'medium',
+        value: 0,
+        tags: ['chat', 'website'],
+        followUpDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+      }).returning();
+
+      // If conversation history exists, save it as a message
+      if (conversation && conversation.length > 0) {
+        const conversationText = conversation.map((msg: any) => 
+          `${msg.isUser ? 'Kunde' : 'Alex'}: ${msg.text}`
+        ).join('\n');
+        
+        await db.insert(crmMessages).values({
+          senderName: name || 'Chat Visitor',
+          senderEmail: email || 'chat@website.com',
+          subject: 'Website Chat Conversation',
+          content: conversationText,
+          status: 'unread',
+          clientId: null,
+          assignedTo: null,
+        });
+      }
+
+      res.json({ success: true, leadId: lead.id });
+    } catch (error) {
+      console.error("Error saving chat lead:", error);
+      res.status(500).json({ error: "Failed to save lead" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
