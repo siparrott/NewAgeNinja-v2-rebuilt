@@ -906,11 +906,11 @@ const NextGenInbox: React.FC = () => {
         accounts={accounts}
         onApplyFilter={(filter) => setFilters(prev => ({ ...prev, ...filter }))}
         onCreateRule={(rule) => {
-          console.log('Creating rule:', rule);
+          // console.log removed
           // Handle rule creation
         }}
         onSuggestReply={(messageId, reply) => {
-          console.log('Suggesting reply for:', messageId, reply);          // Handle reply suggestion
+          // console.log removed          // Handle reply suggestion
         }}
       />
 

@@ -17,7 +17,7 @@ http.interceptors.response.use(
     if (toast && typeof toast.error === 'function') {
       toast.error(message);
     } else {
-      console.error(message);
+      // console.error removed
     }
 
     return Promise.reject(error);

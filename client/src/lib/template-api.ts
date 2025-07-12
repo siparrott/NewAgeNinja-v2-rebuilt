@@ -41,7 +41,7 @@ export const getAvailableTemplates = async (): Promise<TemplateConfig[]> => {
     }
     return response.json();
   } catch (error) {
-    console.error('Error fetching templates:', error);
+    // console.error removed
     // Return mock data for development
     return getMockTemplates();
   }
@@ -57,7 +57,7 @@ export const getStudioConfig = async (studioId?: string): Promise<StudioConfig> 
     }
     return response.json();
   } catch (error) {
-    console.error('Error fetching studio config:', error);
+    // console.error removed
     // Return mock data for development
     return getMockStudioConfig();
   }
@@ -80,7 +80,7 @@ export const updateStudioConfig = async (config: Partial<StudioConfig>): Promise
     
     return response.json();
   } catch (error) {
-    console.error('Error updating studio config:', error);
+    // console.error removed
     throw error;
   }
 };
@@ -100,7 +100,7 @@ export const applyTemplate = async (templateId: string): Promise<void> => {
       throw new Error('Failed to apply template');
     }
   } catch (error) {
-    console.error('Error applying template:', error);
+    // console.error removed
     throw error;
   }
 };

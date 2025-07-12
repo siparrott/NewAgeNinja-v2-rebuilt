@@ -24,7 +24,7 @@ const GalleryEditPage: React.FC = () => {
       const data = await getGalleryById(galleryId);
       setGallery(data);
     } catch (err) {
-      console.error('Error fetching gallery:', err);
+      // console.error removed
       setError('Failed to load gallery. Please try again.');
     } finally {
       setLoading(false);

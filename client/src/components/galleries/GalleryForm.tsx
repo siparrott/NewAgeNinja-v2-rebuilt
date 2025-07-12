@@ -114,7 +114,7 @@ const GalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEdit = false }) =>
         navigate(`/admin/galleries/${newGallery.id}/edit`, { replace: true });
       }
     } catch (err) {
-      console.error('Error saving gallery:', err);
+      // console.error removed
       setError(err instanceof Error ? err.message : 'An error occurred while saving the gallery');
       setLoading(false);
     }

@@ -49,7 +49,7 @@ const AdminLoginPage: React.FC = () => {
     e.stopPropagation();
     
     if (loading) {
-      console.log('Already loading, ignoring submit');
+      // console.log removed
       return;
     }
     
@@ -63,7 +63,7 @@ const AdminLoginPage: React.FC = () => {
       // Sign in call completed successfully
       // The redirect will be handled by the useEffect above once user and isAdmin are updated
     } catch (err) {
-      console.error('Login error:', err);
+      // console.error removed
       
       let errorMessage = 'Login failed';
       

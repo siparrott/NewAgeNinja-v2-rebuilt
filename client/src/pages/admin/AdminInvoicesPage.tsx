@@ -43,7 +43,7 @@ const AdminInvoicesPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching invoices:', error);
+        // console.error removed
         // Fallback to empty array if table doesn't exist yet
         setInvoices([]);
         return;
@@ -51,7 +51,7 @@ const AdminInvoicesPage: React.FC = () => {
 
       setInvoices(data || []);
     } catch (err) {
-      console.error('Error fetching invoices:', err);
+      // console.error removed
       // Fallback to empty array
       setInvoices([]);
     } finally {
@@ -99,7 +99,7 @@ const AdminInvoicesPage: React.FC = () => {
       ];
       setInvoices(mockInvoices);
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }

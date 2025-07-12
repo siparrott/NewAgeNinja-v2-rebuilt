@@ -149,7 +149,7 @@ const AdminDashboardPage: React.FC = () => {
 
       setDashboardData(dashboardData);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }

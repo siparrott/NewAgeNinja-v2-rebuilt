@@ -47,7 +47,7 @@ const QuestionnairesPage: React.FC = () => {
       const response = await surveyApi.getSurveys(1, 50, statusFilter === 'all' ? undefined : statusFilter, searchTerm);
       setSurveys(response.surveys);
     } catch (err) {
-      console.error('Error fetching surveys:', err);
+      // console.error removed
       setError('Failed to load surveys. Please try again.');
     } finally {
       setLoading(false);
@@ -80,7 +80,7 @@ const QuestionnairesPage: React.FC = () => {
       setSurveys(prevSurveys => prevSurveys.filter(s => s.id !== id));
       setDeleteConfirmation(null);
     } catch (err) {
-      console.error('Error deleting survey:', err);
+      // console.error removed
       setError('Failed to delete survey. Please try again.');
     } finally {
       setLoading(false);
@@ -93,7 +93,7 @@ const QuestionnairesPage: React.FC = () => {
       const duplicatedSurvey = await surveyApi.duplicateSurvey(survey.id);
       setSurveys(prevSurveys => [duplicatedSurvey, ...prevSurveys]);
     } catch (err) {
-      console.error('Error duplicating survey:', err);
+      // console.error removed
       setError('Failed to duplicate survey. Please try again.');
     } finally {
       setLoading(false);
@@ -140,7 +140,7 @@ const QuestionnairesPage: React.FC = () => {
       setShowSurveyBuilder(false);
       setEditingSurvey(undefined);
     } catch (err) {
-      console.error('Error saving survey:', err);
+      // console.error removed
       setError('Failed to save survey. Please try again.');
     } finally {
       setBuilderLoading(false);

@@ -72,7 +72,7 @@ const GalleryPage: React.FC = () => {
       const data = await getGalleryBySlug(gallerySlug);
       setGallery(data);
     } catch (err) {
-      console.error('Error fetching gallery:', err);
+      // console.error removed
       setError('Failed to load gallery. Please try again.');
     } finally {
       setLoading(false);
@@ -85,7 +85,7 @@ const GalleryPage: React.FC = () => {
       const data = await getPublicGalleryImages(gallerySlug, token);
       setImages(data);
     } catch (err) {
-      console.error('Error fetching gallery images:', err);
+      // console.error removed
       setError('Failed to load gallery images. Please try again.');
       
       // If token is invalid, clear it and require re-authentication
@@ -109,7 +109,7 @@ const GalleryPage: React.FC = () => {
 
   const logGalleryAccess = async (token: string) => {
     // This would be implemented to log access to the gallery
-    console.log('Gallery access logged with token:', token);
+    // console.log removed
   };
 
   const handleDownloadAll = () => {
@@ -141,7 +141,7 @@ const GalleryPage: React.FC = () => {
       window.URL.revokeObjectURL(url);
     })
     .catch(err => {
-      console.error('Error downloading gallery:', err);
+      // console.error removed
       alert('Failed to download gallery. Please try again.');
     });
   };
@@ -156,7 +156,7 @@ const GalleryPage: React.FC = () => {
         title: gallery.title,
         url: url
       }).catch(err => {
-        console.error('Error sharing:', err);
+        // console.error removed
         copyToClipboard(url);
       });
     } else {
@@ -171,7 +171,7 @@ const GalleryPage: React.FC = () => {
           alert('Gallery link copied to clipboard!');
         })
         .catch(err => {
-          console.error('Could not copy text: ', err);
+          // console.error removed
           prompt('Copy this link:', text);
         });
     } else {

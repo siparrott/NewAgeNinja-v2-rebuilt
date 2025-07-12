@@ -253,7 +253,7 @@ const AdminCalendarPage: React.FC = () => {  const [events, setEvents] = useStat
                           style={{ backgroundColor: event.color + '20', color: event.color }}                          onClick={(e) => {
                             e.stopPropagation();
                             // Edit event functionality can be added here
-                            console.log('Edit event:', event);
+                            // console.log removed
                           }}
                         >
                           {event.title}
@@ -350,7 +350,7 @@ const AdminCalendarPage: React.FC = () => {  const [events, setEvents] = useStat
                       className="text-xs p-2 rounded cursor-pointer hover:opacity-80"                      style={{ backgroundColor: event.color + '20', color: event.color }}
                       onClick={() => {
                         // Edit event functionality can be added here
-                        console.log('Edit event:', event);
+                        // console.log removed
                       }}
                     >
                       <div className="font-medium truncate">{event.title}</div>
@@ -414,7 +414,7 @@ const AdminCalendarPage: React.FC = () => {  const [events, setEvents] = useStat
                   {getStatusBadge(event.status)}
                   <button                    onClick={() => {
                       // Edit event functionality can be added here
-                      console.log('Edit event:', event);
+                      // console.log removed
                     }}
                     className="text-gray-400 hover:text-gray-600"
                   >

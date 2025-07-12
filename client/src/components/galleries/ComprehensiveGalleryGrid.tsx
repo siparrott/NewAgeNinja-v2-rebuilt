@@ -40,15 +40,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
   const [selectedGallery, setSelectedGallery] = useState<string | null>(null);
   
   // Debug logging for props
-  console.log('ComprehensiveGalleryGrid props:', {
-    isAdmin,
-    onDelete: !!onDelete,
-    onShare: !!onShare,
-    onEdit: !!onEdit,
-    onDuplicate: !!onDuplicate,
-    onPreview: !!onPreview,
-    galleriesCount: galleries.length
-  });
+  // console.log removed
 
   const getGalleryUrl = (gallery: Gallery) => {
     return `/gallery/${gallery.slug}`;
@@ -63,7 +55,7 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
       await navigator.clipboard.writeText(getShareUrl(gallery));
       // TODO: Show success message
     } catch (err) {
-      console.error('Failed to copy URL:', err);
+      // console.error removed
     }
   };
 
@@ -189,12 +181,12 @@ const ComprehensiveGalleryGrid: React.FC<ComprehensiveGalleryGridProps> = ({
                       <hr className="my-2" />
                       <button
                         onClick={() => {
-                          console.log('Delete button clicked for gallery:', gallery.id, gallery.title);
-                          console.log('onDelete function exists:', !!onDelete);
+                          // console.log removed
+                          // console.log removed
                           if (onDelete) {
                             onDelete(gallery.id);
                           } else {
-                            console.error('onDelete function is not provided!');
+                            // console.error removed
                           }
                           setSelectedGallery(null);
                         }}

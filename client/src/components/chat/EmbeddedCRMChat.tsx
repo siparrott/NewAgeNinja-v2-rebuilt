@@ -92,7 +92,7 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
       const data = await response.json();
       return data.threadId;
     } catch (error) {
-      console.error('Error creating thread:', error);
+      // console.error removed
       throw error;
     }
   };
@@ -119,7 +119,7 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error sending message:', error);
+      // console.error removed
       throw error;
     }
   };
@@ -178,7 +178,7 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
       }
 
     } catch (error) {
-      console.error('Error in CRM chat:', error);
+      // console.error removed
       setError('Sorry, I encountered an error. Please try again.');
       
       // Remove loading message and add error message

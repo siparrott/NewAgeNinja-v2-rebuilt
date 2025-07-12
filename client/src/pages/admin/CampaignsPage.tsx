@@ -31,7 +31,7 @@ const AdvancedEmailMarketingHub: React.FC = () => {
 
   const handleSaveCampaign = (campaign: EmailCampaign) => {
     // Handle campaign save
-    console.log('Saving campaign:', campaign);
+    // console.log removed
     setShowCampaignBuilder(false);
   };
 

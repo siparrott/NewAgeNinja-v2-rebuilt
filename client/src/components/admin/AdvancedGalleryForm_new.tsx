@@ -94,7 +94,7 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
       if (error) throw error;
       setUploadedImages(data || []);
     } catch (err) {
-      console.error('Error fetching images:', err);
+      // console.error removed
     }
   };
 
@@ -153,7 +153,7 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
       
       handleChange('coverImage', publicUrl);
     } catch (error) {
-      console.error('Error uploading cover image:', error);
+      // console.error removed
       setError('Failed to upload cover image. Please try again.');
     } finally {
       setImageUploading(false);
@@ -198,7 +198,7 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
       setSelectedImages([]);
       
     } catch (error) {
-      console.error('Error uploading images:', error);
+      // console.error removed
       setError('Failed to upload images. Please try again.');
     } finally {
       setImageUploading(false);
@@ -278,7 +278,7 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
           .from('gallery_images')
           .insert(imageRecords);
         
-        if (imageError) console.log('Image insert error:', imageError);
+        if (imageError) // console.log removed
       }
       
       setTimeout(() => {
@@ -286,7 +286,7 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
       }, 1500);
       
     } catch (err) {
-      console.error('Error saving gallery:', err);
+      // console.error removed
       setError(err instanceof Error ? err.message : 'An error occurred while saving the gallery');
     } finally {
       setLoading(false);

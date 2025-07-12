@@ -24,7 +24,7 @@ export async function purchaseVoucher(data: VoucherPurchaseData) {
 
     return await response.json();
   } catch (error) {
-    console.error('Error purchasing voucher:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -39,7 +39,7 @@ export async function getVoucherSales() {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching voucher sales:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -56,7 +56,7 @@ export async function toggleVoucherFulfillment(id: string, fulfilled: boolean) {
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error updating voucher fulfillment:', error);
+    // console.error removed
     throw error;
   }
 }

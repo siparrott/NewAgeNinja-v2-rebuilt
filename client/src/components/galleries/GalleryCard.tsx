@@ -37,7 +37,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ gallery, isAdmin = false, onD
           alert('Gallery link copied to clipboard!');
         })
         .catch(err => {
-          console.error('Could not copy text: ', err);
+          // console.error removed
           prompt('Copy this link:', url);
         });
     } else {

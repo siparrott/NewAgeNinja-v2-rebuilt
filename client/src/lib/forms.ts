@@ -25,13 +25,13 @@ export async function submitContactForm(formData: ContactFormData) {
 
     if (!response.ok) {
       // If Edge Function fails, fall back to direct database insert
-      console.warn('Edge Function failed, using fallback method');
+      // console.warn removed
       return await submitContactFormFallback(formData);
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error with Edge Function, trying fallback:', error);
+    // console.error removed
     // Fallback to direct database insert
     return await submitContactFormFallback(formData);
   }
@@ -51,13 +51,13 @@ export async function submitWaitlistForm(formData: WaitlistFormData) {
 
     if (!response.ok) {
       // If Edge Function fails, fall back to direct database insert
-      console.warn('Edge Function failed, using fallback method');
+      // console.warn removed
       return await submitWaitlistFormFallback(formData);
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error with Edge Function, trying fallback:', error);
+    // console.error removed
     // Fallback to direct database insert
     return await submitWaitlistFormFallback(formData);
   }
@@ -87,7 +87,7 @@ async function submitContactFormFallback(formData: ContactFormData) {
 
     return await response.json();
   } catch (error) {
-    console.error('Database error:', error);
+    // console.error removed
     throw new Error('Failed to submit contact form');
   }
 }
@@ -117,7 +117,7 @@ async function submitWaitlistFormFallback(formData: WaitlistFormData) {
 
     return await response.json();
   } catch (error) {
-    console.error('Database error:', error);
+    // console.error removed
     throw new Error('Failed to submit waitlist form');
   }
 }
@@ -147,7 +147,7 @@ export async function submitNewsletterForm(email: string) {
     const result = await response.json();
     return { success: true, data: result, message: 'Newsletter signup successful!' };
   } catch (error) {
-    console.error('Error with newsletter signup:', error);
+    // console.error removed
     throw new Error('Failed to process newsletter signup - please try again later');
   }
 }
@@ -162,7 +162,7 @@ async function submitNewsletterFormFallback(email: string) {
       return functionResult;
     }
 
-    console.log('Database function not available, using direct insert method');
+    // console.log removed
 
     // Check if user already exists in leads table
     const { data: existingLeads } = await supabase
@@ -200,7 +200,7 @@ async function submitNewsletterFormFallback(email: string) {
 
     // If NEWSLETTER form_source fails, fall back to KONTAKT
     if (error && (error.message?.includes('form_source') || error.code === '23514')) {
-      console.log('NEWSLETTER form_source not allowed, using KONTAKT fallback');
+      // console.log removed
       leadData = {
         ...leadData,
         form_source: 'KONTAKT',
@@ -222,7 +222,7 @@ async function submitNewsletterFormFallback(email: string) {
       if (error.code === '23505') {
         return { success: true, message: 'Already subscribed to newsletter!' };
       }
-      console.error('Failed to insert lead:', error);
+      // console.error removed
       throw new Error(`Database error: ${error.message}. Please ensure the 'leads' table exists and is properly configured.`);
     }
 
@@ -237,16 +237,16 @@ async function submitNewsletterFormFallback(email: string) {
         }]);
       
       if (subscriberError && subscriberError.code !== '23505') {
-        console.warn('Newsletter subscribers insert failed:', subscriberError);
+        // console.warn removed
       }
     } catch (subscriptionError) {
       // Don't fail if newsletter_subscribers insert fails
-      console.warn('Newsletter subscribers table error:', subscriptionError);
+      // console.warn removed
     }
 
     return { success: true, data, message: 'Newsletter signup successful' };
   } catch (error) {
-    console.error('Error in newsletter form fallback:', error);
+    // console.error removed
     throw new Error('Failed to process newsletter signup - please try again later');
   }
 }

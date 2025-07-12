@@ -130,7 +130,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       setTemplates(mockTemplates);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching templates:', error);
+      // console.error removed
       setLoading(false);
     }
   };

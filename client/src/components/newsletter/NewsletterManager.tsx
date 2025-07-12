@@ -38,7 +38,7 @@ const NewsletterManager: React.FC = () => {
       setCampaigns(campaignsData);
       setSubscribers(subscribersData.filter(s => s.status === 'active'));
     } catch (error) {
-      console.error('Error loading newsletter data:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ const NewsletterManager: React.FC = () => {
       setFormData({ name: '', subject: '', content: '', html_content: '' });
       setShowCreateForm(false);
     } catch (error) {
-      console.error('Error creating campaign:', error);
+      // console.error removed
     }
   };
 
@@ -72,7 +72,7 @@ const NewsletterManager: React.FC = () => {
       setEditingCampaign(null);
       setFormData({ name: '', subject: '', content: '', html_content: '' });
     } catch (error) {
-      console.error('Error updating campaign:', error);
+      // console.error removed
     }
   };
 
@@ -83,7 +83,7 @@ const NewsletterManager: React.FC = () => {
       await deleteNewsletterCampaign(id);
       setCampaigns(campaigns.filter(c => c.id !== id));
     } catch (error) {
-      console.error('Error deleting campaign:', error);
+      // console.error removed
     }
   };
 
@@ -94,7 +94,7 @@ const NewsletterManager: React.FC = () => {
       await sendNewsletterCampaign(id);
       await loadData(); // Reload to get updated stats
     } catch (error) {
-      console.error('Error sending campaign:', error);
+      // console.error removed
     }
   };
 

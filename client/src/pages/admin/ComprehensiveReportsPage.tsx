@@ -178,7 +178,7 @@ const ComprehensiveReportsPage: React.FC = () => {
 
       setReportData(comprehensiveData);
     } catch (err) {
-      console.error('Error fetching comprehensive reports:', err);
+      // console.error removed
       setError('Failed to load reports. Please try again.');
     } finally {
       setLoading(false);

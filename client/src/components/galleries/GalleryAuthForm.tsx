@@ -50,7 +50,7 @@ const GalleryAuthForm: React.FC<GalleryAuthFormProps> = ({
       // Notify parent component
       onAuthenticated(token);
     } catch (err) {
-      console.error('Authentication error:', err);
+      // console.error removed
       setError(err instanceof Error ? err.message : 'Authentication failed. Please try again.');
     } finally {
       setLoading(false);

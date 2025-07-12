@@ -39,22 +39,22 @@ const VouchersPage: React.FC = () => {
   const { data: voucherProducts, isLoading, error } = useQuery<VoucherProduct[]>({
     queryKey: ['/api/vouchers/products'],
     queryFn: async () => {
-      console.log('VouchersPage: Making API call to /api/vouchers/products');
+      // console.log removed
       const response = await fetch('/api/vouchers/products');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log('VouchersPage: API response data:', data);
+      // console.log removed
       return data;
     },
     staleTime: 0,
     gcTime: 0,
   });
   
-  console.log('VouchersPage: voucher products:', voucherProducts);
-  console.log('VouchersPage: loading:', isLoading);
-  console.log('VouchersPage: error:', error);
+  // console.log removed
+  // console.log removed
+  // console.log removed
 
   useEffect(() => {
     // SEO Meta Tags

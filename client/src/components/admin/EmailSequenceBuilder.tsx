@@ -41,7 +41,7 @@ const EmailSequenceBuilder: React.FC = () => {
       const data = await getSequences();
       setSequences(data);
     } catch (error) {
-      console.error('Error loading sequences:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ const EmailSequenceBuilder: React.FC = () => {
       setSequences(prev => [newSequence, ...prev]);
       setShowCreateModal(false);
     } catch (error) {
-      console.error('Error creating sequence:', error);
+      // console.error removed
     }
   };
 

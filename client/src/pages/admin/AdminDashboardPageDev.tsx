@@ -119,7 +119,7 @@ const AdminDashboardPageDev: React.FC = () => {
         }
       ]);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }

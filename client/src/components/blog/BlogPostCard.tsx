@@ -27,7 +27,7 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post, isAdmin = false }) =>
             className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => {
-              console.error('Failed to load image:', post.image_url);
+              // console.error removed
               e.currentTarget.style.display = 'none';
               e.currentTarget.parentElement!.classList.add('hidden');
             }}

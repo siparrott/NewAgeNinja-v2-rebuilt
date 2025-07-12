@@ -119,13 +119,13 @@ const ProDigitalFilesPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Database query error:', error);
+        // console.error removed
         throw new Error(`Database error: ${error.message}. Please ensure the 'digital_files' table exists.`);
       }
       
       setFiles(data || []);
     } catch (err: any) {
-      console.error('Error fetching files:', err);
+      // console.error removed
       setError(err.message || 'Failed to load files. Please check database setup.');
     } finally {
       setLoading(false);
@@ -220,7 +220,7 @@ const ProDigitalFilesPage: React.FC = () => {
           .upload(filePath, file);
 
         if (uploadError) {
-          console.error('Storage upload error:', uploadError);
+          // console.error removed
           throw new Error(`Storage upload failed: ${uploadError.message}. Please ensure the 'digital-files' storage bucket exists.`);
         }
 
@@ -246,7 +246,7 @@ const ProDigitalFilesPage: React.FC = () => {
           .insert(fileRecord);
 
         if (dbError) {
-          console.error('Database insert error:', dbError);
+          // console.error removed
           throw new Error(`Database error: ${dbError.message}. Please ensure the 'digital_files' table exists.`);
         }
 
@@ -261,7 +261,7 @@ const ProDigitalFilesPage: React.FC = () => {
       setFolderName('');
       setSelectedFilesForUpload(null);
     } catch (err: any) {
-      console.error('Error uploading files:', err);
+      // console.error removed
       setError(err.message || 'Failed to upload files. Please try again.');
     }
   };
@@ -310,7 +310,7 @@ const ProDigitalFilesPage: React.FC = () => {
       await fetchFiles();
       setShowMetadataModal(false);
     } catch (err) {
-      console.error('Error updating IPTC data:', err);
+      // console.error removed
       setError('Failed to update metadata. Please try again.');
     }
   };
@@ -391,7 +391,7 @@ const ProDigitalFilesPage: React.FC = () => {
       await fetchFiles();
       setSelectedFiles(new Set());
     } catch (err) {
-      console.error('Error performing batch action:', err);
+      // console.error removed
       setError('Failed to perform action. Please try again.');
     }
   };

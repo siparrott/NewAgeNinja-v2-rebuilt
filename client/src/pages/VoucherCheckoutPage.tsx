@@ -258,19 +258,19 @@ const VoucherCheckoutPage: React.FC = () => {
   useEffect(() => {
     const fetchVoucher = async () => {
       try {
-        console.log('VoucherCheckoutPage: Fetching voucher with ID:', id);
+        // console.log removed
         const response = await fetch(`/api/vouchers/products/${id}`);
-        console.log('VoucherCheckoutPage: Response status:', response.status);
+        // console.log removed
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('VoucherCheckoutPage: Voucher data:', data);
+        // console.log removed
         setVoucher(data);
       } catch (err: any) {
-        console.error('VoucherCheckoutPage: Error fetching voucher:', err);
+        // console.error removed
         setError(err.message || 'Gutschein nicht gefunden');
       } finally {
         setLoading(false);

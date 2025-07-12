@@ -78,14 +78,14 @@ const AdminInboxPage: React.FC = () => {
       
       if (response.ok) {
         const result = await response.json();
-        console.log('Email refresh result:', result);
+        // console.log removed
         await fetchMessages(); // Reload messages
         alert(`Email refresh completed: ${result.newEmails} new emails imported`);
       } else {
         throw new Error('Failed to refresh emails');
       }
     } catch (error) {
-      console.error('Email refresh error:', error);
+      // console.error removed
       alert('Failed to refresh emails. Please try again.');
     } finally {
       setIsRefreshing(false);
@@ -114,7 +114,7 @@ const AdminInboxPage: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('Fetched messages:', data);
+      // console.log removed
       
       // Convert API data to EmailMessage format with proper folder separation
       const emailMessages: EmailMessage[] = data.map((msg: any) => ({
@@ -136,7 +136,7 @@ const AdminInboxPage: React.FC = () => {
       
       setMessages(emailMessages);
     } catch (err) {
-      console.error('Error fetching messages:', err);
+      // console.error removed
       setError('Failed to load messages. Please try again.');
     } finally {
       setLoading(false);
@@ -586,7 +586,7 @@ const AdminInboxPage: React.FC = () => {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         onSave={(settings) => {
-          console.log('Email settings saved:', settings);
+          // console.log removed
           // Here you would save the settings to your backend
         }}
       />
@@ -600,7 +600,7 @@ const AdminInboxPage: React.FC = () => {
             setReplyMode(null);
           }}
           onSent={(data) => {
-            console.log('Email sent:', data);
+            // console.log removed
             setShowComposer(false);
             setReplyMode(null);
             // Refresh messages after sending

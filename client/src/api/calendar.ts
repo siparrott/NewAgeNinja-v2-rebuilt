@@ -131,7 +131,7 @@ export async function listCalendars(): Promise<Calendar[]> {
         if (newError) throw newError;
         return newData || [];
       } catch (initError) {
-        console.warn('Could not initialize calendar data:', initError);
+        // console.warn removed
         return [];
       }
     }
@@ -265,7 +265,7 @@ export async function createEvent(eventData: CreateEventData): Promise<CalendarE
     .single();
 
   if (eventError) {
-    console.error('Error creating calendar event:', eventError);
+    // console.error removed
     throw eventError;
   }
 
@@ -284,7 +284,7 @@ export async function createEvent(eventData: CreateEventData): Promise<CalendarE
       .insert(attendeesToInsert);
 
     if (attendeesError) {
-      console.warn('Warning: Could not insert into attendees table:', attendeesError);
+      // console.warn removed
       // Don't throw error as the main event was created successfully
     }
   }
@@ -302,7 +302,7 @@ export async function createEvent(eventData: CreateEventData): Promise<CalendarE
       .insert(remindersToInsert);
 
     if (remindersError) {
-      console.warn('Warning: Could not insert reminders:', remindersError);
+      // console.warn removed
       // Don't throw error as the main event was created successfully
     }
   }
@@ -363,7 +363,7 @@ export async function listEventCategories(): Promise<EventCategory[]> {
         if (newError) throw newError;
         return newData || [];
       } catch (initError) {
-        console.warn('Could not initialize calendar categories:', initError);
+        // console.warn removed
         return [];
       }
     }

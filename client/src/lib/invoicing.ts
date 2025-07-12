@@ -74,7 +74,7 @@ export const invoiceService = {
       .limit(1);
 
     if (error) {
-      console.error('Error fetching latest invoice:', error);
+      // console.error removed
     }
 
     let nextNumber = 1;
@@ -103,7 +103,7 @@ export const invoiceService = {
 
       return data;
     } catch (error) {
-      console.error('Error creating invoice:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -124,7 +124,7 @@ export const invoiceService = {
 
       return data;
     } catch (error) {
-      console.error('Error updating invoice:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -150,7 +150,7 @@ export const invoiceService = {
 
       return data || [];
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -182,7 +182,7 @@ export const invoiceService = {
 
       return data;
     } catch (error) {
-      console.error('Error fetching invoice:', error);
+      // console.error removed
       return null;
     }
   },
@@ -196,7 +196,7 @@ export const invoiceService = {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error deleting invoice:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -390,7 +390,7 @@ export const emailService = {
 
       return data;
     } catch (error) {
-      console.error('Error sending invoice email:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -410,7 +410,7 @@ export const emailService = {
 
       return data;
     } catch (error) {
-      console.error('Error sending payment reminder:', error);
+      // console.error removed
       throw error;
     }
   }
@@ -431,7 +431,7 @@ export const priceListService = {
 
       return data || [];
     } catch (error) {
-      console.error('Error fetching price list:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -448,7 +448,7 @@ export const priceListService = {
 
       return data;
     } catch (error) {
-      console.error('Error creating price list item:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -466,7 +466,7 @@ export const priceListService = {
 
       return data;
     } catch (error) {
-      console.error('Error updating price list item:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -480,7 +480,7 @@ export const priceListService = {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error deleting price list item:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -496,7 +496,7 @@ export const priceListService = {
 
       return data || [];
     } catch (error) {
-      console.error('Error importing price list:', error);
+      // console.error removed
       throw error;
     }
   }
@@ -518,7 +518,7 @@ export const paymentService = {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error marking invoice as paid:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -566,7 +566,7 @@ export const paymentService = {
         averagePaymentTime: Math.round(averagePaymentTime)
       };
     } catch (error) {
-      console.error('Error getting payment stats:', error);
+      // console.error removed
       throw error;
     }
   }

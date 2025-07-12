@@ -83,12 +83,12 @@ const InboxPage: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('Fetched messages:', data);
+      // console.log removed
       
       // Check if we got new messages
       const newMessageCount = data.length - messages.length;
       if (newMessageCount > 0 && messages.length > 0) {
-        console.log(`🔔 ${newMessageCount} new messages received!`);
+        // console.log removed
         // Show notification for new messages
         const notification = document.createElement('div');
         notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50';
@@ -104,7 +104,7 @@ const InboxPage: React.FC = () => {
       setMessages(data || []);
       setLastRefreshTime(new Date());
     } catch (err) {
-      console.error('Error fetching messages:', err);
+      // console.error removed
       setError('Failed to load messages. Please try again.');
       alert(`Error: ${err.message}`);
     } finally {
@@ -114,7 +114,7 @@ const InboxPage: React.FC = () => {
 
   const filterMessages = () => {
     let filtered = [...messages];
-    console.log('Filtering messages, total:', messages.length);
+    // console.log removed
     
     // Apply search filter
     if (searchTerm) {
@@ -131,7 +131,7 @@ const InboxPage: React.FC = () => {
       filtered = filtered.filter(message => message.status === statusFilter);
     }
     
-    console.log('Filtered messages:', filtered.length);
+    // console.log removed
     setFilteredMessages(filtered);
   };
 
@@ -182,7 +182,7 @@ const InboxPage: React.FC = () => {
         });
       }
     } catch (err) {
-      console.error('Error updating message status:', err);
+      // console.error removed
       setError('Failed to update message status. Please try again.');
     } finally {
       setLoading(false);
@@ -214,7 +214,7 @@ const InboxPage: React.FC = () => {
       
       setDeleteConfirmation(null);
     } catch (err) {
-      console.error('Error deleting message:', err);
+      // console.error removed
       setError('Failed to delete message. Please try again.');
     } finally {
       setLoading(false);

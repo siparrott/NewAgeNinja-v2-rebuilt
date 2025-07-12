@@ -116,13 +116,13 @@ export default function AdminVoucherSalesPageV3() {
   const { data: voucherProducts, isLoading: isLoadingProducts, error: productsError } = useQuery<VoucherProduct[]>({
     queryKey: ['/api/vouchers/products'],
     queryFn: async () => {
-      console.log('Making API call to /api/vouchers/products');
+      // console.log removed
       const response = await fetch('/api/vouchers/products');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log('API response data:', data);
+      // console.log removed
       return data;
     },
     refetchOnMount: true,
@@ -132,9 +132,9 @@ export default function AdminVoucherSalesPageV3() {
   });
   
   // Debug log
-  console.log('Voucher products data:', voucherProducts);
-  console.log('Products loading:', isLoadingProducts);
-  console.log('Products error:', productsError);
+  // console.log removed
+  // console.log removed
+  // console.log removed
 
   const { data: discountCoupons, isLoading: isLoadingCoupons } = useQuery<DiscountCoupon[]>({
     queryKey: ['/api/vouchers/coupons'],
@@ -184,7 +184,7 @@ export default function AdminVoucherSalesPageV3() {
       window.location.reload();
     },
     onError: (error) => {
-      console.error("Error creating product:", error);
+      // console.error removed
       alert("Failed to create voucher product");
     },
   });
@@ -213,7 +213,7 @@ export default function AdminVoucherSalesPageV3() {
       alert("Voucher product updated successfully!");
     },
     onError: (error) => {
-      console.error("Error updating product:", error);
+      // console.error removed
       alert("Failed to update voucher product");
     },
   });
@@ -241,7 +241,7 @@ export default function AdminVoucherSalesPageV3() {
       alert("Discount coupon created successfully!");
     },
     onError: (error) => {
-      console.error("Error creating coupon:", error);
+      // console.error removed
       alert("Failed to create discount coupon");
     },
   });
@@ -267,7 +267,7 @@ export default function AdminVoucherSalesPageV3() {
       const data = await response.json();
       setUploadedImage(data.url);
     } catch (error) {
-      console.error('Error uploading image:', error);
+      // console.error removed
       alert('Failed to upload image');
     } finally {
       setIsUploading(false);

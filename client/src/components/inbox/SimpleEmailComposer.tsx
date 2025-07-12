@@ -22,7 +22,7 @@ const SimpleEmailComposer: React.FC<SimpleEmailComposerProps> = ({
 
   const handleSend = async () => {
     try {
-      console.log('Sending email:', { to, subject, body, attachments });
+      // console.log removed
       
       // Convert files to base64 for transmission
       const attachmentPromises = attachments.map(async (file) => {
@@ -59,7 +59,7 @@ const SimpleEmailComposer: React.FC<SimpleEmailComposerProps> = ({
       const result = await response.json();
       
       if (result.success) {
-        console.log('Email sent successfully:', result.messageId);
+        // console.log removed
         onSent?.({ to, subject, body, attachments, messageId: result.messageId });
         onClose();
         // Reset form
@@ -68,11 +68,11 @@ const SimpleEmailComposer: React.FC<SimpleEmailComposerProps> = ({
         setBody('');
         setAttachments([]);
       } else {
-        console.error('Failed to send email:', result.error);
+        // console.error removed
         alert('Failed to send email: ' + result.error);
       }
     } catch (error) {
-      console.error('Error sending email:', error);
+      // console.error removed
       alert('Error sending email. Please try again.');
     }
   };

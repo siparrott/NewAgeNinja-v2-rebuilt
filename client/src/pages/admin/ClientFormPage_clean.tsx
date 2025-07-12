@@ -48,7 +48,7 @@ const ClientFormPage: React.FC = () => {
         notes: data.notes || ''
       });
     } catch (err: any) {
-      console.error('Error fetching client:', err);
+      // console.error removed
       setError('Failed to load client data');
     } finally {
       setLoading(false);
@@ -88,7 +88,7 @@ const ClientFormPage: React.FC = () => {
 
       navigate('/admin/clients');
     } catch (err: any) {
-      console.error('Error saving client:', err);
+      // console.error removed
       setError(err.message || `Failed to ${isEditing ? 'update' : 'create'} client`);
     } finally {
       setLoading(false);

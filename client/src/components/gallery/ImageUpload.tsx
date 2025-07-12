@@ -129,7 +129,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       return publicUrl;
     } catch (error) {
-      console.error('Upload error:', error);
+      // console.error removed
       setFiles(prev => prev.map(f => 
         f.id === uploadedFile.id ? { 
           ...f, 

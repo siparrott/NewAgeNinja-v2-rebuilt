@@ -52,7 +52,7 @@ const BlogPostList: React.FC<BlogPostListProps> = ({ isAdmin = false }) => {
       setTotalPosts(response.total);
       setTotalPages(response.totalPages);
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      // console.error removed
       setError('Failed to load blog posts. Please try again later.');
     } finally {
       setLoading(false);
@@ -64,7 +64,7 @@ const BlogPostList: React.FC<BlogPostListProps> = ({ isAdmin = false }) => {
       const fetchedTags = await getTags();
       setTags(fetchedTags);
     } catch (error) {
-      console.error('Error fetching tags:', error);
+      // console.error removed
     }
   };
   

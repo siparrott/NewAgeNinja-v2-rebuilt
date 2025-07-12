@@ -54,7 +54,7 @@ const CalendarIntegration: React.FC = () => {
       ];
       setEvents(sampleEvents);
     } catch (error) {
-      console.error('Error loading events:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }
@@ -94,7 +94,7 @@ const CalendarIntegration: React.FC = () => {
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error('Error exporting calendar:', error);
+      // console.error removed
     }
   };
 
@@ -132,7 +132,7 @@ const CalendarIntegration: React.FC = () => {
       }
       setImportFile(null);
     } catch (error) {
-      console.error('Error importing calendar:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }

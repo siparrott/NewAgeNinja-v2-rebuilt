@@ -122,7 +122,7 @@ const HomePage: React.FC = () => {
               className="w-full rounded-lg shadow-lg"
               onError={(e) => {
                 // Fallback for mobile/loading issues
-                console.log('Image failed to load, using fallback');
+                // console.log removed
                 e.currentTarget.src = "https://i.postimg.cc/zGVgt500/Familienportrat-Wien-Krchnavy-Stolz-0105-1024x683-1.jpg";
               }}
               loading="lazy"

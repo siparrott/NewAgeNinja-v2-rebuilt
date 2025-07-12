@@ -94,7 +94,7 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
       if (error) throw error;
       setUploadedImages(data || []);
     } catch (err) {
-      console.error('Error fetching images:', err);
+      // console.error removed
     }
   };
 
@@ -153,7 +153,7 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
       setCoverImageUrl(publicUrl);
       setCoverImage(file);
     } catch (error) {
-      console.error('Error uploading cover image:', error);
+      // console.error removed
       setError('Failed to upload cover image. Please try again.');
     } finally {
       setImageUploading(false);
@@ -198,7 +198,7 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
       setSelectedImages([]);
       
     } catch (error) {
-      console.error('Error uploading images:', error);
+      // console.error removed
       setError('Failed to upload images. Please try again.');
     } finally {
       setImageUploading(false);
@@ -215,11 +215,11 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
       setLoading(true);
       setError(null);
       
-      console.log('Starting gallery submission...');
-      console.log('Form data:', formData);
+      // console.log removed
+      // console.log removed
       
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('User authentication:', user?.id);
+      // console.log removed
       
       if (!user) {
         throw new Error('You must be logged in to create or edit galleries');
@@ -233,19 +233,19 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
         coverImage: coverImage,
       };
       
-      console.log('Gallery form data being sent:', galleryFormData);
+      // console.log removed
       
       let galleryId: string;
       
       if (isEditing && gallery?.id) {
-        console.log('Updating existing gallery:', gallery.id);
+        // console.log removed
         const updatedGallery = await updateGallery(gallery.id, galleryFormData);
         galleryId = updatedGallery.id;
         setSuccessMessage('Gallery updated successfully!');
       } else {
-        console.log('Creating new gallery...');
+        // console.log removed
         const newGallery = await createGallery(galleryFormData);
-        console.log('Gallery created successfully:', newGallery);
+        // console.log removed
         galleryId = newGallery.id;
         setSuccessMessage('Gallery created successfully!');
       }
@@ -271,8 +271,8 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
         navigate('/admin/galleries');
       }, 1500);
         } catch (err) {
-      console.error('Error saving gallery:', err);
-      console.error('Full error details:', JSON.stringify(err, null, 2));
+      // console.error removed
+      // console.error removed);
       
       // Extract specific error message if it's a Supabase error
       let errorMessage = 'An error occurred while saving the gallery';

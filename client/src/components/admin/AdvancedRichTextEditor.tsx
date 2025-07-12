@@ -207,7 +207,7 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
       
       setShowImageUpload(false);
     } catch (error) {
-      console.error('Error uploading image:', error);
+      // console.error removed
       alert('Failed to upload image. Please try again.');
     } finally {
       setImageUploading(false);

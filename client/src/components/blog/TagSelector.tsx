@@ -30,7 +30,7 @@ const TagSelector: React.FC<TagSelectorProps> = ({
       const fetchedTags = await getTags();
       setTags(fetchedTags);
     } catch (error) {
-      console.error('Error fetching tags:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ const TagSelector: React.FC<TagSelectorProps> = ({
       // Automatically select the new tag
       onChange([...selectedTags, newTag.id]);
     } catch (error) {
-      console.error('Error creating tag:', error);
+      // console.error removed
       alert('Failed to create tag. Please try again.');
     } finally {
       setIsCreatingTag(false);

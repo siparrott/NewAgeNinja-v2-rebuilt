@@ -179,16 +179,16 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
         });
         setClients(transformedClients);
         setFilteredClients(transformedClients);
-        console.log(`Loaded ${transformedClients.length} clients from CRM database`);
+        // console.log removed
       } else {
         // No clients found in CRM, use sample clients as fallback
-        console.log('No clients found in CRM database, using sample clients');
+        // console.log removed
         const sampleClients = getSampleClients();
         setClients(sampleClients);
         setFilteredClients(sampleClients);
       }
     } catch (err) {
-      console.error('Error fetching clients from CRM:', err);
+      // console.error removed
       setError('Failed to load clients from database');
       // Fallback to sample clients
       const sampleClients = getSampleClients();
@@ -432,7 +432,7 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
         });
 
         if (!paymentResponse.ok) {
-          console.error('Failed to create payment record, but invoice was created');
+          // console.error removed
           // Continue anyway - invoice is created, payment can be added later
         }
       }
@@ -440,7 +440,7 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
       onSuccess();
       onClose();
     } catch (err) {
-      console.error('Error creating invoice:', err);
+      // console.error removed
       setError('Failed to create invoice. Please try again.');
     } finally {
       setLoading(false);
@@ -466,7 +466,7 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Error downloading PDF:', error);
+      // console.error removed
       setError('Failed to download PDF. Please try again.');
     }
   };
@@ -491,7 +491,7 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
       setShowEmailModal(false);
       alert('Invoice successfully sent by email!');
     } catch (error) {
-      console.error('Error sending email:', error);
+      // console.error removed
       setError('Failed to send email. Please try again.');
     } finally {
       setLoading(false);

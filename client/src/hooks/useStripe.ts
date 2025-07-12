@@ -29,7 +29,7 @@ export function useStripeSubscription() {
 
         setSubscription(data);
       } catch (err) {
-        console.error('Error fetching subscription:', err);
+        // console.error removed
         setError(err instanceof Error ? err.message : 'Failed to fetch subscription');
       } finally {
         setLoading(false);
@@ -61,7 +61,7 @@ export function useStripeOrders() {
 
         setOrders(data || []);
       } catch (err) {
-        console.error('Error fetching orders:', err);
+        // console.error removed
         setError(err instanceof Error ? err.message : 'Failed to fetch orders');
       } finally {
         setLoading(false);

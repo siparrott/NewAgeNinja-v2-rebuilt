@@ -122,14 +122,10 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
         }));
       }
 
-      console.log('Calendar data loaded:', {
-        events: eventsData.length,
-        calendars: calendarsData.length,
-        categories: categoriesData.length
-      });
+      // console.log removed
 
     } catch (err: any) {
-      console.error('Error loading calendar data:', err);
+      // console.error removed
       setError('Failed to load calendar data: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
@@ -254,7 +250,7 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
       });
       await loadCalendarData();
     } catch (err) {
-      console.error('Error resizing event:', err);
+      // console.error removed
       setError('Failed to update event');
     }
   }, []);
@@ -267,7 +263,7 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
       });
       await loadCalendarData();
     } catch (err) {
-      console.error('Error moving event:', err);
+      // console.error removed
       setError('Failed to move event');
     }
   }, []);
@@ -297,7 +293,7 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
       let calendarId = eventForm.calendar_id;
       if (!calendarId && calendars.length > 0) {
         calendarId = calendars[0].id;
-        console.log('No calendar selected, using first available:', calendarId);
+        // console.log removed
       }
       
       if (!calendarId) {
@@ -310,14 +306,14 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
         calendar_id: calendarId
       };
       
-      console.log('Saving event:', eventData);
+      // console.log removed
       
       if (editingEvent) {
         await updateEvent(editingEvent.id, eventData);
-        console.log('Event updated successfully');
+        // console.log removed
       } else {
         const newEvent = await createEvent(eventData);
-        console.log('Event created successfully:', newEvent);
+        // console.log removed
       }
       
       await loadCalendarData();
@@ -325,12 +321,12 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
       resetEventForm();
       
       // Show success message
-      console.log('Calendar event saved successfully!');
+      // console.log removed
       
     } catch (err: any) {
-      console.error('Error saving event:', err);
-      console.error('Event data:', eventForm);
-      console.error('Available calendars:', calendars);
+      // console.error removed
+      // console.error removed
+      // console.error removed
       
       let errorMessage = 'Failed to save event';
       if (err.message) {
@@ -357,7 +353,7 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
         setShowEventModal(false);
         resetEventForm();
       } catch (err: any) {
-        console.error('Error deleting event:', err);
+        // console.error removed
         setError('Failed to delete event');
       } finally {
         setLoading(false);
@@ -400,7 +396,7 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Error exporting calendar:', err);
+      // console.error removed
       setError('Failed to export calendar');
     }
   };
@@ -418,7 +414,7 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
       const result = await importFromICAL(text, defaultCalendar.id);
       
       if (result.errors.length > 0) {
-        console.warn('Import errors:', result.errors);
+        // console.warn removed
       }
       
       await loadCalendarData();
@@ -426,7 +422,7 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
       
       alert(`Successfully imported ${result.imported} events${result.errors.length > 0 ? ` with ${result.errors.length} errors` : ''}`);
     } catch (err) {
-      console.error('Error importing calendar:', err);
+      // console.error removed
       setError('Failed to import calendar');
     }
   };

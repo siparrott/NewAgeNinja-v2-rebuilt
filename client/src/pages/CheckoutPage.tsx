@@ -104,7 +104,7 @@ const CheckoutPage: React.FC = () => {
       // Navigate to order complete page
       navigate(`/order-complete/${newOrder.id}`);
     } catch (error) {
-      console.error('Error processing payment:', error);
+      // console.error removed
       setErrors({ submit: 'Failed to process payment. Please try again.' });
       setIsSubmitting(false);
     }

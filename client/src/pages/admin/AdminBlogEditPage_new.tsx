@@ -52,7 +52,7 @@ const AdminBlogEditPage: React.FC = () => {
       
       setPost(data);
     } catch (err) {
-      console.error('Error fetching post:', err);
+      // console.error removed
       setError('Failed to load blog post. Please try again.');
     } finally {
       setLoading(false);

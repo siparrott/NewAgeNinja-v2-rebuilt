@@ -56,7 +56,7 @@ export async function getPosts(
       totalPages
     };
   } catch (error) {
-    console.error('Error fetching posts:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -79,7 +79,7 @@ export async function getPostBySlug(slug: string): Promise<BlogPost> {
     
     return data;
   } catch (error) {
-    console.error(`Error fetching post with slug ${slug}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -142,7 +142,7 @@ export async function createPost(postData: BlogPostFormData): Promise<BlogPost> 
     
     return data;
   } catch (error) {
-    console.error('Error creating post:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -206,7 +206,7 @@ export async function updatePost(id: string, postData: BlogPostFormData): Promis
     
     return data;
   } catch (error) {
-    console.error(`Error updating post ${id}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -227,7 +227,7 @@ export async function deletePost(id: string): Promise<void> {
     
     if (error) throw error;
   } catch (error) {
-    console.error(`Error deleting post ${id}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -256,7 +256,7 @@ export async function publishPost(id: string): Promise<BlogPost> {
     
     return data;
   } catch (error) {
-    console.error(`Error publishing post ${id}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -285,7 +285,7 @@ export async function schedulePost(id: string, publishDate: Date): Promise<BlogP
     
     return data;
   } catch (error) {
-    console.error(`Error scheduling post ${id}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -318,7 +318,7 @@ export async function uploadImage(file: File): Promise<string> {
     
     return publicUrl;
   } catch (error) {
-    console.error('Error uploading image:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -335,7 +335,7 @@ export async function getTags(): Promise<BlogTag[]> {
     
     return data || [];
   } catch (error) {
-    console.error('Error fetching tags:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -364,7 +364,7 @@ export async function createTag(name: string): Promise<BlogTag> {
     
     return data;
   } catch (error) {
-    console.error('Error creating tag:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -386,7 +386,7 @@ export async function getPostComments(postId: string): Promise<any[]> {
     
     return data || [];
   } catch (error) {
-    console.error('Error fetching comments:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -424,7 +424,7 @@ export async function createComment(postId: string, content: string, authorName?
     
     return data;
   } catch (error) {
-    console.error('Error creating comment:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -486,7 +486,7 @@ export async function getBlogAnalytics(): Promise<any> {
       comments: commentCounts
     };
   } catch (error) {
-    console.error('Error fetching blog analytics:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -505,7 +505,7 @@ export async function getPopularPosts(limit = 5): Promise<BlogPost[]> {
     
     return data || [];
   } catch (error) {
-    console.error('Error fetching popular posts:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -548,7 +548,7 @@ export async function searchPosts(
     
     return data || [];
   } catch (error) {
-    console.error('Error searching posts:', error);
+    // console.error removed
     throw error;
   }
 }

@@ -70,7 +70,7 @@ export const surveyApi = {
     const { data, error, count } = await query.range(from, to);
 
     if (error) {
-      console.error('Error fetching surveys:', error);
+      // console.error removed
       throw error;
     }
 
@@ -91,7 +91,7 @@ export const surveyApi = {
       .single();
 
     if (error) {
-      console.error('Error fetching survey:', error);
+      // console.error removed
       throw error;
     }
     
@@ -122,7 +122,7 @@ export const surveyApi = {
       .single();
 
     if (error) {
-      console.error('Error creating survey:', error);
+      // console.error removed
       throw error;
     }
     
@@ -143,7 +143,7 @@ export const surveyApi = {
       .single();
 
     if (error) {
-      console.error('Error updating survey:', error);
+      // console.error removed
       throw error;
     }
     
@@ -158,7 +158,7 @@ export const surveyApi = {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting survey:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -190,7 +190,7 @@ export const surveyApi = {
 
       return await this.createSurvey(duplicate);
     } catch (error) {
-      console.error('Error duplicating survey:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -321,7 +321,7 @@ export const responseApi = {
       .range(from, to);
 
     if (error) {
-      console.error('Error fetching responses:', error);
+      // console.error removed
       throw error;
     }
 
@@ -343,7 +343,7 @@ export const responseApi = {
       .single();
 
     if (error) {
-      console.error('Error submitting response:', error);
+      // console.error removed
       throw error;
     }
 
@@ -362,7 +362,7 @@ export const analyticsApi = {
       .eq('survey_id', surveyId);
 
     if (responsesError) {
-      console.error('Error fetching analytics:', responsesError);
+      // console.error removed
       throw responsesError;
     }
 
@@ -377,7 +377,7 @@ export const analyticsApi = {
       .eq('survey_id', surveyId);
 
     if (analyticsError) {
-      console.error('Error fetching analytics events:', analyticsError);
+      // console.error removed
     }
 
     const totalViews = analytics?.filter(a => a.event_type === 'view').length || 0;

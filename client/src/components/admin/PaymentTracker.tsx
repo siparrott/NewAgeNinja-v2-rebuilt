@@ -63,7 +63,7 @@ const PaymentTracker: React.FC<PaymentTrackerProps> = ({
       const data = await response.json();
       setPayments(data || []);
     } catch (err) {
-      console.error('Error fetching payments:', err);
+      // console.error removed
       setError('Failed to load payments');
     } finally {
       setLoading(false);
@@ -101,7 +101,7 @@ const PaymentTracker: React.FC<PaymentTrackerProps> = ({
       await fetchPayments();
       onPaymentAdded();
     } catch (err) {
-      console.error('Error adding payment:', err);
+      // console.error removed
       setError('Failed to add payment');
     } finally {
       setLoading(false);
@@ -126,7 +126,7 @@ const PaymentTracker: React.FC<PaymentTrackerProps> = ({
       await fetchPayments();
       onPaymentAdded();
     } catch (err) {
-      console.error('Error deleting payment:', err);
+      // console.error removed
       setError('Failed to delete payment');
     } finally {
       setLoading(false);

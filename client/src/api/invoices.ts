@@ -148,7 +148,7 @@ export async function createInvoice(payload: CreateInvoiceData) {
 
     return invoice;
   } catch (error) {
-    console.error('Error creating invoice:', error);
+    // console.error removed
     throw error;
   }
 }

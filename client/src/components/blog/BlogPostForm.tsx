@@ -114,7 +114,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, isEdit = false
       const imageUrl = await uploadImage(file);
       setFormData(prev => ({ ...prev, coverImage: imageUrl }));
     } catch (error) {
-      console.error('Error uploading image:', error);
+      // console.error removed
       alert('Failed to upload image. Please try again.');
     } finally {
       setImageUploading(false);
@@ -137,7 +137,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, isEdit = false
       
       navigate('/admin/blog');
     } catch (error) {
-      console.error('Error saving post:', error);
+      // console.error removed
       alert('Failed to save post. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -163,7 +163,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, isEdit = false
       
       navigate('/admin/blog');
     } catch (error) {
-      console.error('Error publishing post:', error);
+      // console.error removed
       alert('Failed to publish post. Please try again.');
     } finally {
       setIsPublishing(false);
@@ -194,7 +194,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, isEdit = false
       
       navigate('/admin/blog');
     } catch (error) {
-      console.error('Error scheduling post:', error);
+      // console.error removed
       alert('Failed to schedule post. Please try again.');
     } finally {
       setIsScheduling(false);

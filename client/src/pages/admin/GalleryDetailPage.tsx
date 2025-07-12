@@ -49,7 +49,7 @@ const GalleryDetailPage: React.FC = () => {
         const statsData = await getGalleryStats(galleryId);
         setStats(statsData);
       } catch (statsError) {
-        console.error('Error fetching gallery stats:', statsError);
+        // console.error removed
         // Don't fail the whole page load if stats fail
       }
       
@@ -58,7 +58,7 @@ const GalleryDetailPage: React.FC = () => {
         const visitorsData = await getGalleryVisitors(galleryId);
         setVisitors(visitorsData);
       } catch (visitorsError) {
-        console.error('Error fetching gallery visitors:', visitorsError);
+        // console.error removed
         // Don't fail the whole page load if visitors fetch fails
       }
       
@@ -67,11 +67,11 @@ const GalleryDetailPage: React.FC = () => {
         const logsData = await getGalleryAccessLogs(galleryId);
         setAccessLogs(logsData);
       } catch (logsError) {
-        console.error('Error fetching access logs:', logsError);
+        // console.error removed
         // Don't fail the whole page load if logs fetch fails
       }
     } catch (err) {
-      console.error('Error fetching gallery data:', err);
+      // console.error removed
       setError('Failed to load gallery. Please try again.');
     } finally {
       setLoading(false);
@@ -101,7 +101,7 @@ const GalleryDetailPage: React.FC = () => {
         // Switch to images tab
         setActiveTab('images');
       }).catch(err => {
-        console.error('Error refreshing images:', err);
+        // console.error removed
       });
     }
   };
@@ -112,7 +112,7 @@ const GalleryDetailPage: React.FC = () => {
       getGalleryImages(id).then(imagesData => {
         setImages(imagesData);
       }).catch(err => {
-        console.error('Error refreshing images:', err);
+        // console.error removed
       });
     }
   };
@@ -123,7 +123,7 @@ const GalleryDetailPage: React.FC = () => {
       getGalleryById(id).then(galleryData => {
         setGallery(galleryData);
       }).catch(err => {
-        console.error('Error refreshing gallery:', err);
+        // console.error removed
       });
     }
   };
@@ -137,7 +137,7 @@ const GalleryDetailPage: React.FC = () => {
         await deleteGallery(gallery.id);
         navigate('/admin/galleries');
       } catch (err) {
-        console.error('Error deleting gallery:', err);
+        // console.error removed
         setError('Failed to delete gallery. Please try again.');
         setLoading(false);
       }
@@ -155,7 +155,7 @@ const GalleryDetailPage: React.FC = () => {
           alert('Gallery link copied to clipboard!');
         })
         .catch(err => {
-          console.error('Could not copy text: ', err);
+          // console.error removed
           prompt('Copy this link:', url);
         });
     } else {

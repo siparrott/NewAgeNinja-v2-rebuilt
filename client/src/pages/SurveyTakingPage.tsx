@@ -47,7 +47,7 @@ const SurveyTakingPage: React.FC = () => {
       
       setSurvey(surveyData);
     } catch (err) {
-      console.error('Error fetching survey:', err);
+      // console.error removed
       setError(err instanceof Error ? err.message : 'Failed to load survey');
     } finally {
       setLoading(false);
@@ -128,7 +128,7 @@ const SurveyTakingPage: React.FC = () => {
       await responseApi.submitResponse(responseData);
       setSubmitted(true);
     } catch (err) {
-      console.error('Error submitting response:', err);
+      // console.error removed
       setError('Failed to submit response. Please try again.');
     } finally {
       setSubmitting(false);

@@ -420,10 +420,10 @@ export const PhotographyCalendar: React.FC = () => {
         const data = await response.json();
         setSessions(data);
       } else {
-        console.error('Failed to fetch sessions');
+        // console.error removed
       }
     } catch (error) {
-      console.error('Error fetching sessions:', error);
+      // console.error removed
     } finally {
       setIsLoading(false);
     }
@@ -435,7 +435,7 @@ export const PhotographyCalendar: React.FC = () => {
 
   const handleCreateSession = () => {
     // Navigate to session creation form
-    console.log('Create new session');
+    // console.log removed
   };
 
   if (isLoading) {

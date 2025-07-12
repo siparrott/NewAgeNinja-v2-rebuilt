@@ -87,7 +87,7 @@ const AdminClientsPage: React.FC = () => {
       ];
       setClients(mockClients);
     } catch (error) {
-      console.error('Error fetching clients:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }

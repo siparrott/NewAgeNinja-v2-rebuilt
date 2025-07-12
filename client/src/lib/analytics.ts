@@ -93,7 +93,7 @@ export const analyticsService = {
         topServices
       };
     } catch (error) {
-      console.error('Error fetching analytics data:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -143,7 +143,7 @@ export const analyticsService = {
         unpaidAmount
       };
     } catch (error) {
-      console.error('Error fetching revenue metrics:', error);
+      // console.error removed
       throw error;
     }
   },
@@ -215,7 +215,7 @@ export const analyticsService = {
         topClients
       };
     } catch (error) {
-      console.error('Error fetching client metrics:', error);
+      // console.error removed
       throw error;
     }
   },

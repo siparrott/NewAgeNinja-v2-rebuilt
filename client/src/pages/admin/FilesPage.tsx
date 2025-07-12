@@ -87,7 +87,7 @@ const FilesPage: React.FC = () => {
       
       setFiles(formattedFiles || []);
     } catch (err) {
-      console.error('Error fetching files:', err);
+      // console.error removed
       setError('Failed to load files. Please try again.');
     } finally {
       setLoading(false);
@@ -129,7 +129,7 @@ const FilesPage: React.FC = () => {
       setFiles(prevFiles => prevFiles.filter(file => file.id !== id));
       setDeleteConfirmation(null);
     } catch (err) {
-      console.error('Error deleting file:', err);
+      // console.error removed
       setError('Failed to delete file. Please try again.');
     } finally {
       setLoading(false);

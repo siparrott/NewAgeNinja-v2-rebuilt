@@ -217,7 +217,7 @@ export const sendNewsletterCampaign = async (campaignId: string) => {
 
     // Here you would integrate with your email service (SendGrid, Mailgun, etc.)
     // For now, we'll simulate sending
-    console.log(`Sending campaign "${campaign.subject}" to ${subscribers.length} subscribers`);
+    // console.log removed
 
     // Update campaign as sent
     await updateNewsletterCampaign(campaignId, {

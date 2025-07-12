@@ -29,7 +29,7 @@ const GalleriesPage: React.FC = () => {
       const data = await getGalleries();
       setGalleries(data);
     } catch (err) {
-      console.error('Error fetching galleries:', err);
+      // console.error removed
       setError('Failed to load galleries. Please try again.');
     } finally {
       setLoading(false);
@@ -49,39 +49,39 @@ const GalleriesPage: React.FC = () => {
     
     setFilteredGalleries(filtered);
   };  const handleDeleteGallery = async (id: string) => {
-    console.log('handleDeleteGallery called with ID:', id);
+    // console.log removed
     
     const gallery = galleries.find(g => g.id === id);
     const galleryTitle = gallery?.title || 'this gallery';
     
-    console.log('Found gallery for deletion:', gallery);
+    // console.log removed
     
     if (!confirm(`Are you sure you want to delete "${galleryTitle}"? This action cannot be undone.`)) {
-      console.log('User cancelled deletion');
+      // console.log removed
       return;
     }
 
-    console.log('User confirmed deletion, proceeding...');
+    // console.log removed
 
     try {
       setLoading(true);
-      console.log('Calling deleteGallery API...');
+      // console.log removed
       await deleteGallery(id);
-      console.log('deleteGallery API call successful');
+      // console.log removed
       
       // Update local state
       setGalleries(prevGalleries => {
         const updated = prevGalleries.filter(gallery => gallery.id !== id);
-        console.log('Updated galleries list:', updated);
+        // console.log removed
         return updated;
       });
       
       // Clear any existing errors
       setError(null);
       setLoading(false);
-      console.log('Gallery deletion completed successfully');
+      // console.log removed
     } catch (err) {
-      console.error('Error deleting gallery:', err);
+      // console.error removed
       setError(`Failed to delete gallery: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setLoading(false);
     }
@@ -96,7 +96,7 @@ const GalleriesPage: React.FC = () => {
           alert('Gallery link copied to clipboard!');
         })
         .catch(err => {
-          console.error('Could not copy text: ', err);
+          // console.error removed
           prompt('Copy this link:', url);
         });
     } else {

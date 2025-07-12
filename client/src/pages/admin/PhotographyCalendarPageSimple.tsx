@@ -123,7 +123,7 @@ const PhotographyCalendarPage: React.FC = () => {
         setNewLeadsCount(data.length);
       }
     } catch (error) {
-      console.log('Leads API not ready yet, using default count');
+      // console.log removed
     }
   };
 
@@ -135,11 +135,11 @@ const PhotographyCalendarPage: React.FC = () => {
         const data = await response.json();
         setSessions(data);
       } else {
-        console.log('No sessions found or API not ready yet');
+        // console.log removed
         setSessions([]);
       }
     } catch (error) {
-      console.log('Sessions API not ready yet, showing demo interface');
+      // console.log removed
       setSessions([]);
     } finally {
       setIsLoading(false);
@@ -227,7 +227,7 @@ const PhotographyCalendarPage: React.FC = () => {
         alert('Failed to create session. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating session:', error);
+      // console.error removed
       alert('Error creating session. Please try again.');
     }
   };
@@ -856,7 +856,7 @@ const PhotographyCalendarPage: React.FC = () => {
                 <button
                   onClick={() => {
                     // Edit functionality can be added later
-                    console.log('Edit session:', selectedSession.id);
+                    // console.log removed
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
@@ -872,7 +872,7 @@ const PhotographyCalendarPage: React.FC = () => {
           isOpen={showGoogleCalendarModal}
           onClose={() => setShowGoogleCalendarModal(false)}
           onConnectionSuccess={() => {
-            console.log('Google Calendar connected successfully');
+            // console.log removed
             // Refresh sessions to show synced events
             fetchSessions();
           }}

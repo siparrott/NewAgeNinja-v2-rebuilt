@@ -35,7 +35,7 @@ export async function createCheckoutSession(priceId: string, mode: 'payment' | '
 
     window.location.href = url;
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    // console.error removed
     throw error;
   }
 }

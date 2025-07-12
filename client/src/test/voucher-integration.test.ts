@@ -9,7 +9,7 @@ import { purchaseVoucher } from '../lib/voucher';
  */
 export async function testVoucherPurchase() {
   try {
-    console.log('Testing voucher purchase integration...');
+    // console.log removed
     
     const testPurchase = {
       purchaserName: 'Test Customer',
@@ -20,11 +20,11 @@ export async function testVoucherPurchase() {
     };
 
     const result = await purchaseVoucher(testPurchase);
-    console.log('Voucher purchase test successful:', result);
+    // console.log removed
     
     return result;
   } catch (error) {
-    console.error('Voucher purchase test failed:', error);
+    // console.error removed
     throw error;
   }
 }

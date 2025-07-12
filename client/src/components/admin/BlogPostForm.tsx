@@ -65,7 +65,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = false }) 
       if (error) throw error;
       setAvailableTags(data || []);
     } catch (err) {
-      console.error('Error fetching tags:', err);
+      // console.error removed
     }
   };
 
@@ -117,7 +117,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = false }) 
       
       setFormData(prev => ({ ...prev, cover_image: publicUrl }));
     } catch (err) {
-      console.error('Error uploading image:', err);
+      // console.error removed
       setError('Failed to upload image. Please try again.');
     } finally {
       setImageUploading(false);
@@ -197,7 +197,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = false }) 
       }, 1500);
       
     } catch (err) {
-      console.error('Error saving post:', err);
+      // console.error removed
       setError(err instanceof Error ? err.message : 'An error occurred while saving the post');
     } finally {
       setLoading(false);

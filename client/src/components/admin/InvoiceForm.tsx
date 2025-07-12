@@ -73,7 +73,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       const items = await priceListService.getPriceListItems();
       setPriceList(items);
     } catch (err) {
-      console.error('Error fetching price list:', err);
+      // console.error removed
     }
   };
 
@@ -82,7 +82,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       const invoiceNumber = await invoiceService.generateInvoiceNumber();
       setFormData(prev => ({ ...prev, invoice_number: invoiceNumber }));
     } catch (err) {
-      console.error('Error generating invoice number:', err);
+      // console.error removed
     }
   };
 
@@ -188,7 +188,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       }, 1000);
 
     } catch (err) {
-      console.error('Error saving invoice:', err);
+      // console.error removed
       setError('Failed to save invoice. Please try again.');
     } finally {
       setLoading(false);

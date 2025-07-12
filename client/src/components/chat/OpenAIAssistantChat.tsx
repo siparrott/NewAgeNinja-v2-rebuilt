@@ -78,7 +78,7 @@ const OpenAIAssistantChat: React.FC<OpenAIAssistantChatProps> = ({
       const data = await response.json();
       return data.threadId;
     } catch (error) {
-      console.error('Error creating thread:', error);
+      // console.error removed
       throw error;
     }
   };
@@ -105,7 +105,7 @@ const OpenAIAssistantChat: React.FC<OpenAIAssistantChatProps> = ({
       const data = await response.json();
       return data.response;
     } catch (error) {
-      console.error('Error sending message:', error);
+      // console.error removed
       throw error;
     }
   };
@@ -163,12 +163,12 @@ const OpenAIAssistantChat: React.FC<OpenAIAssistantChatProps> = ({
           const parsedData = JSON.parse(customizationData);
           onCustomizationChange(parsedData);
         } catch (parseError) {
-          console.error('Error parsing customization data:', parseError);
+          // console.error removed
         }
       }
 
     } catch (error) {
-      console.error('Error in chat:', error);
+      // console.error removed
       setError('Sorry, I encountered an error. Please try again.');
       
       // Remove loading message and add error message

@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Content-Disposition', 'attachment; filename="studio.ics"');
     res.send(cal.toString());
   } catch (error: any) {
-    console.error(error);
+    // console.error removed
     res.status(500).send('Unable to generate calendar');
   }
 }

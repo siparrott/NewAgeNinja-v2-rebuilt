@@ -107,7 +107,7 @@ const ChatBot: React.FC = () => {
       }
 
     } catch (error) {
-      console.error('Chat error:', error);
+      // console.error removed
       setMessages(prev => {
         const filtered = prev.filter(msg => !msg.loading);
         return [...filtered, { text: "Entschuldigung, es gab ein technisches Problem. Bitte kontaktieren Sie uns direkt unter 0677 633 99210.", isUser: false }];
@@ -146,7 +146,7 @@ const ChatBot: React.FC = () => {
         setLeadFormData({ name: '', email: '', phone: '' });
       }
     } catch (error) {
-      console.error('Error saving lead:', error);
+      // console.error removed
     }
   };
 
@@ -168,10 +168,10 @@ const ChatBot: React.FC = () => {
       });
 
       if (response.ok) {
-        console.log('Lead automatically saved from chat');
+        // console.log removed
       }
     } catch (error) {
-      console.error('Error auto-saving lead:', error);
+      // console.error removed
     }
   };
 

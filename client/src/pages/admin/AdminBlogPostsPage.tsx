@@ -104,7 +104,7 @@ const AdminBlogPostsPage: React.FC = () => {
       setTotalPosts(filteredPosts.length);
       setTotalPages(Math.ceil(filteredPosts.length / 10));
     } catch (err) {
-      console.error('Error fetching posts:', err);
+      // console.error removed
       setError('Failed to load blog posts. Please try again.');
     } finally {
       setLoading(false);
@@ -137,7 +137,7 @@ const AdminBlogPostsPage: React.FC = () => {
       fetchPosts();
       setDeleteConfirmation(null);
     } catch (err) {
-      console.error('Error deleting post:', err);
+      // console.error removed
       setError('Failed to delete post. Please try again.');
       setLoading(false);
     }
@@ -167,7 +167,7 @@ const AdminBlogPostsPage: React.FC = () => {
       // Refresh posts to get updated data
       fetchPosts();
     } catch (err) {
-      console.error('Error updating post status:', err);
+      // console.error removed
       setError('Failed to update post status. Please try again.');
       fetchPosts(); // Refresh to get correct state
     }

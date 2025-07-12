@@ -19,7 +19,7 @@ const HighValueClientsPage: React.FC = () => {
       const data = await getHighValueClients(10);
       setClients(data);
     } catch (err) {
-      console.error('Error loading high value clients:', err);
+      // console.error removed
       setError('Failed to load high value clients. Please try again.');
     } finally {
       setLoading(false);

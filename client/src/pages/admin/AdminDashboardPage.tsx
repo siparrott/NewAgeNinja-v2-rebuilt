@@ -66,7 +66,7 @@ const AdminDashboardPage: React.FC = () => {
   const CRM_ASSISTANT_ID = 'asst_crm_operations_v1'; // Replace with your actual assistant ID
 
   const handleCRMAction = (action: any) => {
-    console.log('CRM Action received:', action);
+    // console.log removed
     
     // Handle different types of CRM actions
     switch (action.type) {
@@ -95,7 +95,7 @@ const AdminDashboardPage: React.FC = () => {
         handleCalendarAction(action);
         break;
       default:
-        console.log('Unknown CRM action type:', action.type);
+        // console.log removed
     }
     
     // Refresh dashboard data after action
@@ -104,19 +104,19 @@ const AdminDashboardPage: React.FC = () => {
 
   const handleEmailAction = (action: any) => {
     // Implement email-specific actions
-    console.log('Handling email action:', action);
+    // console.log removed
     // This would integrate with your email system
   };
 
   const handleBookingAction = (action: any) => {
     // Implement booking-specific actions
-    console.log('Handling booking action:', action);
+    // console.log removed
     // This would integrate with your booking system
   };
 
   const handleClientAction = (action: any) => {
     // Implement client-specific actions
-    console.log('Handling client action:', action);
+    // console.log removed
     // This would navigate to clients page or refresh client data
     if (action.action === 'view_clients') {
       navigate('/admin/clients');
@@ -125,7 +125,7 @@ const AdminDashboardPage: React.FC = () => {
 
   const handleInvoiceAction = (action: any) => {
     // Implement invoice-specific actions
-    console.log('Handling invoice action:', action);
+    // console.log removed
     // This would integrate with your invoicing system
     if (action.action === 'view_invoices') {
       navigate('/admin/invoices');
@@ -134,13 +134,13 @@ const AdminDashboardPage: React.FC = () => {
 
   const handleDataAction = (action: any) => {
     // Implement data-specific actions
-    console.log('Handling data action:', action);
+    // console.log removed
     // This would generate reports or export data
   };
 
   const handleCalendarAction = (action: any) => {
     // Implement calendar-specific actions
-    console.log('Handling calendar action:', action);
+    // console.log removed
     // This would integrate with your calendar system
   };
 
@@ -219,7 +219,7 @@ const AdminDashboardPage: React.FC = () => {
 
       setDashboardData(dashboardData);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }

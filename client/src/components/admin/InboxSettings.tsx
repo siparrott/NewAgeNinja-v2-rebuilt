@@ -116,7 +116,7 @@ const InboxSettings: React.FC<InboxSettingsProps> = ({
       onSave(settings);
       onClose();
     } catch (error) {
-      console.error('Error saving settings:', error);
+      // console.error removed
     } finally {
       setSaving(false);
     }

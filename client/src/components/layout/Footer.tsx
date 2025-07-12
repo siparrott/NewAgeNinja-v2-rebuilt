@@ -31,7 +31,7 @@ const Footer: React.FC = () => {
     
     try {
       const result = await submitNewsletterForm(email.trim());
-      console.log('Newsletter signup result:', result);
+      // console.log removed
       
       if (result.success) {
         setSubscribed(true);
@@ -42,7 +42,7 @@ const Footer: React.FC = () => {
         throw new Error(result.message || 'Signup failed');
       }
     } catch (err) {
-      console.error('Newsletter signup error:', err);
+      // console.error removed
       const errorMessage = err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.';
       setError(errorMessage);
     } finally {

@@ -81,7 +81,7 @@ const AdminCalendarPage: React.FC = () => {
       ];
       setEvents(mockEvents);
     } catch (error) {
-      console.error('Error fetching events:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }

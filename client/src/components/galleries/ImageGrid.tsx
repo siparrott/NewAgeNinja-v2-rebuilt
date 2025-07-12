@@ -61,7 +61,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
     // Log view action if public
     if (isPublic && authToken) {
       // This would be implemented to log a VIEW action
-      console.log('View action logged for image', image.id);
+      // console.log removed
     }
   };
 
@@ -99,7 +99,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
       image.isFavorite = !image.isFavorite;
       setLoading(false);
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      // console.error removed
       setLoading(false);
     }
   };
@@ -137,10 +137,10 @@ const ImageGrid: React.FC<ImageGridProps> = ({
       
       // Log download action if public
       if (isPublic && authToken) {
-        console.log('Download action logged for image', image.id);
+        // console.log removed
       }
     } catch (error) {
-      console.error('Error downloading image:', error);
+      // console.error removed
       // Fallback to direct link if blob method fails
       const link = document.createElement('a');
       link.href = image.displayUrl;
@@ -167,7 +167,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
           onImageDeleted();
         }
       } catch (error) {
-        console.error('Error deleting image:', error);
+        // console.error removed
         setLoading(false);
       }
     }
@@ -187,7 +187,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
         onSetCover();
       }
     } catch (error) {
-      console.error('Error setting cover image:', error);
+      // console.error removed
       setLoading(false);
     }
   };
@@ -224,7 +224,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({
       
       alert('Image shared to JpegWriter successfully!');
     } catch (error) {
-      console.error('Error sharing to JpegWriter:', error);
+      // console.error removed
       setLoading(false);
       alert('Failed to share image to JpegWriter. Please try again.');
     }

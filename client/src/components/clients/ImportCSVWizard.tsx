@@ -45,7 +45,7 @@ const ImportCSVWizard: React.FC = () => {
       // For now, use empty presets - can be implemented later
       setPresets([]);
     } catch (err) {
-      console.error('Error fetching presets:', err);
+      // console.error removed
       // Don't show error for presets, just log it
     }
   };
@@ -128,7 +128,7 @@ const ImportCSVWizard: React.FC = () => {
       setSampleRows(data.sampleRows);
       setCurrentStep(2);
     } catch (err) {
-      console.error('Error uploading CSV:', err);
+      // console.error removed
 
       // Check if this is a connection error
       if (
@@ -181,7 +181,7 @@ const ImportCSVWizard: React.FC = () => {
       // Save preset if requested (skip for now)
       if (savePreset && newPresetName.trim()) {
         // Preset saving can be implemented later
-        console.log('Preset saving not implemented yet');
+        // console.log removed
       }
 
       // Get auth session for the import request
@@ -251,12 +251,12 @@ const ImportCSVWizard: React.FC = () => {
             }
           }
         } catch (statusError) {
-          console.error('Error checking import status:', statusError);
+          // console.error removed
           // Don't stop polling on error, just log it
         }
       }, 2000) as unknown as number;
     } catch (err) {
-      console.error('Error starting import:', err);
+      // console.error removed
       setError(err instanceof Error ? err.message : 'An error occurred while starting the import');
     } finally {
       setLoading(false);

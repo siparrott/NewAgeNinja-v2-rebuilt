@@ -87,7 +87,7 @@ const InvoicesPage: React.FC = () => {
       
       setInvoices(formattedInvoices || []);
     } catch (err) {
-      console.error('Error fetching invoices:', err);
+      // console.error removed
       setError('Failed to load invoices. Please try again.');
     } finally {
       setLoading(false);
@@ -130,7 +130,7 @@ const InvoicesPage: React.FC = () => {
       setInvoices(prevInvoices => prevInvoices.filter(invoice => invoice.id !== id));
       setDeleteConfirmation(null);
     } catch (err) {
-      console.error('Error deleting invoice:', err);
+      // console.error removed
       setError('Failed to delete invoice. Please try again.');
     } finally {
       setLoading(false);
@@ -166,7 +166,7 @@ const InvoicesPage: React.FC = () => {
         )
       );
     } catch (err) {
-      console.error('Error updating invoice status:', err);
+      // console.error removed
       setError('Failed to update invoice status. Please try again.');
     } finally {
       setLoading(false);

@@ -145,7 +145,7 @@ const QuestionnairesPage: React.FC = () => {
       setFilteredSurveys(surveyData);
       
     } catch (err) {
-      console.error('Error fetching questionnaires:', err);
+      // console.error removed
       setError('Failed to load questionnaires. Using sample data.');
       
       // Fallback to empty arrays
@@ -196,7 +196,7 @@ const QuestionnairesPage: React.FC = () => {
         .single();
 
       if (error) {
-        console.error('Failed to save survey:', error);
+        // console.error removed
         throw new Error(`Database error: ${error.message}. Please ensure the 'surveys' table exists.`);
       }
 
@@ -212,7 +212,7 @@ const QuestionnairesPage: React.FC = () => {
       setShowSurveyBuilder(false);
       setEditingSurvey(undefined);
     } catch (err: any) {
-      console.error('Error saving survey:', err);
+      // console.error removed
       setError(err.message || 'Failed to save survey. Please try again.');
     } finally {
       setBuilderLoading(false);
@@ -283,7 +283,7 @@ const QuestionnairesPage: React.FC = () => {
         ...prevQuestionnaires
       ]);
     } catch (err) {
-      console.error('Error duplicating questionnaire:', err);
+      // console.error removed
       setError('Failed to duplicate questionnaire. Please try again.');
     } finally {
       setLoading(false);

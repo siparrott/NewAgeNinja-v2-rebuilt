@@ -2468,14 +2468,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   let lastEmailImportTime = 0;
   
   const startBackgroundEmailImport = () => {
+    // DISABLED: Background email import to eliminate console output
     // Only start if not already running
     if (emailImportInterval) {
       clearInterval(emailImportInterval);
     }
     
+    // DISABLED FOR CLEAN CONSOLE
+    return;
+    
     emailImportInterval = setInterval(async () => {
       try {
-        console.log('🔄 Background email import started...');
+        // Background email import started...
         
         const importedEmails = await importEmailsFromIMAP({
           host: 'imap.easyname.com',
@@ -2507,7 +2511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: email.isRead ? 'read' : 'unread'
               });
               newEmailCount++;
-              console.log(`📧 Imported new email: ${email.subject} from ${email.from}`);
+              // Imported new email: ${email.subject} from ${email.from}
             } catch (error) {
               console.error('Failed to save email:', error);
             }
@@ -2515,15 +2519,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         if (newEmailCount > 0) {
-          console.log(`✅ Background import completed: ${newEmailCount} new emails imported`);
+          // Background import completed: ${newEmailCount} new emails imported
           lastEmailImportTime = Date.now();
         }
       } catch (error) {
-        console.error('❌ Background email import failed:', error);
+        // Background email import failed: error
       }
     }, 5 * 60 * 1000); // Run every 5 minutes
     
-    console.log('🎯 Background email import service started (every 5 minutes)');
+    // Background email import service started (every 5 minutes)
   };
 
   // Start background email import when server starts

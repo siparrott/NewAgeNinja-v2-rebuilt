@@ -84,7 +84,7 @@ const QuestionnairesPage: React.FC = () => {
       setFilteredQuestionnaires(sampleData);
       
     } catch (err) {
-      console.error('Error fetching questionnaires:', err);
+      // console.error removed
       setError('Failed to load questionnaires. Please try again.');
     } finally {
       setLoading(false);
@@ -116,7 +116,7 @@ const QuestionnairesPage: React.FC = () => {
       setFilteredQuestionnaires(prev => prev.filter(q => q.id !== id));
       setDeleteConfirmation(null);
     } catch (err) {
-      console.error('Error deleting questionnaire:', err);
+      // console.error removed
       setError('Failed to delete questionnaire. Please try again.');
     } finally {
       setLoading(false);
@@ -147,7 +147,7 @@ const QuestionnairesPage: React.FC = () => {
       setFilteredQuestionnaires(prev => [newQuestionnaire, ...prev]);
       
     } catch (err) {
-      console.error('Error duplicating questionnaire:', err);
+      // console.error removed
       setError('Failed to duplicate questionnaire. Please try again.');
     } finally {
       setLoading(false);

@@ -28,7 +28,7 @@ export async function getLeads(status?: 'NEW' | 'CONTACTED' | 'CONVERTED') {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API Error Response:', errorText);
+      // console.error removed
       throw new Error(`Failed to fetch leads: ${response.status} - ${errorText}`);
     }
     
@@ -51,7 +51,7 @@ export async function getLeads(status?: 'NEW' | 'CONTACTED' | 'CONVERTED') {
     // Data transformation completed
     return transformedData;
   } catch (error) {
-    console.error('Error fetching leads:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -72,7 +72,7 @@ export async function updateLeadStatus(id: string, status: 'NEW' | 'CONTACTED' |
     
     return await response.json();
   } catch (error) {
-    console.error('Error updating lead status:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -89,7 +89,7 @@ export async function deleteLead(id: string) {
     
     return true;
   } catch (error) {
-    console.error('Error deleting lead:', error);
+    // console.error removed
     throw error;
   }
 }

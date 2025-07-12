@@ -155,7 +155,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ galleryId, onUploadComple
         setUploading(false);
       }, 1000);
     } catch (err) {
-      console.error('Error uploading images:', err);
+      // console.error removed
       setError(err instanceof Error ? err.message : 'Failed to upload images. Please try again.');
       setUploading(false);
       setUploadProgress(0);

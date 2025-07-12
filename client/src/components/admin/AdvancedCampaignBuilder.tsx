@@ -115,7 +115,7 @@ const AdvancedCampaignBuilder: React.FC<AdvancedCampaignBuilderProps> = ({
       setTemplates(templatesData);
       setSegments(segmentsData);
     } catch (error) {
-      console.error('Error loading data:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }
@@ -128,7 +128,7 @@ const AdvancedCampaignBuilder: React.FC<AdvancedCampaignBuilderProps> = ({
       const suggestions = await generateSubjectLine(campaignData.content, 'photography clients');
       setAiSuggestions(suggestions);
     } catch (error) {
-      console.error('Error generating subject lines:', error);
+      // console.error removed
     }
   };
 
@@ -139,7 +139,7 @@ const AdvancedCampaignBuilder: React.FC<AdvancedCampaignBuilderProps> = ({
       const prediction = await predictEngagement(campaignData.id);
       setEngagementPrediction(prediction);
     } catch (error) {
-      console.error('Error predicting engagement:', error);
+      // console.error removed
     }
   };
 
@@ -166,7 +166,7 @@ const AdvancedCampaignBuilder: React.FC<AdvancedCampaignBuilderProps> = ({
 
       onSave(savedCampaign);
     } catch (error) {
-      console.error('Error saving campaign:', error);
+      // console.error removed
     } finally {
       setSaving(false);
     }

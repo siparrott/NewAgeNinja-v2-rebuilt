@@ -66,7 +66,7 @@ const EmailAnalyticsDashboard: React.FC = () => {
       setInsights(insightsData);
       setRecommendations(recommendationsData);
     } catch (error) {
-      console.error('Error loading analytics:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }

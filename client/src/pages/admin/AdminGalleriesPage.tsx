@@ -85,7 +85,7 @@ const AdminGalleriesPage: React.FC = () => {
       ];
       setGalleries(mockGalleries);
     } catch (error) {
-      console.error('Error fetching galleries:', error);
+      // console.error removed
     } finally {
       setLoading(false);
     }

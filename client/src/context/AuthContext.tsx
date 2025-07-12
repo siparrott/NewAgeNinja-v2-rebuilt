@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        console.error('Error getting session:', error);
+        // console.error removed
       }
       setUser(session?.user ?? null);
       checkUserRole(session?.user ?? null);
@@ -53,14 +53,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error) {
-        console.error('Error checking admin status:', error);
+        // console.error removed
         setIsAdmin(false);
         return;
       }
 
       setIsAdmin(data?.is_admin ?? false);
     } catch (err) {
-      console.error('Error checking admin status:', err);
+      // console.error removed
       setIsAdmin(false);
     }
   };
@@ -81,11 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        console.error('Sign in error details:', {
-          message: error.message,
-          status: error.status,
-          details: error
-        });
+        // console.error removed
         
         // Check if this is a project paused error
         if (isProjectPausedError(error)) {
@@ -110,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Sign in successful
     } catch (err) {
-      console.error('Sign in failed:', err);
+      // console.error removed
       throw err;
     }
   };
@@ -141,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
     } catch (err) {
-      console.error('Sign up failed:', err);
+      // console.error removed
       throw err;
     }
   };

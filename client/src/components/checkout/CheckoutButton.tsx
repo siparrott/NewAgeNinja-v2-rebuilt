@@ -23,7 +23,7 @@ const CheckoutButton: React.FC<CheckoutButtonProps> = ({ productId, className, c
 
       await createCheckoutSession(product.priceId, product.mode);
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      // console.error removed
       alert('Failed to start checkout process. Please try again.');
     } finally {
       setLoading(false);

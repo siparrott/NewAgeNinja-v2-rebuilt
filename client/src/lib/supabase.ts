@@ -36,14 +36,14 @@ export const testSupabaseConnection = async () => {
       clearTimeout(timeoutId);
       
       if (error) {
-        console.error('Supabase auth test failed:', error);
+        // console.error removed
         return { success: false, error: error.message };
       }
       
       // Supabase auth connection successful
     } catch (authError) {
       clearTimeout(timeoutId);
-      console.error('Supabase auth connection failed:', authError);
+      // console.error removed
       
       // Don't fail completely on auth errors, try database test
       if (authError.name === 'AbortError') {
@@ -65,13 +65,13 @@ export const testSupabaseConnection = async () => {
       clearTimeout(dbTimeoutId);
       
       if (dbError) {
-        console.error('Database connectivity test failed:', dbError);
+        // console.error removed
         return { success: false, error: `Database error: ${dbError.message}` };
       }
       
       // Database connectivity test successful
     } catch (dbErr) {
-      console.error('Database connectivity test failed:', dbErr);
+      // console.error removed
       
       if (dbErr.name === 'AbortError') {
         return { success: false, error: 'Database connection timeout - please check your Supabase project status' };
@@ -83,7 +83,7 @@ export const testSupabaseConnection = async () => {
     // Supabase connection test successful
     return { success: true };
   } catch (err) {
-    console.error('Supabase connection test failed:', err);
+    // console.error removed
     
     if (err.name === 'AbortError') {
       return { success: false, error: 'Connection timeout - please check your network connection' };
@@ -153,7 +153,7 @@ export const checkSupabaseProjectStatus = async () => {
         };
       }
     } catch (authError) {
-      console.warn('Auth endpoint check failed:', authError);
+      // console.warn removed
       // Don't fail the entire check if auth endpoint fails
     }
 
@@ -193,6 +193,6 @@ export const isProjectPausedError = (error: any): boolean => {
 
 // Test connection on initialization with error handling
 testSupabaseConnection().catch(error => {
-  console.warn('Initial Supabase connection test failed:', error);
+  // console.warn removed
   // Don't throw here to prevent app from crashing on startup
 });

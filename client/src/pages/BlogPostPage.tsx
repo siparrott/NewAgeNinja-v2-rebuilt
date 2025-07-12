@@ -60,7 +60,7 @@ const BlogPostPage: React.FC = () => {
       // Fetch related posts
       fetchRelatedPosts(data.id);
     } catch (err) {
-      console.error('Error fetching post:', err);
+      // console.error removed
       setError('Failed to load blog post. Please try again later.');
     } finally {
       setLoading(false);
@@ -76,7 +76,7 @@ const BlogPostPage: React.FC = () => {
         setRelatedPosts(data.posts || []);
       }
     } catch (err) {
-      console.error('Error fetching related posts:', err);
+      // console.error removed
     }
   };
 
@@ -197,7 +197,7 @@ const BlogPostPage: React.FC = () => {
                 className="w-full h-auto rounded-lg shadow-lg max-h-96 object-cover"
                 loading="lazy"
                 onError={(e) => {
-                  console.error('Failed to load image:', post.imageUrl);
+                  // console.error removed
                   const parent = e.currentTarget.parentElement;
                   if (parent) {
                     parent.innerHTML = `
@@ -243,7 +243,7 @@ const BlogPostPage: React.FC = () => {
                           className="w-full h-full object-cover"
                           loading="lazy"
                           onError={(e) => {
-                            console.error('Failed to load related post image:', relatedPost.imageUrl);
+                            // console.error removed
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement!.classList.add('bg-gray-200');
                             e.currentTarget.parentElement!.classList.add('flex');

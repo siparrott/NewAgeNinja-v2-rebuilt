@@ -47,7 +47,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error creating thread:', error)
+    // console.error removed
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -160,7 +160,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error sending message:', error)
+    // console.error removed
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

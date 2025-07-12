@@ -66,7 +66,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           setUnreadEmailsCount(emails.length);
         }
       } catch (error) {
-        console.error('Error fetching counts:', error);
+        // console.error removed
       }
     };
 

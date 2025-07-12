@@ -112,7 +112,7 @@ export default function AdminVoucherSalesPageV2() {
 
   // Simple toast replacement
   const toast = ({ title, description, variant }: { title: string; description: string; variant?: string }) => {
-    console.log(`${variant === 'destructive' ? '❌' : '✅'} ${title}: ${description}`);
+    // console.log removed
     alert(`${title}: ${description}`);
   };
 

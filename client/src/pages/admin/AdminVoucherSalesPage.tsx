@@ -61,7 +61,7 @@ type DiscountCouponFormData = z.infer<typeof discountCouponFormSchema>;
 export default function AdminVoucherSalesPage() {
   // Simple toast replacement
   const toast = ({ title, description, variant }: { title: string; description: string; variant?: string }) => {
-    console.log(`${variant === 'destructive' ? '❌' : '✅'} ${title}: ${description}`);
+    // console.log removed
     alert(`${title}: ${description}`);
   };
   const [activeTab, setActiveTab] = useState("products");

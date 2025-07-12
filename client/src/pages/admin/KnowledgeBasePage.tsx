@@ -105,7 +105,7 @@ const KnowledgeBasePage: React.FC = () => {
         setKnowledgeEntries(data);
       }
     } catch (error) {
-      console.error('Failed to fetch knowledge base:', error);
+      // console.error removed
       // For now, use sample data
       setKnowledgeEntries([
         {
@@ -147,7 +147,7 @@ const KnowledgeBasePage: React.FC = () => {
         setAssistants(data);
       }
     } catch (error) {
-      console.error('Failed to fetch assistants:', error);
+      // console.error removed
       // Sample data
       setAssistants([
         {

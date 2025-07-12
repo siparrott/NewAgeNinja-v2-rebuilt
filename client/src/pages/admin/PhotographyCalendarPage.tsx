@@ -52,16 +52,16 @@ const PhotographyCalendarPage: React.FC = () => {
       });
 
       if (response.ok) {
-        console.log('Session saved successfully');
+        // console.log removed
         setShowSessionForm(false);
         setEditingSession(null);
         // Refresh the calendar data
         window.location.reload();
       } else {
-        console.error('Failed to save session');
+        // console.error removed
       }
     } catch (error) {
-      console.error('Error saving session:', error);
+      // console.error removed
     }
   };
 

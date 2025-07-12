@@ -94,7 +94,7 @@ const ClientProfilePage: React.FC = () => {
         
         setBookings(bookingsData || []);
       } catch (err) {
-        console.log('Bookings table not available');
+        // console.log removed
       }
       
       // Fetch invoices (if invoices table exists)
@@ -107,11 +107,11 @@ const ClientProfilePage: React.FC = () => {
         
         setInvoices(invoicesData || []);
       } catch (err) {
-        console.log('Invoices table not available');
+        // console.log removed
       }
       
     } catch (err: any) {
-      console.error('Error fetching client data:', err);
+      // console.error removed
       setError(err.message || 'Failed to load client data');
     } finally {
       setLoading(false);
@@ -133,7 +133,7 @@ const ClientProfilePage: React.FC = () => {
       
       navigate('/admin/clients');
     } catch (err: any) {
-      console.error('Error deleting client:', err);
+      // console.error removed
       alert('Failed to delete client. Please try again.');
     }
   };

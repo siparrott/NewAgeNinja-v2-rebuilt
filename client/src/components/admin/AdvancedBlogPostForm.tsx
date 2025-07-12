@@ -93,7 +93,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
       if (error) throw error;
       setAvailableTags(data || []);
     } catch (err) {
-      console.error('Error fetching tags:', err);
+      // console.error removed
     }
   };
 
@@ -124,7 +124,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
       
       handleChange('cover_image', publicUrl);
     } catch (err) {
-      console.error('Error uploading image:', err);
+      // console.error removed
       setError('Failed to upload image. Please try again.');
     } finally {
       setImageUploading(false);
@@ -224,7 +224,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
       
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Validation error details:', errorData);
+        // console.error removed
         throw new Error(errorData.error || 'Failed to save post');
       }
       
@@ -235,7 +235,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
       }, 1500);
       
     } catch (err) {
-      console.error('Error saving post:', err);
+      // console.error removed
       setError(err instanceof Error ? err.message : 'An error occurred while saving the post');
     } finally {
       setLoading(false);

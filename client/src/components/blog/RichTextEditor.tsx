@@ -52,7 +52,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const imageUrl = await uploadImage(file);
       execCommand('insertHTML', `<img src="${imageUrl}" alt="Uploaded image" class="max-w-full h-auto my-4 rounded" />`);
     } catch (error) {
-      console.error('Error uploading image:', error);
+      // console.error removed
       alert('Failed to upload image. Please try again.');
     } finally {
       setImageUploading(false);

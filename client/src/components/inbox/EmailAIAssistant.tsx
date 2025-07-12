@@ -175,7 +175,7 @@ const EmailAIAssistant: React.FC<EmailAIAssistantProps> = ({
 
       setInsights(newInsights);
     } catch (error) {
-      console.error('Error generating insights:', error);
+      // console.error removed
     } finally {
       setLoading(false);
       setProcessingMessage('');
@@ -266,7 +266,7 @@ const EmailAIAssistant: React.FC<EmailAIAssistantProps> = ({
 
       setSuggestions(newSuggestions);
     } catch (error) {
-      console.error('Error generating suggestions:', error);
+      // console.error removed
     }
   };
 
@@ -291,7 +291,7 @@ const EmailAIAssistant: React.FC<EmailAIAssistantProps> = ({
 
       setAnalyticsData(analytics);
     } catch (error) {
-      console.error('Error generating analytics:', error);
+      // console.error removed
     }
   };
 

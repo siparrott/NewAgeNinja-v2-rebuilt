@@ -103,7 +103,7 @@ export async function uploadCSV(file: File): Promise<{ importId: string; headers
     formData.append('file', file);
     
     const apiUrl = getApiUrl();
-    console.log('Uploading to:', `${apiUrl}/upload`);
+    // console.log removed
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
@@ -128,7 +128,7 @@ export async function uploadCSV(file: File): Promise<{ importId: string; headers
           errorMessage = errorData.error || errorData.message || errorMessage;
         } catch (parseError) {
           // If we can't parse the error response, use the status text
-          console.warn('Could not parse error response:', parseError);
+          // console.warn removed
         }
         
         // Provide specific error messages for common HTTP status codes
@@ -173,7 +173,7 @@ export async function uploadCSV(file: File): Promise<{ importId: string; headers
     }
     
   } catch (error) {
-    console.error('Error uploading CSV:', error);
+    // console.error removed
     
     // Re-throw with more context if it's a generic error
     if (error instanceof Error) {
@@ -225,7 +225,7 @@ export async function mapColumns(importId: string, columnMapping: ColumnMapping)
           const errorData = await response.json();
           errorMessage = errorData.error || errorData.message || errorMessage;
         } catch (parseError) {
-          console.warn('Could not parse error response:', parseError);
+          // console.warn removed
         }
         
         throw new Error(errorMessage);
@@ -248,7 +248,7 @@ export async function mapColumns(importId: string, columnMapping: ColumnMapping)
     }
     
   } catch (error) {
-    console.error('Error mapping columns:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -281,7 +281,7 @@ export async function getImportStatus(importId: string): Promise<ImportStatus> {
         const errorData = await response.json();
         errorMessage = errorData.error || errorData.message || errorMessage;
       } catch (parseError) {
-        console.warn('Could not parse error response:', parseError);
+        // console.warn removed
       }
       
       throw new Error(errorMessage);
@@ -289,7 +289,7 @@ export async function getImportStatus(importId: string): Promise<ImportStatus> {
     
     return await response.json();
   } catch (error) {
-    console.error('Error getting import status:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -319,7 +319,7 @@ export async function getErrorFile(errorFileUrl: string): Promise<Blob> {
     
     return await response.blob();
   } catch (error) {
-    console.error('Error downloading error file:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -353,7 +353,7 @@ export async function saveImportPreset(name: string, mapping: ColumnMapping): Pr
     
     return data;
   } catch (error) {
-    console.error('Error saving import preset:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -382,7 +382,7 @@ export async function getImportPresets(): Promise<ImportPreset[]> {
     
     return data || [];
   } catch (error) {
-    console.error('Error fetching import presets:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -411,7 +411,7 @@ export async function getImportLogs(): Promise<any[]> {
     
     return data || [];
   } catch (error) {
-    console.error('Error fetching import logs:', error);
+    // console.error removed
     throw error;
   }
 }

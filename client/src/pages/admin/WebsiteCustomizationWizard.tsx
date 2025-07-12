@@ -86,7 +86,7 @@ const WebsiteCustomizationWizard: React.FC = () => {
       setScrapedData(data);
       setCurrentStep(2);
     } catch (error) {
-      console.error('Error scraping website:', error);
+      // console.error removed
     } finally {
       setIsLoading(false);
     }

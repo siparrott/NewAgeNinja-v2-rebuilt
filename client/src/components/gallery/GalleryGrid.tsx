@@ -134,7 +134,7 @@ const GalleryGrid: React.FC<GalleryGridProps> = ({
 
       setImages(data || []);
     } catch (err) {
-      console.error('Error fetching images:', err);
+      // console.error removed
       setError('Failed to load images');
     } finally {
       setLoading(false);
@@ -286,7 +286,7 @@ const GalleryGrid: React.FC<GalleryGridProps> = ({
           break;
       }
     } catch (err) {
-      console.error('Bulk action error:', err);
+      // console.error removed
       setError('Failed to perform bulk action');
     }
   };

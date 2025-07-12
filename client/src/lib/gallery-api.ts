@@ -23,7 +23,7 @@ export async function getGalleries(): Promise<Gallery[]> {
     const galleries = await response.json();
     return galleries;
   } catch (error) {
-    console.error('Error fetching galleries:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -44,7 +44,7 @@ export async function getGalleryById(id: string): Promise<Gallery> {
     if (error) throw error;
     return mapDatabaseToGallery(data);
   } catch (error) {
-    console.error(`Error fetching gallery with ID ${id}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -65,7 +65,7 @@ export async function getGalleryBySlug(slug: string): Promise<Gallery> {
 
     return await response.json();
   } catch (error) {
-    console.error(`Error fetching gallery with slug ${slug}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -73,7 +73,7 @@ export async function getGalleryBySlug(slug: string): Promise<Gallery> {
 // Create a new gallery (admin only)
 export async function createGallery(galleryData: GalleryFormData): Promise<Gallery> {
   try {
-    console.log('createGallery called with:', galleryData);
+    // console.log removed
     
     // Handle cover image conversion to data URL if provided
     let coverImageUrl = null;
@@ -87,9 +87,9 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
         });
         
         coverImageUrl = await dataUrlPromise;
-        console.log('Cover image converted to data URL successfully');
+        // console.log removed
       } catch (uploadError) {
-        console.error('Error processing cover image:', uploadError);
+        // console.error removed
       }
     }
 
@@ -108,7 +108,7 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
       coverImage: coverImageUrl,
     };
 
-    console.log('Sending data to backend API:', apiData);
+    // console.log removed
 
     const response = await fetch('/api/galleries', {
       method: 'POST',
@@ -124,10 +124,10 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
     }
 
     const gallery = await response.json();
-    console.log('Gallery created successfully:', gallery);
+    // console.log removed
     return gallery;
   } catch (error) {
-    console.error('Error creating gallery:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -167,7 +167,7 @@ export async function updateGallery(id: string, galleryData: GalleryFormData): P
       .single();    if (error) throw error;
     return mapDatabaseToGallery(data);
   } catch (error) {
-    console.error(`Error updating gallery ${id}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -175,7 +175,7 @@ export async function updateGallery(id: string, galleryData: GalleryFormData): P
 // Delete a gallery (admin only)
 export async function deleteGallery(id: string): Promise<void> {
   try {
-    console.log(`Attempting to delete gallery with ID: ${id}`);
+    // console.log removed
     
     const response = await fetch(`/api/galleries/${id}`, {
       method: 'DELETE',
@@ -184,18 +184,18 @@ export async function deleteGallery(id: string): Promise<void> {
       },
     });
 
-    console.log(`Delete response status: ${response.status}`);
+    // console.log removed
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error(`Delete failed - Status: ${response.status}, Error: ${errorData}`);
+      // console.error removed
       throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
     }
 
     const result = await response.json();
-    console.log('Gallery deleted successfully:', id, result);
+    // console.log removed
   } catch (error) {
-    console.error(`Error deleting gallery ${id}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -234,7 +234,7 @@ export async function uploadGalleryImages(galleryId: string, files: File[]): Pro
 
       return await response.json();
     } catch (edgeFunctionError) {
-      console.warn('Edge Function upload failed, falling back to direct upload:', edgeFunctionError);
+      // console.warn removed
       
       // Fall back to direct upload if Edge Function fails
       const uploadedImages = [];
@@ -299,7 +299,7 @@ export async function uploadGalleryImages(galleryId: string, files: File[]): Pro
       return uploadedImages;
     }
   } catch (error) {
-    console.error('Error uploading gallery images:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -322,7 +322,7 @@ export async function getGalleryImages(galleryId: string): Promise<GalleryImage[
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error(`Error fetching images for gallery ${galleryId}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -345,7 +345,7 @@ export async function getGalleryVisitors(galleryId: string): Promise<GalleryVisi
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error(`Error fetching visitors for gallery ${galleryId}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -368,7 +368,7 @@ export async function getGalleryAccessLogs(galleryId: string): Promise<GalleryAc
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error(`Error fetching access logs for gallery ${galleryId}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -394,7 +394,7 @@ export async function updateImageOrder(galleryId: string, imageIds: string[]): P
 
     if (error) throw error;
   } catch (error) {
-    console.error(`Error updating image order for gallery ${galleryId}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -439,7 +439,7 @@ export async function deleteGalleryImage(imageId: string): Promise<void> {
         `${image.gallery_id}/thumb/${thumbPath}`
       ]);
   } catch (error) {
-    console.error(`Error deleting image ${imageId}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -470,7 +470,7 @@ export async function setGalleryCoverImage(galleryId: string, imageId: string): 
 
     if (updateError) throw updateError;
   } catch (error) {
-    console.error(`Error setting cover image for gallery ${galleryId}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -497,7 +497,7 @@ export async function getGalleryStats(galleryId: string): Promise<GalleryStats> 
 
     return await response.json();
   } catch (error) {
-    console.error(`Error fetching stats for gallery ${galleryId}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -522,7 +522,7 @@ export async function authenticateGallery(slug: string, authData: GalleryAuthDat
 
     return await response.json();
   } catch (error) {
-    console.error(`Error authenticating to gallery ${slug}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -543,7 +543,7 @@ export async function getPublicGalleryImages(slug: string, token: string): Promi
 
     return await response.json();
   } catch (error) {
-    console.error(`Error fetching public images for gallery ${slug}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -563,7 +563,7 @@ export async function toggleImageFavorite(imageId: string, token: string): Promi
       throw new Error(error.error || 'Failed to toggle favorite status');
     }
   } catch (error) {
-    console.error(`Error toggling favorite for image ${imageId}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -584,7 +584,7 @@ export async function downloadGallery(slug: string, token: string): Promise<Blob
 
     return await response.blob();
   } catch (error) {
-    console.error(`Error downloading gallery ${slug}:`, error);
+    // console.error removed
     throw error;
   }
 }
@@ -604,7 +604,7 @@ export async function getPublicGalleries(limit?: number): Promise<Gallery[]> {
     
     return result;
   } catch (error) {
-    console.error('Error fetching public galleries:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -644,7 +644,7 @@ async function uploadGalleryCoverImage(galleryId: string, file: File): Promise<s
     
     return publicUrl;
   } catch (error) {
-    console.error('Error uploading cover image:', error);
+    // console.error removed
     throw error;
   }
 }

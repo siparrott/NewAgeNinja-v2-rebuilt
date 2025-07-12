@@ -11,7 +11,7 @@ export async function getAllClients(): Promise<Client[]> {
       .order('name', { ascending: true });
 
     if (error) {
-      console.error('Error fetching clients from crm_clients:', error);
+      // console.error removed
       
       // Fallback to legacy clients table
       const { data: legacyData, error: legacyError } = await supabase
@@ -20,7 +20,7 @@ export async function getAllClients(): Promise<Client[]> {
         .order('first_name', { ascending: true });
       
       if (legacyError) {
-        console.error('Error fetching clients from legacy table:', legacyError);
+        // console.error removed
         throw legacyError;
       }
       
@@ -64,7 +64,7 @@ export async function getAllClients(): Promise<Client[]> {
       updatedAt: row.updated_at,
     }));
   } catch (error) {
-    console.error('Error fetching clients:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -79,7 +79,7 @@ export async function getHighValueClients(limit = 10): Promise<Client[]> {
       .limit(limit);
 
     if (error) {
-      console.error('Error fetching high value clients from crm_clients:', error);
+      // console.error removed
       
       // Fallback to legacy clients table
       const { data: legacyData, error: legacyError } = await supabase
@@ -130,7 +130,7 @@ export async function getHighValueClients(limit = 10): Promise<Client[]> {
       updatedAt: row.updated_at,
     }));
   } catch (error) {
-    console.error('Error fetching high value clients:', error);
+    // console.error removed
     throw error;
   }
 }
@@ -185,7 +185,7 @@ export async function createClient(client: Omit<Client, 'id' | 'createdAt' | 'up
       updatedAt: data.updated_at,
     };
   } catch (error) {
-    console.error('Error creating client:', error);
+    // console.error removed
     throw error;
   }
 }

@@ -26,7 +26,7 @@ const PublicGalleriesPage: React.FC = () => {
       const data = await getPublicGalleries();
       setGalleries(data);
     } catch (err) {
-      console.error('Error fetching galleries:', err);
+      // console.error removed
       setError('Failed to load galleries. Please try again.');
     } finally {
       setLoading(false);

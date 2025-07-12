@@ -6,7 +6,7 @@ import { setupVite, serveStatic, log } from "./vite";
 // This is NOT a demo - it's the live business website
 if (!process.env.DEMO_MODE || process.env.DEMO_MODE === 'true') {
   process.env.DEMO_MODE = 'false';
-  console.log('🎯 New Age Fotografie CRM - Live Production Site (Demo Mode Disabled)');
+  // New Age Fotografie CRM - Live Production Site (Demo Mode Disabled)
 }
 
 const app = express();

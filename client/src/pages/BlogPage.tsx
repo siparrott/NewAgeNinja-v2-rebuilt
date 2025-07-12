@@ -108,7 +108,7 @@ const BlogPage: React.FC = () => {
         setTags(uniqueTags);
       }
     } catch (err) {
-      console.error('Error fetching blog data:', err);
+      // console.error removed
       setError('Failed to load blog posts. Please try again later.');
     } finally {
       setLoading(false);
@@ -203,7 +203,7 @@ const BlogPage: React.FC = () => {
                           className="w-full h-full object-cover transition-transform hover:scale-105"
                           loading="lazy"
                           onError={(e) => {
-                            console.error('Failed to load image:', post.imageUrl);
+                            // console.error removed
                             // Hide broken image and show placeholder
                             e.currentTarget.style.display = 'none';
                             const parent = e.currentTarget.parentElement;

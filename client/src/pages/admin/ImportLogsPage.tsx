@@ -40,7 +40,7 @@ const ImportLogsPage: React.FC = () => {
       const importLogs = await getImportLogs();
       setLogs(importLogs);
     } catch (err) {
-      console.error('Error fetching import logs:', err);
+      // console.error removed
       setError('Failed to load import logs. Please try again.');
     } finally {
       setLoading(false);

@@ -31,7 +31,7 @@ export class GalleryEnhancedAPI {
       
       return (data || []).map(this.mapDatabaseToGallery);
     } catch (error) {
-      console.error('Error fetching galleries:', error);
+      // console.error removed
       throw error;
     }
   }
@@ -57,7 +57,7 @@ export class GalleryEnhancedAPI {
       if (error) throw error;
       return this.mapDatabaseToGallery(data);
     } catch (error) {
-      console.error('Error fetching gallery:', error);
+      // console.error removed
       throw error;
     }
   }
@@ -97,7 +97,7 @@ export class GalleryEnhancedAPI {
       if (error) throw error;
       return this.mapDatabaseToGallery(gallery);
     } catch (error) {
-      console.error('Error creating gallery:', error);
+      // console.error removed
       throw error;
     }
   }
@@ -138,7 +138,7 @@ export class GalleryEnhancedAPI {
       if (error) throw error;
       return this.mapDatabaseToGallery(data);
     } catch (error) {
-      console.error('Error updating gallery:', error);
+      // console.error removed
       throw error;
     }
   }
@@ -159,7 +159,7 @@ export class GalleryEnhancedAPI {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error deleting gallery:', error);
+      // console.error removed
       throw error;
     }
   }
@@ -225,7 +225,7 @@ export class GalleryEnhancedAPI {
 
       return uploadedImages;
     } catch (error) {
-      console.error('Error uploading images:', error);
+      // console.error removed
       throw error;
     }
   }
@@ -242,7 +242,7 @@ export class GalleryEnhancedAPI {
       if (error) throw error;
       return (data || []).map(this.mapDatabaseToGalleryImage);
     } catch (error) {
-      console.error('Error fetching gallery images:', error);
+      // console.error removed
       throw error;
     }
   }
@@ -272,7 +272,7 @@ export class GalleryEnhancedAPI {
       if (error) throw error;
       return (data || []).map(this.mapDatabaseToGalleryVisitor);
     } catch (error) {
-      console.error('Error sharing gallery:', error);
+      // console.error removed
       throw error;
     }
   }
@@ -317,7 +317,7 @@ export class GalleryEnhancedAPI {
         topImages: []
       };
     } catch (error) {
-      console.error('Error fetching gallery stats:', error);
+      // console.error removed
       throw error;
     }
   }

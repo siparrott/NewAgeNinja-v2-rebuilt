@@ -61,7 +61,7 @@ const InvoiceViewer: React.FC<InvoiceViewerProps> = ({
       
       setInvoice(formattedInvoice);
     } catch (err) {
-      console.error('Error fetching invoice:', err);
+      // console.error removed
       setError('Failed to load invoice');
     } finally {
       setLoading(false);

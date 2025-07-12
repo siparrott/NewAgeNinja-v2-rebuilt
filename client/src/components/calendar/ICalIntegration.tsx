@@ -64,7 +64,7 @@ const ICalIntegration: React.FC<ICalIntegrationProps> = ({
         setSelectedCalendar(defaultCal.id);
       }
     } catch (err) {
-      console.error('Error loading calendars:', err);
+      // console.error removed
       setError('Failed to load calendars');
     }
   };
@@ -96,7 +96,7 @@ const ICalIntegration: React.FC<ICalIntegrationProps> = ({
         setSuccess('Calendar URL copied to clipboard!');
       }
     } catch (err) {
-      console.error('Error exporting calendar:', err);
+      // console.error removed
       setError('Failed to export calendar');
     } finally {
       setLoading(false);
@@ -114,12 +114,12 @@ const ICalIntegration: React.FC<ICalIntegrationProps> = ({
       setSuccess(`Successfully imported ${result.imported} events${result.errors.length > 0 ? ` with ${result.errors.length} warnings` : ''}`);
       
       if (result.errors.length > 0) {
-        console.warn('Import warnings:', result.errors);
+        // console.warn removed
       }
       
       onImportSuccess?.();
     } catch (err) {
-      console.error('Error importing calendar:', err);
+      // console.error removed
       setError('Failed to import calendar file');
     } finally {
       setLoading(false);
@@ -148,7 +148,7 @@ const ICalIntegration: React.FC<ICalIntegrationProps> = ({
       
       setSuccess('Sync test successful!');
     } catch (err) {
-      console.error('Error testing sync:', err);
+      // console.error removed
       setError('Sync test failed');
     } finally {
       setLoading(false);

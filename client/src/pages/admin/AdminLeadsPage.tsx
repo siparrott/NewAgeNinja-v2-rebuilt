@@ -47,7 +47,7 @@ const AdminLeadsPage: React.FC = () => {
       const data = await getLeads();
       setLeads(data);
     } catch (err) {
-      console.error('Error fetching leads:', err);
+      // console.error removed
       setError('Failed to load leads. Please ensure the database schema is deployed.');
       // Set empty array as fallback
       setLeads([]);
@@ -94,7 +94,7 @@ const AdminLeadsPage: React.FC = () => {
           : lead
       ));
     } catch (err) {
-      console.error('Error updating lead status:', err);
+      // console.error removed
       setError('Failed to update lead status. Please try again.');
     }
   };
@@ -133,7 +133,7 @@ const AdminLeadsPage: React.FC = () => {
         form_source: 'MANUAL'
       });
     } catch (err) {
-      console.error('Error creating lead:', err);
+      // console.error removed
       setError('Failed to create lead. Please try again.');
     }
   };
@@ -146,7 +146,7 @@ const AdminLeadsPage: React.FC = () => {
       setLeads(prevLeads => prevLeads.filter(lead => lead.id !== leadId));
       setDeleteConfirmation(null);
     } catch (err) {
-      console.error('Error deleting lead:', err);
+      // console.error removed
       setError('Failed to delete lead. Please try again.');
     }
   };
@@ -202,7 +202,7 @@ const AdminLeadsPage: React.FC = () => {
         status: 'NEW'
       });
     } catch (err) {
-      console.error('Error updating lead:', err);
+      // console.error removed
       setError('Failed to update lead. Please try again.');
     }
   };

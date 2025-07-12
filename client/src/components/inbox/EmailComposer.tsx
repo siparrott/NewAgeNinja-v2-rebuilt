@@ -189,7 +189,7 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
       });
       // Show success notification
     } catch (error) {
-      console.error('Failed to save draft:', error);
+      // console.error removed
       // Show error notification
     } finally {
       setSaving(false);
@@ -227,7 +227,7 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
       onSent?.(message);
       onClose();
     } catch (error) {
-      console.error('Failed to send email:', error);
+      // console.error removed
       // Show error notification
     } finally {
       setSending(false);
@@ -261,7 +261,7 @@ const EmailComposer: React.FC<EmailComposerProps> = ({
 
       onClose();
     } catch (error) {
-      console.error('Failed to schedule email:', error);
+      // console.error removed
     }
   };
 

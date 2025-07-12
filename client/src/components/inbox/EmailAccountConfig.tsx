@@ -306,7 +306,7 @@ const EmailAccountConfig: React.FC<EmailAccountConfigProps> = ({
 
       onClose();
     } catch (error) {
-      console.error('Error saving account:', error);
+      // console.error removed
       setErrors({ general: 'Failed to save account. Please try again.' });
     } finally {
       setSaving(false);
@@ -322,7 +322,7 @@ const EmailAccountConfig: React.FC<EmailAccountConfigProps> = ({
         onAccountDeleted?.(existingAccount.id);
         onClose();
       } catch (error) {
-        console.error('Error deleting account:', error);
+        // console.error removed
         setErrors({ general: 'Failed to delete account. Please try again.' });
       }
     }

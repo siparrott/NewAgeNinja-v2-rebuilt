@@ -58,7 +58,7 @@ const CustomizationPage: React.FC = () => {
   const CUSTOMIZATION_ASSISTANT_ID = 'asst_customization_helper_v1'; // Replace with your actual assistant ID
 
   const handleCustomizationChange = (changes: any) => {
-    console.log('AI Customization changes:', changes);
+    // console.log removed
     
     // Apply theme changes
     if (changes.theme) {
@@ -114,7 +114,7 @@ const CustomizationPage: React.FC = () => {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      console.error('Error saving theme settings:', err);
+      // console.error removed
       setError('Failed to save theme settings. Please try again.');
     } finally {
       setLoading(false);
@@ -133,7 +133,7 @@ const CustomizationPage: React.FC = () => {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      console.error('Error saving email settings:', err);
+      // console.error removed
       setError('Failed to save email settings. Please try again.');
     } finally {
       setLoading(false);

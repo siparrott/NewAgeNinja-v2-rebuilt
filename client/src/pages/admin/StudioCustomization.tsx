@@ -77,9 +77,9 @@ const StudioCustomization: React.FC = () => {
       // Here you would typically make an API call to save the template
       // await apiRequest('/api/studio/template', { method: 'PUT', body: { templateId } });
       
-      console.log('Template selected:', templateId);
+      // console.log removed
     } catch (error) {
-      console.error('Error selecting template:', error);
+      // console.error removed
     } finally {
       setSaving(false);
     }
@@ -96,9 +96,9 @@ const StudioCustomization: React.FC = () => {
     try {
       // Save configuration
       // await apiRequest('/api/studio/config', { method: 'PUT', body: config });
-      console.log('Configuration saved:', config);
+      // console.log removed
     } catch (error) {
-      console.error('Error saving configuration:', error);
+      // console.error removed
     } finally {
       setSaving(false);
     }

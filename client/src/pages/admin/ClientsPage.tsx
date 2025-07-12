@@ -90,7 +90,7 @@ const ClientsPage: React.FC = () => {
       
       setClients(mappedClients || []);
     } catch (err) {
-      console.error('Error fetching clients:', err);
+      // console.error removed
       setError('Failed to load clients. Please try again.');
     } finally {
       setLoading(false);
@@ -142,7 +142,7 @@ const ClientsPage: React.FC = () => {
       
       alert('Client deleted successfully');
     } catch (err: any) {
-      console.error('Error deleting client:', err);
+      // console.error removed
       alert('Failed to delete client. Please try again.');
     }
   };

@@ -82,35 +82,35 @@ const COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5a2b'
 
 // Processing functions for PostgreSQL data with correct field names
 const processRevenueByMonth = (invoices: any[]) => {
-  console.log('Processing invoices for revenue by month:', invoices);
+  // console.log removed
   const monthlyData = new Map();
   invoices.forEach(invoice => {
     const date = new Date(invoice.createdAt || invoice.created_at || invoice.issueDate);
     if (isNaN(date.getTime())) {
-      console.warn('Invalid date for invoice:', invoice);
+      // console.warn removed
       return;
     }
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const existing = monthlyData.get(monthKey) || { month: monthKey, revenue: 0, invoices: 0 };
     const revenue = parseFloat(invoice.total?.toString() || '0');
-    console.log(`Adding revenue ${revenue} for month ${monthKey}`);
+    // console.log removed
     existing.revenue += revenue;
     existing.invoices += 1;
     monthlyData.set(monthKey, existing);
   });
   const result = Array.from(monthlyData.values()).sort((a, b) => a.month.localeCompare(b.month));
-  console.log('Revenue by month result:', result);
+  // console.log removed
   return result;
 };
 
 const processRevenueByService = (invoices: any[]) => {
-  console.log('Processing invoices for revenue by service:', invoices);
+  // console.log removed
   const serviceData = new Map();
   let totalRevenue = 0;
   
   invoices.forEach(invoice => {
     const revenue = parseFloat(invoice.total?.toString() || '0');
-    console.log(`Processing invoice revenue: ${revenue}`);
+    // console.log removed
     totalRevenue += revenue;
     
     // Extract service type from invoice description or use default
@@ -124,7 +124,7 @@ const processRevenueByService = (invoices: any[]) => {
     ...item,
     percentage: totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0
   }));
-  console.log('Revenue by service result:', result, 'Total revenue:', totalRevenue);
+  // console.log removed
   return result;
 };
 
@@ -325,13 +325,13 @@ const ReportsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('overview');
 
   useEffect(() => {
-    console.log('🚀 ReportsPage mounted, triggering fetchComprehensiveReports');
+    // console.log removed
     fetchComprehensiveReports();
   }, [selectedTimeRange]);
 
   const fetchComprehensiveReports = async () => {
     try {
-      console.log('🔥 fetchComprehensiveReports started');
+      // console.log removed
       setLoading(true);
       setError(null);
 
@@ -385,28 +385,28 @@ const ReportsPage: React.FC = () => {
         await blogResult.value.json() : [];
       
       // Filter data by date range and status for PAID invoices only  
-      console.log('All invoices received:', invoices);
-      console.log('Start date for filtering:', startDate);
+      // console.log removed
+      // console.log removed
       const dateFilteredInvoices = invoices.filter((inv: any) => {
         const isPaid = inv.status === 'paid';
         const invoiceDate = new Date(inv.createdAt || inv.created_at || inv.issueDate);
         const isInDateRange = invoiceDate >= startDate;
-        console.log(`Invoice ${inv.id}: status=${inv.status}, isPaid=${isPaid}, date=${invoiceDate}, inRange=${isInDateRange}`);
+        // console.log removed
         return isPaid && isInDateRange;
       });
-      console.log('Filtered invoices:', dateFilteredInvoices);
+      // console.log removed
       
       // Debug: Calculate total revenue directly from filtered invoices
       const directTotalRevenue = dateFilteredInvoices.reduce((sum, inv) => {
         const revenue = parseFloat(inv.total?.toString() || '0');
-        console.log(`Invoice ${inv.id}: total=${inv.total}, parsed=${revenue}`);
+        // console.log removed
         return sum + revenue;
       }, 0);
-      console.log('Direct total revenue calculation:', directTotalRevenue);
+      // console.log removed
       
       // If we have the direct total, use it immediately for testing
       if (directTotalRevenue > 0) {
-        console.log('🎯 Using direct revenue calculation for immediate display');
+        // console.log removed
         const quickReportData: ComprehensiveReportData = {
           revenueByMonth: [{
             month: new Date().toLocaleString('default', { month: 'short', year: 'numeric' }),
@@ -511,10 +511,10 @@ const ReportsPage: React.FC = () => {
         voucherTypes
       };
 
-      console.log('Setting comprehensive report data:', comprehensiveData);
+      // console.log removed
       setReportData(comprehensiveData);
     } catch (err) {
-      console.error('Error fetching comprehensive reports:', err);
+      // console.error removed
       setError('Failed to load reports. Please try again.');
     } finally {
       setLoading(false);
@@ -540,7 +540,7 @@ const ReportsPage: React.FC = () => {
 
   const fetchReportData = async () => {
     // This function is kept for backward compatibility but disabled
-    console.warn('fetchReportData is deprecated, using fetchComprehensiveReports instead');
+    // console.warn removed
     return fetchComprehensiveReports();
   };
 
@@ -599,7 +599,7 @@ const ReportsPage: React.FC = () => {
       
       setReportData(mockData);
     } catch (err) {
-      console.error('Error fetching report data:', err);
+      // console.error removed
       setError('Failed to load report data. Please try again.');
     } finally {
       setLoading(false);
