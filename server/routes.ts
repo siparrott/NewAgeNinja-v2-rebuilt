@@ -299,7 +299,7 @@ function generateInvoiceHTML(invoice: any, client: any): string {
           ${invoice.discountAmount ? `
           <tr>
             <td>Rabatt:</td>
-            <td class="number">-€${parseFloat(invoice.discountAmount.toString()).toFixed(2)}</td>
+            <td class="number">-€${parseFloat(invoice.discountAmount?.toString() || '0').toFixed(2)}</td>
           </tr>
           ` : ''}
           <tr class="total-row">
@@ -1274,9 +1274,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const metrics = {
-        totalRevenue: Number(totalRevenue.toFixed(2)),
-        paidRevenue: Number(paidRevenue.toFixed(2)),
-        avgOrderValue: Number(avgOrderValue.toFixed(2)),
+        totalRevenue: Number((totalRevenue || 0).toFixed(2)),
+        paidRevenue: Number((paidRevenue || 0).toFixed(2)),
+        avgOrderValue: Number((avgOrderValue || 0).toFixed(2)),
         totalInvoices: invoices.length,
         paidInvoices: paidInvoices.length,
         activeLeads: leads.filter(lead => lead.status === 'new' || lead.status === 'contacted').length,
@@ -3002,7 +3002,7 @@ New Age Fotografie CRM System
           name: coupon.name,
           discountType: coupon.discountType,
           discountValue: coupon.discountValue,
-          discountAmount: discountAmount.toFixed(2)
+          discountAmount: (discountAmount || 0).toFixed(2)
         }
       });
     } catch (error) {
