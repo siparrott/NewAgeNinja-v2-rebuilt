@@ -824,3 +824,56 @@ export const insertCouponUsageSchema = createInsertSchema(couponUsage, {
 
 export type InsertCouponUsage = z.infer<typeof insertCouponUsageSchema>;
 export type CouponUsage = typeof couponUsage.$inferSelect;
+
+// Knowledge Base table
+export const knowledgeBase = pgTable("knowledge_base", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull(),
+  tags: text("tags").array().default([]),
+  isActive: boolean("is_active").default(true),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// OpenAI Assistants table
+export const openaiAssistants = pgTable("openai_assistants", {
+  id: text("id").primaryKey(), // OpenAI assistant ID
+  name: text("name").notNull(),
+  description: text("description"),
+  model: text("model").default("gpt-4o"),
+  instructions: text("instructions").notNull(),
+  isActive: boolean("is_active").default(true),
+  knowledgeBaseIds: text("knowledge_base_ids").array().default([]),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Knowledge Base schemas
+export const insertKnowledgeBaseSchema = createInsertSchema(knowledgeBase, {
+  title: z.string().min(1, "Title is required"),
+  content: z.string().min(1, "Content is required"),
+  category: z.string().min(1, "Category is required"),
+}).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export type InsertKnowledgeBase = z.infer<typeof insertKnowledgeBaseSchema>;
+export type KnowledgeBase = typeof knowledgeBase.$inferSelect;
+
+// OpenAI Assistant schemas
+export const insertOpenaiAssistantSchema = createInsertSchema(openaiAssistants, {
+  name: z.string().min(1, "Assistant name is required"),
+  instructions: z.string().min(1, "Instructions are required"),
+}).omit({ 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export type InsertOpenaiAssistant = z.infer<typeof insertOpenaiAssistantSchema>;
+export type OpenaiAssistant = typeof openaiAssistants.$inferSelect;

@@ -25,7 +25,9 @@ import {
   Globe,
   User,
   ExternalLink,
-  Bell
+  Bell,
+  BookOpen,
+  Bot
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -90,6 +92,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: Inbox, label: 'Inbox', path: '/admin/inbox', badge: unreadEmailsCount },
     { icon: ClipboardList, label: 'Questionnaires', path: '/admin/questionnaires' },
     { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
+    { icon: BookOpen, label: 'Knowledge Base', path: '/admin/knowledge-base' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
     { icon: Palette, label: 'Customization', path: '/admin/customization' },
     { icon: Palette, label: 'Studio Templates', path: '/admin/studio-templates' },

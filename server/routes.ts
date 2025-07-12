@@ -15,7 +15,11 @@ import {
   insertVoucherProductSchema,
   insertDiscountCouponSchema,
   insertVoucherSaleSchema,
-  galleryImages
+  galleryImages,
+  knowledgeBase,
+  openaiAssistants,
+  insertKnowledgeBaseSchema,
+  insertOpenaiAssistantSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { createClient } from '@supabase/supabase-js';
@@ -2416,6 +2420,152 @@ New Age Fotografie CRM System
       res.json(sale);
     } catch (error) {
       console.error("Error updating voucher sale:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ==================== KNOWLEDGE BASE ROUTES ====================
+  app.get("/api/knowledge-base", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const entries = await db.select().from(knowledgeBase);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching knowledge base:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/knowledge-base", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const result = insertKnowledgeBaseSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error.issues });
+      }
+
+      const [entry] = await db.insert(knowledgeBase).values({
+        ...result.data,
+        createdBy: req.user.id,
+      }).returning();
+
+      res.status(201).json(entry);
+    } catch (error) {
+      console.error("Error creating knowledge base entry:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/knowledge-base/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const result = insertKnowledgeBaseSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error.issues });
+      }
+
+      const [entry] = await db.update(knowledgeBase)
+        .set({
+          ...result.data,
+          updatedAt: new Date(),
+        })
+        .where(eq(knowledgeBase.id, req.params.id))
+        .returning();
+
+      if (!entry) {
+        return res.status(404).json({ error: "Knowledge base entry not found" });
+      }
+
+      res.json(entry);
+    } catch (error) {
+      console.error("Error updating knowledge base entry:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/knowledge-base/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const [entry] = await db.delete(knowledgeBase)
+        .where(eq(knowledgeBase.id, req.params.id))
+        .returning();
+
+      if (!entry) {
+        return res.status(404).json({ error: "Knowledge base entry not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting knowledge base entry:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ==================== OPENAI ASSISTANTS ROUTES ====================
+  app.get("/api/openai/assistants", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const assistants = await db.select().from(openaiAssistants);
+      res.json(assistants);
+    } catch (error) {
+      console.error("Error fetching OpenAI assistants:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/openai/assistants", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const result = insertOpenaiAssistantSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error.issues });
+      }
+
+      const [assistant] = await db.insert(openaiAssistants).values({
+        ...result.data,
+        createdBy: req.user.id,
+      }).returning();
+
+      res.status(201).json(assistant);
+    } catch (error) {
+      console.error("Error creating OpenAI assistant:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/openai/assistants/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const result = insertOpenaiAssistantSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: result.error.issues });
+      }
+
+      const [assistant] = await db.update(openaiAssistants)
+        .set({
+          ...result.data,
+          updatedAt: new Date(),
+        })
+        .where(eq(openaiAssistants.id, req.params.id))
+        .returning();
+
+      if (!assistant) {
+        return res.status(404).json({ error: "OpenAI assistant not found" });
+      }
+
+      res.json(assistant);
+    } catch (error) {
+      console.error("Error updating OpenAI assistant:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/openai/assistants/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const [assistant] = await db.delete(openaiAssistants)
+        .where(eq(openaiAssistants.id, req.params.id))
+        .returning();
+
+      if (!assistant) {
+        return res.status(404).json({ error: "OpenAI assistant not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting OpenAI assistant:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
