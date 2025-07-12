@@ -380,7 +380,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm font-medium">€{item.amount.toFixed(2)}</span>
+                      <span className="text-sm font-medium">€{(item.amount || 0).toFixed(2)}</span>
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -409,15 +409,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             <div className="w-64 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Subtotal:</span>
-                <span>€{formData.subtotal?.toFixed(2) || '0.00'}</span>
+                <span>€{(formData.subtotal || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Tax:</span>
-                <span>€{formData.tax_amount?.toFixed(2) || '0.00'}</span>
+                <span>€{(formData.tax_amount || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-lg font-semibold border-t pt-2">
                 <span>Total:</span>
-                <span>€{formData.total_amount?.toFixed(2) || '0.00'}</span>
+                <span>€{(formData.total_amount || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -533,7 +533,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </div>
                       </div>
                       <div className="text-lg font-semibold text-purple-600">
-                        €{item.price.toFixed(2)}
+                        €{(item.price || 0).toFixed(2)}
                       </div>
                     </div>
                   </div>

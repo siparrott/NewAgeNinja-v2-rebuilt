@@ -688,7 +688,7 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
                   </div>
 
                   <div className="mt-2 text-right text-sm text-gray-600">
-                    Total: {formData.currency} {calculateItemTotal(item).toFixed(2)}
+                    Total: {formData.currency} {(calculateItemTotal(item) || 0).toFixed(2)}
                   </div>
                 </div>
               ))}
@@ -698,13 +698,13 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
               <div className="flex justify-end">
                 <div className="text-right space-y-1">
                   <div className="text-sm text-gray-600">
-                    Subtotal: {formData.currency} {calculateTotals().subtotal.toFixed(2)}
+                    Subtotal: {formData.currency} {(calculateTotals().subtotal || 0).toFixed(2)}
                   </div>
                   <div className="text-sm text-gray-600">
-                    Tax: {formData.currency} {calculateTotals().totalTax.toFixed(2)}
+                    Tax: {formData.currency} {(calculateTotals().totalTax || 0).toFixed(2)}
                   </div>
                   <div className="text-lg font-semibold text-gray-900">
-                    Total: {formData.currency} {calculateTotals().total.toFixed(2)}                  </div>
+                    Total: {formData.currency} {(calculateTotals().total || 0).toFixed(2)}                  </div>
                 </div>
               </div>
             </div>
@@ -866,7 +866,7 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
                   {formData.items.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
                       <span>{item.description} (x{item.quantity})</span>
-                      <span>{formData.currency} {calculateItemTotal(item).toFixed(2)}</span>
+                      <span>{formData.currency} {(calculateItemTotal(item) || 0).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -876,21 +876,21 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
                 <div className="space-y-1 text-right">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal:</span>
-                    <span>{formData.currency} {totals.subtotal.toFixed(2)}</span>
+                    <span>{formData.currency} {(totals.subtotal || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax:</span>
-                    <span>{formData.currency} {totals.totalTax.toFixed(2)}</span>
+                    <span>{formData.currency} {(totals.totalTax || 0).toFixed(2)}</span>
                   </div>
                   {totals.discount > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Discount:</span>
-                      <span>-{formData.currency} {totals.discount.toFixed(2)}</span>
+                      <span>-{formData.currency} {(totals.discount || 0).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-lg font-semibold border-t pt-2">
                     <span>Total:</span>
-                    <span>{formData.currency} {totals.total.toFixed(2)}</span>
+                    <span>{formData.currency} {(totals.total || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -907,7 +907,7 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-green-700">Amount:</span>
-                    <span className="font-semibold text-green-800">{formData.currency} {totals.total.toFixed(2)}</span>
+                    <span className="font-semibold text-green-800">{formData.currency} {(totals.total || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-green-700">Payment Method:</span>
