@@ -546,30 +546,7 @@ const AdminInboxPage: React.FC = () => {
               ))}
             </nav>
 
-            {/* Debug Info */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">Debug Info</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Messages</span>
-                  <span className="font-medium">{messages.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Loading</span>
-                  <span className="font-medium">{loading ? 'Yes' : 'No'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Error</span>
-                  <span className="font-medium">{error ? 'Yes' : 'No'}</span>
-                </div>
-                <button
-                  onClick={fetchMessages}
-                  className="w-full mt-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Refresh Messages
-                </button>
-              </div>
-            </div>
+
 
             {/* Quick Stats */}
             <div className="mt-6 pt-6 border-t border-gray-200">
