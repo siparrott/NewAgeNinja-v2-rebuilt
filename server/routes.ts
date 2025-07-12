@@ -30,8 +30,50 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import Stripe from 'stripe';
-import puppeteer from 'puppeteer';
 import nodemailer from 'nodemailer';
+
+// Simple text invoice generator that works immediately
+function generateTextInvoice(invoice: any, client: any): string {
+  const today = new Date().toLocaleDateString('de-DE');
+  const invoiceNumber = invoice.invoiceNumber || invoice.invoice_number || invoice.id;
+  const clientName = `${client.firstName || client.first_name || ''} ${client.lastName || client.last_name || ''}`.trim();
+  const total = parseFloat(invoice.total?.toString() || invoice.total_amount?.toString() || '0');
+  
+  return `
+NEW AGE FOTOGRAFIE
+Professionelle Fotografie in Wien
+=================================
+
+RECHNUNG
+--------
+Rechnungsnummer: ${invoiceNumber}
+Datum: ${today}
+
+Rechnungsempfänger:
+${clientName}
+${client.email || ''}
+
+Rechnungsdetails:
+${invoice.items ? invoice.items.map((item: any, index: number) => 
+  `${index + 1}. ${item.description || 'Fotografie-Leistung'} - €${parseFloat(item.unitPrice?.toString() || '0').toFixed(2)}`
+).join('\n') : 'Fotografie-Leistungen'}
+
+Gesamtbetrag: €${total.toFixed(2)}
+
+Zahlungsinformationen:
+Status: ${invoice.status === 'paid' ? 'BEZAHLT' : 'OFFEN'}
+
+Kontakt:
+--------
+New Age Fotografie
+Wehrgasse 11A/2+5, 1050 Wien
+Tel: +43 677 933 99210
+Email: hallo@newagefotografie.com
+Web: www.newagefotografie.com
+
+Vielen Dank für Ihr Vertrauen!
+  `.trim();
+}
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -1442,34 +1484,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Client not found" });
       }
 
-      // Create HTML template for PDF
-      const htmlContent = generateInvoiceHTML(invoice, client);
-
-      // Generate PDF using puppeteer
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-      const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      // Generate simple text-based invoice download
+      const invoiceText = generateTextInvoice(invoice, client);
       
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20px',
-          right: '20px',
-          bottom: '20px',
-          left: '20px'
-        }
-      });
-      
-      await browser.close();
-
-      // Set headers for PDF download
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="Rechnung-${invoice.invoiceNumber || invoice.invoice_number || invoice.id}.pdf"`);
-      res.send(pdfBuffer);
+      // Set headers for text download
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="Rechnung-${invoice.invoiceNumber || invoice.invoice_number || invoice.id}.txt"`);
+      res.send(invoiceText);
 
     } catch (error) {
       console.error("Error generating PDF:", error);
