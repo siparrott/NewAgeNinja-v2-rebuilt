@@ -351,7 +351,7 @@ const ReportsPage: React.FC = () => {
         fetch('/api/crm/clients'),
         fetch('/api/crm/leads'),
         fetch('/api/photography/sessions'),
-        fetch('/api/vouchers/sales'),
+        // fetch('/api/vouchers/sales'), // Temporarily skip voucher sales API
         fetch('/api/blog/posts')
       ]);
 
@@ -364,8 +364,8 @@ const ReportsPage: React.FC = () => {
         await leadsResult.value.json() : [];
       const bookings = bookingsResult.status === 'fulfilled' && bookingsResult.value.ok ? 
         await bookingsResult.value.json() : [];
-      const vouchers = vouchersResult.status === 'fulfilled' && vouchersResult.value.ok ? 
-        await vouchersResult.value.json() : [];
+      const vouchers = []; // vouchersResult.status === 'fulfilled' && vouchersResult.value.ok ? 
+        // await vouchersResult.value.json() : [];
       const blogPosts = blogResult.status === 'fulfilled' && blogResult.value.ok ? 
         await blogResult.value.json() : [];
       
