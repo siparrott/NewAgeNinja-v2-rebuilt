@@ -345,6 +345,15 @@ Preferred communication style: Simple, everyday language.
   * Created chat-to-lead pipeline with conversation history tracking and follow-up scheduling
   * Chat now provides pricing (€95-295), booking assistance, studio locations, and knowledge base content
   * All chat interactions create actionable leads in admin panel for sales team follow-up
+- July 12, 2025. Fixed critical dashboard revenue display issue preventing immediate payment revenue from showing:
+  * Problem: Dashboard showed €0 instead of €583.10 from paid invoice created with immediate payment feature
+  * Root cause: Complex date parsing errors in chart processing functions causing dashboard crashes
+  * Solution: Updated dashboard to use dedicated /api/crm/dashboard/metrics endpoint for revenue calculations
+  * Backend API correctly returns: totalRevenue: 583.1, paidInvoices: 1, avgOrderValue: 583.1
+  * Frontend: Simplified chart data processing to avoid date parsing errors that prevented component loading
+  * Dashboard now correctly displays €583 total revenue from immediate payment test invoice
+  * All revenue calculations now filter for PAID invoices only using proper PostgreSQL API integration
+  * Immediate payment feature fully operational with accurate revenue tracking in admin dashboard
 - July 12, 2025. Identified and documented critical domain routing issue:
   * Root domain newagefotografie.com shows SSL security warning due to missing SSL certificate
   * www.newagefotografie.com works perfectly with proper SSL certificate and site functionality
