@@ -1,27 +1,84 @@
-import React, { useState } from 'react';
-import { MessageCircle, X, Send } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+interface Message {
+  text: string;
+  isUser: boolean;
+  loading?: boolean;
+}
 
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([
-    { text: "Hi! How can I help you today?", isUser: false }
+  const [messages, setMessages] = useState<Message[]>([
+    { text: "Hallo! Ich bin Alex von New Age Fotografie. Wie kann ich Ihnen heute helfen? 📸", isUser: false }
   ]);
   const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
-    setMessages(prev => [...prev, { text: inputText, isUser: true }]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const createThread = async (): Promise<string> => {
+    const response = await fetch('/api/openai/chat/thread', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await response.json();
+    return data.threadId;
+  };
+
+  const handleSend = async () => {
+    if (!inputText.trim() || isLoading) return;
+
+    const userMessage = inputText;
+    setMessages(prev => [...prev, { text: userMessage, isUser: true }]);
     setInputText('');
+    setIsLoading(true);
 
-    // Simulate bot response
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        text: "Thanks for your message! Our team will get back to you soon.",
-        isUser: false
-      }]);
-    }, 1000);
+    // Add loading message
+    setMessages(prev => [...prev, { text: "Alex schreibt...", isUser: false, loading: true }]);
+
+    try {
+      let currentThreadId = threadId;
+      if (!currentThreadId) {
+        currentThreadId = await createThread();
+        setThreadId(currentThreadId);
+      }
+
+      const response = await fetch('/api/openai/chat/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          threadId: currentThreadId
+        })
+      });
+
+      const data = await response.json();
+
+      // Remove loading message and add actual response
+      setMessages(prev => {
+        const filtered = prev.filter(msg => !msg.loading);
+        return [...filtered, { text: data.response || "Entschuldigung, ich konnte Ihre Anfrage nicht bearbeiten.", isUser: false }];
+      });
+
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => {
+        const filtered = prev.filter(msg => !msg.loading);
+        return [...filtered, { text: "Entschuldigung, es gab ein technisches Problem. Bitte kontaktieren Sie uns direkt unter 0677 633 99210.", isUser: false }];
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -43,7 +100,10 @@ const ChatBot: React.FC = () => {
           >
             <div className="bg-gradient-to-r from-purple-600 to-pink-500 p-4 rounded-t-lg">
               <div className="flex justify-between items-center">
-                <h3 className="text-white font-semibold">Support Chat</h3>
+                <div>
+                  <h3 className="text-white font-semibold">Alex - Photo Consultant</h3>
+                  <p className="text-purple-100 text-sm">New Age Fotografie Wien</p>
+                </div>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-white hover:text-gray-200 transition-colors"
@@ -61,16 +121,24 @@ const ChatBot: React.FC = () => {
                     className={`mb-4 ${message.isUser ? 'text-right' : 'text-left'}`}
                   >
                     <div
-                      className={`inline-block p-3 rounded-lg ${
+                      className={`inline-block p-3 rounded-lg max-w-[280px] ${
                         message.isUser
                           ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white'
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {message.text}
+                      {message.loading ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 size={16} className="animate-spin" />
+                          {message.text}
+                        </div>
+                      ) : (
+                        message.text
+                      )}
                     </div>
                   </div>
                 ))}
+                <div ref={messagesEndRef} />
               </div>
               
               <div className="border-t p-4">
@@ -85,9 +153,10 @@ const ChatBot: React.FC = () => {
                   />
                   <button
                     onClick={handleSend}
-                    className="p-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg hover:opacity-90 transition-opacity"
+                    disabled={isLoading}
+                    className="p-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
-                    <Send size={20} />
+                    {isLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
                   </button>
                 </div>
               </div>

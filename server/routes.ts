@@ -2601,6 +2601,226 @@ New Age Fotografie CRM System
     }
   });
 
+  // ==================== OPENAI CHAT ROUTES ====================
+  app.post("/api/openai/chat/thread", async (req: Request, res: Response) => {
+    try {
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ error: "OpenAI API key not configured" });
+      }
+
+      const response = await fetch('https://api.openai.com/v1/threads', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const thread = await response.json();
+      res.json({ threadId: thread.id });
+    } catch (error) {
+      console.error("Error creating thread:", error);
+      res.status(500).json({ error: "Failed to create thread" });
+    }
+  });
+
+  app.post("/api/openai/chat/message", async (req: Request, res: Response) => {
+    try {
+      const { message, threadId, assistantId } = req.body;
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ error: "OpenAI API key not configured" });
+      }
+
+      if (!message || !threadId) {
+        return res.status(400).json({ error: "Message and threadId required" });
+      }
+
+      // Get the assistant from database
+      const [assistant] = await db.select().from(openaiAssistants)
+        .where(eq(openaiAssistants.isActive, true))
+        .limit(1);
+
+      if (!assistant) {
+        return res.status(404).json({ error: "No active assistant found" });
+      }
+
+      // Fallback if OpenAI API is not working
+      if (!assistant.openaiAssistantId) {
+        // Simple rule-based response for testing
+        const response = generateFallbackResponse(message);
+        return res.json({ response });
+      }
+
+      // Add message to thread
+      await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content: message
+        })
+      });
+
+      // Create run with assistant
+      const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          assistant_id: assistant.openaiAssistantId || assistantId || 'asst_default',
+          instructions: assistant.instructions
+        })
+      });
+
+      if (!runResponse.ok) {
+        throw new Error(`Run creation failed: ${runResponse.status}`);
+      }
+
+      const run = await runResponse.json();
+
+      // Poll for completion
+      let runStatus = run.status;
+      let attempts = 0;
+      const maxAttempts = 30;
+
+      while ((runStatus === 'queued' || runStatus === 'in_progress') && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+
+        const statusResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${run.id}`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          runStatus = statusData.status;
+        }
+      }
+
+      // Get messages
+      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+
+      if (!messagesResponse.ok) {
+        throw new Error(`Failed to get messages: ${messagesResponse.status}`);
+      }
+
+      const messagesData = await messagesResponse.json();
+      const assistantMessage = messagesData.data.find((msg: any) => msg.role === 'assistant');
+
+      if (!assistantMessage) {
+        throw new Error('No assistant response found');
+      }
+
+      const response = assistantMessage.content[0]?.text?.value || 'Sorry, I could not process your request.';
+      res.json({ response });
+
+    } catch (error) {
+      console.error("Error sending message:", error);
+      
+      // Fallback response
+      const fallbackResponse = generateFallbackResponse(message);
+      res.json({ response: fallbackResponse });
+    }
+  });
+
+  function generateFallbackResponse(message: string): string {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('preis') || lowerMessage.includes('kosten') || lowerMessage.includes('price')) {
+      return `Gerne kann ich Ihnen unsere Preise mitteilen! 📸
+
+**Unsere Fotoshootings:**
+• 1 Foto (15x10cm) + Datei + 40x30cm Leinwand: €95
+• 5 Fotos (15x10cm) + Dateien + 60x40cm Leinwand: €195  
+• 10 Fotos (15x10cm) + Dateien + 70x50cm Leinwand: €295
+• 10er Paket (10 digitale Bilder): €250 - **BESTSELLER!**
+
+Jedes Paket inkludiert 60 Min Fotoshooting, Willkommensgetränk, Beratung und Outfit-Wechsel.
+
+Kontakt: WhatsApp 0677 633 99210 oder hallo@newagefotografie.com`;
+    }
+    
+    if (lowerMessage.includes('termin') || lowerMessage.includes('booking') || lowerMessage.includes('buchung')) {
+      return `Sehr gerne helfe ich Ihnen bei der Terminbuchung! 📅
+
+Wir sind meistens ausgebucht, aber ich kann Sie gerne auf unsere Warteliste setzen. Oft bekommen wir kurzfristig Termine frei!
+
+**So geht's:**
+1. Geben Sie mir Ihre WhatsApp Nummer: 0677 633 99210
+2. Nennen Sie mir Ihre Wunschtermine
+3. Ich melde mich bei Ihnen sobald ein Platz frei wird
+
+**Online Kalender:** https://newagefotografie.sproutstudio.com/invitation/live-link-shootings-new-age-fotografie
+
+Welche Art von Shooting interessiert Sie? Familie, Neugeborene, Schwangerschaft oder Business?`;
+    }
+    
+    if (lowerMessage.includes('hallo') || lowerMessage.includes('hi') || lowerMessage.includes('guten tag')) {
+      return `Hallo! Schön, dass Sie da sind! 😊
+
+Ich bin Alex von New Age Fotografie Wien. Wir sind spezialisiert auf:
+• Familienfotografie
+• Neugeborenen-Shootings  
+• Schwangerschaftsfotos
+• Business-Headshots
+
+Wie kann ich Ihnen heute helfen? Haben Sie Fragen zu unseren Preisen, möchten Sie einen Termin vereinbaren oder brauchen Sie andere Informationen?
+
+WhatsApp: 0677 633 99210`;
+    }
+    
+    if (lowerMessage.includes('location') || lowerMessage.includes('adresse') || lowerMessage.includes('wo')) {
+      return `Wir haben Studios in Wien und Zürich! 📍
+
+**Studio Wien:**
+Schönbrunner Str. 25, 1050 Wien
+(5 Minuten von Kettenbrückengasse, Parkplätze verfügbar)
+
+**Kontakt:**
+WhatsApp: 0677 633 99210
+Email: hallo@newagefotografie.com
+
+**Öffnungszeiten:**
+Freitag - Sonntag: 09:00 - 17:00
+
+Möchten Sie einen Termin vereinbaren?`;
+    }
+    
+    return `Vielen Dank für Ihre Nachricht! 😊
+
+Ich bin Alex von New Age Fotografie Wien. Gerne helfe ich Ihnen bei:
+• **Preisanfragen** (ab €95 für Foto-Pakete)
+• **Terminbuchungen** (meist ausgebucht, aber Warteliste verfügbar)  
+• **Informationen** über unsere Services
+
+**Direkter Kontakt:**
+WhatsApp: 0677 633 99210
+Email: hallo@newagefotografie.com
+
+Was interessiert Sie am meisten?`;
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }
