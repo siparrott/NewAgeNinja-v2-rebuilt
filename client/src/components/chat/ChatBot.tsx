@@ -11,7 +11,7 @@ interface Message {
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { text: "Hallo! Ich bin Alex von New Age Fotografie. Wie kann ich Ihnen heute helfen? 📸", isUser: false }
+    { text: "Hallo! Ich bin Alex von New Age Fotografie Wien. 📸\n\nBevor wir starten, darf ich nach Ihrer WhatsApp Nummer oder E-Mail fragen? So kann ich Sie besser beraten und bei Interesse direkt kontaktieren.", isUser: false }
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +22,7 @@ const ChatBot: React.FC = () => {
     email: '',
     phone: ''
   });
+  const [contactCaptured, setContactCaptured] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -49,6 +50,34 @@ const ChatBot: React.FC = () => {
     setInputText('');
     setIsLoading(true);
 
+    // Check if this looks like contact info and capture it
+    if (!contactCaptured) {
+      const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
+      const phoneRegex = /(\+43|0043|0)?[\s\-]?[0-9]{3,4}[\s\-]?[0-9]{3,4}[\s\-]?[0-9]{2,4}/;
+      
+      if (emailRegex.test(userMessage)) {
+        setLeadFormData(prev => ({ ...prev, email: userMessage.match(emailRegex)?.[0] || '' }));
+        setContactCaptured(true);
+        setMessages(prev => [...prev, { 
+          text: `Perfekt! Vielen Dank für Ihre E-Mail: ${userMessage.match(emailRegex)?.[0]}. Wie kann ich Ihnen bei Ihrem Fotoshooting helfen?`, 
+          isUser: false 
+        }]);
+        setIsLoading(false);
+        return;
+      }
+      
+      if (phoneRegex.test(userMessage)) {
+        setLeadFormData(prev => ({ ...prev, phone: userMessage.match(phoneRegex)?.[0] || '' }));
+        setContactCaptured(true);
+        setMessages(prev => [...prev, { 
+          text: `Super! Vielen Dank für Ihre Nummer: ${userMessage.match(phoneRegex)?.[0]}. Wie kann ich Ihnen bei Ihrem Fotoshooting helfen?`, 
+          isUser: false 
+        }]);
+        setIsLoading(false);
+        return;
+      }
+    }
+
     // Add loading message
     setMessages(prev => [...prev, { text: "Alex schreibt...", isUser: false, loading: true }]);
 
@@ -58,7 +87,7 @@ const ChatBot: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          threadId: 'fallback-mode' // Not needed for fallback
+          threadId: 'fallback-mode'
         })
       });
 
@@ -70,10 +99,12 @@ const ChatBot: React.FC = () => {
         return [...filtered, { text: data.response || "Entschuldigung, ich konnte Ihre Anfrage nicht bearbeiten.", isUser: false }];
       });
 
-      // Trigger lead capture after a few messages
-      setTimeout(() => {
-        triggerLeadCapture();
-      }, 2000);
+      // Auto-save lead after capturing contact and conversation
+      if (contactCaptured && messages.filter(msg => msg.isUser).length >= 2) {
+        setTimeout(() => {
+          autoSaveLead();
+        }, 3000);
+      }
 
     } catch (error) {
       console.error('Chat error:', error);
@@ -119,8 +150,33 @@ const ChatBot: React.FC = () => {
     }
   };
 
+  const autoSaveLead = async () => {
+    if (!contactCaptured) return;
+    
+    try {
+      const lastUserMessage = messages.filter(msg => msg.isUser).pop();
+      const response = await fetch('/api/chat/save-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Chat Visitor',
+          email: leadFormData.email,
+          phone: leadFormData.phone,
+          message: lastUserMessage?.text || 'Website Chat Interest',
+          conversation: messages
+        })
+      });
+
+      if (response.ok) {
+        console.log('Lead automatically saved from chat');
+      }
+    } catch (error) {
+      console.error('Error auto-saving lead:', error);
+    }
+  };
+
   const triggerLeadCapture = () => {
-    if (messages.filter(msg => msg.isUser).length >= 2) {
+    if (!contactCaptured && messages.filter(msg => msg.isUser).length >= 2) {
       setMessages(prev => [...prev, { 
         text: "Ich sehe Sie sind interessiert! Möchten Sie Ihre Kontaktdaten hinterlassen, damit wir Sie direkt kontaktieren können?", 
         isUser: false 
