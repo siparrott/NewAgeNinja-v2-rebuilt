@@ -426,14 +426,21 @@ export const priceListService = {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch price list');
+        throw new Error(`Failed to fetch price list: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      return data || [];
+      console.log('Price list API response:', data.length, 'items received');
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid price list response format');
+      }
+      
+      return data;
     } catch (error) {
-      // console.error removed
-      throw error;
+      console.error('Price list service error:', error);
+      // Return empty array instead of throwing to prevent modal from breaking
+      return [];
     }
   },
 
