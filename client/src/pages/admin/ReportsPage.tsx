@@ -369,18 +369,18 @@ const ReportsPage: React.FC = () => {
       const blogPosts = blogResult.status === 'fulfilled' && blogResult.value.ok ? 
         await blogResult.value.json() : [];
       
-      // Filter data by date range and status for PAID invoices only
+      // Filter data by date range and status for PAID invoices only  
       const dateFilteredInvoices = invoices.filter((inv: any) => 
-        inv.status === 'paid' && new Date(inv.createdAt) >= startDate
+        inv.status === 'paid' && new Date(inv.createdAt || inv.created_at) >= startDate
       );
       const dateFilteredLeads = leads.filter((lead: any) => 
-        new Date(lead.createdAt) >= startDate
+        new Date(lead.createdAt || lead.created_at) >= startDate
       );
       const dateFilteredBookings = bookings.filter((booking: any) => 
-        new Date(booking.createdAt) >= startDate
+        new Date(booking.createdAt || booking.created_at) >= startDate
       );
       const dateFilteredVouchers = vouchers.filter((voucher: any) => 
-        new Date(voucher.createdAt) >= startDate
+        new Date(voucher.createdAt || voucher.created_at) >= startDate
       );
 
       // Process financial data from paid invoices only
