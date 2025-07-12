@@ -327,6 +327,22 @@ Preferred communication style: Simple, everyday language.
   * Deployment approach uses exact server configuration that works in development but with production environment variables
   * Static files served from dist/public directory with proper production configuration
   * Ready for deployment through Replit interface with clean, tested configuration
+- July 12, 2025. Implemented comprehensive knowledge base management system for support chat:
+  * Created complete knowledge base management page with 3 sections: Knowledge Base, AI Assistants, Settings
+  * Added full CRUD functionality for managing support articles and FAQ content with categories and tags
+  * Built OpenAI assistant integration system with knowledge base connections for live chat functionality
+  * Created database schema with knowledge_base and openai_assistants tables plus backend API endpoints
+  * Added new "Knowledge Base" tab in admin CRM sidebar with BookOpen icon and professional UI
+  * Implemented search and filter capabilities for articles by category, tags, and content
+  * Added statistics dashboard showing total articles, active status, and category management
+  * System ready to power support chat with real knowledge base content and OpenAI assistant integration
+- July 12, 2025. Identified and documented critical domain routing issue:
+  * Root domain newagefotografie.com shows SSL security warning due to missing SSL certificate
+  * www.newagefotografie.com works perfectly with proper SSL certificate and site functionality
+  * Problem: SSL certificate only configured for www subdomain, not root domain
+  * Solution required: Multi-domain SSL certificate or wildcard certificate to include both domains
+  * Created comprehensive documentation (DOMAIN-ROUTING-FIX.md) with implementation steps
+  * Issue needs resolution at domain registrar/hosting provider level (EasyName/Google Cloud Run)
 - July 10, 2025. Resolved deployment blank screen issue with comprehensive client build fix:
   * Identified root cause: Vite build process was timing out due to application complexity, resulting in missing JavaScript/CSS assets
   * Created scripts/quick-deployment-fix.js to bypass slow Vite builds and create minimal working client bundle
