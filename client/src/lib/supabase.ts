@@ -3,10 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://gtnwccyxwrevfnbkjvzm.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0bndjY3l4d3JldmZuYmtqdnptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNDgwMTgsImV4cCI6MjA2NTgyNDAxOH0.MiOeCq2NCD969D_SXQ1wAlheSvRY5h04cUnV0XNuOrc';
 
-console.log('Supabase configuration:', {
-  url: supabaseUrl,
-  keyPrefix: supabaseAnonKey.substring(0, 20) + '...',
-});
+// Supabase configuration initialized
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -28,7 +25,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Enhanced connection test with better error handling
 export const testSupabaseConnection = async () => {
   try {
-    console.log('Testing Supabase connection...');
+    // Testing Supabase connection
     
     // Test basic connectivity with timeout
     const controller = new AbortController();
@@ -43,7 +40,7 @@ export const testSupabaseConnection = async () => {
         return { success: false, error: error.message };
       }
       
-      console.log('Supabase auth connection successful');
+      // Supabase auth connection successful
     } catch (authError) {
       clearTimeout(timeoutId);
       console.error('Supabase auth connection failed:', authError);
@@ -72,7 +69,7 @@ export const testSupabaseConnection = async () => {
         return { success: false, error: `Database error: ${dbError.message}` };
       }
       
-      console.log('Database connectivity test successful');
+      // Database connectivity test successful
     } catch (dbErr) {
       console.error('Database connectivity test failed:', dbErr);
       
@@ -83,7 +80,7 @@ export const testSupabaseConnection = async () => {
       return { success: false, error: `Database connectivity failed: ${dbErr.message || 'Unknown error'}` };
     }
     
-    console.log('Supabase connection test successful');
+    // Supabase connection test successful
     return { success: true };
   } catch (err) {
     console.error('Supabase connection test failed:', err);

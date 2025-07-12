@@ -15,7 +15,7 @@ export interface Lead {
 export async function getLeads(status?: 'NEW' | 'CONTACTED' | 'CONVERTED') {
   try {
     const url = status ? `/api/crm/leads?status=${status.toLowerCase()}` : '/api/crm/leads';
-    console.log('Fetching leads from:', url);
+    // Fetching leads from API
     
     const response = await fetch(url, {
       credentials: 'include', // Include cookies for authentication
@@ -24,7 +24,7 @@ export async function getLeads(status?: 'NEW' | 'CONTACTED' | 'CONVERTED') {
       }
     });
     
-    console.log('Response status:', response.status);
+    // Response received
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -33,7 +33,7 @@ export async function getLeads(status?: 'NEW' | 'CONTACTED' | 'CONVERTED') {
     }
     
     const data = await response.json();
-    console.log('Raw API data:', data);
+    // Raw API data received
     
     // Transform the CRM lead data to match the expected Lead interface
     const transformedData = data.map((lead: any) => ({
@@ -48,7 +48,7 @@ export async function getLeads(status?: 'NEW' | 'CONTACTED' | 'CONVERTED') {
       created_at: lead.createdAt
     }));
     
-    console.log('Transformed data:', transformedData);
+    // Data transformation completed
     return transformedData;
   } catch (error) {
     console.error('Error fetching leads:', error);

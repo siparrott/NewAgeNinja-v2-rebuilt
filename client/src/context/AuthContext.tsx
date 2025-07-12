@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
-    console.log('Attempting to sign in with email:', email);
+    // Attempting to sign in
     
     try {
       // First check if the Supabase project is active
@@ -108,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      console.log('Sign in successful:', data);
+      // Sign in successful
     } catch (err) {
       console.error('Sign in failed:', err);
       throw err;

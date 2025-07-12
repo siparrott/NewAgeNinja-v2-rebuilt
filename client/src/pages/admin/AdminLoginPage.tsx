@@ -21,9 +21,9 @@ const AdminLoginPage: React.FC = () => {
 
   // Redirect if user is already logged in and is admin
   useEffect(() => {
-    console.log('Auth state check:', { user: user?.email, isAdmin });
+    // Auth state check
     if (user && isAdmin) {
-      console.log('User is authenticated and admin, redirecting to dashboard');
+      // User is authenticated and admin, redirecting to dashboard
       navigate('/admin/dashboard');
     }
   }, [user, isAdmin, navigate]);
@@ -53,14 +53,14 @@ const AdminLoginPage: React.FC = () => {
       return;
     }
     
-    console.log('Form submitted, starting sign in process');
+    // Form submitted, starting sign in process
     setError('');
     setLoading(true);
 
     try {
-      console.log('Calling signIn with:', email);
+      // Calling signIn
       await signIn(email, password);
-      console.log('Sign in call completed successfully');
+      // Sign in call completed successfully
       // The redirect will be handled by the useEffect above once user and isAdmin are updated
     } catch (err) {
       console.error('Login error:', err);
