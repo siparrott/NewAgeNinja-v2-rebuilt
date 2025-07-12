@@ -916,25 +916,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getCrmClients()
       ]);
 
-      // Calculate revenue metrics from real invoices
-      const totalRevenue = invoices.reduce((sum, invoice) => {
-        const total = parseFloat(invoice.total?.toString() || '0');
-        return sum + total;
-      }, 0);
-
+      // Calculate revenue metrics from PAID invoices only
       const paidInvoices = invoices.filter(inv => inv.status === 'paid');
-      const paidRevenue = paidInvoices.reduce((sum, invoice) => {
+      const totalRevenue = paidInvoices.reduce((sum, invoice) => {
         const total = parseFloat(invoice.total?.toString() || '0');
         return sum + total;
       }, 0);
 
-      const avgOrderValue = invoices.length > 0 ? totalRevenue / invoices.length : 0;
+      const paidRevenue = totalRevenue; // Same as totalRevenue since we only count paid invoices
 
-      // Calculate trend data from invoices over last 7 days
+      const avgOrderValue = paidInvoices.length > 0 ? totalRevenue / paidInvoices.length : 0;
+
+      // Calculate trend data from PAID invoices over last 7 days
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
-      const recentInvoices = invoices.filter(invoice => {
+      const recentInvoices = paidInvoices.filter(invoice => {
         const createdDate = new Date(invoice.createdAt || invoice.created_at);
         return createdDate >= sevenDaysAgo;
       });

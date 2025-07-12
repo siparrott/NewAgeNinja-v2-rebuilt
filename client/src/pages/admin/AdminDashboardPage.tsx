@@ -202,20 +202,22 @@ const AdminDashboardPage: React.FC = () => {
       // Filter leads by date range for dashboard metrics
       const leads = allLeads.filter((lead: any) => new Date(lead.createdAt) >= startDate);
 
-      // Calculate metrics
-      const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
-      const previousRevenue = previousInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+      // Calculate metrics from PAID invoices only
+      const paidInvoices = invoices.filter((inv: any) => inv.status === 'paid');
+      const totalRevenue = paidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0);
+      const previousPaidInvoices = previousInvoices.filter((inv: any) => inv.status === 'paid');
+      const previousRevenue = previousPaidInvoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0);
       const monthlyGrowth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
       
       const convertedLeads = leads.filter(lead => lead.status === 'CONVERTED').length;
       const conversionRate = leads.length > 0 ? (convertedLeads / leads.length) * 100 : 0;
       
-      const averageOrderValue = invoices.length > 0 ? totalRevenue / invoices.length : 0;
+      const averageOrderValue = paidInvoices.length > 0 ? totalRevenue / paidInvoices.length : 0;
 
-      // Process chart data
-      const revenueChart = processRevenueChart(invoices);
+      // Process chart data from paid invoices
+      const revenueChart = processRevenueChart(paidInvoices);
       const leadConversionChart = processLeadChart(leads);
-      const serviceDistribution = processServiceDistribution(invoices);
+      const serviceDistribution = processServiceDistribution(paidInvoices);
 
       const dashboardData: DashboardData = {
         totalRevenue,
@@ -247,10 +249,10 @@ const AdminDashboardPage: React.FC = () => {
   const processRevenueChart = (invoices: any[]) => {
     const monthlyData = new Map();
     invoices.forEach(invoice => {
-      const date = new Date(invoice.created_at);
+      const date = new Date(invoice.createdAt || invoice.created_at);
       const monthKey = format(date, 'MMM yyyy');
       const existing = monthlyData.get(monthKey) || { month: monthKey, revenue: 0, bookings: 0 };
-      existing.revenue += invoice.total_amount || 0;
+      existing.revenue += parseFloat(invoice.total) || 0;
       existing.bookings += 1;
       monthlyData.set(monthKey, existing);
     });
