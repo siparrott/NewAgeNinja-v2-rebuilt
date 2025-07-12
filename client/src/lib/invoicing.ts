@@ -420,15 +420,16 @@ export const emailService = {
 export const priceListService = {
   async getPriceListItems(): Promise<PriceListItem[]> {
     try {
-      const { data, error } = await supabase
-        .from('price_list')
-        .select('*')
-        .eq('is_active', true)
-        .order('category', { ascending: true })
-        .order('name', { ascending: true });
+      const response = await fetch('/api/crm/price-list', {
+        method: 'GET',
+        credentials: 'include',
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch price list');
+      }
 
+      const data = await response.json();
       return data || [];
     } catch (error) {
       // console.error removed

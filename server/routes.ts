@@ -3046,6 +3046,65 @@ New Age Fotografie CRM System
     }
   });
 
+  // ==================== PRICE LIST ROUTES ====================
+  app.get("/api/crm/price-list", async (req: Request, res: Response) => {
+    try {
+      // Return static price list data for now
+      const priceList = [
+        {
+          id: 'family-portrait',
+          category: 'Photography',
+          name: 'Family Portrait Session',
+          description: 'Professional family photography session',
+          price: 295.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'digital-photo-package',
+          category: 'Digital',
+          name: 'Digital Photo Package',
+          description: '10 high-resolution edited photos',
+          price: 180.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'newborn-session',
+          category: 'Photography',
+          name: 'Newborn Session',
+          description: 'Newborn photography session',
+          price: 350.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'maternity-session',
+          category: 'Photography',
+          name: 'Maternity Session',
+          description: 'Maternity photography session',
+          price: 250.00,
+          currency: 'EUR',
+          is_active: true
+        },
+        {
+          id: 'business-headshots',
+          category: 'Business',
+          name: 'Business Headshots',
+          description: 'Professional business headshots',
+          price: 150.00,
+          currency: 'EUR',
+          is_active: true
+        }
+      ];
+      
+      res.json(priceList);
+    } catch (error) {
+      console.error("Error fetching price list:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // ==================== KNOWLEDGE BASE ROUTES ====================
   app.get("/api/knowledge-base", authenticateUser, async (req: Request, res: Response) => {
     try {
