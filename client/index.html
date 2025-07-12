@@ -95,9 +95,27 @@
     </script>
   </head>
   <body>
+    <script>
+      // COMPLETE CONSOLE SILENCE - Must be first script to run
+      (function() {
+        const noop = function() {};
+        window.console = {
+          log: noop, warn: noop, error: noop, info: noop, debug: noop,
+          trace: noop, table: noop, group: noop, groupEnd: noop,
+          time: noop, timeEnd: noop, clear: noop, count: noop,
+          assert: noop, dir: noop, dirxml: noop
+        };
+        Object.defineProperty(window, 'console', {
+          value: window.console, writable: false, configurable: false
+        });
+        // Disable React DevTools
+        window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
+          isDisabled: true, supportsFiber: true, inject: noop,
+          onCommitFiberRoot: noop, onCommitFiberUnmount: noop
+        };
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
   </body>
 </html>
