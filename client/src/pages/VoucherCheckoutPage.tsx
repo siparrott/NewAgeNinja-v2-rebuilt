@@ -252,10 +252,19 @@ const VoucherCheckoutPage: React.FC = () => {
   useEffect(() => {
     const fetchVoucher = async () => {
       try {
+        console.log('VoucherCheckoutPage: Fetching voucher with ID:', id);
         const response = await apiRequest('GET', `/api/vouchers/products/${id}`);
+        console.log('VoucherCheckoutPage: Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('VoucherCheckoutPage: Voucher data:', data);
         setVoucher(data);
       } catch (err: any) {
+        console.error('VoucherCheckoutPage: Error fetching voucher:', err);
         setError(err.message || 'Gutschein nicht gefunden');
       } finally {
         setLoading(false);
@@ -264,6 +273,9 @@ const VoucherCheckoutPage: React.FC = () => {
 
     if (id) {
       fetchVoucher();
+    } else {
+      setError('Keine Gutschein-ID gefunden');
+      setLoading(false);
     }
   }, [id]);
 
