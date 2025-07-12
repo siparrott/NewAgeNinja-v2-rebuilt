@@ -31,6 +31,7 @@ import path from 'path';
 import fs from 'fs';
 import Stripe from 'stripe';
 import nodemailer from 'nodemailer';
+import { jsPDF } from 'jspdf';
 
 // Simple text invoice generator that works immediately
 function generateTextInvoice(invoice: any, client: any): string {
@@ -1484,13 +1485,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Client not found" });
       }
 
-      // Generate simple text-based invoice download
-      const invoiceText = generateTextInvoice(invoice, client);
+      // Generate PDF using jsPDF (server-side)
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      let yPosition = 20;
+
+      // Company header
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('NEW AGE FOTOGRAFIE', 20, yPosition);
       
-      // Set headers for text download
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename="Rechnung-${invoice.invoiceNumber || invoice.invoice_number || invoice.id}.txt"`);
-      res.send(invoiceText);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Professionelle Fotografie in Wien', 20, yPosition + 8);
+      doc.text('hallo@newagefotografie.com | www.newagefotografie.com', 20, yPosition + 16);
+
+      // Invoice title and number
+      yPosition += 40;
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RECHNUNG', pageWidth - 60, yPosition, { align: 'right' });
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      const invoiceNumber = invoice.invoiceNumber || invoice.invoice_number || invoice.id;
+      const issueDate = new Date(invoice.issueDate || invoice.issue_date || new Date()).toLocaleDateString('de-DE');
+      const dueDate = new Date(invoice.dueDate || invoice.due_date || new Date()).toLocaleDateString('de-DE');
+      
+      doc.text(`Rechnung Nr.: ${invoiceNumber}`, pageWidth - 60, yPosition + 12, { align: 'right' });
+      doc.text(`Datum: ${issueDate}`, pageWidth - 60, yPosition + 20, { align: 'right' });
+      doc.text(`Fällig: ${dueDate}`, pageWidth - 60, yPosition + 28, { align: 'right' });
+
+      // Client information
+      yPosition += 20;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Rechnungsempfänger:', 20, yPosition);
+      
+      doc.setFont('helvetica', 'normal');
+      yPosition += 8;
+      const clientName = `${client.firstName || client.first_name || ''} ${client.lastName || client.last_name || ''}`.trim();
+      if (clientName) {
+        doc.text(clientName, 20, yPosition);
+        yPosition += 6;
+      }
+      if (client.email) {
+        doc.text(client.email, 20, yPosition);
+        yPosition += 6;
+      }
+      if (client.phone) {
+        doc.text(client.phone, 20, yPosition);
+        yPosition += 6;
+      }
+
+      // Items table
+      yPosition += 20;
+      
+      // Table headers
+      doc.setFont('helvetica', 'bold');
+      doc.text('Beschreibung', 20, yPosition);
+      doc.text('Anzahl', 120, yPosition, { align: 'center' });
+      doc.text('Preis', 140, yPosition, { align: 'right' });
+      doc.text('Betrag', pageWidth - 20, yPosition, { align: 'right' });
+      
+      // Table line
+      yPosition += 4;
+      doc.line(20, yPosition, pageWidth - 20, yPosition);
+      
+      // Table items
+      doc.setFont('helvetica', 'normal');
+      yPosition += 8;
+      
+      if (invoice.items && Array.isArray(invoice.items)) {
+        invoice.items.forEach((item: any) => {
+          const description = item.description || 'Fotografie-Leistung';
+          const quantity = item.quantity || 1;
+          const unitPrice = parseFloat(item.unitPrice?.toString() || item.price?.toString() || '0');
+          const amount = quantity * unitPrice;
+          
+          doc.text(description, 20, yPosition);
+          doc.text(quantity.toString(), 120, yPosition, { align: 'center' });
+          doc.text(`€${unitPrice.toFixed(2)}`, 140, yPosition, { align: 'right' });
+          doc.text(`€${amount.toFixed(2)}`, pageWidth - 20, yPosition, { align: 'right' });
+          yPosition += 8;
+        });
+      }
+
+      // Totals
+      yPosition += 10;
+      doc.line(120, yPosition, pageWidth - 20, yPosition);
+      yPosition += 8;
+      
+      const total = parseFloat(invoice.total?.toString() || invoice.total_amount?.toString() || '0');
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Gesamtbetrag: €${total.toFixed(2)}`, pageWidth - 20, yPosition, { align: 'right' });
+
+      // Payment status
+      yPosition += 15;
+      doc.setFont('helvetica', 'normal');
+      const status = invoice.status === 'paid' ? 'BEZAHLT' : 'OFFEN';
+      doc.text(`Status: ${status}`, 20, yPosition);
+
+      // Footer
+      yPosition = doc.internal.pageSize.height - 40;
+      doc.setFontSize(10);
+      doc.text('New Age Fotografie | Schönbrunner Str. 25, 1050 Wien', 20, yPosition);
+      doc.text('Tel: +43 677 933 99210 | Email: hallo@newagefotografie.com', 20, yPosition + 6);
+      doc.text('Vielen Dank für Ihr Vertrauen!', 20, yPosition + 12);
+
+      // Generate PDF buffer
+      const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+      
+      // Set proper PDF headers
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Rechnung-${invoiceNumber}.pdf"`);
+      res.send(pdfBuffer);
 
     } catch (error) {
       console.error("Error generating PDF:", error);
