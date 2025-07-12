@@ -73,11 +73,17 @@ const CheckoutForm: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) => {
 
     try {
       // Create payment intent for voucher purchase
-      const response = await apiRequest('POST', '/api/vouchers/create-payment-intent', {
-        voucherId: voucher.id,
-        quantity,
-        customerDetails,
-        amount: Math.round(totalPrice * 100) // Convert to cents
+      const response = await fetch('/api/vouchers/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          voucherId: voucher.id,
+          quantity,
+          customerDetails,
+          amount: Math.round(totalPrice * 100) // Convert to cents
+        })
       });
 
       const { clientSecret } = await response.json();
@@ -253,7 +259,7 @@ const VoucherCheckoutPage: React.FC = () => {
     const fetchVoucher = async () => {
       try {
         console.log('VoucherCheckoutPage: Fetching voucher with ID:', id);
-        const response = await apiRequest('GET', `/api/vouchers/products/${id}`);
+        const response = await fetch(`/api/vouchers/products/${id}`);
         console.log('VoucherCheckoutPage: Response status:', response.status);
         
         if (!response.ok) {
