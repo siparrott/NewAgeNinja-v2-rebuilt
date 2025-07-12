@@ -330,6 +330,7 @@ const ReportsPage: React.FC = () => {
 
   const fetchComprehensiveReports = async () => {
     try {
+      console.log('🔥 fetchComprehensiveReports started');
       setLoading(true);
       setError(null);
 
