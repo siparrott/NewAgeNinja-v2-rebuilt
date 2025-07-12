@@ -25,7 +25,7 @@ import {
   AreaChart,
   Area
 } from 'recharts';
-// import { format } from 'date-fns'; // Temporarily removed to fix date parsing errors
+import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardData {
