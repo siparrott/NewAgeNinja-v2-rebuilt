@@ -5,6 +5,7 @@ export async function importEmailsFromIMAP(config: any) {
   const { simpleParser } = await import('mailparser');
   
   return new Promise((resolve, reject) => {
+    const collectedEmails: any[] = [];
     console.log('Connecting to IMAP server...');
     
     const connection = new imap(config);
@@ -29,13 +30,21 @@ export async function importEmailsFromIMAP(config: any) {
           return resolve({ newEmails: 0, totalEmails: 0, processedEmails: 0 });
         }
         
-        // Fetch recent emails (last 50)
-        const recent = Math.max(1, box.messages.total - 49);
-        const fetchRange = `${recent}:${box.messages.total}`;
+        // Determine fetch strategy based on since parameter
+        let fetchCriteria;
+        if (config.since) {
+          // Fetch emails since last import date
+          const sinceDate = new Date(config.since);
+          fetchCriteria = ['SINCE', sinceDate];
+          console.log(`Fetching emails since ${sinceDate.toISOString()}`);
+        } else {
+          // Fetch recent emails (last 10 only for live updates)
+          const recent = Math.max(1, box.messages.total - 9);
+          fetchCriteria = `${recent}:${box.messages.total}`;
+          console.log(`Fetching recent emails ${fetchCriteria}`);
+        }
         
-        console.log(`Fetching emails ${fetchRange}`);
-        
-        const fetch = connection.fetch(fetchRange, {
+        const fetch = connection.fetch(fetchCriteria, {
           bodies: '',
           struct: true,
           markSeen: false
@@ -56,26 +65,22 @@ export async function importEmailsFromIMAP(config: any) {
                 try {
                   const parsed = await simpleParser(buffer);
                   
-                  // Check if email already exists (more precise matching)
-                  const existingMessages = await storage.getCrmMessages();
-                  const fromEmail = parsed.from?.value[0]?.address || parsed.from?.text || 'unknown@unknown.com';
-                  const exists = existingMessages.some(m => 
-                    m.senderEmail === fromEmail && 
-                    m.subject === (parsed.subject || 'No Subject') &&
-                    !m.subject.startsWith('[SENT]') // Don't duplicate sent items
-                  );
+                  // Return email data for processing in routes (no direct storage here)
+                  const emailData = {
+                    fromName: parsed.from?.text?.split('<')[0]?.trim() || 'Unknown',
+                    from: parsed.from?.value[0]?.address || parsed.from?.text || 'unknown@unknown.com',
+                    subject: parsed.subject || 'No Subject',
+                    body: parsed.text || parsed.html || 'No content',
+                    date: parsed.date || new Date(),
+                    isRead: false
+                  };
                   
-                  if (!exists) {
-                    await storage.createCrmMessage({
-                      senderName: parsed.from?.text?.split('<')[0]?.trim() || 'Unknown',
-                      senderEmail: parsed.from?.value[0]?.address || 'unknown@unknown.com',
-                      subject: parsed.subject || 'No Subject',
-                      content: parsed.text || parsed.html || 'No content',
-                      status: 'unread'
-                    });
-                    
+                  // Skip sent items and system messages
+                  if (!emailData.subject.startsWith('[SENT]') && 
+                      !emailData.subject.includes('Auto-Reply') &&
+                      emailData.from !== 'hallo@newagefotografie.com') {
+                    collectedEmails.push(emailData);
                     newEmails++;
-                    console.log(`Imported new email: ${parsed.subject}`);
                   }
                   
                   processedEmails++;
@@ -108,7 +113,7 @@ export async function importEmailsFromIMAP(config: any) {
             connection.end();
             
             console.log(`Email import completed: ${newEmails} new emails, ${processedEmails} processed, ${totalEmails} total`);
-            resolve({ newEmails, totalEmails, processedEmails });
+            resolve(collectedEmails);
           } catch (error) {
             console.error('Error processing emails:', error);
             connection.end();

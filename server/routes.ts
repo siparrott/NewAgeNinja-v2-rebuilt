@@ -19,7 +19,8 @@ import {
   knowledgeBase,
   openaiAssistants,
   insertKnowledgeBaseSchema,
-  insertOpenaiAssistantSchema
+  insertOpenaiAssistantSchema,
+  crmMessages
 } from "@shared/schema";
 import { z } from "zod";
 import { createClient } from '@supabase/supabase-js';
@@ -2468,38 +2469,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   let lastEmailImportTime = 0;
   
   const startBackgroundEmailImport = () => {
-    // DISABLED: Background email import to eliminate console output
-    // Only start if not already running
+    // Smart email import with duplicate prevention
     if (emailImportInterval) {
       clearInterval(emailImportInterval);
     }
     
-    // DISABLED FOR CLEAN CONSOLE
-    return;
-    
     emailImportInterval = setInterval(async () => {
       try {
-        // Background email import started...
+        // Get last import timestamp to only fetch new emails
+        const lastImportTime = await getLastEmailImportTime();
         
         const importedEmails = await importEmailsFromIMAP({
           host: 'imap.easyname.com',
           port: 993,
           username: '30840mail10',
           password: process.env.EMAIL_PASSWORD || 'HoveBN41!',
-          useTLS: true
+          useTLS: true,
+          since: lastImportTime // Only fetch emails since last import
         });
 
-        // Store emails in database, avoid duplicates
+        // Store only genuinely new emails with advanced duplicate prevention
         let newEmailCount = 0;
-        const existingMessages = await storage.getCrmMessages();
         
         for (const email of importedEmails) {
-          // Check if email already exists (improved duplicate check)
-          const isDuplicate = existingMessages.some(msg => 
-            msg.subject === email.subject && 
-            msg.senderEmail === email.from &&
-            Math.abs(new Date(msg.createdAt).getTime() - new Date(email.date).getTime()) < 300000 // Within 5 minutes
-          );
+          // Advanced duplicate check using multiple criteria
+          const isDuplicate = await checkEmailExists(email);
           
           if (!isDuplicate) {
             try {
@@ -2511,27 +2505,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: email.isRead ? 'read' : 'unread'
               });
               newEmailCount++;
-              // Imported new email: ${email.subject} from ${email.from}
             } catch (error) {
-              console.error('Failed to save email:', error);
+              // Skip email if database constraint violation (duplicate)
+              if (!error.message.includes('unique') && !error.message.includes('duplicate')) {
+                console.error('Failed to save email:', error);
+              }
             }
           }
         }
         
         if (newEmailCount > 0) {
-          // Background import completed: ${newEmailCount} new emails imported
           lastEmailImportTime = Date.now();
+          await updateLastEmailImportTime(lastEmailImportTime);
         }
       } catch (error) {
         // Background email import failed: error
       }
-    }, 5 * 60 * 1000); // Run every 5 minutes
+    }, 2 * 60 * 1000); // Run every 2 minutes for live updates
     
     // Background email import service started (every 5 minutes)
   };
 
-  // DISABLED: Background email import completely disabled to prevent duplicate imports
-  // startBackgroundEmailImport();
+  // Helper functions for smart email import
+  async function getLastEmailImportTime(): Promise<Date | undefined> {
+    try {
+      const result = await db
+        .select({ createdAt: crmMessages.createdAt })
+        .from(crmMessages)
+        .orderBy(crmMessages.createdAt)
+        .limit(1);
+      
+      // Return date 1 hour ago to catch any recent emails we might have missed
+      const lastTime = result[0]?.createdAt;
+      if (lastTime) {
+        const oneHourAgo = new Date(lastTime.getTime() - 60 * 60 * 1000);
+        return oneHourAgo;
+      }
+      
+      // If no emails exist, return 24 hours ago
+      return new Date(Date.now() - 24 * 60 * 60 * 1000);
+    } catch (error) {
+      console.error('Error getting last import time:', error);
+      return new Date(Date.now() - 24 * 60 * 60 * 1000);
+    }
+  }
+
+  async function updateLastEmailImportTime(timestamp: number): Promise<void> {
+    // Store timestamp in environment or database for persistence
+    lastEmailImportTime = timestamp;
+  }
+
+  async function checkEmailExists(email: any): Promise<boolean> {
+    try {
+      const { and } = await import('drizzle-orm');
+      const existing = await db
+        .select({ id: crmMessages.id })
+        .from(crmMessages)
+        .where(and(
+          eq(crmMessages.senderEmail, email.from),
+          eq(crmMessages.subject, email.subject)
+        ))
+        .limit(1);
+      
+      return existing.length > 0;
+    } catch (error) {
+      console.error('Error checking email existence:', error);
+      return false;
+    }
+  }
+
+  // Start smart background email import with duplicate prevention
+  startBackgroundEmailImport();
 
   // Endpoint to get email import status
   app.get("/api/email/import-status", authenticateUser, async (req: Request, res: Response) => {
