@@ -98,6 +98,14 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
     ]
   });
 
+  // Payment tracking states
+  const [markAsPaid, setMarkAsPaid] = useState(false);
+  const [paymentData, setPaymentData] = useState({
+    payment_method: 'cash',
+    payment_reference: '',
+    payment_notes: ''
+  });
+
   const steps = [
     { id: 1, title: 'Client & Details', icon: User },
     { id: 2, title: 'Line Items', icon: FileText },
@@ -364,7 +372,7 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
         subtotal: subtotal.toString(),
         taxAmount: taxAmount.toString(),
         total: total.toString(),
-        status: 'draft',
+        status: markAsPaid ? 'paid' : 'draft', // Set status to paid if immediate payment
         notes: formData.notes,
         termsAndConditions: formData.payment_terms,
         items: formData.items.map(item => ({
@@ -390,6 +398,31 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
       }
 
       const invoice = await response.json();
+
+      // If marked as paid, create payment record
+      if (markAsPaid) {
+        const paymentRecord = {
+          invoice_id: invoice.id,
+          amount: total,
+          payment_method: paymentData.payment_method,
+          payment_reference: paymentData.payment_reference,
+          payment_date: new Date().toISOString().split('T')[0],
+          notes: paymentData.payment_notes
+        };
+
+        const paymentResponse = await fetch('/api/crm/invoice-payments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(paymentRecord),
+        });
+
+        if (!paymentResponse.ok) {
+          console.error('Failed to create payment record, but invoice was created');
+          // Continue anyway - invoice is created, payment can be added later
+        }
+      }
 
       onSuccess();
       onClose();
@@ -653,6 +686,79 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
               </div>
             </div>
 
+            {/* Immediate Payment Section */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center mb-4">
+                <input
+                  type="checkbox"
+                  id="markAsPaid"
+                  checked={markAsPaid}
+                  onChange={(e) => setMarkAsPaid(e.target.checked)}
+                  className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                />
+                <label htmlFor="markAsPaid" className="ml-2 text-sm font-medium text-green-800">
+                  💰 Client paid immediately - Mark invoice as PAID
+                </label>
+              </div>
+
+              {markAsPaid && (
+                <div className="space-y-4 border-t border-green-200 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-green-700 mb-2">
+                        Payment Method *
+                      </label>
+                      <select
+                        value={paymentData.payment_method}
+                        onChange={(e) => setPaymentData(prev => ({ ...prev, payment_method: e.target.value }))}
+                        className="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        required
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="card">Credit/Debit Card</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="paypal">PayPal</option>
+                        <option value="stripe">Stripe</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-green-700 mb-2">
+                        Payment Reference (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={paymentData.payment_reference}
+                        onChange={(e) => setPaymentData(prev => ({ ...prev, payment_reference: e.target.value }))}
+                        className="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="Transaction ID, Check #, etc."
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-green-700 mb-2">
+                      Payment Notes (Optional)
+                    </label>
+                    <textarea
+                      value={paymentData.payment_notes}
+                      onChange={(e) => setPaymentData(prev => ({ ...prev, payment_notes: e.target.value }))}
+                      rows={2}
+                      className="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Additional payment details..."
+                    />
+                  </div>
+
+                  <div className="bg-green-100 p-3 rounded-md">
+                    <p className="text-sm text-green-800">
+                      ✅ This invoice will be marked as <strong>PAID</strong> and will appear as a completed sale in your dashboard and reports.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Notes (Optional)
@@ -726,6 +832,36 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Payment Status Preview */}
+            {markAsPaid && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="font-medium text-green-800 mb-3">💰 Payment Details Preview</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-green-700">Status:</span>
+                    <span className="font-semibold text-green-800">PAID</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-700">Amount:</span>
+                    <span className="font-semibold text-green-800">{formData.currency} {totals.total.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-700">Payment Method:</span>
+                    <span className="text-green-800 capitalize">{paymentData.payment_method.replace('_', ' ')}</span>
+                  </div>
+                  {paymentData.payment_reference && (
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Reference:</span>
+                      <span className="text-green-800">{paymentData.payment_reference}</span>
+                    </div>
+                  )}
+                  <div className="mt-3 p-2 bg-green-100 rounded text-xs text-green-800">
+                    ✅ This sale will appear immediately in your dashboard revenue and reports
+                  </div>
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
