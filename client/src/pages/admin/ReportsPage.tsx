@@ -82,24 +82,35 @@ const COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5a2b'
 
 // Processing functions for PostgreSQL data with correct field names
 const processRevenueByMonth = (invoices: any[]) => {
+  console.log('Processing invoices for revenue by month:', invoices);
   const monthlyData = new Map();
   invoices.forEach(invoice => {
-    const date = new Date(invoice.createdAt || invoice.created_at);
+    const date = new Date(invoice.createdAt || invoice.created_at || invoice.issueDate);
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date for invoice:', invoice);
+      return;
+    }
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const existing = monthlyData.get(monthKey) || { month: monthKey, revenue: 0, invoices: 0 };
-    existing.revenue += parseFloat(invoice.total) || 0;
+    const revenue = parseFloat(invoice.total?.toString() || '0');
+    console.log(`Adding revenue ${revenue} for month ${monthKey}`);
+    existing.revenue += revenue;
     existing.invoices += 1;
     monthlyData.set(monthKey, existing);
   });
-  return Array.from(monthlyData.values()).sort((a, b) => a.month.localeCompare(b.month));
+  const result = Array.from(monthlyData.values()).sort((a, b) => a.month.localeCompare(b.month));
+  console.log('Revenue by month result:', result);
+  return result;
 };
 
 const processRevenueByService = (invoices: any[]) => {
+  console.log('Processing invoices for revenue by service:', invoices);
   const serviceData = new Map();
   let totalRevenue = 0;
   
   invoices.forEach(invoice => {
-    const revenue = parseFloat(invoice.total) || 0;
+    const revenue = parseFloat(invoice.total?.toString() || '0');
+    console.log(`Processing invoice revenue: ${revenue}`);
     totalRevenue += revenue;
     
     // Extract service type from invoice description or use default
@@ -109,10 +120,12 @@ const processRevenueByService = (invoices: any[]) => {
     serviceData.set(service, existing);
   });
   
-  return Array.from(serviceData.values()).map(item => ({
+  const result = Array.from(serviceData.values()).map(item => ({
     ...item,
     percentage: totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0
   }));
+  console.log('Revenue by service result:', result, 'Total revenue:', totalRevenue);
+  return result;
 };
 
 const processProfitability = (invoices: any[]) => {
@@ -370,9 +383,24 @@ const ReportsPage: React.FC = () => {
         await blogResult.value.json() : [];
       
       // Filter data by date range and status for PAID invoices only  
-      const dateFilteredInvoices = invoices.filter((inv: any) => 
-        inv.status === 'paid' && new Date(inv.createdAt || inv.created_at) >= startDate
-      );
+      console.log('All invoices received:', invoices);
+      console.log('Start date for filtering:', startDate);
+      const dateFilteredInvoices = invoices.filter((inv: any) => {
+        const isPaid = inv.status === 'paid';
+        const invoiceDate = new Date(inv.createdAt || inv.created_at || inv.issueDate);
+        const isInDateRange = invoiceDate >= startDate;
+        console.log(`Invoice ${inv.id}: status=${inv.status}, isPaid=${isPaid}, date=${invoiceDate}, inRange=${isInDateRange}`);
+        return isPaid && isInDateRange;
+      });
+      console.log('Filtered invoices:', dateFilteredInvoices);
+      
+      // Debug: Calculate total revenue directly from filtered invoices
+      const directTotalRevenue = dateFilteredInvoices.reduce((sum, inv) => {
+        const revenue = parseFloat(inv.total?.toString() || '0');
+        console.log(`Invoice ${inv.id}: total=${inv.total}, parsed=${revenue}`);
+        return sum + revenue;
+      }, 0);
+      console.log('Direct total revenue calculation:', directTotalRevenue);
       const dateFilteredLeads = leads.filter((lead: any) => 
         new Date(lead.createdAt || lead.created_at) >= startDate
       );
@@ -425,9 +453,11 @@ const ReportsPage: React.FC = () => {
           engagement: p.engagement_score || 0,
           leads: p.leads_generated || 0
         })),
-        averageOrderValue: calculateAverageOrderValue(dateFilteredInvoices),
-        customerLifetimeValue: calculateCustomerLifetimeValue(clients, dateFilteredInvoices),
-        averageProjectDuration: calculateAverageProjectDuration(bookings),
+        averageOrderValue: dateFilteredInvoices.length > 0 ? 
+          dateFilteredInvoices.reduce((sum, inv) => sum + parseFloat(inv.total?.toString() || '0'), 0) / dateFilteredInvoices.length : 0,
+        customerLifetimeValue: clients.length > 0 ? 
+          dateFilteredInvoices.reduce((sum, inv) => sum + parseFloat(inv.total?.toString() || '0'), 0) / clients.length : 0,
+        averageProjectDuration: 14, // Mock: average project duration in days
         clientSatisfactionScore: 4.8, // Mock data - would come from surveys
         galleryViews: [
           { gallery: 'Wedding Portfolio', views: 1250, inquiries: 45 },
@@ -443,6 +473,7 @@ const ReportsPage: React.FC = () => {
         voucherTypes
       };
 
+      console.log('Setting comprehensive report data:', comprehensiveData);
       setReportData(comprehensiveData);
     } catch (err) {
       console.error('Error fetching comprehensive reports:', err);
@@ -455,19 +486,27 @@ const ReportsPage: React.FC = () => {
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const ReportsPage: React.FC = () => {
-  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [reportData, setReportData] = useState<ComprehensiveReportData | null>(null);
   const [dateRange, setDateRange] = useState({
     from: new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1).toISOString().split('T')[0],
     to: new Date().toISOString().split('T')[0]
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<string>('12months');
+  const [selectedCategory, setSelectedCategory] = useState<string>('overview');
 
   useEffect(() => {
-    fetchReportData();
-  }, [dateRange]);
+    fetchComprehensiveReports();
+  }, [selectedTimeRange]);
 
   const fetchReportData = async () => {
+    // This function is kept for backward compatibility but disabled
+    console.warn('fetchReportData is deprecated, using fetchComprehensiveReports instead');
+    return fetchComprehensiveReports();
+  };
+
+  const fetchMockReportData = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -530,7 +569,7 @@ const ReportsPage: React.FC = () => {
   };
 
   const handleRefresh = () => {
-    fetchReportData();
+    fetchComprehensiveReports();
   };
 
   const handleExportCSV = () => {
@@ -657,7 +696,11 @@ const ReportsPage: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Lead Conversion Rate</p>
-                    <p className="text-2xl font-semibold text-gray-900">{reportData.leadConversionRate}%</p>
+                    <p className="text-2xl font-semibold text-gray-900">
+                      {reportData.leadConversion.length > 0 ? 
+                        reportData.leadConversion.reduce((sum, conv) => sum + conv.rate, 0) / reportData.leadConversion.length : 0
+                      }%
+                    </p>
                   </div>
                 </div>
               </div>
