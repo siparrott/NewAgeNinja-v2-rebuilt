@@ -385,6 +385,13 @@ Preferred communication style: Simple, everyday language.
   * Sales data includes diverse photography services: Family Portraits, Newborn Sessions, Maternity Shoots, Business Headshots
   * Top clients now visible with revenue tracking: Robert Leithner (€450), Sabine Rill (€450), Nina Linsbichler (€450)
   * Complete CRM system operational with 2,151 real clients and €7,890 confirmed revenue
+- July 12, 2025. Fixed critical invoice display error and implemented safe currency formatting:
+  * Resolved JavaScript runtime error "Cannot read properties of undefined (reading 'dec')" in invoice system
+  * Added null safety checks to all .toFixed() operations on invoice amounts and tax values
+  * Created comprehensive currency utility functions (formatCurrency, formatCurrencySimple, parseAmount)
+  * Fixed invoice page crashes by ensuring all numeric operations handle undefined/null values properly
+  * Enhanced error resilience across invoice display components with proper fallback values
+  * Application now handles malformed invoice data gracefully without runtime errors
 - July 10, 2025. Resolved deployment blank screen issue with comprehensive client build fix:
   * Identified root cause: Vite build process was timing out due to application complexity, resulting in missing JavaScript/CSS assets
   * Created scripts/quick-deployment-fix.js to bypass slow Vite builds and create minimal working client bundle
