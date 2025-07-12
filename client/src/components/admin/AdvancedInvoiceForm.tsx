@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../../lib/queryClient';
-// Removed invoice-api and priceList imports to fix missing dependencies
+import { priceListService, PriceListItem } from '../../lib/invoicing';
 
 interface Client {
   id: string;
@@ -81,6 +81,7 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showPriceList, setShowPriceList] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [priceList, setPriceList] = useState<PriceListItem[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<InvoiceFormData>({
     client_id: '',
@@ -127,11 +128,21 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
   useEffect(() => {
     if (isOpen) {
       fetchClients();
+      fetchPriceList();
       if (editingInvoice) {
         loadInvoiceData();
       }
     }
   }, [isOpen, editingInvoice]);
+
+  const fetchPriceList = async () => {
+    try {
+      const items = await priceListService.getPriceListItems();
+      setPriceList(items);
+    } catch (err) {
+      setPriceList([]);
+    }
+  };
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -1137,51 +1148,40 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
                 </select>
               </div>
 
-              {/* Simplified Service Items */}
+              {/* Complete Price List from API */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
-                  <h4 className="font-medium text-gray-900">Family Portrait Session</h4>
-                  <p className="text-sm text-gray-600 mb-2">Professional family photography session</p>
-                  <p className="font-semibold text-purple-600 mb-3">€295.00</p>
-                  <button
-                    onClick={() => {
-                      const newItem: InvoiceItem = {
-                        id: Date.now().toString(),
-                        description: 'Family Portrait Session',
-                        quantity: 1,
-                        unit_price: 295,
-                        tax_rate: 19
-                      };
-                      setFormData(prev => ({...prev, items: [...prev.items, newItem]}));
-                      setShowPriceList(false);
-                    }}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm"
-                  >
-                    Add to Invoice
-                  </button>
-                </div>
-                
-                <div className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
-                  <h4 className="font-medium text-gray-900">Digital Photo Package</h4>
-                  <p className="text-sm text-gray-600 mb-2">10 high-resolution edited photos</p>
-                  <p className="font-semibold text-purple-600 mb-3">€150.00</p>
-                  <button
-                    onClick={() => {
-                      const newItem: InvoiceItem = {
-                        id: Date.now().toString(),
-                        description: 'Digital Photo Package (10 photos)',
-                        quantity: 1,
-                        unit_price: 150,
-                        tax_rate: 19
-                      };
-                      setFormData(prev => ({...prev, items: [...prev.items, newItem]}));
-                      setShowPriceList(false);
-                    }}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm"
-                  >
-                    Add to Invoice
-                  </button>
-                </div>
+                {priceList.length > 0 ? (
+                  priceList.map((item) => (
+                    <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
+                      <h4 className="font-medium text-gray-900">{item.name}</h4>
+                      <p className="text-sm text-gray-600 mb-2">{item.description || 'Professional photography service'}</p>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="font-semibold text-purple-600">€{(item.price || 0).toFixed(2)}</p>
+                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">{item.category}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newItem: InvoiceItem = {
+                            id: Date.now().toString(),
+                            description: item.name + (item.description ? ` - ${item.description}` : ''),
+                            quantity: 1,
+                            unit_price: item.price || 0,
+                            tax_rate: item.tax_rate || 19
+                          };
+                          setFormData(prev => ({...prev, items: [...prev.items, newItem]}));
+                          setShowPriceList(false);
+                        }}
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm"
+                      >
+                        Add to Invoice
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8 text-gray-500">
+                    Loading price list...
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

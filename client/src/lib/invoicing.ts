@@ -420,26 +420,13 @@ export const emailService = {
 export const priceListService = {
   async getPriceListItems(): Promise<PriceListItem[]> {
     try {
-      const response = await fetch('/api/crm/price-list', {
-        method: 'GET',
-        credentials: 'include',
-      });
-
+      const response = await fetch('/api/crm/price-list');
       if (!response.ok) {
-        throw new Error(`Failed to fetch price list: ${response.status} ${response.statusText}`);
+        return [];
       }
-
       const data = await response.json();
-      console.log('Price list API response:', data.length, 'items received');
-      
-      if (!Array.isArray(data)) {
-        throw new Error('Invalid price list response format');
-      }
-      
-      return data;
+      return Array.isArray(data) ? data : [];
     } catch (error) {
-      console.error('Price list service error:', error);
-      // Return empty array instead of throwing to prevent modal from breaking
       return [];
     }
   },

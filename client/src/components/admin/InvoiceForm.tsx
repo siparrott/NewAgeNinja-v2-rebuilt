@@ -71,10 +71,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const fetchPriceList = async () => {
     try {
       const items = await priceListService.getPriceListItems();
-      console.log('Fetched price list items:', items.length, items);
       setPriceList(items);
     } catch (err) {
-      console.error('Error fetching price list:', err);
+      // Fallback to empty array to prevent modal from breaking
+      setPriceList([]);
     }
   };
 
@@ -515,9 +515,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </div>
             <div className="max-h-96 overflow-y-auto p-6">
               <div className="space-y-2">
-                <div className="text-xs text-gray-500 mb-2">
-                  Showing {filteredPriceList.length} of {priceList.length} items
-                </div>
+
                 {filteredPriceList.map(item => (
                   <div
                     key={item.id}
