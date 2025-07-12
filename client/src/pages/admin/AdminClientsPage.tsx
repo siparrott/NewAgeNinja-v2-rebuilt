@@ -4,16 +4,20 @@ import { Plus, Search, Filter, Eye, Edit, Trash2, Phone, Mail, MapPin, Building 
 
 interface Client {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  clientId?: string;
   email: string;
   phone: string;
   address: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
   company: string;
   notes: string;
   status: 'active' | 'inactive' | 'archived';
-  leadId?: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 const AdminClientsPage: React.FC = () => {
@@ -34,58 +38,13 @@ const AdminClientsPage: React.FC = () => {
 
   const fetchClients = async () => {
     try {
-      // Simulate API call - replace with actual endpoint
-      const mockClients: Client[] = [
-        {
-          id: '1',
-          name: 'Sarah Mueller',
-          email: 'sarah@example.com',
-          phone: '+43 123 456 789',
-          address: 'Mariahilfer Str. 123, 1060 Wien',
-          company: 'Mueller Photography',
-          notes: 'Regular client, prefers outdoor sessions',
-          status: 'active',
-          createdAt: '2025-01-20T10:30:00Z',
-          updatedAt: '2025-01-25T10:30:00Z'
-        },
-        {
-          id: '2',
-          name: 'Michael Schmidt',
-          email: 'michael@example.com',
-          phone: '+43 987 654 321',
-          address: 'Ringstraße 45, 1010 Wien',
-          company: 'Schmidt Events',
-          notes: 'Wedding photographer collaboration',
-          status: 'active',
-          createdAt: '2025-01-18T09:15:00Z',
-          updatedAt: '2025-01-24T11:20:00Z'
-        },
-        {
-          id: '3',
-          name: 'Anna Weber',
-          email: 'anna@example.com',
-          phone: '+43 555 123 456',
-          address: 'Praterstraße 78, 1020 Wien',
-          company: '',
-          notes: 'New mother, interested in family packages',
-          status: 'active',
-          createdAt: '2025-01-15T16:45:00Z',
-          updatedAt: '2025-01-23T08:30:00Z'
-        },
-        {
-          id: '4',
-          name: 'Thomas Huber',
-          email: 'thomas@example.com',
-          phone: '+43 777 888 999',
-          address: 'Währinger Str. 234, 1180 Wien',
-          company: 'Huber Consulting',
-          notes: 'Corporate headshots completed',
-          status: 'inactive',
-          createdAt: '2025-01-10T14:20:00Z',
-          updatedAt: '2025-01-22T16:00:00Z'
-        }
-      ];
-      setClients(mockClients);
+      // Fetch real clients from API
+      const response = await fetch('/api/crm/clients');
+      if (!response.ok) {
+        throw new Error('Failed to fetch clients');
+      }
+      const realClients = await response.json();
+      setClients(realClients);
     } catch (error) {
       // console.error removed
     } finally {
@@ -98,9 +57,10 @@ const AdminClientsPage: React.FC = () => {
 
     if (searchTerm) {
       filtered = filtered.filter(client =>
-        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.company.toLowerCase().includes(searchTerm.toLowerCase())
+        (client.company && client.company.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -193,7 +153,7 @@ const AdminClientsPage: React.FC = () => {
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{client.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{client.firstName} {client.lastName}</h3>
                     {client.company && (
                       <p className="text-sm text-gray-600 flex items-center mt-1">
                         <Building size={14} className="mr-1" />
