@@ -47,6 +47,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
   const [currentStep, setCurrentStep] = useState<Step>('content');
   const [formData, setFormData] = useState<BlogPost>({
     title: '',
+    slug: '',
     excerpt: '',
     content_html: '',
     status: 'DRAFT',
@@ -54,6 +55,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
     meta_description: '',
     tags: [],
     scheduled_for: '',
+    cover_image: ''
   });
   
   const [availableTags, setAvailableTags] = useState<{id: string, name: string}[]>([]);
@@ -76,8 +78,17 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
     
     if (post && isEditing) {
       setFormData({
-        ...post,
+        title: post.title || '',
+        slug: post.slug || '',
+        excerpt: post.excerpt || '',
+        content_html: post.content_html || '',
+        status: post.status || 'DRAFT',
+        seo_title: post.seo_title || '',
+        meta_description: post.meta_description || '',
         tags: post.tags || [],
+        scheduled_for: post.scheduled_for || '',
+        cover_image: post.cover_image || '',
+        ...post
       });
       setSelectedTags(post.tags || []);
     }
@@ -142,7 +153,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
   };
 
   const handleAddTag = () => {
-    if (newTag.trim() && !selectedTags.includes(newTag.trim())) {
+    if (newTag?.trim() && !selectedTags.includes(newTag.trim())) {
       const updatedTags = [...selectedTags, newTag.trim()];
       setSelectedTags(updatedTags);
       handleChange('tags', updatedTags);
@@ -167,11 +178,11 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
   const validateStep = (step: Step): boolean => {
     switch (step) {
       case 'content':
-        return !!(formData.title.trim() && formData.content_html.trim());
+        return !!(formData.title?.trim() && formData.content_html?.trim());
       case 'media':
         return true; // Media is optional
       case 'meta':
-        return !!(formData.excerpt.trim());
+        return !!(formData.excerpt?.trim());
       case 'preview':
         return true;
       default:
@@ -207,9 +218,9 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
     
     try {
       const postData = {
-        title: formData.title,
-        slug: formData.slug || generateSlug(formData.title),
-        excerpt: formData.excerpt,
+        title: formData.title || '',
+        slug: formData.slug || generateSlug(formData.title || ''),
+        excerpt: formData.excerpt || '',
         content: formData.content_html || '',
         contentHtml: formData.content_html || '',
         imageUrl: formData.cover_image || '',
@@ -303,7 +314,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
           onChange={(e) => {
             handleChange('title', e.target.value);
             // Auto-generate slug if not manually set
-            if (!formData.slug || formData.slug === generateSlug(formData.title)) {
+            if (!formData.slug || formData.slug === generateSlug(formData.title || '')) {
               handleChange('slug', generateSlug(e.target.value));
             }
           }}
