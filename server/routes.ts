@@ -885,9 +885,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/blog/posts/:slug", async (req: Request, res: Response) => {
+  app.get("/api/blog/posts/:identifier", async (req: Request, res: Response) => {
     try {
-      const post = await storage.getBlogPostBySlug(req.params.slug);
+      const identifier = req.params.identifier;
+      let post;
+      
+      // Check if identifier is a UUID (for ID lookup) or a slug
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier);
+      
+      if (isUUID) {
+        // Fetch by ID
+        const posts = await storage.getBlogPosts();
+        post = posts.find(p => p.id === identifier);
+      } else {
+        // Fetch by slug
+        post = await storage.getBlogPostBySlug(identifier);
+      }
+      
       if (!post) {
         return res.status(404).json({ error: "Post not found" });
       }

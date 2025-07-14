@@ -43,33 +43,26 @@ const AdminBlogEditPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch post with tags
-      const { data: postData, error: postError } = await supabase
-        .from('blog_posts')
-        .select(`
-          *,
-          author:author_id(email),
-          blog_post_tags(
-            blog_tags(id, name)
-          )
-        `)
-        .eq('id', postId)
-        .single();
+      // Fetch post from PostgreSQL API using ID
+      const response = await fetch(`/api/blog/posts/${postId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch post');
+      }
       
-      if (postError) throw postError;
-        // Format the post data to match our interface
+      const postData = await response.json();
+      
+      // Format the post data to match our interface
       const formattedPost: BlogPost = {
         ...postData,
-        excerpt: postData.excerpt || '', // Ensure excerpt is not undefined
-        tags: postData.blog_post_tags?.map((tag: any) => tag.blog_tags.name) || [],
-        // Convert legacy fields to new schema
-        cover_image: postData.cover_image || postData.image_url,
+        excerpt: postData.excerpt || '',
+        tags: postData.tags || [],
+        cover_image: postData.coverImage || postData.cover_image,
         status: postData.status || (postData.published ? 'PUBLISHED' : 'DRAFT')
       };
       
       setPost(formattedPost);
     } catch (err) {
-      // console.error removed
+      console.error('Error fetching post:', err);
       setError('Failed to load blog post. Please try again.');
     } finally {
       setLoading(false);

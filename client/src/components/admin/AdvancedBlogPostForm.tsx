@@ -97,6 +97,16 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
     }
   };
 
+  const generateSlug = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters except hyphens
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+      .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+      .substring(0, 60); // Limit length
+  };
+
   const handleChange = (field: keyof BlogPost, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -198,7 +208,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
     try {
       const postData = {
         title: formData.title,
-        slug: formData.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-'),
+        slug: formData.slug || generateSlug(formData.title),
         excerpt: formData.excerpt,
         content: formData.content_html || '',
         contentHtml: formData.content_html || '',
@@ -290,10 +300,38 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
         <input
           type="text"
           value={formData.title}
-          onChange={(e) => handleChange('title', e.target.value)}
+          onChange={(e) => {
+            handleChange('title', e.target.value);
+            // Auto-generate slug if not manually set
+            if (!formData.slug || formData.slug === generateSlug(formData.title)) {
+              handleChange('slug', generateSlug(e.target.value));
+            }
+          }}
           className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
           placeholder="Enter your post title..."
         />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          URL Slug <span className="text-red-500">*</span>
+          <span className="text-xs text-gray-500 ml-2">(Used in the post URL)</span>
+        </label>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-500 px-3 py-3 bg-gray-50 border border-gray-300 rounded-l-lg">
+            /blog/
+          </span>
+          <input
+            type="text"
+            value={formData.slug || ''}
+            onChange={(e) => handleChange('slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-'))}
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            placeholder="post-url-slug"
+          />
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Only lowercase letters, numbers, and hyphens allowed. Auto-generated from title if left empty.
+        </p>
       </div>
       
       <div>
