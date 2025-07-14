@@ -2816,8 +2816,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
-  // Start smart background email import with duplicate prevention
-  startBackgroundEmailImport();
+  // Disabled background email import to prevent server overload
+  // startBackgroundEmailImport();
 
   // Endpoint to get email import status
   app.get("/api/email/import-status", authenticateUser, async (req: Request, res: Response) => {
@@ -2830,7 +2830,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== HEALTH CHECK ====================
   app.get("/api/health", (req: Request, res: Response) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
+    try {
+      res.json({ 
+        status: "ok", 
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        demoMode: process.env.DEMO_MODE,
+        databaseUrl: process.env.DATABASE_URL ? 'configured' : 'missing'
+      });
+    } catch (error) {
+      console.error('Health check error:', error);
+      res.status(500).json({ 
+        status: "error", 
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // ==================== CLIENT ERROR LOGGING ====================
+  app.post("/api/client-error", (req: Request, res: Response) => {
+    try {
+      const { error, timestamp, url, userAgent } = req.body;
+      console.error(`Client Error [${timestamp}]:`, error);
+      console.error(`URL: ${url || req.headers.referer}`);
+      console.error(`User Agent: ${userAgent || req.headers['user-agent']}`);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Failed to log client error:', error);
+      res.status(500).json({ success: false });
+    }
   });
 
   // Website scraping and customization routes
