@@ -53,11 +53,21 @@ const AdminBlogEditPage: React.FC = () => {
       
       // Format the post data to match our interface
       const formattedPost: BlogPost = {
-        ...postData,
+        id: postData.id,
+        title: postData.title || '',
+        slug: postData.slug || '',
         excerpt: postData.excerpt || '',
+        content_html: postData.contentHtml || postData.content_html || postData.content || '',
+        cover_image: postData.imageUrl || postData.cover_image || '',
         tags: postData.tags || [],
-        cover_image: postData.coverImage || postData.cover_image,
-        status: postData.status || (postData.published ? 'PUBLISHED' : 'DRAFT')
+        status: postData.published ? 'PUBLISHED' : 'DRAFT',
+        seo_title: postData.seoTitle || postData.seo_title || '',
+        meta_description: postData.metaDescription || postData.meta_description || '',
+        author_id: postData.authorId || postData.author_id || '',
+        published_at: postData.publishedAt || postData.published_at || '',
+        scheduled_for: postData.scheduled_for || '',
+        created_at: postData.createdAt || postData.created_at || '',
+        updated_at: postData.updatedAt || postData.updated_at || ''
       };
       
       setPost(formattedPost);

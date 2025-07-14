@@ -77,7 +77,7 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
     fetchTags();
     
     if (post && isEditing) {
-      setFormData({
+      const mappedData = {
         title: post.title || '',
         slug: post.slug || '',
         excerpt: post.excerpt || '',
@@ -88,8 +88,14 @@ const AdvancedBlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = f
         tags: post.tags || [],
         scheduled_for: post.scheduled_for || '',
         cover_image: post.cover_image || '',
-        ...post
-      });
+        id: post.id,
+        author_id: post.author_id,
+        published_at: post.published_at,
+        created_at: post.created_at,
+        updated_at: post.updated_at
+      };
+      
+      setFormData(mappedData);
       setSelectedTags(post.tags || []);
     }
   }, [post, isEditing]);
