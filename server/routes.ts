@@ -2657,6 +2657,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Health check endpoint for deployment monitoring
+  app.get("/api/health", (req: Request, res: Response) => {
+    res.json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || "development",
+      version: "1.0.0"
+    });
+  });
+
   // ==================== AUTOMATIC EMAIL REFRESH ====================
   app.post("/api/email/refresh", authenticateUser, async (req: Request, res: Response) => {
     try {

@@ -13,7 +13,10 @@
     "db:push": "drizzle-kit push",
     "demo:setup": "node scripts/setup-demo-data.js",
     "demo:reset": "node scripts/reset-demo-data.js",
-    "deploy:start": "NODE_ENV=production PORT=5000 tsx server/index.ts"
+    "deploy:start": "NODE_ENV=production PORT=5000 tsx server/index.ts",
+    "start:stable": "bash start-production.sh",
+    "health:check": "bash health-check.sh",
+    "deploy": "npm run build && npm run start:stable"
   },
   "keywords": [
     "photography",

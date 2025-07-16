@@ -1,59 +1,137 @@
 #!/usr/bin/env node
 
 /**
- * Production server startup script for New Age Fotografie CRM
- * Handles environment variables and port binding for Replit deployment
+ * Production-ready startup script for New Age Fotografie CRM
+ * This script ensures stable deployment with proper error handling
+ * and automatic recovery mechanisms.
  */
 
 import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
+import fs from 'fs';
+import path from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const logFile = 'deployment.log';
+const pidFile = 'server.pid';
 
-// Set production environment
-process.env.NODE_ENV = 'production';
-process.env.DEMO_MODE = 'false';
+function log(message) {
+  const timestamp = new Date().toISOString();
+  console.log(`${timestamp} - ${message}`);
+  fs.appendFileSync(logFile, `${timestamp} - ${message}\n`);
+}
 
-// Use PORT from environment or default to 5000
-const port = process.env.PORT || '5000';
-process.env.PORT = port;
-
-console.log('🎯 Starting New Age Fotografie CRM - Live Production Site');
-console.log(`Environment: ${process.env.NODE_ENV}`);
-console.log(`Port: ${port}`);
-console.log(`Working directory: ${process.cwd()}`);
-
-// Start the server with tsx
-const serverPath = resolve(__dirname, 'server/index.ts');
-const child = spawn('tsx', [serverPath], {
-  stdio: 'inherit',
-  env: {
-    ...process.env,
-    NODE_ENV: 'production',
-    PORT: port,
-    DEMO_MODE: 'false'
+function startServer() {
+  log('🚀 Starting New Age Fotografie CRM production server...');
+  
+  // Set production environment variables
+  process.env.NODE_ENV = 'production';
+  process.env.DEMO_MODE = 'false';
+  
+  // Kill any existing server process
+  if (fs.existsSync(pidFile)) {
+    try {
+      const oldPid = fs.readFileSync(pidFile, 'utf8').trim();
+      process.kill(oldPid, 'SIGTERM');
+      log(`Terminated old server process: ${oldPid}`);
+    } catch (error) {
+      log(`Failed to kill old process: ${error.message}`);
+    }
+    fs.unlinkSync(pidFile);
   }
-});
+  
+  // Choose server configuration
+  let serverScript = 'server/index.production.ts';
+  if (!fs.existsSync(serverScript)) {
+    log('⚠️ Production server not found, using development configuration');
+    serverScript = 'server/index.ts';
+  }
+  
+  log(`✅ Using server script: ${serverScript}`);
+  
+  // Start server with tsx for TypeScript execution
+  const serverProcess = spawn('npx', ['tsx', serverScript], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env },
+    detached: false
+  });
+  
+  // Save PID for monitoring
+  fs.writeFileSync(pidFile, serverProcess.pid.toString());
+  log(`Server started with PID: ${serverProcess.pid}`);
+  
+  // Handle server output
+  serverProcess.stdout.on('data', (data) => {
+    const output = data.toString().trim();
+    if (output) {
+      console.log(output);
+      fs.appendFileSync(logFile, `${new Date().toISOString()} - STDOUT: ${output}\n`);
+    }
+  });
+  
+  serverProcess.stderr.on('data', (data) => {
+    const error = data.toString().trim();
+    if (error) {
+      console.error(error);
+      fs.appendFileSync(logFile, `${new Date().toISOString()} - STDERR: ${error}\n`);
+    }
+  });
+  
+  // Handle server exit
+  serverProcess.on('exit', (code, signal) => {
+    log(`Server exited with code ${code} and signal ${signal}`);
+    if (fs.existsSync(pidFile)) {
+      fs.unlinkSync(pidFile);
+    }
+    
+    // Auto-restart on unexpected exit
+    if (code !== 0 && signal !== 'SIGTERM') {
+      log('🔄 Server crashed, restarting in 5 seconds...');
+      setTimeout(startServer, 5000);
+    }
+  });
+  
+  // Handle process signals
+  process.on('SIGTERM', () => {
+    log('Received SIGTERM, gracefully shutting down...');
+    serverProcess.kill('SIGTERM');
+    process.exit(0);
+  });
+  
+  process.on('SIGINT', () => {
+    log('Received SIGINT, gracefully shutting down...');
+    serverProcess.kill('SIGTERM');
+    process.exit(0);
+  });
+  
+  return serverProcess;
+}
 
-child.on('error', (error) => {
-  console.error('❌ Failed to start server:', error.message);
-  process.exit(1);
-});
+// Health check function
+async function healthCheck() {
+  try {
+    const response = await fetch('http://localhost:5000/api/health');
+    if (response.ok) {
+      log('✅ Health check passed');
+      return true;
+    } else {
+      log(`❌ Health check failed: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    log(`❌ Health check error: ${error.message}`);
+    return false;
+  }
+}
 
-child.on('exit', (code) => {
-  console.log(`Server exited with code ${code}`);
-  process.exit(code || 0);
-});
+// Start the server
+const server = startServer();
 
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('Received SIGTERM, shutting down gracefully');
-  child.kill('SIGTERM');
-});
+// Set up health monitoring
+setInterval(async () => {
+  const isHealthy = await healthCheck();
+  if (!isHealthy && fs.existsSync(pidFile)) {
+    log('⚠️ Server appears unhealthy, attempting restart...');
+    server.kill('SIGTERM');
+  }
+}, 60000); // Check every minute
 
-process.on('SIGINT', () => {
-  console.log('Received SIGINT, shutting down gracefully');
-  child.kill('SIGINT');
-});
+log('🎯 Production server startup completed');

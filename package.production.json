@@ -1,0 +1,21 @@
+{
+  "name": "newage-fotografie-crm",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "New Age Fotografie CRM - Production",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "start:production": "NODE_ENV=production node server/index.production.js",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build --outDir dist/public",
+    "build:server": "esbuild server/index.production.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/index.js --external:@neondatabase/serverless --external:drizzle-orm --external:tsx",
+    "dev": "NODE_ENV=development tsx server/index.ts",
+    "health": "curl -f http://localhost:5000/api/health || exit 1"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "drizzle-orm": "^0.29.0",
+    "@neondatabase/serverless": "^0.7.2"
+  }
+}
