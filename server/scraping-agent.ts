@@ -395,3 +395,31 @@ export class SEOAgent {
     };
   }
 }
+
+/**
+ * Simple function to scrape site content for AutoBlog context
+ * Returns simplified data structure for brand voice analysis
+ */
+export async function scrapeSiteContent(url: string) {
+  try {
+    const scrapedData = await WebsiteScraper.scrapeWebsite(url);
+    
+    return {
+      services: scrapedData.content.services.join(', '),
+      brandVoice: scrapedData.content.aboutText,
+      keyFeatures: scrapedData.headings.h2.join(', '),
+      contactInfo: scrapedData.content.contactInfo,
+      title: scrapedData.title
+    };
+  } catch (error) {
+    console.error('Error scraping site content:', error);
+    // Return fallback data
+    return {
+      services: 'Family, newborn, maternity, and portrait photography',
+      brandVoice: 'Professional, warm, and personal photography services',
+      keyFeatures: 'High-quality photography, professional editing, personal service',
+      contactInfo: {},
+      title: 'Professional Photography Studio'
+    };
+  }
+}

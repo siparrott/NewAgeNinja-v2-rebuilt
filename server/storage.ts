@@ -60,6 +60,8 @@ export interface IStorage {
   createBlogPost(post: InsertBlogPost): Promise<BlogPost>;
   updateBlogPost(id: string, updates: Partial<BlogPost>): Promise<BlogPost>;
   deleteBlogPost(id: string): Promise<void>;
+  getAllBlogSlugs(): Promise<string[]>;
+  savePublicAsset(bucket: string, filename: string, buffer: Buffer): Promise<string>;
 
   // CRM Client management
   getCrmClients(): Promise<CrmClient[]>;
@@ -518,6 +520,33 @@ export class DatabaseStorage implements IStorage {
   async createCouponUsage(usage: InsertCouponUsage): Promise<CouponUsage> {
     const results = await db.insert(couponUsage).values(usage).returning();
     return results[0];
+  }
+
+  // AutoBlog helper methods
+  async getAllBlogSlugs(): Promise<string[]> {
+    const results = await db.select({ slug: blogPosts.slug }).from(blogPosts);
+    return results.map(r => r.slug);
+  }
+
+  async savePublicAsset(bucket: string, filename: string, buffer: Buffer): Promise<string> {
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    // Create directory structure if it doesn't exist
+    const uploadDir = path.join(process.cwd(), 'server', 'public', bucket);
+    
+    try {
+      await fs.mkdir(uploadDir, { recursive: true });
+    } catch (error) {
+      // Directory might already exist
+    }
+    
+    // Save file
+    const filePath = path.join(uploadDir, filename);
+    await fs.writeFile(filePath, buffer);
+    
+    // Return public URL
+    return `/public/${bucket}/${filename}`;
   }
 }
 

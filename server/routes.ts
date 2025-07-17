@@ -4148,6 +4148,106 @@ Was interessiert Sie am meisten?`;
     }
   }
 
+  // ==================== AUTOBLOG ROUTES ====================
+  // Set up multer for file uploads
+  const autoblogUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+      files: 3 // Maximum 3 images
+    },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed'), false);
+      }
+    }
+  });
+
+  // AutoBlog generation endpoint
+  app.post("/api/autoblog/generate", authenticateUser, autoblogUpload.array('images', 3), async (req: Request, res: Response) => {
+    try {
+      const { AutoBlogOrchestrator } = await import('./autoblog');
+      const { autoBlogInputSchema } = await import('./autoblog-schema');
+      
+      // Validate input
+      const input = autoBlogInputSchema.parse({
+        userPrompt: req.body.userPrompt,
+        language: req.body.language || 'de',
+        siteUrl: req.body.siteUrl,
+        publishNow: req.body.publishNow === 'true'
+      });
+
+      // Check if files were uploaded
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'At least one image is required' 
+        });
+      }
+
+      // Get user ID for blog post creation
+      const authorId = req.user?.id;
+      if (!authorId) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'User authentication required' 
+        });
+      }
+
+      // Initialize AutoBlog orchestrator
+      const orchestrator = new AutoBlogOrchestrator();
+      
+      // Generate blog post
+      const result = await orchestrator.generateAutoBlog(
+        req.files as Express.Multer.File[],
+        input,
+        authorId
+      );
+
+      res.json(result);
+    } catch (error) {
+      console.error('AutoBlog generation error:', error);
+      
+      let errorMessage = 'Failed to generate blog post';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: errorMessage 
+      });
+    }
+  });
+
+  // AutoBlog status endpoint
+  app.get("/api/autoblog/status", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const openaiAvailable = !!process.env.OPENAI_API_KEY;
+      const maxImages = parseInt(process.env.MAX_AUTOBLOG_IMAGES || '3');
+      
+      res.json({
+        available: openaiAvailable,
+        maxImages,
+        supportedLanguages: ['de', 'en'],
+        features: [
+          'Image-based content generation',
+          'SEO optimization',
+          'Brand voice integration',
+          'Multi-language support'
+        ]
+      });
+    } catch (error) {
+      console.error('AutoBlog status error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to get AutoBlog status' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

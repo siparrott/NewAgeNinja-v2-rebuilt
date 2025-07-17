@@ -88,6 +88,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: Calendar, label: 'Calendar', path: '/admin/calendar' },
     { icon: FolderOpen, label: 'Digital Files', path: '/admin/pro-files' },
     { icon: PenTool, label: 'Blog', path: '/admin/blog' },
+    { icon: Wand2, label: 'AI AutoBlog', path: '/admin/autoblog' },
     { icon: Mail, label: 'Email Campaigns', path: '/admin/campaigns' },
     { icon: Inbox, label: 'Inbox', path: '/admin/inbox', badge: unreadEmailsCount },
     { icon: ClipboardList, label: 'Questionnaires', path: '/admin/questionnaires' },
