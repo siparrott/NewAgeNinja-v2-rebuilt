@@ -493,7 +493,7 @@ export default function AdminAutoBlogPage() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => window.open(`/admin/blog-posts/${result.post?.id}`, '_blank')}
+                    onClick={() => window.open(`/admin/blog/edit/${result.post?.id}`, '_blank')}
                   >
                     Edit Post
                   </Button>
