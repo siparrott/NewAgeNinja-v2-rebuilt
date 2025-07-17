@@ -165,14 +165,17 @@ Key Features: High-quality photography, professional editing, personal service
         throw new Error('No content received from OpenAI');
       }
 
-      console.log('OpenAI raw response:', content.substring(0, 500) + '...');
+      console.log('OpenAI raw response length:', content.length);
+      console.log('OpenAI raw response preview:', content.substring(0, 500) + '...');
 
       // Parse and validate the JSON response
       const parsedContent = JSON.parse(content);
       console.log('Parsed content keys:', Object.keys(parsedContent));
       console.log('Content HTML length:', parsedContent.content_html?.length || 0);
+      console.log('Content HTML preview:', parsedContent.content_html?.substring(0, 200) + '...');
       
       const validatedContent = autoBlogSchema.parse(parsedContent);
+      console.log('Validated content HTML length:', validatedContent.content_html?.length || 0);
 
       // Override status if publishNow is requested
       if (input.publishNow) {
@@ -196,8 +199,11 @@ Key Features: High-quality photography, professional editing, personal service
       const existingSlugs = await storage.getAllBlogSlugs();
       const uniqueSlug = generateUniqueSlug(cleanSlug(aiContent.slug), existingSlugs);
 
+      console.log('Original AI content HTML length:', aiContent.content_html?.length || 0);
+      
       // Sanitize HTML content and embed images
       let sanitizedHtml = stripDangerousHtml(aiContent.content_html);
+      console.log('Sanitized HTML length:', sanitizedHtml?.length || 0);
       
       // Add images to the blog content if they were uploaded
       if (images.length > 0) {
@@ -217,22 +223,23 @@ Key Features: High-quality photography, professional editing, personal service
           sanitizedHtml = imageElements + '\n\n' + sanitizedHtml;
         }
       }
+      
+      console.log('Final HTML content length before database save:', sanitizedHtml?.length || 0);
 
       // Prepare blog post data
       const blogPostData = {
         title: aiContent.title,
         slug: uniqueSlug,
-        content_html: sanitizedHtml,
+        content: sanitizedHtml, // Plain text version for search
+        contentHtml: sanitizedHtml, // HTML version for display
         excerpt: aiContent.excerpt,
-        cover_image: images[0]?.publicUrl || null,
-        seo_title: aiContent.seo_title,
-        meta_description: aiContent.meta_description,
-        status: aiContent.status,
-        published_at: aiContent.publish_now ? new Date() : null,
+        imageUrl: images[0]?.publicUrl || null,
+        seoTitle: aiContent.seo_title,
+        metaDescription: aiContent.meta_description,
+        published: aiContent.publish_now || false,
+        publishedAt: aiContent.publish_now ? new Date() : null,
         tags: aiContent.tags || [],
-        author_id: authorId,
-        view_count: 0,
-        featured: false
+        authorId: authorId,
       };
 
       // Create blog post
@@ -277,7 +284,9 @@ Key Features: High-quality photography, professional editing, personal service
 
       // Step 4: Create blog post
       console.log('Creating blog post...');
+      console.log('AI content before creating post - HTML length:', aiContent.content_html?.length || 0);
       const createdPost = await this.createBlogPost(aiContent, processedImages, authorId);
+      console.log('Blog post created successfully with ID:', createdPost.id);
 
       return {
         success: true,

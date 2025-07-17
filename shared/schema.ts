@@ -656,12 +656,16 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertBlogPostSchema = createInsertSchema(blogPosts).pick({
   title: true,
   content: true,
+  contentHtml: true,
   slug: true,
   excerpt: true,
   published: true,
   imageUrl: true,
   tags: true,
   publishedAt: true,
+  seoTitle: true,
+  metaDescription: true,
+  authorId: true,
 });
 
 export const insertCrmClientSchema = createInsertSchema(crmClients).pick({
