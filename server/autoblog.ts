@@ -156,7 +156,7 @@ Key Features: High-quality photography, professional editing, personal service
           }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 2000,
+        max_tokens: 4000,
         temperature: 0.7
       });
 
@@ -165,8 +165,13 @@ Key Features: High-quality photography, professional editing, personal service
         throw new Error('No content received from OpenAI');
       }
 
+      console.log('OpenAI raw response:', content.substring(0, 500) + '...');
+
       // Parse and validate the JSON response
       const parsedContent = JSON.parse(content);
+      console.log('Parsed content keys:', Object.keys(parsedContent));
+      console.log('Content HTML length:', parsedContent.content_html?.length || 0);
+      
       const validatedContent = autoBlogSchema.parse(parsedContent);
 
       // Override status if publishNow is requested
@@ -191,8 +196,27 @@ Key Features: High-quality photography, professional editing, personal service
       const existingSlugs = await storage.getAllBlogSlugs();
       const uniqueSlug = generateUniqueSlug(cleanSlug(aiContent.slug), existingSlugs);
 
-      // Sanitize HTML content
-      const sanitizedHtml = stripDangerousHtml(aiContent.content_html);
+      // Sanitize HTML content and embed images
+      let sanitizedHtml = stripDangerousHtml(aiContent.content_html);
+      
+      // Add images to the blog content if they were uploaded
+      if (images.length > 0) {
+        const imageElements = images.map((img, index) => {
+          const altText = aiContent.image_alts?.[index] || `Photography session image ${index + 1}`;
+          return `<img src="${img.publicUrl}" alt="${altText}" style="max-width: 100%; height: auto; margin: 20px 0; border-radius: 8px;" />`;
+        }).join('\n');
+        
+        // Insert images after the first paragraph
+        const firstParagraphEnd = sanitizedHtml.indexOf('</p>');
+        if (firstParagraphEnd !== -1) {
+          sanitizedHtml = sanitizedHtml.slice(0, firstParagraphEnd + 4) + 
+                         '\n\n' + imageElements + '\n\n' + 
+                         sanitizedHtml.slice(firstParagraphEnd + 4);
+        } else {
+          // If no paragraphs found, add images at the beginning
+          sanitizedHtml = imageElements + '\n\n' + sanitizedHtml;
+        }
+      }
 
       // Prepare blog post data
       const blogPostData = {

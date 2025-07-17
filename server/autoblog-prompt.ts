@@ -65,14 +65,23 @@ ${isGerman ? `
 - Paragraphs should be under 300 words each
 - Use short, engaging sentences
 
-**HTML STRUCTURE:**
+**HTML CONTENT REQUIREMENTS:**
+- Write a COMPLETE blog post of 800-1200 words
 - Use semantic HTML: <h2>, <h3>, <p>, <strong>, <em>
 - NO scripts, iframes, or javascript
 - NO markdown - pure HTML only
 - Include proper heading hierarchy (start with <h2> since <h1> is the title)
 - Add rel="noopener" to external links
+- Structure should include:
+  * Introduction paragraph with keyphrase
+  * 2-3 main content sections with <h2> headings
+  * Personal insights about the photography session
+  * Conclusion with call-to-action
 
-**IMAGE ALT TEXT:**
+**IMAGE INTEGRATION:**
+- Images will be automatically added to the blog post
+- Provide descriptive alt text for each uploaded image
+- Reference the images naturally in your content
 - Provide descriptive alt text for each uploaded image
 - Include location context (Wien/Vienna) when relevant
 - Make alt text SEO-friendly but natural
