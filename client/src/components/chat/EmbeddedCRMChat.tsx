@@ -38,7 +38,7 @@ interface EmbeddedCRMChatProps {
 }
 
 const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({ 
-  assistantId = 'asst_crm_operations_v1',
+  assistantId = 'asst_CH4vIbZPs7gUD36Lxf7vlfIV',
   onCRMAction,
   height = '600px',
   title = 'CRM Operations Assistant',
@@ -77,7 +77,7 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
 
   const createThread = async () => {
     try {
-      const response = await fetch('/functions/v1/openai-create-thread', {
+      const response = await fetch('/api/openai/chat/thread', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,14 +92,14 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
       const data = await response.json();
       return data.threadId;
     } catch (error) {
-      // console.error removed
+      console.error('Failed to create thread:', error);
       throw error;
     }
   };
 
   const sendMessage = async (message: string, currentThreadId: string) => {
     try {
-      const response = await fetch('/functions/v1/openai-send-crm-message', {
+      const response = await fetch('/api/openai/chat/message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
       const data = await response.json();
       return data;
     } catch (error) {
-      // console.error removed
+      console.error('Failed to send message:', error);
       throw error;
     }
   };

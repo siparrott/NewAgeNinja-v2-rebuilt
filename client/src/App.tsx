@@ -53,6 +53,7 @@ import AdminBlogPostsPage from './pages/admin/AdminBlogPostsPage';
 import AdminBlogNewPage from './pages/admin/AdminBlogNewPage';
 import AdminBlogEditPage from './pages/admin/AdminBlogEditPage';
 import KnowledgeBasePage from './pages/admin/KnowledgeBasePage';
+import CRMOperationsAssistant from './pages/admin/CRMOperationsAssistant';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CartPage from './pages/CartPage';
 import FamilyGutscheinPage from './pages/gutschein/FamilyGutscheinPage';
@@ -275,6 +276,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <ComprehensiveReportsPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/crm-assistant" 
+                  element={
+                    <ProtectedRoute>
+                      <CRMOperationsAssistant />
                     </ProtectedRoute>
                   } 
                 />
