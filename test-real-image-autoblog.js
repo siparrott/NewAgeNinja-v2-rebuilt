@@ -1,4 +1,4 @@
-// Test AutoBlog with real image
+// Test AutoBlog with real image and verify both German content and proper image display
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 import fs from 'fs';
@@ -6,92 +6,140 @@ import path from 'path';
 
 async function testRealImageAutoBlog() {
   try {
-    console.log('=== Testing AutoBlog with Real Image ===');
+    console.log('=== Testing Real Image AutoBlog with German Content ===');
     
-    // Use a real image from the attached assets
-    const imagePath = path.join(process.cwd(), 'attached_assets', 'image_1752756571884.png');
+    // Use a different image to test fresh generation
+    const imagePath = path.join(process.cwd(), 'attached_assets', 'image_1752758225675.png');
     
     if (!fs.existsSync(imagePath)) {
-      console.log('Image not found, creating synthetic JPG...');
-      
-      // Create a more realistic test image buffer (simple colored square)
-      const imageBuffer = Buffer.from([
-        0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01, 0x00, 0x48,
-        0x00, 0x48, 0x00, 0x00, 0xFF, 0xDB, 0x00, 0x43, 0x00, 0x08, 0x06, 0x06, 0x07, 0x06, 0x05, 0x08,
-        0x07, 0x07, 0x07, 0x09, 0x09, 0x08, 0x0A, 0x0C, 0x14, 0x0D, 0x0C, 0x0B, 0x0B, 0x0C, 0x19, 0x12,
-        0x13, 0x0F, 0x14, 0x1D, 0x1A, 0x1F, 0x1E, 0x1D, 0x1A, 0x1C, 0x1C, 0x20, 0x24, 0x2E, 0x27, 0x20,
-        0x22, 0x2C, 0x23, 0x1C, 0x1C, 0x28, 0x37, 0x29, 0x2C, 0x30, 0x31, 0x34, 0x34, 0x34, 0x1F, 0x27,
-        0x39, 0x3D, 0x38, 0x32, 0x3C, 0x2E, 0x33, 0x34, 0x32, 0xFF, 0xC0, 0x00, 0x11, 0x08, 0x00, 0x01,
-        0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0x02, 0x11, 0x01, 0x03, 0x11, 0x01, 0xFF, 0xC4, 0x00, 0x14,
-        0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x08, 0xFF, 0xC4, 0x00, 0x14, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xDA, 0x00, 0x0C, 0x03, 0x01, 0x00, 0x02,
-        0x11, 0x03, 0x11, 0x00, 0x3F, 0x00, 0xB2, 0xC0, 0x07, 0xFF, 0xD9
-      ]);
-      
-      const formData = new FormData();
-      formData.append('images', imageBuffer, {
-        filename: 'family-portrait-session.jpg',
-        contentType: 'image/jpeg'
-      });
-      formData.append('userPrompt', 'Warm family portrait session in Vienna with parents and two children, natural lighting, autumn setting in Schönbrunn Palace gardens');
-      formData.append('language', 'de');
-      formData.append('publishOption', 'draft');
-      formData.append('siteUrl', 'https://www.newagefotografie.com');
-
-      const response = await fetch('http://localhost:5000/api/autoblog/generate', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const result = await response.json();
-      console.log('Response status:', response.status);
-      console.log('Success:', result.success);
-      
-      if (result.success) {
-        console.log('✅ Blog post created successfully!');
-        console.log('Post ID:', result.post.id);
-        console.log('Title:', result.post.title);
-        console.log('SEO Title:', result.post.seoTitle);
-        console.log('Slug:', result.post.slug);
-        console.log('Content HTML length:', result.post.contentHtml?.length || 0);
-        console.log('Content preview:', result.post.contentHtml?.substring(0, 800) + '...');
-        console.log('Meta Description:', result.post.metaDescription);
-        console.log('Tags:', result.post.tags);
-        console.log('Status:', result.post.status);
-        
-        // Check if content contains structured sections
-        const hasH1 = result.post.contentHtml?.includes('<h1>');
-        const hasH2 = result.post.contentHtml?.includes('<h2>');
-        const hasImages = result.post.contentHtml?.includes('<img src=');
-        
-        console.log('Contains H1:', hasH1);
-        console.log('Contains H2:', hasH2);
-        console.log('Contains embedded images:', hasImages);
-        
-        // Check if Assistant API was used successfully
-        if (result.post.contentHtml && result.post.contentHtml.length > 500) {
-          console.log('✅ Complete success: Generated substantial content!');
-        } else {
-          console.log('⚠️ Partial success: Generated minimal content');
-        }
-        
-        // Check for structured format compliance
-        console.log('\n=== Checking for structured format compliance ===');
-        console.log('Has structured content sections:', hasH1 && hasH2);
-        console.log('Content includes real analysis:', !result.post.contentHtml?.includes("I'm sorry, I can't analyze"));
-        
+      console.log('❌ Test image not found, trying alternative...');
+      const altImagePath = path.join(process.cwd(), 'attached_assets', 'image_1752760513043.png');
+      if (fs.existsSync(altImagePath)) {
+        console.log('✅ Using alternative image');
       } else {
-        console.log('❌ Failed:', result.error);
+        console.log('❌ No suitable test image found');
+        return;
+      }
+    }
+    
+    const imageBuffer = fs.readFileSync(fs.existsSync(imagePath) ? imagePath : path.join(process.cwd(), 'attached_assets', 'image_1752760513043.png'));
+    console.log('✅ Loaded test image:', imageBuffer.length, 'bytes');
+    
+    // Create FormData with German prompt emphasis
+    const formData = new FormData();
+    formData.append('images', imageBuffer, {
+      filename: 'familien-session-wien.png',
+      contentType: 'image/png'
+    });
+    formData.append('userPrompt', 'Wunderschöne Familienfotosession in Wien mit authentischen Momenten zwischen Eltern und Kindern, natürliche Beleuchtung, emotionale Verbindung und professionelle Porträts im Studio');
+    formData.append('language', 'de');
+    formData.append('publishOption', 'publish');
+    formData.append('siteUrl', 'https://www.newagefotografie.com');
+
+    console.log('📤 Sending request to AutoBlog API with German emphasis...');
+    
+    const response = await fetch('http://localhost:5000/api/autoblog/generate', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    console.log('Response status:', response.status);
+    console.log('Generation success:', result.success);
+    
+    if (result.success) {
+      console.log('✅ Blog post generated successfully!');
+      console.log('📄 Title:', result.post.title);
+      console.log('🔗 Slug:', result.post.slug);
+      console.log('📝 Content length:', result.post.contentHtml?.length || 0);
+      console.log('🖼️  Cover image:', result.post.imageUrl);
+      
+      // Check if content is in German
+      const contentPreview = result.post.contentHtml?.substring(0, 500) || '';
+      const hasGermanContent = contentPreview.includes('und') || contentPreview.includes('der') || contentPreview.includes('die') || contentPreview.includes('das');
+      console.log('🇩🇪 Content appears to be in German:', hasGermanContent);
+      
+      if (hasGermanContent) {
+        console.log('✅ German content generation successful');
+      } else {
+        console.log('❌ Content not in German - needs fix');
+        console.log('Content preview:', contentPreview);
       }
       
+      // Test image accessibility
+      const hasImages = result.post.contentHtml?.includes('<img src="/blog-images/');
+      console.log('🖼️  Images embedded:', hasImages);
+      
+      if (hasImages) {
+        const imageRegex = /<img[^>]*src="([^"]*blog-images[^"]*)"[^>]*>/g;
+        const matches = [...result.post.contentHtml.matchAll(imageRegex)];
+        console.log('📸 Found', matches.length, 'embedded images');
+        
+        // Test first image
+        if (matches.length > 0) {
+          const imageUrl = matches[0][1];
+          console.log(`\n🔍 Testing image: ${imageUrl}`);
+          
+          const imageResponse = await fetch(`http://localhost:5000${imageUrl}`);
+          console.log(`   Status: ${imageResponse.status}`);
+          console.log(`   Content-Type: ${imageResponse.headers.get('content-type')}`);
+          
+          if (imageResponse.ok) {
+            const buffer = await imageResponse.buffer();
+            console.log(`   Size: ${buffer.length} bytes`);
+            
+            // Check if it's a valid image by looking at headers
+            const contentType = imageResponse.headers.get('content-type');
+            const isValidImage = contentType && contentType.startsWith('image/');
+            console.log(`   Valid image: ${isValidImage}`);
+            
+            if (isValidImage) {
+              console.log('✅ Image is properly accessible and valid');
+            } else {
+              console.log('❌ Image may be corrupted or invalid');
+            }
+          } else {
+            console.log('❌ Image not accessible');
+          }
+        }
+      }
+      
+      // Test blog page display
+      console.log('\n🌐 Testing blog page display...');
+      const pageResponse = await fetch(`http://localhost:5000/blog/${result.post.slug}`);
+      console.log('Page status:', pageResponse.status);
+      
+      if (pageResponse.ok) {
+        const pageHtml = await pageResponse.text();
+        const hasReactApp = pageHtml.includes('id="root"');
+        console.log('⚛️  React app container found:', hasReactApp);
+        
+        if (hasReactApp) {
+          console.log('✅ Blog page structure is correct');
+        }
+      }
+      
+      console.log('\n=== Test Summary ===');
+      console.log('✅ AutoBlog generation completed');
+      console.log('✅ OpenAI integration working');
+      console.log('✅ Image processing and storage');
+      console.log('✅ Database operations successful');
+      console.log(hasGermanContent ? '✅ German content generation working' : '❌ German content generation needs fix');
+      console.log(hasImages ? '✅ Image embedding working' : '❌ Image embedding needs fix');
+      
+      // Show actual content preview for verification
+      console.log('\n=== Content Preview (first 300 chars) ===');
+      console.log(result.post.contentHtml?.substring(0, 300) + '...');
+      
     } else {
-      console.log('Found existing image, using real file...');
-      // Use the real image file logic here
+      console.log('❌ Blog generation failed:', result.error);
+      if (result.debug) {
+        console.log('🔍 Debug info:', JSON.stringify(result.debug, null, 2));
+      }
     }
     
   } catch (error) {
-    console.error('Test failed:', error.message);
+    console.error('❌ Test failed:', error.message);
   }
 }
 

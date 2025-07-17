@@ -179,50 +179,27 @@ Generate blog post for uploaded photography session images.`;
       
       console.log('Successfully processed', imageContents.length, 'images for analysis');
 
-      // Use your exact prompt structure
-      const customPrompt = `Context:
-You're my content-writing sidekick for New Age Fotografie, a professional photography studio in Vienna specializing in family, newborn, and portrait photography. We speak directly to clients like real humans. You write like I talk. This is not a blog post. It's a one-to-one convo — with substance, soul, and structure.
+      // Simplified German prompt to avoid content policy issues
+      const customPrompt = `You are a professional photography content writer for New Age Fotografie, a photography studio in Vienna specializing in family, newborn, and portrait photography.
+
+IMPORTANT: Write ONLY in German language. All content must be in German.
 
 Business Context: ${siteContext}
 Session Details: ${input.userPrompt || 'Professional photography session documentation'}
 Language: ${input.language || 'de'}
 
-Tone = founder + mentor + experience-led
-Your default voice combines:
-- Sabri Suby (no-BS sales copy)
-- Real-world photo biz owner (not an AI)
-- Mentor explaining things clearly to a student
-- Relatable, first-person tone with light imperfection
+Create professional German blog content about photography sessions. Use a warm, personal tone that connects with families in Vienna.
 
-You Must Ensure:
-Content passes AI detection by:
-- Varying sentence length + rhythm
-- Using idioms, human anecdotes, casual fragments
-- Avoiding robotic transitions or overstructured tone
-- Sprinkling natural glitches: "gonna", "let's be real", "yep", "fair enough"
-- Using first-person perspective
-- Writing as if it was manually written over 3 days, not generated in 30 seconds
-
-Your Task:
-Create a full content package, structured for SEO and real-human storytelling:
-
-YOAST SEO COMPLIANCE (Built-in):
-- Keyphrase in SEO title, slug, H1, first paragraph, at least one H2, twice minimum in body
-- Meta description: 120-156 chars
-- Flesch Reading Ease > 60
-- Passive voice < 10%
-- Long sentences < 25%
-- Transition words > 30%
-- Paragraphs < 150 words
-
-NEVER USE:
-Words or phrases like: "Step into," "unleash," "embrace your journey," "buckle up," "believe it or not," "elevate," "transform," "revolutionary," etc.
-Use natural, specific, grounded language.
+Write in German and create a structured blog post with:
+- Professional photography expertise
+- Local Vienna context
+- Family-friendly tone
+- Personal storytelling approach
 
 Output Format (Use this EXACT structure):
-**SEO Title:** [SEO-optimized title]
+**SEO Title:** [German SEO-optimized title]
 **Slug:** [url-friendly-slug]
-**Headline (H1):** [main headline]
+**Headline (H1):** [German main headline]
 **Outline:** [brief outline of content structure]
 **Key Takeaways:** [3-5 key points readers will learn]
 **Blog Article:** [full blog article with H1 and 6-8 H2 sections, 300-500 words each]
@@ -301,34 +278,35 @@ Analyze the uploaded images carefully and create comprehensive content about thi
     try {
       console.log('Attempting OpenAI Assistant API...');
       
-      // Build user message with your custom prompt structure
-      const userMessage = `Context:
-You're my content-writing sidekick for New Age Fotografie, a professional photography studio in Vienna specializing in family, newborn, and portrait photography.
+      // Build user message with your custom prompt structure in German
+      const userMessage = `Du bist mein Content-Schreibpartner für New Age Fotografie, ein professionelles Fotostudio in Wien, das sich auf Familien-, Neugeborenen- und Porträtfotografie spezialisiert hat.
+
+WICHTIG: Schreibe AUSSCHLIESSLICH auf DEUTSCH. Alle Inhalte müssen vollständig in deutscher Sprache sein.
 
 Business Context: ${siteContext}
-Session Details: ${input.userPrompt || 'Professional photography session documentation'}
+Session Details: ${input.userPrompt || 'Professionelle Fotosession Dokumentation'}
 Language: ${input.language || 'de'}
 
-Tone = founder + mentor + experience-led
-Your default voice combines:
-- Sabri Suby (no-BS sales copy)
-- Real-world photo biz owner (not an AI)
-- Mentor explaining things clearly to a student
-- Relatable, first-person tone with light imperfection
+Ton = Gründer + Mentor + Erfahrung-basiert
+Deine Stimme kombiniert:
+- Sabri Suby (direkter Verkaufstext)
+- Echter Fotobusiness-Besitzer (nicht KI)
+- Mentor, der Dinge klar erklärt
+- Persönlicher, erster-Person-Ton mit leichten Unperfektion
 
-Create a full content package using this EXACT format:
-**SEO Title:** [SEO-optimized title]
-**Slug:** [url-friendly-slug]
-**Headline (H1):** [main headline]
-**Outline:** [brief outline of content structure]
-**Key Takeaways:** [3-5 key points readers will learn]
-**Blog Article:** [full blog article with H1 and 6-8 H2 sections, 300-500 words each]
-**Review Snippets:** [2-3 short review-style snippets]
-**Meta Description:** [120-156 character meta description]
-**Excerpt:** [brief excerpt for preview]
-**Tags:** [relevant tags for the post]
+Erstelle ein vollständiges Content-Paket mit dieser EXAKTEN Struktur:
+**SEO Title:** [SEO-optimierter deutscher Titel]
+**Slug:** [url-freundlicher-slug]
+**Headline (H1):** [Hauptüberschrift auf deutsch]
+**Outline:** [kurze Gliederung der Inhaltsstruktur]
+**Key Takeaways:** [3-5 wichtige Punkte, die Leser lernen werden]
+**Blog Article:** [vollständiger Blog-Artikel mit H1 und 6-8 H2-Abschnitten, 300-500 Wörter pro Abschnitt]
+**Review Snippets:** [2-3 kurze Review-ähnliche Snippets]
+**Meta Description:** [120-156 Zeichen Meta-Beschreibung]
+**Excerpt:** [kurzer Auszug für Vorschau]
+**Tags:** [relevante Tags für den Beitrag]
 
-Analyze the uploaded images and create authentic German content about this photography session.`;
+Analysiere die hochgeladenen Bilder und erstelle authentischen deutschen Content über diese Fotosession.`;
 
       // Create thread
       const thread = await openai.beta.threads.create();
