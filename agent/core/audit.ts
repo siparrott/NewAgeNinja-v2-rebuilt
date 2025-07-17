@@ -1,4 +1,3 @@
-// Audit logging for agent actions
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import { agentActionLog } from '../../shared/schema';
@@ -6,26 +5,129 @@ import { agentActionLog } from '../../shared/schema';
 const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql);
 
-export interface AgentAuditLog {
-  studioId: string;
-  userId: string;
+export interface AuditEntry {
+  studio_id: string;
+  user_id: string | null;
   action: string;
-  details: any;
-  timestamp: Date;
+  target_table?: string;
+  target_id?: string;
+  before?: any;
+  after?: any;
+  status: "proposed" | "approved" | "executed" | "failed" | "rolled_back";
+  approved_by?: string | null;
+  risk_level?: "low" | "med" | "high";
+  amount?: number;
+  metadata?: any;
 }
 
-export async function logAgentAction(log: AgentAuditLog) {
+export async function auditLog(entry: AuditEntry): Promise<void> {
   try {
     await db.insert(agentActionLog).values({
-      studioId: log.studioId,
-      userId: log.userId, // This should be a UUID, but we'll use string for now
-      actionType: log.action,
-      actionDetails: log.details,
-      success: true,
-      // timestamp is handled by createdAt default
+      studioId: entry.studio_id,
+      userId: entry.user_id,
+      action: entry.action,
+      targetTable: entry.target_table,
+      targetId: entry.target_id,
+      beforePayload: entry.before,
+      afterPayload: entry.after,
+      status: entry.status,
+      approvedBy: entry.approved_by,
+      riskLevel: entry.risk_level,
+      amount: entry.amount,
+      metadata: entry.metadata,
+      timestamp: new Date()
     });
-    console.log('Agent action logged:', log.action);
+    
+    console.log(`Audit logged: ${entry.action} on ${entry.target_table || 'unknown'} - ${entry.status}`, {
+      studioId: entry.studio_id,
+      userId: entry.user_id,
+      action: entry.action,
+      status: entry.status
+    });
   } catch (error) {
-    console.error('Failed to log agent action:', error);
+    console.error('Failed to log audit entry:', error);
+    // Don't throw - audit logging failures shouldn't break the main flow
   }
+}
+
+export async function auditLogProposal(
+  studioId: string,
+  userId: string | null,
+  action: string,
+  targetTable: string,
+  proposalData: any,
+  riskLevel: "low" | "med" | "high" = "low"
+): Promise<void> {
+  await auditLog({
+    studio_id: studioId,
+    user_id: userId,
+    action,
+    target_table: targetTable,
+    before: null,
+    after: proposalData,
+    status: "proposed",
+    risk_level: riskLevel,
+    metadata: { proposal_timestamp: new Date().toISOString() }
+  });
+}
+
+export async function auditLogExecution(
+  studioId: string,
+  userId: string | null,
+  action: string,
+  targetTable: string,
+  targetId: string,
+  beforeData: any,
+  afterData: any,
+  approvedBy?: string | null,
+  amount?: number
+): Promise<void> {
+  await auditLog({
+    studio_id: studioId,
+    user_id: userId,
+    action,
+    target_table: targetTable,
+    target_id: targetId,
+    before: beforeData,
+    after: afterData,
+    status: "executed",
+    approved_by: approvedBy,
+    amount,
+    metadata: { execution_timestamp: new Date().toISOString() }
+  });
+}
+
+export async function auditLogFailure(
+  studioId: string,
+  userId: string | null,
+  action: string,
+  targetTable: string,
+  error: any,
+  attemptedData?: any
+): Promise<void> {
+  await auditLog({
+    studio_id: studioId,
+    user_id: userId,
+    action,
+    target_table: targetTable,
+    before: attemptedData,
+    after: null,
+    status: "failed",
+    metadata: { 
+      error_message: error.message || String(error),
+      error_timestamp: new Date().toISOString()
+    }
+  });
+}
+
+// Helper function to capture before/after data for updates
+export async function captureBeforeAfter<T>(
+  executor: () => Promise<T>,
+  beforeFetcher: () => Promise<any>
+): Promise<{ result: T; before: any; after: any }> {
+  const before = await beforeFetcher();
+  const result = await executor();
+  const after = await beforeFetcher(); // Re-fetch to get updated state
+  
+  return { result, before, after };
 }

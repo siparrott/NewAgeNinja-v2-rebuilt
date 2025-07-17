@@ -1,0 +1,1720 @@
+Phase B: Guarded Write Enablement
+New Capabilities:
+
+AI proposes structured actions: create lead, update client fields, create draft invoice, send email.
+
+Per-studio policy-driven guardrails decide: auto, ask, or deny.
+
+All write attempts logged in agent_action_log.
+
+User approval UI in chat (“Yes, create the lead”).
+
+Monetary & field-level thresholds respected.
+
+Optional auto_safe mode runs low-risk ops without stopping the workflow.
+
+Quick Safety Model
+Action	Allowed When	Requires Human?	Logged?	Notes
+Create Lead	Authority CREATE_LEAD	If mode=read_only → propose; else auto_safe if request explicit	Yes	Deduplicate by email first.
+Update Client	Authority UPDATE_CLIENT	If restricted fields touched → require human	Yes	Block email change unless policy.
+Create Invoice Draft	Authority SEND_INVOICE or CREATE_INVOICE (choose naming)	Auto if below limit & explicit user	Yes	> limit → require confirm.
+Send Email	Authority SEND_EMAIL	Policy email_send_mode=auto or user confirm	Yes	Always show preview if “draft” mode.
+
+Approval Flow (Chat-Driven)
+sql
+Kopieren
+Bearbeiten
+User: "Please invoice Anna for newborn session."
+Assistant:
+  1) Calls read tools (lookup client, sessions, rate tables)
+  2) Returns summary + proposed_actions JSON (create_invoice_draft)
+User clicks "Create Draft"
+Backend:
+  - Guardrail check
+  - Execute DB write
+  - Log to agent_action_log
+  - Respond back to chat thread ("Draft created. Send now?")
+COPY-AND-PASTE: Opening Prompt for Replit (Phase B Guarded Writes)
+Paste the block below verbatim into a new Replit AI session (or keep it as a dev script you follow manually). It extends the existing Phase A install.
+
+text
+Kopieren
+Bearbeiten
+You are working in an existing Replit Node/TypeScript project where Phase A (read-only AI Agent) has been implemented. We are now upgrading to **Phase B: Guarded Writes**.
+
+## GOALS
+- Allow AI Assistant to PROPOSE and (if allowed) EXECUTE write actions in the CRM.
+- Enforce per-studio guardrails from `ai_policies`.
+- Log all write attempts in `agent_action_log`.
+- Add server endpoints so chat UI can approve / reject proposed actions.
+- Update system prompt so the Assistant:
+  - reads data,
+  - proposes structured actions,
+  - waits for user approval unless policy allows auto,
+  - confirms results after tool execution.
+
+## RULES
+- Maintain multi-studio isolation (`studio_id` everywhere).
+- NEVER perform writes outside guardrail check.
+- Each tool that writes MUST call `enforceGuardrail()` before touching storage.
+- Log before/after payloads to `agent_action_log`.
+- If guardrail denies, return an error object; Assistant should explain politely.
+
+## STAGES
+We will proceed in ordered, reviewable stages. After each stage: run checks, print summary, print `RW_X_DONE`, and stop.
+
+Stages:
+RW0 sanity
+RW1 extend policy types + restricted fields
+RW2 guardrail engine
+RW3 action log writer + before/after capture
+RW4 propose-action response format utilities
+RW5 write tools (create_lead, update_client_fields, create_invoice_draft)
+RW6 chat approval endpoint (/api/agent/approve)
+RW7 assistant tool exposure (function defs) + system prompt update
+RW8 end-to-end test (create lead -> approve)
+RW9 invoice threshold test
+RW10 commit & push
+
+Acknowledge with `RW0_READY`.
+Wait for human to say `GO RW0`.
+Phase B Stage Guide (Replit)
+RW0 – Sanity (pre-write check)
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+node -v
+npx tsc --noEmit || echo "TS errors (ok short-term)"
+git status --short || true
+If clean → continue.
+
+RW1 – Extend Policy Types
+Add richer guardrail power:
+
+restricted_fields object (per table array)
+
+auto_safe_actions array
+
+max_ops_per_hour number
+
+approval_required_over_amount numeric (invoice currency)
+
+email_domain_trustlist array
+
+Patch agent/core/policy.ts: (snippet below in code drop section).
+
+RW2 – Guardrail Engine
+Create agent/core/guardrails.ts:
+
+ts
+Kopieren
+Bearbeiten
+import type { AgentCtx } from "./ctx";
+import type { Authority } from "./policy";
+
+export type GuardrailDecision = 
+  | { decision: "allow" }
+  | { decision: "needs_approval"; reason: string }
+  | { decision: "deny"; reason: string };
+
+interface GuardrailCheckInput {
+  authority: Authority;
+  table?: string;
+  fields?: Record<string, any>;
+  amount?: number; // invoice totals
+  risk?: "low"|"med"|"high";
+}
+
+export function evaluateGuardrail(ctx: AgentCtx, input: GuardrailCheckInput): GuardrailDecision {
+  const pol = ctx.policy;
+
+  // Authority required
+  if (!pol.authorities.includes(input.authority)) {
+    return { decision: "deny", reason: `Authority ${input.authority} not granted.` };
+  }
+
+  // Mode read_only?
+  if (pol.mode === "read_only") {
+    return { decision: "needs_approval", reason: "Policy read_only." };
+  }
+
+  // Restricted fields?
+  if (input.table && input.fields && pol.restricted_fields?.[input.table]) {
+    const blocked = Object.keys(input.fields).filter(f => pol.restricted_fields[input.table].includes(f));
+    if (blocked.length) {
+      return { decision: "needs_approval", reason: `Restricted fields: ${blocked.join(",")}` };
+    }
+  }
+
+  // Monetary threshold
+  if (typeof input.amount === "number" && input.amount > (pol.approval_required_over_amount ?? 0)) {
+    return { decision: "needs_approval", reason: `Amount ${input.amount} exceeds auto limit.` };
+  }
+
+  // Mode propose?
+  if (pol.mode === "propose") {
+    return { decision: "needs_approval", reason: "Propose mode." };
+  }
+
+  // Mode auto_safe: require approval for medium/high risk
+  if (pol.mode === "auto_safe" && input.risk && input.risk !== "low") {
+    return { decision: "needs_approval", reason: `Risk ${input.risk}` };
+  }
+
+  // else allow
+  return { decision: "allow" };
+}
+RW3 – Action Log Writer
+Create agent/core/audit.ts:
+
+ts
+Kopieren
+Bearbeiten
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export interface AuditEntry {
+  studio_id: string;
+  user_id: string | null;
+  action: string;
+  target_table?: string;
+  target_id?: string;
+  before?: any;
+  after?: any;
+  status: "proposed"|"approved"|"executed"|"failed"|"rolled_back";
+  approved_by?: string | null;
+}
+
+export async function auditLog(entry: AuditEntry) {
+  const { error } = await supabase.from("agent_action_log").insert({
+    studio_id: entry.studio_id,
+    user_id: entry.user_id,
+    action: entry.action,
+    target_table: entry.target_table,
+    target_id: entry.target_id,
+    before: entry.before,
+    after: entry.after,
+    status: entry.status,
+    approved_by: entry.approved_by ?? null
+  });
+  if (error) throw error;
+}
+Add helper: captureBeforeAfter(executor) where executor returns new row; you fetch old row before update.
+
+RW4 – Proposal Utilities
+Add agent/core/proposals.ts:
+
+ts
+Kopieren
+Bearbeiten
+import crypto from "crypto";
+export interface ProposedAction {
+  id: string;              // proposal id (uuid or hash)
+  label: string;
+  tool: string;
+  args: Record<string, any>;
+  requires_approval: boolean;
+  reason?: string;
+}
+
+export function makeProposal(tool: string, args: any, requires: boolean, label: string, reason?: string): ProposedAction {
+  const seed = JSON.stringify({tool,args});
+  const id = crypto.createHash("sha1").update(seed).digest("hex").slice(0,12);
+  return { id, tool, args, requires_approval: requires, label, reason };
+}
+Assistant responses will embed these proposals in JSON (your UI picks them up).
+
+RW5 – Write Tools
+We’ll add 3 initial write tools (call them minimal safe operations):
+
+propose_or_create_lead (dedup by email)
+
+propose_or_update_client_fields (selected fields)
+
+propose_or_create_invoice_draft (monetary threshold aware)
+
+Each tool:
+
+Evaluates guardrail → if allow AND safe → executes immediately.
+
+If needs_approval → does not execute; returns proposal object.
+
+If deny → returns error object; Assistant explains politely.
+
+We do not auto-send email yet (RW7+ extension).
+
+Code snippet below; full patch later.
+
+RW6 – Approval Endpoint
+Add server route: POST /api/agent/action/:proposal_id/approve
+
+Body includes:
+
+json
+Kopieren
+Bearbeiten
+{
+  "tool": "propose_or_create_lead",
+  "args": {...},
+  "hash": "<proposal id>"
+}
+Server re-validates guardrail (in case policy changed) then executes and logs as approved->executed.
+
+RW7 – Update Assistant (System Prompt + Tools)
+Add new tool defs (OpenAI Assistant update).
+
+Update instructions to include Action Execution Rules (see prompt below).
+
+Reload or update existing Assistant via openai.beta.assistants.update.
+
+RW8 – End-to-End Lead Creation Test
+Chat test: “Add this new lead: Jane Smith, jane@test.com, due in October.”
+Assistant should propose lead; user approves; row appears in crm_leads.
+
+RW9 – Invoice Threshold Test
+Policy auto_limit = 500 EUR. Ask to invoice 800. Assistant must propose & require approval.
+
+RW10 – Commit & Push
+Commit all new files; push; merge.
+
+Phase B Updated System Prompt (Guarded Write Variant)
+Use this when updating the Assistant (replace placeholders). This version assumes the model is operating in your CRM chat interface and may propose or execute actions:
+
+text
+Kopieren
+Bearbeiten
+You are {{STUDIO_NAME}}’s CRM Operations Assistant inside the TogNinja dashboard.
+
+## Automation Policy
+- Mode: {{POLICY_MODE}}  (read_only | propose | auto_safe | auto_all)
+- Authorities: {{POLICY_AUTHORITIES_CSV}}
+- Invoice auto-limit: {{POLICY_INVOICE_LIMIT}} {{STUDIO_CURRENCY}}
+- Email send mode: {{POLICY_EMAIL_MODE}} (draft | trusted | auto)
+- Restricted fields: {{POLICY_RESTRICTED_FIELDS_SUMMARY}}
+
+## Required Behavior
+1. ALWAYS call tools to inspect data before proposing writes.
+2. NEVER invent ids or data.
+3. For write requests:
+   - Evaluate risk level: low (add lead), med (update client), high (send invoice, change email).
+   - Pass your best guess at risk in the tool call args (`risk`).
+4. If policy or risk requires approval: return a **proposal** (do NOT execute). Include `requires_approval:true`.
+5. If policy allows auto & user intent is explicit (“Yes, send invoice now”): execute tool; confirm result.
+6. After tool actions, summarize what was done; offer next step.
+
+## Output Rules
+- Speak plainly in the user’s language.
+- After describing what you can do, include a JSON block named `proposed_actions` when approval is needed.
+- Limit lists; ask before dumping >25 items.
+
+## Data Scope
+studio_id={{STUDIO_ID}} only.
+
+## Booking Shortcut
+If user wants to schedule: <a href="https://www.newagefotografie.com/warteliste/">Studio Termin planen</a>.
+
+End instructions.
+Developer Control Block (Optional Separate Message)
+text
+Kopieren
+Bearbeiten
+DEVELOPER BLOCK:
+- Valid tools: list_clients, pipeline_summary, propose_or_create_lead, propose_or_update_client_fields, propose_or_create_invoice_draft.
+- You must always deduplicate leads by email before proposing creation.
+- When updating clients, only include changed fields.
+- When creating invoices, include estimated total and currency.
+- If tool returns {proposed_actions:[]}, surface them to user.
+END BLOCK
+Phase B Tool Implementations (Code Snippets)
+agent/tools/lead-write.ts
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import type { AgentCtx } from "../core/ctx";
+import { requireAuthority } from "../core/authz";
+import { evaluateGuardrail } from "../core/guardrails";
+import { getLeadsForStudio } from "../integrations/crm-data";
+import { auditLog } from "../core/audit";
+import { createClient } from "@supabase/supabase-js";
+import { makeProposal } from "../core/proposals";
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export const leadWriteTool = {
+  name: "propose_or_create_lead",
+  description: "Create a new lead if it does not exist; else return existing. Guardrail aware.",
+  parameters: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string().email(),
+    phone: z.string().optional(),
+    note: z.string().optional(),
+    risk: z.enum(["low","med","high"]).default("low")
+  }),
+  handler: async (args: any, ctx: AgentCtx) => {
+    requireAuthority(ctx, "CREATE_LEAD");
+
+    // dedup
+    const leads = await getLeadsForStudio(ctx.studioId);
+    const existing = leads.find((l:any)=> (l.email||"").toLowerCase() === args.email.toLowerCase());
+    if (existing) {
+      return {status:"exists", lead: existing};
+    }
+
+    const decision = evaluateGuardrail(ctx, {
+      authority: "CREATE_LEAD",
+      table: "crm_leads",
+      fields: args,
+      risk: args.risk
+    });
+
+    if (decision.decision === "deny") {
+      return {status:"denied", reason: decision.reason};
+    }
+
+    if (decision.decision === "needs_approval") {
+      const proposal = makeProposal(
+        "propose_or_create_lead",
+        args,
+        true,
+        `Create lead ${args.firstName} ${args.lastName}`,
+        decision.reason
+      );
+      await auditLog({
+        studio_id: ctx.studioId,
+        user_id: ctx.userId,
+        action: "CREATE_LEAD",
+        target_table: "crm_leads",
+        before: null,
+        after: args,
+        status: "proposed"
+      });
+      return {status:"proposed", proposed_actions:[proposal]};
+    }
+
+    // allow
+    const { data, error } = await supabase.from("crm_leads").insert({
+      studio_id: ctx.studioId,
+      first_name: args.firstName,
+      last_name: args.lastName,
+      email: args.email,
+      phone: args.phone ?? null,
+      note: args.note ?? null
+    }).select().single();
+    if (error) {
+      await auditLog({
+        studio_id: ctx.studioId,
+        user_id: ctx.userId,
+        action:"CREATE_LEAD",
+        target_table:"crm_leads",
+        before:null,
+        after:args,
+        status:"failed"
+      });
+      throw error;
+    }
+    await auditLog({
+      studio_id: ctx.studioId,
+      user_id: ctx.userId,
+      action:"CREATE_LEAD",
+      target_table:"crm_leads",
+      target_id:data.id,
+      before:null,
+      after:data,
+      status:"executed"
+    });
+    return {status:"created", lead:data};
+  }
+};
+(Similar patterns for client update + invoice draft — I’ll generate full code when you pick the stage.)
+
+Updating toolRegistry (Phase B)
+Add imports then spread into registry:
+
+ts
+Kopieren
+Bearbeiten
+import { leadWriteTool } from "../tools/lead-write";
+import { clientUpdateTool } from "../tools/client-update";
+import { invoiceDraftTool } from "../tools/invoice-draft";
+
+export const toolRegistry = {
+  ...existing,
+  [leadWriteTool.name]: leadWriteTool,
+  [clientUpdateTool.name]: clientUpdateTool,
+  [invoiceDraftTool.name]: invoiceDraftTool,
+};
+Regenerate Assistant if tool schema changed.
+
+Chat → Approval Endpoint Flow
+Frontend approval click → POST to your backend:
+
+swift
+Kopieren
+Bearbeiten
+POST /api/agent/action/approve
+{
+  "proposal_id": "abc123",
+  "tool": "propose_or_create_lead",
+  "args": {... full args ...}
+}
+Backend:
+
+Validate user has rights (admin/mod).
+
+Re-evaluate guardrail — if now allowed → execute.
+
+Update agent_action_log status=approved, then executed/failed.
+
+Optional: Post assistant message back to thread (“Lead created. Want to send a welcome email?”).
+
+Example Approval Handler (Express)
+ts
+Kopieren
+Bearbeiten
+app.post("/api/agent/action/approve", authenticateUser, async (req, res) => {
+  const { proposal_id, tool, args } = req.body;
+  const ctx = await buildAgentCtxFromReq(req); // includes policy
+
+  const toolImpl = toolRegistry[tool];
+  if (!toolImpl) return res.status(400).json({error:"Unknown tool"});
+
+  // Force risk 'med' if unknown to eliminate unsafe writes
+  const safeArgs = {...args, risk: args.risk || "med"};
+
+  try {
+    const out = await toolImpl.handler(safeArgs, ctx);
+    // record manual approval
+    // (optional: call auditLog again w/ approved_by)
+    return res.json({status:"ok", result: out});
+  } catch (err:any) {
+    return res.status(500).json({error:String(err?.message||err)});
+  }
+});
+Internal Link (CTA)
+When the Assistant recommends booking/sessions during a write workflow, include:
+<a href="https://www.newagefotografie.com/warteliste/">Studio Termin planen</a>.
+
+External References
+OpenAI Assistants with tool calling & runs: <a href="https://platform.openai.com/docs/assistants">OpenAI Assistants Docs</a>.
+
+Supabase RLS & service role considerations for writes: <a href="https://supabase.com/docs/guides/auth/row-level-security">Supabase RLS Guide</a>.
+
+What Do You Need Now?
+Reply with one of the following and I’ll deliver the exact code patches:
+
+“GO RW0” – I’ll reprint the RW0 sanity command bundle for copy/paste.
+
+“Generate RW1 patch” – I’ll produce the full policy.ts upgrade (restricted fields, invoice limit, etc.).
+
+“Generate write tools (RW5)” – I’ll drop complete lead-write.ts, client-update.ts, invoice-draft.ts.
+
+“Assistant update script” – Node script to update the existing Assistant with new instructions/tools.
+
+“Full approval endpoint code” – Express route file ready to paste.
+
+“All Phase B code in one batch” – Big drop; use carefully.
+
+Let me know which you want to tackle first and we’ll keep moving! 💪
+
+
+
+
+
+
+
+
+Du:
+do them all
+
+
+ChatGPT:
+
+Nachgedacht für 17 Sekunden
+You got it — full Phase B (Guarded Writes) rollout, all stages RW0–RW10, with copy-and-paste patch blocks, shell commands, updated Assistant prompts, backend approval endpoints, and write-capable tools (lead create, client update, invoice draft) wired to guardrails, logging, and chat approvals.
+
+I’ll present this as:
+
+Fast Cheat Sheet (what changes overall)
+
+Database Migration Patch (extend ai_policies, agent_action_log)
+
+Stage Blocks RW0–RW10
+
+Each stage = purpose + copy/paste shell + code patch
+
+Ends with success token
+
+Updated System Prompt (Phase B) ready to paste into OpenAI
+
+Assistant Update Script
+
+End-to-End Test Scripts (lead + invoice scenarios)
+
+Wrap-Up / Next steps
+
+0. FAST CHEAT SHEET
+New capabilities:
+
+Capability	File	Notes
+Policy with restricted fields & thresholds	agent/core/policy.ts	loads from Supabase ai_policies JSON columns
+Guardrail engine	agent/core/guardrails.ts	allow / needs_approval / deny
+Audit log writer & status updates	agent/core/audit.ts	writes to agent_action_log
+Proposal maker	agent/core/proposals.ts	deterministic id per tool+args
+Lead create tool (guarded)	agent/tools/lead-write.ts	dedup by email
+Client update tool (guarded)	agent/tools/client-update.ts	field filter
+Invoice draft tool (guarded)	agent/tools/invoice-draft.ts	threshold aware
+Approval API route	server/routes-agent-approve.ts	executes approved proposal
+Assistant update script	agent/update-assistant.ts	refresh instructions & tools
+
+Policy upgrade schema fields:
+
+ts
+Kopieren
+Bearbeiten
+restricted_fields?: Record<string,string[]>;
+auto_safe_actions?: string[];
+max_ops_per_hour?: number;
+approval_required_over_amount?: number; // invoice limit
+email_domain_trustlist?: string[];
+1. DATABASE MIGRATION PATCH
+Run this BEFORE adding write tools so policy checks don’t blow up.
+
+Create migration file (adjust path to your drizzle migrations dir; here drizzle/migrations/2025XXXX_guarded_writes.sql):
+
+sql
+Kopieren
+Bearbeiten
+-- 2025XXXX_guarded_writes.sql
+-- Phase B Guarded Writes upgrade
+
+-- ai_policies extensions
+ALTER TABLE ai_policies
+  ADD COLUMN IF NOT EXISTS restricted_fields jsonb DEFAULT '{}'::jsonb,
+  ADD COLUMN IF NOT EXISTS auto_safe_actions jsonb DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS max_ops_per_hour integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS approval_required_over_amount numeric,
+  ADD COLUMN IF NOT EXISTS email_domain_trustlist text[];
+
+-- agent_action_log hardened schema (add columns if missing)
+ALTER TABLE agent_action_log
+  ADD COLUMN IF NOT EXISTS approved_by uuid,
+  ADD COLUMN IF NOT EXISTS status text,
+  ADD COLUMN IF NOT EXISTS error_text text;
+
+-- index for faster studio query
+CREATE INDEX IF NOT EXISTS agent_action_log_studio_idx ON agent_action_log (studio_id);
+Apply migration (Replit shell):
+
+bash
+Kopieren
+Bearbeiten
+psql "$SUPABASE_DB_URL" -f drizzle/migrations/2025XXXX_guarded_writes.sql 2>/dev/null || \
+echo "If you don't have psql, paste SQL in Supabase SQL Editor."
+(If using Drizzle migration runner, add file and push as usual.)
+
+Phase B Stage Blocks
+RW0 – Sanity (pre-write)
+Shell (copy/paste):
+
+bash
+Kopieren
+Bearbeiten
+echo "=== RW0 Sanity ==="
+node -v
+npx tsc --noEmit || echo "Type errors (ok temporarily)"
+git status --short || true
+echo "RW0_DONE"
+RW1 – Extend Policy Types + Loader
+Patch: agent/core/policy.ts (replace file)
+
+ts
+Kopieren
+Bearbeiten
+/* Phase B Guarded Writes Policy Loader */
+
+import { createClient } from "@supabase/supabase-js";
+
+export type Authority =
+  | "READ_CLIENTS"
+  | "READ_LEADS"
+  | "READ_SESSIONS"
+  | "READ_INVOICES"
+  | "DRAFT_EMAIL"
+  | "CREATE_LEAD"
+  | "UPDATE_CLIENT"
+  | "SEND_INVOICE"
+  | "SEND_EMAIL"
+  | "CREATE_INVOICE"; // alias for clarity
+
+export interface AgentPolicy {
+  mode: "read_only" | "propose" | "auto_safe" | "auto_all";
+  authorities: Authority[];
+
+  /** legacy Phase A */
+  invoice_auto_limit?: number;            // kept for backward compat
+
+  /** Phase B extended fields */
+  approval_required_over_amount?: number; // supersedes invoice_auto_limit
+  email_send_mode: "draft" | "trusted" | "auto";
+
+  restricted_fields?: Record<string,string[]>; // {table:['email','balance']}
+  auto_safe_actions?: string[];                // e.g. ['CREATE_LEAD']
+  max_ops_per_hour?: number;
+  email_domain_trustlist?: string[];
+}
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function loadPolicy(studioId: string): Promise<AgentPolicy> {
+  const { data, error } = await supabase
+    .from("ai_policies")
+    .select("*")
+    .eq("studio_id", studioId)
+    .single();
+
+  if (error || !data) {
+    return {
+      mode: "read_only",
+      authorities: [
+        "READ_CLIENTS","READ_LEADS","READ_SESSIONS","READ_INVOICES","DRAFT_EMAIL"
+      ],
+      invoice_auto_limit: 0,
+      approval_required_over_amount: 0,
+      email_send_mode: "draft",
+      restricted_fields: {},
+      auto_safe_actions: [],
+      max_ops_per_hour: 0,
+      email_domain_trustlist: [],
+    };
+  }
+
+  // backwards compat shapes
+  const restricted_fields = data.restricted_fields ?? {};
+  const auto_safe_actions = data.auto_safe_actions ?? [];
+  const approval_required_over_amount =
+    data.approval_required_over_amount ??
+    data.invoice_auto_limit ??
+    0;
+
+  return {
+    mode: data.mode,
+    authorities: data.authorities ?? [],
+    invoice_auto_limit: data.invoice_auto_limit ?? undefined,
+    approval_required_over_amount,
+    email_send_mode: data.email_send_mode ?? "draft",
+    restricted_fields,
+    auto_safe_actions,
+    max_ops_per_hour: data.max_ops_per_hour ?? 0,
+    email_domain_trustlist: data.email_domain_trustlist ?? [],
+  };
+}
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/core/policy.ts
+git commit -m "RW1: extend policy loader for guarded writes" || true
+echo "RW1_DONE"
+RW2 – Guardrail Engine
+New file: agent/core/guardrails.ts
+
+ts
+Kopieren
+Bearbeiten
+/* Guardrail decision logic */
+
+import type { AgentCtx } from "./ctx";
+import type { Authority } from "./policy";
+
+export type GuardrailDecision =
+  | { decision: "allow" }
+  | { decision: "needs_approval"; reason: string }
+  | { decision: "deny"; reason: string };
+
+export interface GuardrailCheckInput {
+  authority: Authority;
+  table?: string;
+  fields?: Record<string, any>;
+  amount?: number; // e.g., invoice total
+  risk?: "low"|"med"|"high";
+  emailDomain?: string;
+}
+
+export function evaluateGuardrail(ctx: AgentCtx, input: GuardrailCheckInput): GuardrailDecision {
+  const pol = ctx.policy;
+
+  // must have authority
+  if (!pol.authorities.includes(input.authority)) {
+    return { decision: "deny", reason: `Missing authority ${input.authority}.` };
+  }
+
+  // read_only always propose
+  if (pol.mode === "read_only") {
+    return { decision: "needs_approval", reason: "Policy read_only." };
+  }
+
+  // restricted fields
+  if (input.table && input.fields && pol.restricted_fields?.[input.table]) {
+    const blocked = Object.keys(input.fields).filter(f => pol.restricted_fields![input.table].includes(f));
+    if (blocked.length) {
+      return { decision: "needs_approval", reason: `Restricted fields: ${blocked.join(", ")}` };
+    }
+  }
+
+  // monetary thresholds
+  if (typeof input.amount === "number") {
+    const limit = pol.approval_required_over_amount ?? pol.invoice_auto_limit ?? 0;
+    if (input.amount > limit) {
+      return { decision: "needs_approval", reason: `Amount ${input.amount} > auto limit ${limit}.` };
+    }
+  }
+
+  // email trust logic
+  if (input.emailDomain && pol.email_send_mode !== "auto") {
+    const trusted = pol.email_domain_trustlist ?? [];
+    if (!trusted.includes(input.emailDomain)) {
+      return { decision: "needs_approval", reason: `Email domain ${input.emailDomain} not trusted.` };
+    }
+  }
+
+  // propose mode always propose
+  if (pol.mode === "propose") {
+    return { decision: "needs_approval", reason: "Propose mode." };
+  }
+
+  // auto_safe respects risk
+  if (pol.mode === "auto_safe") {
+    if (input.risk && input.risk !== "low") {
+      return { decision: "needs_approval", reason: `Risk ${input.risk}.` };
+    }
+    // if authority not auto safe, propose
+    if (pol.auto_safe_actions && pol.auto_safe_actions.length && !pol.auto_safe_actions.includes(input.authority)) {
+      return { decision: "needs_approval", reason: `Authority ${input.authority} not in auto_safe_actions.` };
+    }
+  }
+
+  // else allowed
+  return { decision: "allow" };
+}
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/core/guardrails.ts
+git commit -m "RW2: guardrail engine" || true
+echo "RW2_DONE"
+RW3 – Audit Log (create + update)
+Replace: agent/core/audit.ts
+
+ts
+Kopieren
+Bearbeiten
+/* Audit logging for AI actions */
+
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export type AuditStatus =
+  | "proposed"
+  | "approved"
+  | "executed"
+  | "failed"
+  | "rolled_back";
+
+export interface AuditEntry {
+  studio_id: string;
+  user_id: string | null;
+  action: string;
+  target_table?: string;
+  target_id?: string;
+  before?: any;
+  after?: any;
+  status: AuditStatus;
+  approved_by?: string | null;
+  error_text?: string | null;
+  proposal_id?: string | null;
+}
+
+export async function auditLog(entry: AuditEntry) {
+  const { error } = await supabase.from("agent_action_log").insert({
+    studio_id: entry.studio_id,
+    user_id: entry.user_id,
+    action: entry.action,
+    target_table: entry.target_table,
+    target_id: entry.target_id,
+    before: entry.before,
+    after: entry.after,
+    status: entry.status,
+    approved_by: entry.approved_by ?? null,
+    error_text: entry.error_text ?? null,
+    proposal_id: entry.proposal_id ?? null,
+  });
+  if (error) throw error;
+}
+
+/** update status after execution */
+export async function auditUpdateStatus(proposal_id: string, status: AuditStatus, opts: {approved_by?:string|null, error_text?:string|null} = {}) {
+  const { error } = await supabase
+    .from("agent_action_log")
+    .update({
+      status,
+      approved_by: opts.approved_by ?? null,
+      error_text: opts.error_text ?? null,
+    })
+    .eq("proposal_id", proposal_id);
+  if (error) throw error;
+}
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/core/audit.ts
+git commit -m "RW3: audit log upgrades" || true
+echo "RW3_DONE"
+RW4 – Proposal Utilities
+New: agent/core/proposals.ts
+
+ts
+Kopieren
+Bearbeiten
+import crypto from "crypto";
+
+export interface ProposedAction {
+  id: string;
+  label: string;
+  tool: string;
+  args: Record<string, any>;
+  requires_approval: boolean;
+  reason?: string;
+}
+
+export function makeProposal(
+  tool: string,
+  args: Record<string,any>,
+  requires_approval: boolean,
+  label: string,
+  reason?: string
+): ProposedAction {
+  const seed = `${tool}:${JSON.stringify(args)}`;
+  const id = crypto.createHash("sha1").update(seed).digest("hex").slice(0,12);
+  return { id, tool, args, requires_approval, label, reason };
+}
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/core/proposals.ts
+git commit -m "RW4: proposal util" || true
+echo "RW4_DONE"
+RW5 – Write Tools (lead, client, invoice)
+5a. Lead Write Tool
+agent/tools/lead-write.ts
+
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+import type { AgentCtx } from "../core/ctx";
+import { requireAuthority } from "../core/authz";
+import { evaluateGuardrail } from "../core/guardrails";
+import { getLeadsForStudio } from "../integrations/crm-data";
+import { auditLog } from "../core/audit";
+import { makeProposal } from "../core/proposals";
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export const leadWriteTool = {
+  name: "propose_or_create_lead",
+  description: "Create a new lead if not exists; guardrail aware; may propose instead of executing.",
+  parameters: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string().email(),
+    phone: z.string().optional(),
+    note: z.string().optional(),
+    risk: z.enum(["low","med","high"]).default("low")
+  }),
+  handler: async (args: any, ctx: AgentCtx) => {
+    requireAuthority(ctx, "CREATE_LEAD");
+
+    // Dedup
+    const leads = await getLeadsForStudio(ctx.studioId);
+    const existing = leads.find((l:any)=> (l.email||"").toLowerCase() === args.email.toLowerCase());
+    if (existing) {
+      return { status:"exists", lead: existing };
+    }
+
+    const decision = evaluateGuardrail(ctx, {
+      authority: "CREATE_LEAD",
+      table: "crm_leads",
+      fields: args,
+      risk: args.risk
+    });
+
+    if (decision.decision === "deny") {
+      return { status:"denied", reason: decision.reason };
+    }
+
+    if (decision.decision === "needs_approval") {
+      const proposal = makeProposal(
+        "propose_or_create_lead",
+        args,
+        true,
+        `Create lead ${args.firstName} ${args.lastName}`,
+        decision.reason
+      );
+      await auditLog({
+        studio_id: ctx.studioId,
+        user_id: ctx.userId,
+        action: "CREATE_LEAD",
+        target_table: "crm_leads",
+        before: null,
+        after: args,
+        status: "proposed",
+        proposal_id: proposal.id
+      });
+      return { status:"proposed", proposed_actions: [proposal] };
+    }
+
+    // allow immediate creation
+    const { data, error } = await supabase
+      .from("crm_leads")
+      .insert({
+        studio_id: ctx.studioId,
+        first_name: args.firstName,
+        last_name: args.lastName,
+        email: args.email,
+        phone: args.phone ?? null,
+        note: args.note ?? null
+      })
+      .select()
+      .single();
+
+    if (error) {
+      await auditLog({
+        studio_id: ctx.studioId,
+        user_id: ctx.userId,
+        action:"CREATE_LEAD",
+        target_table:"crm_leads",
+        before:null,
+        after:args,
+        status:"failed",
+        error_text:String(error.message||error)
+      });
+      throw error;
+    }
+
+    await auditLog({
+      studio_id: ctx.studioId,
+      user_id: ctx.userId,
+      action:"CREATE_LEAD",
+      target_table:"crm_leads",
+      target_id:data.id,
+      before:null,
+      after:data,
+      status:"executed"
+    });
+
+    return { status:"created", lead:data };
+  }
+};
+5b. Client Update Tool
+agent/tools/client-update.ts
+
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+import type { AgentCtx } from "../core/ctx";
+import { requireAuthority } from "../core/authz";
+import { evaluateGuardrail } from "../core/guardrails";
+import { makeProposal } from "../core/proposals";
+import { auditLog } from "../core/audit";
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export const clientUpdateTool = {
+  name: "propose_or_update_client_fields",
+  description: "Update selected client fields; guardrail aware; proposes if approval required.",
+  parameters: z.object({
+    clientId: z.string(),
+    fields: z.record(z.any()), // {phone:"+",note:""}
+    risk: z.enum(["low","med","high"]).default("med")
+  }),
+  handler: async (args: any, ctx: AgentCtx) => {
+    requireAuthority(ctx, "UPDATE_CLIENT");
+
+    // fetch current for before snapshot
+    const { data: before, error: getErr } = await supabase
+      .from("crm_clients")
+      .select("*")
+      .eq("studio_id", ctx.studioId)
+      .eq("id", args.clientId)
+      .single();
+    if (getErr || !before) {
+      return { status:"error", reason:"Client not found" };
+    }
+
+    const decision = evaluateGuardrail(ctx, {
+      authority: "UPDATE_CLIENT",
+      table: "crm_clients",
+      fields: args.fields,
+      risk: args.risk
+    });
+
+    if (decision.decision === "deny") {
+      return { status:"denied", reason: decision.reason };
+    }
+
+    if (decision.decision === "needs_approval") {
+      const proposal = makeProposal(
+        "propose_or_update_client_fields",
+        args,
+        true,
+        `Update client ${before.first_name ?? ""} ${before.last_name ?? ""}`,
+        decision.reason
+      );
+      await auditLog({
+        studio_id: ctx.studioId,
+        user_id: ctx.userId,
+        action:"UPDATE_CLIENT",
+        target_table:"crm_clients",
+        target_id:args.clientId,
+        before:before,
+        after:args.fields,
+        status:"proposed",
+        proposal_id:proposal.id
+      });
+      return { status:"proposed", proposed_actions:[proposal] };
+    }
+
+    // allowed
+    const { data: after, error: updErr } = await supabase
+      .from("crm_clients")
+      .update(args.fields)
+      .eq("studio_id", ctx.studioId)
+      .eq("id", args.clientId)
+      .select()
+      .single();
+    if (updErr) {
+      await auditLog({
+        studio_id: ctx.studioId,
+        user_id: ctx.userId,
+        action:"UPDATE_CLIENT",
+        target_table:"crm_clients",
+        target_id:args.clientId,
+        before:before,
+        after:args.fields,
+        status:"failed",
+        error_text:String(updErr.message||updErr)
+      });
+      throw updErr;
+    }
+
+    await auditLog({
+      studio_id: ctx.studioId,
+      user_id: ctx.userId,
+      action:"UPDATE_CLIENT",
+      target_table:"crm_clients",
+      target_id:args.clientId,
+      before:before,
+      after:after,
+      status:"executed"
+    });
+
+    return { status:"updated", client:after };
+  }
+};
+5c. Invoice Draft Tool
+agent/tools/invoice-draft.ts
+
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+import type { AgentCtx } from "../core/ctx";
+import { requireAuthority } from "../core/authz";
+import { evaluateGuardrail } from "../core/guardrails";
+import { auditLog } from "../core/audit";
+import { makeProposal } from "../core/proposals";
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export const invoiceDraftTool = {
+  name: "propose_or_create_invoice_draft",
+  description: "Create a draft invoice for a client/session; threshold aware; proposes if needed.",
+  parameters: z.object({
+    clientId: z.string(),
+    sessionId: z.string().optional(),
+    lineItems: z.array(z.object({
+      description: z.string(),
+      qty: z.number().default(1),
+      unitPrice: z.number(),
+    })),
+    currency: z.string().optional(),
+    risk: z.enum(["low","med","high"]).default("high")
+  }),
+  handler: async (args: any, ctx: AgentCtx) => {
+    requireAuthority(ctx, "SEND_INVOICE");
+
+    const currency = args.currency || ctx.creds.currency || "EUR";
+    const total = args.lineItems.reduce((sum:number, li:any)=> sum + li.qty*li.unitPrice, 0);
+
+    const decision = evaluateGuardrail(ctx, {
+      authority: "SEND_INVOICE",
+      table: "crm_invoices",
+      amount: total,
+      risk: args.risk
+    });
+
+    if (decision.decision === "deny") {
+      return { status:"denied", reason: decision.reason };
+    }
+
+    if (decision.decision === "needs_approval") {
+      const proposal = makeProposal(
+        "propose_or_create_invoice_draft",
+        { ...args, currency, total },
+        true,
+        `Create invoice draft (${currency} ${total.toFixed(2)})`,
+        decision.reason
+      );
+      await auditLog({
+        studio_id: ctx.studioId,
+        user_id: ctx.userId,
+        action:"CREATE_INVOICE",
+        target_table:"crm_invoices",
+        before:null,
+        after:{...args, currency, total},
+        status:"proposed",
+        proposal_id:proposal.id
+      });
+      return { status:"proposed", proposed_actions:[proposal] };
+    }
+
+    // immediate create
+    const { data, error } = await supabase
+      .from("crm_invoices")
+      .insert({
+        studio_id: ctx.studioId,
+        client_id: args.clientId,
+        session_id: args.sessionId ?? null,
+        currency,
+        total,
+        status: "draft",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      await auditLog({
+        studio_id: ctx.studioId,
+        user_id: ctx.userId,
+        action:"CREATE_INVOICE",
+        target_table:"crm_invoices",
+        before:null,
+        after:{...args, currency, total},
+        status:"failed",
+        error_text:String(error.message||error)
+      });
+      throw error;
+    }
+
+    // Add line items (if you have items table)
+    if (args.lineItems?.length) {
+      const itemsPayload = args.lineItems.map((li:any)=>({
+        studio_id: ctx.studioId,
+        invoice_id: data.id,
+        description: li.description,
+        qty: li.qty,
+        unit_price: li.unitPrice,
+        line_total: li.qty*li.unitPrice,
+      }));
+      await supabase.from("crm_invoice_items").insert(itemsPayload);
+    }
+
+    await auditLog({
+      studio_id: ctx.studioId,
+      user_id: ctx.userId,
+      action:"CREATE_INVOICE",
+      target_table:"crm_invoices",
+      target_id:data.id,
+      before:null,
+      after:data,
+      status:"executed"
+    });
+
+    return { status:"created", invoice:data, total, currency };
+  }
+};
+Add imports & registry update in agent/core/tools.ts:
+
+ts
+Kopieren
+Bearbeiten
+import { leadWriteTool } from "../tools/lead-write";
+import { clientUpdateTool } from "../tools/client-update";
+import { invoiceDraftTool } from "../tools/invoice-draft";
+
+// extend toolRegistry
+export const toolRegistry = {
+  [listClientsTool.name]: listClientsTool,
+  [pipelineSummaryTool.name]: pipelineSummaryTool,
+  [leadWriteTool.name]: leadWriteTool,
+  [clientUpdateTool.name]: clientUpdateTool,
+  [invoiceDraftTool.name]: invoiceDraftTool,
+};
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/tools/lead-write.ts agent/tools/client-update.ts agent/tools/invoice-draft.ts agent/core/tools.ts
+git commit -m "RW5: write tools + registry update" || true
+echo "RW5_DONE"
+RW6 – Approval Endpoint (Express)
+New file: server/routes-agent-approve.ts
+
+ts
+Kopieren
+Bearbeiten
+import type { Request, Response } from "express";
+import { Router } from "express";
+import { authenticateUser } from "./auth"; // adjust path
+import { loadPolicy } from "../agent/core/policy"; // adjust relative path
+import { loadStudioCreds } from "../agent/integrations/storage-bridge";
+import type { AgentCtx } from "../agent/core/ctx";
+import { toolRegistry } from "../agent/core/tools";
+import { auditLog, auditUpdateStatus } from "../agent/core/audit";
+
+export function agentApproveRouter() {
+  const r = Router();
+  r.post("/approve", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { proposal_id, tool, args } = req.body;
+      const user = req.user!; // assume middleware attaches user
+      const studioId = user.studio_id; // adjust property mapping
+
+      const policy = await loadPolicy(studioId);
+      const creds = await loadStudioCreds(studioId);
+      const ctx: AgentCtx = {
+        studioId,
+        studioName: studioId,
+        userId: user.id,
+        creds,
+        policy
+      };
+
+      const impl = (toolRegistry as any)[tool];
+      if (!impl) {
+        return res.status(400).json({error:`Unknown tool ${tool}`});
+      }
+
+      // run tool handler (will create / update)
+      const out = await impl.handler(args, ctx);
+
+      // update audit
+      if (proposal_id) {
+        await auditUpdateStatus(proposal_id, "approved", {approved_by:user.id});
+      }
+
+      return res.json({status:"ok", result:out});
+    } catch (err:any) {
+      console.error(err);
+      return res.status(500).json({error:String(err?.message||err)});
+    }
+  });
+  return r;
+}
+Mount in server/index.ts (or wherever main server mounted):
+
+ts
+Kopieren
+Bearbeiten
+import { agentApproveRouter } from "./routes-agent-approve";
+// ...
+app.use("/api/agent/action", agentApproveRouter());
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+git add server/routes-agent-approve.ts server/index.ts
+git commit -m "RW6: approval API route" || true
+echo "RW6_DONE"
+RW7 – Assistant Update Script
+We need to update the existing Assistant to include the new tools & Phase B system prompt.
+
+File: agent/update-assistant.ts
+
+ts
+Kopieren
+Bearbeiten
+import fs from "fs";
+import path from "path";
+import { ensureAssistantForStudio } from "./bootstrap"; // loads & creates if needed
+import { toolDefsForAssistant } from "./core/tools";
+import { loadPolicy } from "./core/policy";
+import { loadStudioCreds } from "./integrations/storage-bridge";
+import { systemPromptPhaseB } from "./prompts/system-phaseB"; // new file
+
+export async function updateAssistantForStudio(studioId: string, studioName?:string) {
+  const { assistant, openai, creds } = await ensureAssistantForStudio(studioId);
+  const policy = await loadPolicy(studioId);
+
+  const instructions = systemPromptPhaseB({
+    studioId,
+    studioName: studioName ?? studioId,
+    currency: creds.currency ?? "EUR",
+    policy
+  });
+
+  const tools = toolDefsForAssistant();
+
+  const updated = await openai.beta.assistants.update(assistant.id, {
+    instructions,
+    tools
+  });
+
+  // store metadata
+  const fp = path.join(process.cwd(), "agent", "data", `${studioId}-assistant.json`);
+  fs.writeFileSync(fp, JSON.stringify({ id: updated.id }, null, 2));
+  console.log("Updated Assistant", updated.id);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const studioId = process.argv[2] || "newage";
+  updateAssistantForStudio(studioId).catch(err=>{console.error(err);process.exit(1);});
+}
+Phase B Prompt Template File: agent/prompts/system-phaseB.ts
+
+ts
+Kopieren
+Bearbeiten
+import type { AgentPolicy } from "../core/policy";
+
+interface Params {
+  studioId: string;
+  studioName: string;
+  currency: string;
+  policy: AgentPolicy;
+}
+
+export function systemPromptPhaseB({studioId, studioName, currency, policy}: Params) {
+  const auths = policy.authorities.join(", ");
+  const restrictedSummary = Object.entries(policy.restricted_fields ?? {})
+    .map(([tbl,fields])=>`${tbl}: [${fields.join(",")}]`).join("; ") || "none";
+  const limit = policy.approval_required_over_amount ?? policy.invoice_auto_limit ?? 0;
+
+  return `
+You are ${studioName}'s CRM Operations Assistant inside the TogNinja dashboard.
+Studio scope: ${studioId}. Currency: ${currency}.
+
+Automation Policy:
+- Mode: ${policy.mode}
+- Authorities: ${auths}
+- Approval > Amount: ${limit} ${currency}
+- Email Send Mode: ${policy.email_send_mode}
+- Restricted Fields: ${restrictedSummary}
+
+Behavior:
+1. Use tools for ALL data access.
+2. For write requests, call the matching *propose_or_* tool with risk level.
+3. If tool response includes proposed_actions -> surface to user and wait.
+4. Only perform writes when the tool itself returns status=created/updated (i.e., allowed) or when user approval triggers backend call.
+5. Always summarize what you did.
+
+Output formatting:
+- Speak plainly; short paragraphs.
+- Ask before listing >25 records.
+- If proposing actions, include JSON 'proposed_actions' block.
+
+Booking link if user asks to schedule: <a href="https://www.newagefotografie.com/warteliste/">Studio Termin planen</a>.
+`;
+}
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/update-assistant.ts agent/prompts/system-phaseB.ts
+git commit -m "RW7: assistant update script + PhaseB prompt" || true
+echo "RW7_DONE"
+RW8 – End-to-End Lead Creation Test Script
+File: agent/scripts/test-lead-create.ts
+
+ts
+Kopieren
+Bearbeiten
+import { ensureAssistantForStudio } from "../bootstrap";
+import { toolRegistry } from "../core/tools";
+import { loadPolicy } from "../core/policy";
+import type { AgentCtx } from "../core/ctx";
+import { loadStudioCreds } from "../integrations/storage-bridge";
+
+async function main() {
+  const studioId = process.argv[2] || "newage";
+  const userId = "rw8-test";
+
+  const { assistant, openai, creds } = await ensureAssistantForStudio(studioId);
+  const policy = await loadPolicy(studioId);
+  const ctx: AgentCtx = {
+    studioId,
+    studioName: studioId,
+    userId,
+    creds,
+    policy,
+  };
+
+  const thread = await openai.beta.threads.create({});
+  await openai.beta.threads.messages.create(thread.id, {
+    role: "user",
+    content: "Please add lead: Jane Sample, jane.sample@example.com, expecting October."
+  });
+
+  let run = await openai.beta.threads.runs.create(thread.id, {
+    assistant_id: assistant.id,
+    metadata: { studioId, userId }
+  });
+
+  while (run.status === "requires_action") {
+    const toolCalls = run.required_action!.submit_tool_outputs!.tool_calls;
+    const outputs = [];
+    for (const call of toolCalls) {
+      const impl = (toolRegistry as any)[call.function.name];
+      const args = JSON.parse(call.function.arguments || "{}");
+      const out = await impl.handler(args, ctx);
+      outputs.push({ tool_call_id: call.id, output: JSON.stringify(out) });
+    }
+    run = await openai.beta.threads.runs.submitToolOutputs(thread.id, run.id, { tool_outputs: outputs });
+  }
+
+  const msgs = await openai.beta.threads.messages.list(thread.id, { order: "asc" });
+  console.log(JSON.stringify(msgs.data.filter(m=>m.role==="assistant").pop(), null, 2));
+}
+
+main().catch(err=>{console.error(err);process.exit(1);});
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/scripts/test-lead-create.ts
+git commit -m "RW8: lead creation test script" || true
+echo "RW8_DONE"
+Run it:
+
+bash
+Kopieren
+Bearbeiten
+node agent/scripts/test-lead-create.ts newage
+If policy requires approval, you’ll get proposed_actions in output. Use RW6 API route to approve.
+
+RW9 – Invoice Threshold Test Script
+File: agent/scripts/test-invoice-limit.ts
+
+ts
+Kopieren
+Bearbeiten
+import { ensureAssistantForStudio } from "../bootstrap";
+import { toolRegistry } from "../core/tools";
+import { loadPolicy } from "../core/policy";
+import type { AgentCtx } from "../core/ctx";
+import { loadStudioCreds } from "../integrations/storage-bridge";
+
+async function main() {
+  const studioId = process.argv[2] || "newage";
+  const userId = "rw9-test";
+
+  const { assistant, openai, creds } = await ensureAssistantForStudio(studioId);
+  const policy = await loadPolicy(studioId);
+  const ctx: AgentCtx = { studioId, studioName: studioId, userId, creds, policy };
+
+  const thread = await openai.beta.threads.create({});
+  await openai.beta.threads.messages.create(thread.id, {
+    role: "user",
+    content: "Invoice client Anna Miller for the newborn and album package ~800 EUR."
+  });
+
+  let run = await openai.beta.threads.runs.create(thread.id, {
+    assistant_id: assistant.id,
+    metadata: { studioId, userId }
+  });
+
+  while (run.status === "requires_action") {
+    const toolCalls = run.required_action!.submit_tool_outputs!.tool_calls;
+    const outputs = [];
+    for (const call of toolCalls) {
+      const impl = (toolRegistry as any)[call.function.name];
+      const args = JSON.parse(call.function.arguments || "{}");
+      const out = await impl.handler(args, ctx);
+      outputs.push({ tool_call_id: call.id, output: JSON.stringify(out) });
+    }
+    run = await openai.beta.threads.runs.submitToolOutputs(thread.id, run.id, { tool_outputs: outputs });
+  }
+
+  const msgs = await openai.beta.threads.messages.list(thread.id, { order: "asc" });
+  console.log(JSON.stringify(msgs.data.filter(m=>m.role==="assistant").pop(), null, 2));
+}
+
+main().catch(err=>{console.error(err);process.exit(1);});
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/scripts/test-invoice-limit.ts
+git commit -m "RW9: invoice threshold test" || true
+echo "RW9_DONE"
+RW10 – Final Commit & Push
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+git add -u
+git status --short
+git commit -m "Phase B Guarded Writes complete" || true
+git push origin HEAD
+echo "RW10_DONE"
+Updated SYSTEM PROMPT (Phase B, Ready to Paste)
+Use this when updating your OpenAI Assistant. Paste into the instructions field (replace placeholders).
+This version is condensed but covers all guardrail behaviors.
+
+text
+Kopieren
+Bearbeiten
+You are {{STUDIO_NAME}}’s CRM Operations Assistant inside the TogNinja dashboard.
+
+Studio scope: {{STUDIO_ID}}. Currency: {{STUDIO_CURRENCY}}.
+
+Automation Policy
+- Mode: {{POLICY_MODE}}  (read_only | propose | auto_safe | auto_all)
+- Authorities: {{POLICY_AUTHORITIES_CSV}}
+- Approval required above: {{POLICY_AMOUNT_LIMIT}} {{STUDIO_CURRENCY}}
+- Email mode: {{POLICY_EMAIL_MODE}}
+- Restricted fields: {{POLICY_RESTRICTED_FIELDS_SUMMARY}}
+
+Rules
+1. Use tools for all data access + CRM changes. Never fabricate data.
+2. For write requests, call the matching *propose_or_* tool with a risk level.
+3. If tool output includes `proposed_actions`, surface them to the user and wait.
+4. Only consider the write complete when tool returns status=created/updated. Do **not** assume success.
+5. Summarize what you did after every action; offer next logical step.
+6. Ask before returning >25 rows.
+7. If lacking authority or policy blocks change, explain briefly and propose alternatives.
+
+Proposal JSON
+When approval is required: after your human text include a JSON object:
+```json
+{
+  "proposed_actions": [
+    {
+      "id": "abc123",
+      "label": "Create lead Jane Sample",
+      "tool": "propose_or_create_lead",
+      "args": {"firstName":"Jane","lastName":"Sample","email":"jane@example.com"},
+      "requires_approval": true,
+      "reason": "Policy propose mode."
+    }
+  ]
+}
+Booking link (if scheduling needed): <a href="https://www.newagefotografie.com/warteliste/">Studio Termin planen</a>.
+
+yaml
+Kopieren
+Bearbeiten
+
+---
+
+# How to Update Assistant in Replit
+
+**Shell:**
+```bash
+node agent/update-assistant.ts newage
+If you changed the prompt template inline, edit system-phaseB.ts first.
+
+Quick UI Notes (Chat Approval)
+When the Assistant returns a message containing proposed_actions, parse that JSON in your chat component and render Approve / Reject buttons. When user approves, POST to:
+
+swift
+Kopieren
+Bearbeiten
+POST /api/agent/action/approve
+{
+  "proposal_id": "<id>",
+  "tool": "propose_or_create_lead",
+  "args": {...}
+}
+Your backend route (RW6) executes the action using the same tool; returns result; you then append a chat bubble to show success.
+
+Sanity Smoke after Phase B
+1. Update Assistant
+
+bash
+Kopieren
+Bearbeiten
+node agent/update-assistant.ts newage
+2. Run lead test (auto path)
+
+bash
+Kopieren
+Bearbeiten
+node agent/scripts/test-lead-create.ts newage
+3. Approve (if proposed)
+Copy proposed_actions[0] args & call:
+
+bash
+Kopieren
+Bearbeiten
+curl -X POST https://<replit-url>/api/agent/action/approve \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <session_token>" \
+  -d '{"proposal_id":"abc123","tool":"propose_or_create_lead","args":{"firstName":"Jane","lastName":"Sample","email":"jane.sample@example.com"}}'
+4. Confirm DB row in Supabase table crm_leads.
+
+Where to Go Next
+Phase C: Auto email send w/ template merge + invoice PDF + human fallback.
+
+Phase D: Background monitors (overdue invoices, unread leads) auto-messaging.
+
+Blog AI Integration: still queued; we can wire write tools into blog posts once CRM side stable.
+
+External References
+OpenAI Assistants API (function calling; updating assistants): <a href="https://platform.openai.com/docs/assistants">OpenAI Assistants Docs</a>.
+
+Supabase Row-Level Security & service role usage: <a href="https://supabase.com/docs/guides/auth/row-level-security">Supabase RLS Guide</a>.

@@ -4,6 +4,10 @@ import { listClientsTool, listLeadsTool, listSessionsTool, listInvoicesTool } fr
 import { pipelineSummaryTool } from "../tools/pipeline-summary";
 import { draftEmailTool } from "../tools/email-draft";
 import { lookupClientTool, searchCrmTool } from "../tools/crm-lookup";
+// Phase B: Write tools
+import { leadWriteTool } from "../tools/lead-write";
+import { clientUpdateTool } from "../tools/client-write";
+import { invoiceWriteTool } from "../tools/invoice-write";
 
 export interface AgentTool {
   name: string;
@@ -43,3 +47,8 @@ toolRegistry.register(pipelineSummaryTool);
 toolRegistry.register(draftEmailTool);
 toolRegistry.register(lookupClientTool);
 toolRegistry.register(searchCrmTool);
+
+// Phase B: Register write tools
+toolRegistry.register(leadWriteTool);
+toolRegistry.register(clientUpdateTool);
+toolRegistry.register(invoiceWriteTool);
