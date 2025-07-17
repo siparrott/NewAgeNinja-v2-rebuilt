@@ -141,6 +141,9 @@ Key Features: High-quality photography, professional editing, personal service
     }));
 
     try {
+      console.log('OpenAI prompt length:', prompt.length);
+      console.log('Image content count:', imageContent.length);
+      
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -174,8 +177,13 @@ Key Features: High-quality photography, professional editing, personal service
       console.log('Content HTML length:', parsedContent.content_html?.length || 0);
       console.log('Content HTML preview:', parsedContent.content_html?.substring(0, 200) + '...');
       
+      // Add debugging before validation
+      console.log('About to validate with schema. Raw content_html exists:', !!parsedContent.content_html);
+      console.log('Raw content_html type:', typeof parsedContent.content_html);
+      
       const validatedContent = autoBlogSchema.parse(parsedContent);
       console.log('Validated content HTML length:', validatedContent.content_html?.length || 0);
+      console.log('Validated content HTML preview:', validatedContent.content_html?.substring(0, 200) + '...');
 
       // Override status if publishNow is requested
       if (input.publishNow) {
@@ -242,8 +250,19 @@ Key Features: High-quality photography, professional editing, personal service
         authorId: authorId,
       };
 
+      // Validate blog post data before insertion
+      const { insertBlogPostSchema } = await import('../shared/schema');
+      console.log('Validating blog post data with schema...');
+      console.log('Blog post data keys:', Object.keys(blogPostData));
+      console.log('Content HTML in blog data:', !!blogPostData.contentHtml, 'length:', blogPostData.contentHtml?.length || 0);
+      
+      const validatedBlogData = insertBlogPostSchema.parse(blogPostData);
+      console.log('Blog post validation successful!');
+      console.log('Validated data keys:', Object.keys(validatedBlogData));
+      console.log('Validated contentHtml exists:', !!validatedBlogData.contentHtml, 'length:', validatedBlogData.contentHtml?.length || 0);
+      
       // Create blog post
-      const createdPost = await storage.createBlogPost(blogPostData);
+      const createdPost = await storage.createBlogPost(validatedBlogData);
       
       return createdPost;
     } catch (error) {
