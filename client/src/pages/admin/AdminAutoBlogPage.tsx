@@ -35,7 +35,9 @@ export default function AdminAutoBlogPage() {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [userPrompt, setUserPrompt] = useState('');
   const [language, setLanguage] = useState('de');
-  const [publishNow, setPublishNow] = useState(false);
+  const [publishOption, setPublishOption] = useState<'draft' | 'publish' | 'schedule'>('draft');
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
   const [siteUrl, setSiteUrl] = useState('https://www.newagefotografie.com');
   const [result, setResult] = useState<AutoBlogResult | null>(null);
   const [status, setStatus] = useState<AutoBlogStatus | null>(null);
@@ -134,8 +136,14 @@ export default function AdminAutoBlogPage() {
       
       formData.append('userPrompt', userPrompt);
       formData.append('language', language);
-      formData.append('publishNow', publishNow.toString());
+      formData.append('publishOption', publishOption);
       formData.append('siteUrl', siteUrl);
+      
+      // Add scheduling info if needed
+      if (publishOption === 'schedule' && scheduleDate && scheduleTime) {
+        const scheduledDateTime = new Date(`${scheduleDate}T${scheduleTime}`);
+        formData.append('scheduledFor', scheduledDateTime.toISOString());
+      }
 
       const response = await fetch('/api/autoblog/generate', {
         method: 'POST',
@@ -359,20 +367,85 @@ export default function AdminAutoBlogPage() {
               />
             </div>
 
-            {/* Publish Options */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <Label htmlFor="publishNow">Publish Immediately</Label>
-                <p className="text-sm text-muted-foreground">
-                  Otherwise, blog post will be saved as draft
-                </p>
+            {/* Publishing Options */}
+            <div className="space-y-4">
+              <Label>Publishing Options</Label>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="draft"
+                    name="publishOption"
+                    value="draft"
+                    checked={publishOption === 'draft'}
+                    onChange={(e) => setPublishOption(e.target.value as 'draft' | 'publish' | 'schedule')}
+                    disabled={isGenerating}
+                    className="text-purple-600"
+                  />
+                  <Label htmlFor="draft" className="font-normal">
+                    Save as Draft
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="publish"
+                    name="publishOption"
+                    value="publish"
+                    checked={publishOption === 'publish'}
+                    onChange={(e) => setPublishOption(e.target.value as 'draft' | 'publish' | 'schedule')}
+                    disabled={isGenerating}
+                    className="text-purple-600"
+                  />
+                  <Label htmlFor="publish" className="font-normal">
+                    Publish Immediately
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="schedule"
+                    name="publishOption"
+                    value="schedule"
+                    checked={publishOption === 'schedule'}
+                    onChange={(e) => setPublishOption(e.target.value as 'draft' | 'publish' | 'schedule')}
+                    disabled={isGenerating}
+                    className="text-purple-600"
+                  />
+                  <Label htmlFor="schedule" className="font-normal">
+                    Schedule for Later
+                  </Label>
+                </div>
               </div>
-              <Switch
-                id="publishNow"
-                checked={publishNow}
-                onCheckedChange={setPublishNow}
-                disabled={isGenerating}
-              />
+              
+              {/* Schedule Date/Time Inputs */}
+              {publishOption === 'schedule' && (
+                <div className="grid grid-cols-2 gap-4 mt-4 p-4 bg-muted rounded-lg">
+                  <div>
+                    <Label htmlFor="scheduleDate">Date</Label>
+                    <Input
+                      id="scheduleDate"
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      disabled={isGenerating}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="scheduleTime">Time</Label>
+                    <Input
+                      id="scheduleTime"
+                      type="time"
+                      value={scheduleTime}
+                      onChange={(e) => setScheduleTime(e.target.value)}
+                      disabled={isGenerating}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Generate Button */}

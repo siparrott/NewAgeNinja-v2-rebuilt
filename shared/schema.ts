@@ -113,6 +113,8 @@ export const blogPosts = pgTable("blog_posts", {
   imageUrl: text("image_url"),
   published: boolean("published").default(false),
   publishedAt: timestamp("published_at"),
+  scheduledFor: timestamp("scheduled_for"),
+  status: text("status").default("DRAFT"), // DRAFT, PUBLISHED, SCHEDULED
   authorId: uuid("author_id").references(() => users.id),
   tags: text("tags").array(),
   metaDescription: text("meta_description"),

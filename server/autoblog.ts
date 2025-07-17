@@ -271,10 +271,16 @@ WICHTIG: Antworte NUR mit einem gültigen JSON-Objekt in diesem exakten Format:
       console.log('Validated content HTML length:', validatedContent.content_html?.length || 0);
       console.log('Validated content HTML preview:', validatedContent.content_html?.substring(0, 200) + '...');
 
-      // Override status if publishNow is requested
-      if (input.publishNow) {
+      // Override status based on publishing option
+      if (input.publishOption === 'publish') {
         validatedContent.status = 'PUBLISHED';
         validatedContent.publish_now = true;
+      } else if (input.publishOption === 'schedule') {
+        validatedContent.status = 'SCHEDULED';
+        validatedContent.publish_now = false;
+      } else {
+        validatedContent.status = 'DRAFT';
+        validatedContent.publish_now = false;
       }
 
       return validatedContent;
@@ -320,7 +326,7 @@ WICHTIG: Antworte NUR mit einem gültigen JSON-Objekt in diesem exakten Format:
       
       console.log('Final HTML content length before database save:', sanitizedHtml?.length || 0);
 
-      // Prepare blog post data
+      // Prepare blog post data with publishing logic
       const blogPostData = {
         title: aiContent.title,
         slug: uniqueSlug,
@@ -330,8 +336,11 @@ WICHTIG: Antworte NUR mit einem gültigen JSON-Objekt in diesem exakten Format:
         imageUrl: images[0]?.publicUrl || null,
         seoTitle: aiContent.seo_title,
         metaDescription: aiContent.meta_description,
-        published: aiContent.publish_now || false,
-        publishedAt: aiContent.publish_now ? new Date() : null,
+        published: input.publishOption === 'publish',
+        publishedAt: input.publishOption === 'publish' ? new Date() : null,
+        scheduledFor: input.publishOption === 'schedule' && input.scheduledFor ? new Date(input.scheduledFor) : null,
+        status: input.publishOption === 'publish' ? 'PUBLISHED' : 
+                input.publishOption === 'schedule' ? 'SCHEDULED' : 'DRAFT',
         tags: aiContent.tags || [],
         authorId: authorId,
       };

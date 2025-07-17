@@ -11,7 +11,7 @@ export const autoBlogSchema = z.object({
   cover_image: z.string().url().optional().nullable(),
   image_alts: z.array(z.string()).max(3).optional(),
   tags: z.array(z.string()).max(10).optional(),
-  status: z.enum(["DRAFT","PUBLISHED"]).default("DRAFT"),
+  status: z.enum(["DRAFT","PUBLISHED","SCHEDULED"]).default("DRAFT"),
   publish_now: z.boolean().default(false),
   language: z.string().default("de")
 });
@@ -23,7 +23,8 @@ export const autoBlogInputSchema = z.object({
   userPrompt: z.string().optional(),
   language: z.enum(["de", "en"]).default("de"),
   siteUrl: z.string().url().optional(),
-  publishNow: z.boolean().default(false)
+  publishOption: z.enum(["draft", "publish", "schedule"]).default("draft"),
+  scheduledFor: z.string().optional() // ISO string for scheduled publishing
 });
 
 export type AutoBlogInput = z.infer<typeof autoBlogInputSchema>;

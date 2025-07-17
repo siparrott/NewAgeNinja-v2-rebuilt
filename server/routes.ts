@@ -4176,7 +4176,8 @@ Was interessiert Sie am meisten?`;
         userPrompt: req.body.userPrompt,
         language: req.body.language || 'de',
         siteUrl: req.body.siteUrl,
-        publishNow: req.body.publishNow === 'true'
+        publishOption: req.body.publishOption || 'draft',
+        scheduledFor: req.body.scheduledFor
       });
 
       // Check if files were uploaded
