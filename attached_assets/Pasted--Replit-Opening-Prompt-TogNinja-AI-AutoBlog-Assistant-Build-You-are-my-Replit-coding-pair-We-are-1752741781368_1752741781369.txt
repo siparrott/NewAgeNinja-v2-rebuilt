@@ -1,0 +1,219 @@
+🔧 Replit Opening Prompt: TogNinja AI AutoBlog Assistant Build
+You are my Replit coding pair. We are extending the TogNinja multi-studio photography CRM (Node/Express + React/TypeScript + Supabase) to add a 1-minute AI AutoBlog feature:
+
+Admin uploads up to 3 low-res images → backend scrapes the user’s live site for brand voice & services → OpenAI generates YOAST-ready blog JSON (title, slug, excerpt, HTML, SEO meta, internal + external links, alt text) → blog post auto-created in TogNinja Blog database → optional auto-publish.
+
+We’ll build this iteratively. After each numbered task, STOP and wait for my confirmation before continuing. Always show file diffs or new file contents. Never commit secrets. Ask if unsure.
+
+0. Tech Stack Snapshot (as currently in repo)
+Client: React + TypeScript (Vite or CRA variant — detect & confirm). Admin pages under /client/src/pages/admin/….
+
+Chat Components: There is an existing OpenAIAssistantChat.tsx or similar; we will fork/simplify into AutoBlogChat.tsx.
+
+Blog System: Blog CRUD + list pages in /client/src/pages/admin/AdminBlog*. Blog API + storage logic in /server/... (likely routes.ts, storage.ts, maybe blog.service.ts depending on repo version).
+
+Backend: Node/Express server. Supabase for auth + data (blog_posts table etc.). Already integrated.
+
+Scraper: /server/scraping-agent.ts (or similar). We will reuse to pull site context text, services, location, etc.
+
+Static serving: There is (or we will add) /public/uploads/ served via Express for uploaded temp/processed images.
+
+Please scan the project tree and confirm these paths or report the actual ones.
+
+1. Feature Requirements (Must Haves)
+New API Route: POST /api/autoblog/start
+
+Multipart form: images[] (≤3, jpg/png), userPrompt, language, siteUrl (fallback to studio’s public site env).
+
+Auth required (get user / studio context from session/JWT).
+
+Server Orchestration Flow:
+
+Resize + compress each uploaded image (~1600px long edge, JPEG q75).
+
+Store to public asset bucket (local /public/uploads/blog-images/ dev; Supabase bucket prod).
+
+Scrape the user’s live site (URL param or studio config) -> summarized context block.
+
+Build OpenAI system + user messages (see schema & style below).
+
+Call OpenAI model (default gpt-4o-mini; fallback?) with response_format JSON. Include image URLs as vision inputs.
+
+Parse + validate JSON (Zod schema).
+
+Sanitize HTML (strip script, on* attrs).
+
+Create blog post via existing storage layer (status: PUBLISHED or DRAFT depending on publish_now).
+
+Return JSON: { post, ai, raw?:debug }.
+
+Frontend Admin Widget: AutoBlogChat
+
+Dropzone (drag/drop max 3).
+
+Text input (optional guidance: theme, client name, newborn vs family).
+
+Language select (de/en).
+
+Generate button -> calls /api/autoblog/start -> shows progress & result.
+
+After success: buttons “Open in Editor” + “View Live”.
+
+SEO/Content Rules to enforce in prompt (we don’t hard-block in code, but we’ll warn):
+
+2-4 word keyphrase; appears in intro, SEO title, meta description, ≥2× body.
+
+One internal link (anchor to /warteliste/ or provided studio booking path).
+
+One outbound link to an authority (non-competitor).
+
+Paragraphs < 300 words.
+
+Short, snappy, founder-led tone.
+
+Provide excerpt ≤155 chars (plain).
+
+Provide slug (kebab, lowercase, ascii).
+
+Provide image alt text suggestions (array length = uploaded images).
+
+Studio / Multi-Tenant Awareness: Pass studioId or derive from auth; allow per-studio site URL + booking path overrides later. For now env defaults OK.
+
+2. Environment Variables (we will populate in Replit Secrets; use process.env.X)
+ini
+Kopieren
+Bearbeiten
+OPENAI_API_KEY=___
+PUBLIC_SITE_BASE_URL=https://www.newagefotografie.com
+INTERNAL_WARTELISTE_PATH=/warteliste/
+STUDIO_NAME=New Age Fotografie
+MAX_AUTOBLOG_IMAGES=3
+OPENAI_ASSISTANT_ID=asst_xxxxxx   # optional; if unset, use raw chat.completions
+Do not hardcode secrets. Provide sample fallback defaults for local dev.
+
+3. Assistant Output JSON Schema (Zod)
+We’ll create server/autoblog-schema.ts:
+
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+
+export const autoBlogSchema = z.object({
+  title: z.string().max(140),
+  keyphrase: z.string().max(60),
+  slug: z.string().regex(/^[a-z0-9\-]+$/),
+  excerpt: z.string().max(180),
+  content_html: z.string(),
+  seo_title: z.string().max(70),
+  meta_description: z.string().max(160),
+  cover_image: z.string().url().optional().nullable(),
+  image_alts: z.array(z.string()).max(3).optional(),
+  tags: z.array(z.string()).max(10).optional(),
+  status: z.enum(["DRAFT","PUBLISHED"]).default("DRAFT"),
+  publish_now: z.boolean().default(false),
+  language: z.string().default("de")
+});
+export type AutoBlogParsed = z.infer<typeof autoBlogSchema>;
+4. System Prompt Constant
+We’ll store a long multi-line template in server/autoblog-prompt.ts that accepts interpolation for studio name + internal link path + context block. Ghostwriter: please scaffold it with tagged template function so we can inject the scraped context at runtime.
+
+5. Coding Standards
+TypeScript everywhere (server + client).
+
+Strict null checks.
+
+No any unless unavoidable; type the response.
+
+Async/await; no unhandled promises.
+
+Centralize error logging; user-safe messages in JSON responses.
+
+ESLint / Prettier respect existing config.
+
+Avoid breaking existing blog admin pages.
+
+All new files exported and imported cleanly; build must pass.
+
+6. Security + Safety
+Validate auth (reuse existing middleware; point me to it if named differently).
+
+Enforce max 3 images, max file size (e.g., 5MB each).
+
+Strip executable HTML before storing.
+
+Sanitize outbound links: enforce http/https; add rel="noopener" suggestion in content (Assistant should output, but we’ll sanitize if missing).
+
+Ensure slug uniqueness (if slug exists, append -2, -3 etc.).
+
+7. Incremental Build Plan (Stop after each)
+Task 1 – Confirm project paths + stack; list relevant files we’ll touch.
+Task 2 – Create feature branch feature/autoblog-assistant (if not already).
+Task 3 – Install deps: openai sharp multer zod (and types). Confirm build.
+Task 4 – Add env var fallbacks & document in README section.
+Task 5 – Add server/autoblog-schema.ts, util-strip-html.ts, and autoblog-prompt.ts.
+Task 6 – Implement server/autoblog.ts orchestrator (upload, scrape, prompt, OpenAI, validate, persist).
+Task 7 – Extend server/storage.ts with savePublicAsset(bucket, filename, buf) -> public URL & ensure Express static serving.
+Task 8 – Wire Express route POST /api/autoblog/start (multer, auth, orchestrator).
+Task 9 – Frontend AutoBlogChat.tsx widget (dropzone, form, call endpoint, show result).
+Task10 – Mount widget in Admin Blog page(s).
+Task11 – Light YOAST preflight (client). Not blocking; warnings only.
+Task12 – Smoke test: upload 3 sample images; verify blog row created; open public URL.
+Task13 – Cleanup, types, comments, PR ready.
+
+After each task you will:
+
+Show diff (unified patch).
+
+Note new deps & build steps.
+
+Flag TODOs or decisions required.
+
+WAIT for my “continue with Task X”.
+
+8. Assistant Prompt Template (short inline version)
+We’ll macro-expand into full in autoblog-prompt.ts. Core instructions:
+
+Role: AutoBlog Assistant for {STUDIO_NAME} on TogNinja.
+
+Input: ≤3 images + structured site context.
+
+Output: Strict JSON matching schema.
+
+Style: Founder-led, local (Vienna default), short sentences, <300 word paras.
+
+SEO: one internal link to {INTERNAL_WARTELISTE_PATH}; one authoritative outbound link; keyphrase in intro/meta/etc.
+
+Provide image_alts aligned to uploaded images.
+
+No scripts/iframes.
+
+No markdown in content_html (pure HTML).
+
+9. Acceptance Criteria
+A feature is “done” when ALL below pass:
+
+✅ POST /api/autoblog/start with 3 test JPGs returns 200 + blog post inserted in DB.
+
+✅ Returned blog data renders in Admin edit UI without console errors.
+
+✅ Slug route loads on public blog page & displays AI HTML.
+
+✅ Internal link appears exactly once; outbound link appears exactly once.
+
+✅ No secrets in repo.
+
+✅ Build & typecheck pass.
+
+10. Questions For You (Ghostwriter)
+Before writing code, please:
+
+Confirm detected project root + server/client subpaths.
+
+Confirm we are using Express (or other) and where main app instance lives.
+
+Confirm blog post DB table & fields (send interface).
+
+Confirm auth middleware name & what it puts on req.user.
+
+Stop after answering. Wait for my go-ahead to start Task 2.
