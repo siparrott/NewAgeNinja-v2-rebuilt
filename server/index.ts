@@ -19,6 +19,17 @@ app.use(express.urlencoded({ extended: false }));
 // Serve uploaded files statically
 app.use('/uploads', express.static('public/uploads'));
 
+// Serve blog images statically (before Vite middleware)
+app.use('/blog-images', express.static('server/public/blog-images', {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (path.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    }
+  }
+}));
+
 // Domain redirect middleware - redirect root domain to www
 app.use((req, res, next) => {
   if (req.headers.host === 'newagefotografie.com') {
