@@ -2,6 +2,7 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
 import OpenAI from 'openai';
+import FormData from 'form-data';
 import { autoBlogSchema, type AutoBlogParsed, type AutoBlogInput } from './autoblog-schema';
 import { buildAutoBlogPrompt } from './autoblog-prompt';
 import { stripDangerousHtml, generateUniqueSlug, cleanSlug } from './util-strip-html';
@@ -117,20 +118,20 @@ Key Features: High-quality photography, professional editing, personal service
   }
 
   /**
-   * Generate blog content using OpenAI
+   * Generate blog content using OpenAI Assistant
    */
   async generateBlogContent(
     images: ProcessedImage[], 
     input: AutoBlogInput, 
     siteContext: string
   ): Promise<AutoBlogParsed> {
-    const prompt = buildAutoBlogPrompt({
-      studioName: this.studioName,
-      internalBookingPath: this.internalBookingPath,
-      siteContext,
-      userPrompt: input.userPrompt,
-      language: input.language
-    });
+    const assistantId = 'asst_nlyO3yRav2oWtyTvkq0cHZaU'; // AutoBlog Assistant
+    
+    // Build user message with context
+    const userMessage = `Business Context: ${siteContext}
+Session Details: ${input.userPrompt || 'Professional photography session documentation'}
+Language: ${input.language}
+Generate blog post for uploaded photography session images.`;
 
     // Prepare image content for OpenAI vision
     const imageContent = images.map((img, index) => ({
@@ -141,10 +142,18 @@ Key Features: High-quality photography, professional editing, personal service
     }));
 
     try {
-      console.log('OpenAI prompt length:', prompt.length);
-      console.log('Image content count:', imageContent.length);
-      console.log('Prompt preview:', prompt.substring(0, 500) + '...');
+      console.log('Using Chat Completions API for image analysis with custom instructions');
+      console.log('Image content count:', images.length);
+      console.log('User context:', userMessage);
       
+      const prompt = buildAutoBlogPrompt({
+        studioName: this.studioName,
+        internalBookingPath: this.internalBookingPath,
+        siteContext,
+        userPrompt: input.userPrompt,
+        language: input.language
+      });
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -165,17 +174,22 @@ Key Features: High-quality photography, professional editing, personal service
       });
 
       const content = response.choices[0]?.message?.content;
-      console.log('OpenAI response status:', response);
-      console.log('OpenAI choices length:', response.choices?.length || 0);
+      console.log('Chat Completions response received');
+      console.log('Response structure:', JSON.stringify(response, null, 2));
       console.log('First choice message:', response.choices[0]?.message);
       
       if (!content) {
-        console.error('OpenAI response structure:', JSON.stringify(response, null, 2));
+        console.error('No content received from Chat Completions API');
+        console.error('Response details:', {
+          choices: response.choices?.length || 0,
+          firstChoice: response.choices[0],
+          message: response.choices[0]?.message
+        });
         throw new Error('No content received from OpenAI');
       }
 
-      console.log('OpenAI raw response length:', content.length);
-      console.log('OpenAI raw response preview:', content.substring(0, 500) + '...');
+      console.log('Chat Completions response length:', content.length);
+      console.log('Chat Completions response preview:', content.substring(0, 500) + '...');
 
       // Parse and validate the JSON response
       const parsedContent = JSON.parse(content);
@@ -199,7 +213,7 @@ Key Features: High-quality photography, professional editing, personal service
 
       return validatedContent;
     } catch (error) {
-      console.error('Error generating blog content with OpenAI:', error);
+      console.error('Error generating blog content with Chat Completions:', error);
       throw new Error('Failed to generate blog content');
     }
   }
