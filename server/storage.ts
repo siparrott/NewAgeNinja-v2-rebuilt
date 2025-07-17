@@ -546,7 +546,7 @@ export class DatabaseStorage implements IStorage {
     await fs.writeFile(filePath, buffer);
     
     // Return public URL
-    return `/public/${bucket}/${filename}`;
+    return `/${bucket}/${filename}`;
   }
 }
 
