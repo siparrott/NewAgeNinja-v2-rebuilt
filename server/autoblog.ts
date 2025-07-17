@@ -143,6 +143,7 @@ Key Features: High-quality photography, professional editing, personal service
     try {
       console.log('OpenAI prompt length:', prompt.length);
       console.log('Image content count:', imageContent.length);
+      console.log('Prompt preview:', prompt.substring(0, 500) + '...');
       
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -164,7 +165,12 @@ Key Features: High-quality photography, professional editing, personal service
       });
 
       const content = response.choices[0]?.message?.content;
+      console.log('OpenAI response status:', response);
+      console.log('OpenAI choices length:', response.choices?.length || 0);
+      console.log('First choice message:', response.choices[0]?.message);
+      
       if (!content) {
+        console.error('OpenAI response structure:', JSON.stringify(response, null, 2));
         throw new Error('No content received from OpenAI');
       }
 
