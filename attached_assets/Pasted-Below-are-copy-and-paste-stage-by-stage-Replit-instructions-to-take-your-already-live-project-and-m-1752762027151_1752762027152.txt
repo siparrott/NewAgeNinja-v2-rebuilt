@@ -1,0 +1,1199 @@
+Below are copy-and-paste, stage-by-stage Replit instructions to take your already-live project and move it forward into the Multi-Studio, Guardrailed, AI Operator (Phase A / Read-Only) build. Each stage is designed to be small, testable, and reversible. You can do them in order — or tell me which stage to print full code for and I’ll expand that block immediately.
+
+Quick Navigation
+R0 – Workspace Sanity
+
+R1 – Install New Packages
+
+R2 – Env & Secrets Setup
+
+R3 – Multi-Studio Schema Patch (Drizzle)
+
+R4 – Apply Migration & Backfill Default Studio
+
+R5 – Enable RLS (Dev Safe Scaffold)
+
+R6 – Create Agent Directory Skeleton
+
+R7 – Core Types + Policy + OpenAI
+
+R8 – Studio Credentials Loader + CRM Fetchers
+
+R9 – Read Tools + Registry
+
+R10 – System Prompt + Assistant Bootstrap
+
+R11 – Run Harness (CLI Test)
+
+R12 – Smoke Script
+
+R13 – Agent README
+
+R14 – Commit & Push
+
+At the end I’ll ask which stage you want the full code drops for.
+
+Pre-Flight: Confirm Project Root
+In Replit shell, check whether your code lives at /home/runner/<repl-name>/ or inside a nested folder:
+
+bash
+Kopieren
+Bearbeiten
+ls -1
+If you see THISONESURELY-main/, move contents up:
+
+bash
+Kopieren
+Bearbeiten
+mv THISONESURELY-main/* ./
+mv THISONESURELY-main/.* ./ 2>/dev/null || true
+rmdir THISONESURELY-main || true
+R0 – Workspace Sanity
+Purpose: Make sure build compiles before we change anything.
+
+Copy/Paste (shell):
+
+bash
+Kopieren
+Bearbeiten
+echo "=== Node Version ==="
+node -v
+
+echo "=== Type Check ==="
+npx tsc --noEmit || echo "Type errors (ok for now)"
+
+echo "=== Git Status ==="
+git status --short || true
+If Node < 18: Update .replit > Nix Environment (or install Node 18 LTS). Let me know if you need the snippet.
+
+R1 – Install New Packages
+Purpose: Add the libraries needed for the AI Operator.
+
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+npm install openai @supabase/supabase-js nodemailer zod-to-json-schema
+git add package.json package-lock.json
+git commit -m "deps: openai supabase nodemailer zod-to-json-schema" || true
+R2 – Env & Secrets Setup
+Purpose: Keep sensitive creds OUT of source; load them correctly.
+
+1. Add keys in Replit > Tools > Secrets (left sidebar)
+Add the following keys (values = your real creds):
+
+OPENAI_API_KEY
+
+VITE_SUPABASE_URL
+
+SUPABASE_SERVICE_ROLE_KEY
+
+SMTP_HOST
+
+SMTP_PORT (e.g., 587)
+
+SMTP_USER
+
+SMTP_PASS
+
+STUDIO_DEFAULT_EMAIL_FROM → New Age Fotografie <hallo@newagefotografie.com>
+
+2. Extend .env.example (copy/paste)
+bash
+Kopieren
+Bearbeiten
+cat <<'EOF' >> .env.example
+# === Agent / Multi-Studio ===
+OPENAI_API_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+STUDIO_DEFAULT_EMAIL_FROM="New Age Fotografie <hallo@newagefotografie.com>"
+EOF
+3. Ensure env loads early
+Open server/index.ts (top lines). If not present, add:
+
+ts
+Kopieren
+Bearbeiten
+import "dotenv/config";
+4. Commit:
+bash
+Kopieren
+Bearbeiten
+git add .env.example server/index.ts
+git commit -m "env: agent vars + dotenv load" || true
+R3 – Multi-Studio Schema Patch (Drizzle)
+Purpose: Add studios, studio_integrations, ai_policies, agent_action_log, and studio_id columns to core CRM tables.
+
+👉 Tell me: “Generate Replit Drizzle schema patch now” and I will output the exact TypeScript code you paste into shared/schema.ts + a migration helper file.
+
+(Skipping code in this summary to control length — I’ll generate full patch on request.)
+
+R4 – Apply Migration & Backfill Default Studio
+After patching schema:
+
+Generate migrations:
+
+bash
+Kopieren
+Bearbeiten
+npm run db:generate || npx drizzle-kit generate
+Push to DB:
+
+bash
+Kopieren
+Bearbeiten
+npm run db:push || npx drizzle-kit push
+Insert default studio (capture ID):
+
+bash
+Kopieren
+Bearbeiten
+node <<'EOF'
+import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+const { data, error } = await supabase
+  .from("studios")
+  .insert({
+    name: "New Age Fotografie",
+    slug: "newage",
+    default_currency: "EUR"
+  })
+  .select()
+  .single();
+
+if (error) { console.error(error); process.exit(1); }
+console.log("DEFAULT_STUDIO_ID", data.id);
+EOF
+Copy the printed UUID. Use it below (replace XXX):
+
+bash
+Kopieren
+Bearbeiten
+DEFAULT_STUDIO_ID=XXX
+node <<EOF
+import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const sid = "$DEFAULT_STUDIO_ID";
+const tables = ["crm_clients","crm_leads","photography_sessions","crm_invoices","galleries","gallery_images"];
+for (const t of tables) {
+  const { error } = await supabase.from(t).update({ studio_id: sid }).is("studio_id", null);
+  if (error) console.error("ERR", t, error);
+  else console.log("Backfilled", t);
+}
+EOF
+Seed integrations + policy (replace SMTP creds OR let env fallback):
+
+bash
+Kopieren
+Bearbeiten
+node <<EOF
+import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+const sid = "$DEFAULT_STUDIO_ID";
+await supabase.from("studio_integrations").insert({
+  studio_id: sid,
+  smtp_host: process.env.SMTP_HOST,
+  smtp_port: Number(process.env.SMTP_PORT || 587),
+  smtp_user: process.env.SMTP_USER,
+  smtp_pass_encrypted: process.env.SMTP_PASS, -- TODO encrypt
+  inbound_email_address: process.env.SMTP_USER,
+  default_from_email: process.env.STUDIO_DEFAULT_EMAIL_FROM
+});
+
+await supabase.from("ai_policies").insert({
+  studio_id: sid,
+  mode: "read_only",
+  authorities: ["READ_CLIENTS","READ_LEADS","READ_SESSIONS","READ_INVOICES","DRAFT_EMAIL"],
+  invoice_auto_limit: 0,
+  email_send_mode: "draft"
+});
+console.log("Seeded integrations + policy");
+EOF
+R5 – Enable RLS (Dev Safe Scaffold)
+You can do this from Supabase SQL editor (recommended) or shell if you have a DB URL. I’ll generate full SQL when you ask. For now:
+
+Action: Enable RLS on each multi-tenant table. Add permissive SELECT if you need UI to keep working during development. Document TODO to tighten.
+
+R6 – Create Agent Directory Skeleton
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+mkdir -p agent/{core,integrations,tools,prompts/styles,util,data,scripts}
+touch agent/README.md agent/bootstrap.ts agent/run-agent.ts
+touch agent/core/{ctx.ts,policy.ts,openai.ts,authz.ts,tools.ts,audit.ts}
+touch agent/integrations/{storage-bridge.ts,crm-data.ts,smtp.ts,stripe.ts}
+touch agent/tools/{crm-read.ts,pipeline-summary.ts,email-draft.ts,crm-lookup.ts,propose-invoice.ts}
+touch agent/prompts/system.ts agent/prompts/styles/{client-reply.ts,admin-summary.ts}
+touch agent/util/{json-schema.ts,logger.ts,crypto.ts}
+touch agent/data/.gitkeep
+git add agent
+git commit -m "agent: skeleton structure" || true
+R7 – Core Types + Policy + OpenAI
+Paste into agent/core/ctx.ts
+ts
+Kopieren
+Bearbeiten
+export interface StudioCreds {
+  smtp?: {
+    host: string;
+    port: number;
+    user: string;
+    pass: string;
+    from: string;
+  };
+  stripe?: {
+    accountId?: string;
+    publishable?: string;
+    secret?: string;
+  };
+  openai?: {
+    apiKey?: string;
+  };
+  currency?: string;
+}
+
+export interface AgentCtx {
+  studioId: string;
+  studioName: string;
+  userId: string;
+  creds: StudioCreds;
+  policy: AgentPolicy;
+}
+
+// Forward ref; import after definition to avoid circulars
+export type { AgentPolicy } from "./policy";
+Paste into agent/core/policy.ts
+(shortened; full authorities list)
+
+ts
+Kopieren
+Bearbeiten
+import { createClient } from "@supabase/supabase-js";
+
+export type Authority =
+  | "READ_CLIENTS"
+  | "READ_LEADS"
+  | "READ_SESSIONS"
+  | "READ_INVOICES"
+  | "DRAFT_EMAIL"
+  | "CREATE_LEAD"
+  | "UPDATE_CLIENT"
+  | "SEND_INVOICE"
+  | "SEND_EMAIL";
+
+export interface AgentPolicy {
+  mode: "read_only" | "propose" | "auto_safe" | "auto_all";
+  authorities: Authority[];
+  invoice_auto_limit: number;
+  email_send_mode: "draft" | "trusted" | "auto";
+}
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function loadPolicy(studioId: string): Promise<AgentPolicy> {
+  const { data, error } = await supabase
+    .from("ai_policies")
+    .select("*")
+    .eq("studio_id", studioId)
+    .single();
+
+  if (error || !data) {
+    return {
+      mode: "read_only",
+      authorities: ["READ_CLIENTS","READ_LEADS","READ_SESSIONS","READ_INVOICES","DRAFT_EMAIL"],
+      invoice_auto_limit: 0,
+      email_send_mode: "draft",
+    };
+  }
+
+  return {
+    mode: data.mode,
+    authorities: data.authorities ?? [],
+    invoice_auto_limit: Number(data.invoice_auto_limit ?? 0),
+    email_send_mode: data.email_send_mode ?? "draft",
+  };
+}
+agent/core/openai.ts
+ts
+Kopieren
+Bearbeiten
+import OpenAI from "openai";
+import type { StudioCreds } from "./ctx";
+
+export function openaiForStudio(creds: StudioCreds) {
+  const apiKey = creds.openai?.apiKey || process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("No OpenAI key configured.");
+  return new OpenAI({ apiKey });
+}
+agent/core/authz.ts
+ts
+Kopieren
+Bearbeiten
+import type { AgentCtx } from "./ctx";
+import type { Authority } from "./policy";
+
+export function hasAuthority(ctx: AgentCtx, a: Authority) {
+  return ctx.policy.authorities.includes(a);
+}
+
+export function requireAuthority(ctx: AgentCtx, a: Authority) {
+  if (!hasAuthority(ctx, a)) throw new Error(`Policy forbids: ${a}`);
+}
+Commit:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/core
+git commit -m "agent: core ctx + policy + openai + authz" || true
+R8 – Studio Credentials Loader + CRM Fetchers
+agent/integrations/storage-bridge.ts
+ts
+Kopieren
+Bearbeiten
+import { createClient } from "@supabase/supabase-js";
+import { decrypt } from "../util/crypto";
+import type { StudioCreds } from "../core/ctx";
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function loadStudioCreds(studioId: string): Promise<StudioCreds> {
+  const { data, error } = await supabase
+    .from("studio_integrations")
+    .select("*")
+    .eq("studio_id", studioId)
+    .single();
+
+  if (error || !data) throw error || new Error("Studio integrations missing");
+
+  return {
+    smtp: {
+      host: data.smtp_host,
+      port: data.smtp_port,
+      user: data.smtp_user,
+      pass: decrypt(data.smtp_pass_encrypted ?? ""),
+      from: data.default_from_email ?? process.env.STUDIO_DEFAULT_EMAIL_FROM ?? "no-reply@example.com",
+    },
+    stripe: {
+      accountId: data.stripe_account_id ?? undefined,
+    },
+    openai: {
+      apiKey: data.openai_api_key_encrypted
+        ? decrypt(data.openai_api_key_encrypted)
+        : undefined,
+    },
+    currency: data.default_currency ?? "EUR",
+  };
+}
+Minimal agent/util/crypto.ts (no real crypto yet)
+ts
+Kopieren
+Bearbeiten
+export function decrypt(v?: string | null) {
+  return v || "";
+}
+export function encrypt(v: string) {
+  return v; // TODO Phase B
+}
+agent/integrations/crm-data.ts
+ts
+Kopieren
+Bearbeiten
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+async function fetchTable(table: string, studioId: string) {
+  const { data, error } = await supabase.from(table).select("*").eq("studio_id", studioId);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export const getClientsForStudio = (sid: string) => fetchTable("crm_clients", sid);
+export const getLeadsForStudio   = (sid: string) => fetchTable("crm_leads", sid);
+export const getSessionsForStudio= (sid: string) => fetchTable("photography_sessions", sid);
+export const getInvoicesForStudio= (sid: string) => fetchTable("crm_invoices", sid);
+Commit:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/integrations agent/util
+git commit -m "agent: studio creds + crm data fetchers" || true
+R9 – Read Tools + Registry
+agent/tools/crm-read.ts
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import type { AgentCtx } from "../core/ctx";
+import { requireAuthority } from "../core/authz";
+import { getClientsForStudio } from "../integrations/crm-data";
+
+export const listClientsTool = {
+  name: "list_clients",
+  description: "List clients for the current studio. Optional search & limit.",
+  parameters: z.object({
+    search: z.string().optional(),
+    limit: z.number().int().min(1).max(100).default(25),
+  }),
+  handler: async (args: any, ctx: AgentCtx) => {
+    requireAuthority(ctx, "READ_CLIENTS");
+    let clients = await getClientsForStudio(ctx.studioId);
+    if (args.search) {
+      const s = String(args.search).toLowerCase();
+      clients = clients.filter((c: any) =>
+        `${c.firstName ?? ""} ${c.lastName ?? ""}`.toLowerCase().includes(s) ||
+        (c.email?.toLowerCase().includes(s))
+      );
+    }
+    return clients.slice(0, args.limit);
+  }
+};
+agent/tools/pipeline-summary.ts
+ts
+Kopieren
+Bearbeiten
+import type { AgentCtx } from "../core/ctx";
+import { requireAuthority } from "../core/authz";
+import { getLeadsForStudio, getSessionsForStudio, getInvoicesForStudio } from "../integrations/crm-data";
+
+export const pipelineSummaryTool = {
+  name: "pipeline_summary",
+  description: "Return counts of leads, sessions, unpaid invoices.",
+  parameters: {},
+  handler: async (_args: any, ctx: AgentCtx) => {
+    requireAuthority(ctx, "READ_LEADS");
+    const [leads, sessions, invoices] = await Promise.all([
+      getLeadsForStudio(ctx.studioId),
+      getSessionsForStudio(ctx.studioId),
+      getInvoicesForStudio(ctx.studioId),
+    ]);
+    const unpaid = invoices.filter((i: any) => i.status !== "paid");
+    const upcoming = sessions.filter(
+      (s: any) => new Date(s.startDate ?? s.sessionDate ?? 0) > new Date()
+    );
+    return {
+      leads: leads.length,
+      upcomingSessions: upcoming.length,
+      unpaidInvoices: unpaid.length,
+      topUnpaid: unpaid.slice(0, 10).map((i: any) => ({
+        id: i.id,
+        invoiceNumber: i.invoiceNumber,
+        total: i.total,
+        dueDate: i.dueDate,
+      })),
+    };
+  }
+};
+agent/util/json-schema.ts
+ts
+Kopieren
+Bearbeiten
+import type { ZodTypeAny } from "zod";
+import { zodToJsonSchema as z2j } from "zod-to-json-schema";
+
+export function zodToJsonSchema(schema: ZodTypeAny | {}) {
+  if ((schema as any)?.safeParse) {
+    return z2j(schema as any);
+  }
+  return { type: "object", properties: {} };
+}
+agent/core/tools.ts
+ts
+Kopieren
+Bearbeiten
+import { zodToJsonSchema } from "../util/json-schema";
+import { listClientsTool } from "../tools/crm-read";
+import { pipelineSummaryTool } from "../tools/pipeline-summary";
+
+export const toolRegistry = {
+  [listClientsTool.name]: listClientsTool,
+  [pipelineSummaryTool.name]: pipelineSummaryTool,
+};
+
+export function toolDefsForAssistant() {
+  return Object.values(toolRegistry).map(t => ({
+    type: "function",
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: zodToJsonSchema((t as any).parameters || {}),
+    }
+  }));
+}
+Commit:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/tools agent/util agent/core/tools.ts
+git commit -m "agent: read tools + registry" || true
+R10 – System Prompt + Assistant Bootstrap
+agent/prompts/system.ts
+ts
+Kopieren
+Bearbeiten
+export const systemPrompt = `
+You are the AI Operator for a photography CRM SaaS used by many studios.
+Each run is scoped to a single studio (you will receive studio metadata in tool context).
+Stay in scope. Never reveal data from other studios.
+Use tools to fetch real data. Do not fabricate financials or job counts.
+Writes are disabled in this phase. When asked to change data, respond with a JSON object describing the proposed change.
+Include the studio currency when quoting totals.
+Keep answers short and actionable. Ask for missing info.
+`;
+agent/bootstrap.ts
+ts
+Kopieren
+Bearbeiten
+import fs from "fs";
+import path from "path";
+import { openaiForStudio } from "./core/openai";
+import { toolDefsForAssistant } from "./core/tools";
+import { systemPrompt } from "./prompts/system";
+import { loadStudioCreds } from "./integrations/storage-bridge";
+
+const dataDir = path.join(process.cwd(), "agent", "data");
+fs.mkdirSync(dataDir, { recursive: true });
+
+export async function ensureAssistantForStudio(studioId: string) {
+  const creds = await loadStudioCreds(studioId);
+  const openai = openaiForStudio(creds);
+  const fp = path.join(dataDir, `${studioId}-assistant.json`);
+
+  if (fs.existsSync(fp)) {
+    try {
+      const { id } = JSON.parse(fs.readFileSync(fp, "utf8"));
+      const asst = await openai.beta.assistants.retrieve(id);
+      return { assistant: asst, openai, creds };
+    } catch (_) {
+      /* recreate */
+    }
+  }
+
+  const assistant = await openai.beta.assistants.create({
+    name: `CRM Operator – ${studioId}`,
+    model: "gpt-4.1-mini",
+    instructions: systemPrompt,
+    tools: toolDefsForAssistant()
+  });
+
+  fs.writeFileSync(fp, JSON.stringify({ id: assistant.id }, null, 2));
+  return { assistant, openai, creds };
+}
+Commit:
+
+bash
+Kopieren
+Bearbeiten
+git add agent/prompts agent/bootstrap.ts
+git commit -m "agent: system prompt + bootstrap" || true
+R11 – Run Harness (CLI Test)
+agent/run-agent.ts
+ts
+Kopieren
+Bearbeiten
+import { ensureAssistantForStudio } from "./bootstrap";
+import { toolRegistry } from "./core/tools";
+import { loadPolicy } from "./core/policy";
+import type { AgentCtx } from "./core/ctx";
+
+const studioId = process.argv[2] || "newage";
+const userId = "system-studio-admin";
+
+async function run() {
+  const { assistant, openai, creds } = await ensureAssistantForStudio(studioId);
+  const policy = await loadPolicy(studioId);
+  const ctx: AgentCtx = {
+    studioId,
+    studioName: studioId,
+    userId,
+    creds,
+    policy,
+  };
+
+  const thread = await openai.beta.threads.create({});
+  await openai.beta.threads.messages.create(thread.id, {
+    role: "user",
+    content: "Give me a pipeline summary."
+  });
+
+  let run = await openai.beta.threads.runs.create(thread.id, {
+    assistant_id: assistant.id,
+    metadata: { studioId, userId }
+  });
+
+  while (run.status === "requires_action") {
+    const toolCalls = run.required_action!.submit_tool_outputs!.tool_calls;
+    const outputs = [];
+    for (const call of toolCalls) {
+      const tool = (toolRegistry as any)[call.function.name];
+      if (!tool) {
+        outputs.push({ tool_call_id: call.id, output: JSON.stringify({ error: "unknown tool" }) });
+        continue;
+      }
+      const args = JSON.parse(call.function.arguments || "{}");
+      const out = await tool.handler(args, ctx);
+      outputs.push({ tool_call_id: call.id, output: JSON.stringify(out) });
+    }
+    run = await openai.beta.threads.runs.submitToolOutputs(thread.id, run.id, {
+      tool_outputs: outputs
+    });
+  }
+
+  const msgs = await openai.beta.threads.messages.list(thread.id, { order: "asc" });
+  const last = msgs.data.filter(m => m.role === "assistant").pop();
+  console.log(JSON.stringify(last, null, 2));
+}
+
+run().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
+Add NPM script
+bash
+Kopieren
+Bearbeiten
+apply_patch <<'EOF'
+*** Begin Patch
+*** Update File: package.json
+@@
+   "scripts": {
++    "agent:test": "tsx agent/run-agent.ts newage",
+*** End Patch
+EOF
+(If apply_patch not available, just edit file in editor.)
+
+Test:
+
+bash
+Kopieren
+Bearbeiten
+npm run agent:test
+Expected: assistant responds with pipeline summary (counts may be 0).
+
+R12 – Smoke Script
+(Optional but handy for regression.)
+
+agent/scripts/smoke.ts
+ts
+Kopieren
+Bearbeiten
+import { ensureAssistantForStudio } from "../bootstrap";
+import { toolRegistry } from "../core/tools";
+import { loadPolicy } from "../core/policy";
+import type { AgentCtx } from "../core/ctx";
+import fs from "fs";
+import path from "path";
+
+async function ask(openai, assistant, ctx: AgentCtx, content: string) {
+  const thread = await openai.beta.threads.create({});
+  await openai.beta.threads.messages.create(thread.id, { role: "user", content });
+  let run = await openai.beta.threads.runs.create(thread.id, {
+    assistant_id: assistant.id,
+    metadata: { studioId: ctx.studioId, userId: ctx.userId }
+  });
+  while (run.status === "requires_action") {
+    const toolCalls = run.required_action!.submit_tool_outputs!.tool_calls;
+    const outputs = [];
+    for (const call of toolCalls) {
+      const tool = (toolRegistry as any)[call.function.name];
+      const args = JSON.parse(call.function.arguments || "{}");
+      const out = await tool.handler(args, ctx);
+      outputs.push({ tool_call_id: call.id, output: JSON.stringify(out) });
+    }
+    run = await openai.beta.threads.runs.submitToolOutputs(thread.id, run.id, {
+      tool_outputs: outputs,
+    });
+  }
+  const msgs = await openai.beta.threads.messages.list(thread.id, { order: "asc" });
+  return msgs.data.filter(m => m.role === "assistant").pop();
+}
+
+async function main() {
+  const studioId = process.argv[2] || "newage";
+  const { assistant, openai, creds } = await ensureAssistantForStudio(studioId);
+  const policy = await loadPolicy(studioId);
+  const ctx: AgentCtx = { studioId, studioName: studioId, userId: "smoke", creds, policy };
+
+  const q1 = await ask(openai, assistant, ctx, "List 5 clients containing 'anna'");
+  const q2 = await ask(openai, assistant, ctx, "Pipeline summary please");
+
+  const out = { q1, q2 };
+  const fp = path.join(process.cwd(), "agent", "data", "smoke-results.json");
+  fs.writeFileSync(fp, JSON.stringify(out, null, 2));
+  console.log("Wrote", fp);
+}
+
+main();
+Shell:
+
+bash
+Kopieren
+Bearbeiten
+node agent/scripts/smoke.ts newage
+cat agent/data/smoke-results.json
+R13 – Agent README
+Open agent/README.md and paste:
+
+md
+Kopieren
+Bearbeiten
+# Agent Service (Multi-Studio, Read-Only Phase)
+
+This folder contains the early implementation of our AI Operator for the photography CRM SaaS.
+
+**Current Phase:** Read-Only (no writes).  
+**Scope:** Per-studio isolation (multi-tenant).  
+**AI:** OpenAI Assistant function calls to registered tools.
+
+## Setup
+1. Add secrets in Replit (OPENAI_API_KEY, SUPABASE_SERVICE_ROLE_KEY, SMTP_*).
+2. Run migrations (see root README or R3 instructions).
+3. Seed a studio row + integrations (SMTP, currency).
+4. Bootstrap assistant:
+   ```bash
+   node -e 'import("./agent/bootstrap.js").then(async m=>{const r=await m.ensureAssistantForStudio("newage");console.log(r.assistant.id)})'
+Test Run
+bash
+Kopieren
+Bearbeiten
+npm run agent:test
+Next Phase (Writes)
+Propose lead creation
+
+Draft client replies
+
+Invoice thresholds
+
+Human approval queue
+
+Booking link (live studio example)
+<a href="https://www.newagefotografie.com/warteliste/">Studio Termin planen</a>
+
+sql
+Kopieren
+Bearbeiten
+
+Commit:
+```bash
+git add agent/README.md
+git commit -m "agent: README phase A" || true
+R14 – Commit & Push
+bash
+Kopieren
+Bearbeiten
+git add -u
+git commit -m "Agent Foundation Phase A complete" || true
+git push origin HEAD
+If branch not set:
+
+bash
+Kopieren
+Bearbeiten
+git checkout -b feature/agent-foundation
+git push -u origin feature/agent-foundation
+Open GitHub → make PR.
+
+What Do You Need Next?
+Please tell me which stage you want full code for:
+
+“Give me the full code for R3 Drizzle schema patch.”
+
+“Give me R5 RLS SQL.”
+
+“I’m at R11 and getting errors — help.”
+
+“Jump me straight to Phase B (write proposals).”
+
+I’ll drop the requested blocks in copy-paste format.
+
+External References
+OpenAI Assistants docs: <a href="https://platform.openai.com/docs/assistants">OpenAI Assistants Docs</a>
+
+Supabase RLS: <a href="https://supabase.com/docs/guides/auth/row-level-security">Supabase RLS Guide</a>
+
+Your move: Which stage should I expand first? Let me know and we’ll keep rolling. 💪
+
+
+
+
+
+
+
+
+Du:
+
+just to be 100% clear the assitant will be controlled by the user in this natural language chat interface in the crm. Does this make a difference?
+Can you also provide me with the prompt for the assistant so that i can set up the assistant. 
+
+ChatGPT:
+
+Nachgedacht für 18 Sekunden
+Short answer: Yes, the fact that the AI Operator is directly controlled by the user through the natural-language chat widget in your CRM dashboard does change a few things — mostly around interaction contracts, safety confirmations, and UX for approvals. The core backend architecture we built still holds, but we’ll tune prompts, tool usage rules, and response formatting so the Assistant gives actionable choices (“Draft invoice?”, “Add lead?”, “Send confirmation?”) instead of silently acting in the background.
+
+Below you’ll find:
+
+✅ What’s different when the Assistant is chat-driven
+
+✅ Recommended interaction contract (how it talks, when it acts)
+
+✅ Response format rules (plain chat vs structured action JSON)
+
+✅ Full System Prompt Template (copy/paste + placeholders)
+
+✅ Optional Developer Control Block (tool usage rules)
+
+✅ Example runtime context injection payload (studio, policy, user)
+
+✅ Example Node code: calling the Assistant w/ chat message + tool loop
+
+✅ UI behaviors (Approve/Reject buttons, default modes)
+
+✅ One internal link (booking funnel)
+
+✅ External doc links for deeper setup
+
+1. Does the chat UI change the architecture?
+Mostly UX + safety, not data plumbing. The backend “Agent Service” (tools, policy, Supabase, OpenAI) stays the same. What changes:
+
+Concern	Background Worker Model	Chat-Driven Model (yours)	What to Do
+When to act	Timer or webhook	User asks in chat	Parse intent on each user message.
+Confirmation	Implicit / policy	Visible to user	Always summarize planned action + wait for user “Yes” unless auto allowed.
+Multi-step	Hidden loops	Transparent steps	Show checklist: lookup client → create lead → draft email.
+Error surfacing	Logs	Natural reply	Return human-friendly “Couldn’t find client; want me to create one?”
+Data volume	Batch	Scoped	Default to summarized lists; ask before dumping 1k clients.
+Tone	Machine-to-machine	Human chat	Friendly, brief, avoids jargon; uses local context.
+
+Bottom line: The Assistant must ask, show, and confirm — never silently mutate data in a user-controlled chat unless the studio’s policy explicitly allows no-confirm actions and the user instruction is unambiguous (“Yes, send it now”).
+
+2. Interaction Contract (Put This in Prompt)
+Golden rule: Read, propose, confirm, act.
+
+Default Behavior (safe, recommended)
+Interpret user request.
+
+Fetch needed data via tools.
+
+Respond with a conversational summary + proposed action options (numbered).
+
+Only call write tools after explicit user approval OR if policy auto-allows and user gave a clear directive (“Send invoice now”).
+
+After executing a tool: confirm success in chat + show next logical step.
+
+Quick Example
+User: “Please invoice Anna Miller for the newborn shoot.”
+Assistant: “Found client Anna Miller. No open invoice for newborn shoot 2025-08-12. I can create a draft invoice for €350 and email it to hallo@... after you confirm. 1) Create draft 2) Create & send 3) Cancel.”
+(User clicks option 2)
+Assistant calls create_invoice tool, then send_invoice_email (if allowed), returns confirmation.
+
+3. Response Format Rules
+Your UI can parse structured signals if we standardize a block.
+
+Human text first. Always lead with natural language the user can read.
+
+Structured action JSON second (optional). When proposing actions, append a fenced JSON block like:
+
+json
+Kopieren
+Bearbeiten
+{
+  "proposed_actions": [
+    {
+      "id": "create_draft_invoice",
+      "label": "Create draft invoice",
+      "tool": "propose_invoice",
+      "args": { "client_id": "UUID", "session_id": "UUID" },
+      "requires_approval": true
+    }
+  ]
+}
+Your front-end can parse and convert these into clickable buttons.
+
+Important: Only include actions that map to registered tools. Don’t invent tool names.
+
+4. Assistant System Prompt Template (Copy/Paste)
+Use this as the instructions field when creating the Assistant.
+Replace ALL {{PLACEHOLDER}} tokens at runtime or pre-render with string templating.
+
+Tip: For multi-studio SaaS, build this as a template; inject studio name, currency, policy mode, and automation rules dynamically before creating/updating the Assistant.
+
+text
+Kopieren
+Bearbeiten
+You are **{{STUDIO_NAME}}’s CRM Operations Assistant** inside the TogNinja business dashboard.
+
+PRIMARY MISSION
+- Help the studio manage leads, clients, bookings, invoices, galleries, and email follow-ups.
+- Operate ONLY within the current studio context (studio_id={{STUDIO_ID}}). Never reference or access data from any other studio.
+- Use registered TOOLS for all data access. NEVER fabricate data. NEVER guess invoice totals—retrieve them.
+
+AUTOMATION SAFETY
+- Current automation mode: {{POLICY_MODE}}  (one of: read_only | propose | auto_safe | auto_all).
+- Granted authorities: {{POLICY_AUTHORITIES_CSV}}.
+- Invoice auto-limit: {{POLICY_INVOICE_LIMIT}} {{STUDIO_CURRENCY}}. If above, require confirmation.
+- Email send mode: {{POLICY_EMAIL_MODE}} (draft | trusted | auto).
+- When in read_only: NEVER perform data writes. Respond with a proposed action JSON payload instead.
+- When in propose: Suggest actions and wait for user approval.
+- When in auto_safe: You may perform low-risk actions (e.g., create lead from inbound, update missing phone numbers) if user intent is clear. Always summarize what you did.
+- When in auto_all: Perform requested actions immediately unless ambiguous; confirm results.
+
+INTERACTION STYLE
+- Brief, friendly, pro, founder-style tone. No corporate fluff.
+- Mirror the user’s language (German/English).
+- Use bullets when listing options.
+- Ask before dumping large data (“I found 1,243 clients. Want the top 10 newest?”).
+
+ACTION FLOW
+1. Understand the user request.
+2. Call read tools to gather context.
+3. Reply with summary + numbered action choices.
+4. If the user approves or policy allows: call the appropriate write tool(s).
+5. Confirm outcome & next step.
+
+STRUCTURED ACTION OUTPUT
+When proposing actions, include a JSON object after your human reply:
+
+```json
+{
+  "proposed_actions": [
+    {
+      "id": "ACTION_KEY",
+      "label": "Human short label",
+      "tool": "tool_name",
+      "args": { "key": "value" },
+      "requires_approval": true
+    }
+  ]
+}
+The front-end may convert these into interactive buttons.
+
+DATA SCOPE RULES
+
+Only show personal data (email/phone/address) when user asks or when needed for the task.
+
+For large result sets, summarize counts + top few.
+
+Mask sensitive values in open outputs unless the user requests full detail.
+
+CURRENCY & LOCALE
+
+Default currency: {{STUDIO_CURRENCY}}.
+
+When quoting prices, include symbol or code (e.g., € / EUR).
+
+Dates: use studio locale ({{STUDIO_LOCALE}}), or ISO if unclear.
+
+ERROR HANDLING
+
+If a tool fails, apologize briefly and tell the user what to retry or fix.
+
+If lacking authority: “I’m not allowed to do that under the current automation settings. Would you like to switch modes?”
+
+INTERNAL LINK & NEXT STEP EXAMPLE
+If user wants bookings, you may reference: <a href="https://www.newagefotografie.com/warteliste/">Studio Termin planen</a>.
+
+END OF INSTRUCTIONS
+
+yaml
+Kopieren
+Bearbeiten
+
+---
+
+## 5. Optional Developer Prompt (Tool Usage Contract)
+
+If your OpenAI setup lets you use a *separate developer message* (some frameworks distinguish), include this to increase tool precision:
+
+```text
+DEVELOPER CONTROL BLOCK
+- The only valid tools are those supplied in this run.
+- Always prefer *the most specific* tool. Example: use `pipeline_summary` instead of manually fetching leads + invoices if user just wants a summary.
+- Do not pass extra args. Only pass schema-defined arguments.
+- For freeform user text like “email anna” you must:
+  1) Lookup by name/email via CRM
+  2) Confirm identity
+  3) Draft email (never auto-send unless policy allows)
+- For long operations, chunk work and return intermediate state.
+END CONTROL BLOCK
+6. Runtime Context Injection (Server-Side)
+Rather than hard-baking static values into the Assistant forever, refresh context on each run using metadata or a leading system context message.
+
+Recommended: Add a first message to each thread that encodes current runtime policy and context in JSON. Example:
+
+js
+Kopieren
+Bearbeiten
+await openai.beta.threads.messages.create(thread.id, {
+  role: "user",  // or "system" if supported; if user, prefix clearly
+  content: [
+    {
+      type: "input_text",
+      text: "[CONTEXT JSON]\n" + JSON.stringify({
+        studio_id: studioId,
+        studio_name: studioName,
+        currency: studioCurrency,
+        policy: policyObj,
+        user: { id: userId, email: userEmail, role: "admin" }
+      })
+    }
+  ]
+});
+Then append the actual user’s typed message in the next message.
+
+7. Example Chat Request Flow (Node)
+This illustrates how your CRM dashboard “Send” button will talk to the AI Operator.
+
+ts
+Kopieren
+Bearbeiten
+import { ensureAssistantForStudio } from "./agent/bootstrap";
+import { toolRegistry } from "./agent/core/tools";
+import { loadPolicy } from "./agent/core/policy";
+import type { AgentCtx } from "./agent/core/ctx";
+
+export async function runChatMessage({ studioId, userId, userEmail, message }) {
+  const { assistant, openai, creds } = await ensureAssistantForStudio(studioId);
+  const policy = await loadPolicy(studioId);
+  const ctx: AgentCtx = {
+    studioId,
+    studioName: studioId,
+    userId,
+    creds,
+    policy,
+  };
+
+  // Create or reuse thread per chat session (store thread.id in DB)
+  const thread = await openai.beta.threads.create({});
+
+  // Inject context frame
+  await openai.beta.threads.messages.create(thread.id, {
+    role: "user",
+    content: `[[CONTEXT]] ${JSON.stringify({
+      studioId,
+      userId,
+      userEmail,
+      policy,
+      currency: ctx.creds.currency || "EUR",
+    })}`
+  });
+
+  // User's chat input
+  await openai.beta.threads.messages.create(thread.id, {
+    role: "user",
+    content: message
+  });
+
+  // Start run
+  let run = await openai.beta.threads.runs.create(thread.id, {
+    assistant_id: assistant.id,
+    metadata: { studioId, userId }
+  });
+
+  // Tool loop
+  while (run.status === "requires_action") {
+    const toolCalls = run.required_action!.submit_tool_outputs!.tool_calls;
+    const outputs = [];
+    for (const call of toolCalls) {
+      const tool = (toolRegistry as any)[call.function.name];
+      let output;
+      if (!tool) {
+        output = { error: "Unknown tool" };
+      } else {
+        const args = JSON.parse(call.function.arguments || "{}");
+        try {
+          output = await tool.handler(args, ctx);
+        } catch (err: any) {
+          output = { error: String(err?.message || err) };
+        }
+      }
+      outputs.push({ tool_call_id: call.id, output: JSON.stringify(output) });
+    }
+    run = await openai.beta.threads.runs.submitToolOutputs(thread.id, run.id, {
+      tool_outputs: outputs
+    });
+  }
+
+  // Collect model messages
+  const msgs = await openai.beta.threads.messages.list(thread.id, { order: "asc" });
+  const assistantMsgs = msgs.data.filter(m => m.role === "assistant");
+  const last = assistantMsgs.at(-1);
+
+  // Send to client UI
+  return {
+    messages: assistantMsgs,
+    last,
+    threadId: thread.id
+  };
+}
+8. UI Behaviors (what your chat widget should do)
+When Assistant replies with options: Parse the JSON block and render those as clickable chips/buttons below the message bubble (e.g., “Create draft invoice”, “Send email now”, “Show details”).
+
+When user clicks an action button: Send a new chat message like:
+
+/approve create_draft_invoice
+or call your backend route: /api/agent/approve → tool call → assistant follow-up message.
+
+Automation Mode Toggle in UI:
+Display current mode (“Read Only”, “Propose”, “Auto Safe”). Changing this updates the ai_policies row and triggers an Assistant update.
+
+9. Quick Visual Flow (Chat Variant)
+rust
+Kopieren
+Bearbeiten
+User types ---> CRM chat API ---> create thread + context msg ---> OpenAI Run
+                          ↘ requires_action? -> server tool calls -> outputs
+                            finalize -> assistant reply -> includes proposed_actions JSON
+                                        ↘ CRM UI renders buttons -> user approves
+                                          -> call tool directly OR send follow-up chat "/approve"
+10. Recommended First Test Script (Manual Chat Smoke)
+In Replit shell:
+
+bash
+Kopieren
+Bearbeiten
+node <<'EOF'
+import { runChatMessage } from "./run-chat-sim.js"; // create from above snippet
+const studioId = "newage";
+const userId = "matt-admin";
+const userEmail = "matt@newagefotografie.com";
+const msg = "Show me any new leads and what I should do next.";
+const out = await runChatMessage({ studioId, userId, userEmail, message: msg });
+console.log(JSON.stringify(out.last, null, 2));
+EOF
+11. Should the Assistant Initiate Messages?
+Because it lives in a chat UI: no unsolicited background output in the chat unless:
+
+You’re showing system notifications like “3 unread leads” (these come from your own app, not the Assistant), OR
+
+Studio enabled proactive automation + chat feed injection (Phase C).
+
+For now: respond only when user interacts or when your backend posts “New lead from website – want me to add?” as a user-visible system message.
+
+12. One Internal Link (as requested)
+If the user wants to create or schedule a booking:
+<a href="https://www.newagefotografie.com/warteliste/">Studio Termin planen</a>.
+
+13. External References
+OpenAI Assistants + tool calling: <a href="https://platform.openai.com/docs/assistants">OpenAI Assistants Docs</a>.
+
+Supabase Row-Level Security (multi-tenant best practice): <a href="https://supabase.com/docs/guides/auth/row-level-security">Supabase RLS Guide</a>.

@@ -887,3 +887,140 @@ export const insertOpenaiAssistantSchema = createInsertSchema(openaiAssistants, 
 
 export type InsertOpenaiAssistant = z.infer<typeof insertOpenaiAssistantSchema>;
 export type OpenaiAssistant = typeof openaiAssistants.$inferSelect;
+
+// ========== MULTI-STUDIO AI OPERATOR TABLES ==========
+
+// Studios table (main studio/tenant table)
+export const studios = pgTable("studios", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  slug: text("slug").unique().notNull(),
+  default_currency: text("default_currency").default("EUR"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Studio Integrations (credentials and settings per studio)
+export const studioIntegrations = pgTable("studio_integrations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  studioId: uuid("studio_id").references(() => studios.id, { onDelete: "cascade" }).notNull(),
+  
+  // SMTP Configuration
+  smtp_host: text("smtp_host"),
+  smtp_port: integer("smtp_port").default(587),
+  smtp_user: text("smtp_user"),
+  smtp_pass_encrypted: text("smtp_pass_encrypted"),
+  inbound_email_address: text("inbound_email_address"),
+  default_from_email: text("default_from_email"),
+  
+  // Stripe Configuration
+  stripe_account_id: text("stripe_account_id"),
+  stripe_publishable_key: text("stripe_publishable_key"),
+  stripe_secret_key_encrypted: text("stripe_secret_key_encrypted"),
+  
+  // OpenAI Configuration
+  openai_api_key_encrypted: text("openai_api_key_encrypted"),
+  
+  // Currency and Regional Settings
+  default_currency: text("default_currency").default("EUR"),
+  timezone: text("timezone").default("Europe/Vienna"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// AI Policies (what the AI agent can do per studio)
+export const aiPolicies = pgTable("ai_policies", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  studioId: uuid("studio_id").references(() => studios.id, { onDelete: "cascade" }).notNull(),
+  
+  // Agent behavior mode
+  mode: text("mode").notNull().default("read_only"), // "read_only", "propose", "auto_safe", "auto_all"
+  
+  // Specific authorities/permissions
+  authorities: text("authorities").array().default([]), // ["READ_CLIENTS", "READ_LEADS", "DRAFT_EMAIL", etc.]
+  
+  // Limits and restrictions
+  invoice_auto_limit: decimal("invoice_auto_limit", { precision: 10, scale: 2 }).default("0"),
+  email_send_mode: text("email_send_mode").default("draft"), // "draft", "trusted", "auto"
+  
+  // Additional constraints
+  max_daily_actions: integer("max_daily_actions").default(100),
+  require_approval_above: decimal("require_approval_above", { precision: 10, scale: 2 }).default("500"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Agent Action Log (audit trail)
+export const agentActionLog = pgTable("agent_action_log", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  studioId: uuid("studio_id").references(() => studios.id, { onDelete: "cascade" }).notNull(),
+  userId: uuid("user_id").references(() => users.id),
+  
+  // Action details
+  action_type: text("action_type").notNull(), // "READ_CLIENTS", "DRAFT_EMAIL", "SEND_INVOICE", etc.
+  action_details: jsonb("action_details"), // Full details of what was done
+  
+  // Context
+  assistant_id: text("assistant_id"), // OpenAI assistant ID that performed the action
+  conversation_id: text("conversation_id"), // Link to conversation thread
+  
+  // Result
+  success: boolean("success").default(true),
+  error_message: text("error_message"),
+  
+  // Metadata
+  ip_address: text("ip_address"),
+  user_agent: text("user_agent"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Add studio_id to existing tables for multi-tenancy
+// Note: This should be added to existing tables in migrations
+
+// Schema types for new tables
+export const insertStudioSchema = createInsertSchema(studios, {
+  name: z.string().min(1, "Studio name is required"),
+  slug: z.string().min(1, "Studio slug is required"),
+}).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export const insertStudioIntegrationSchema = createInsertSchema(studioIntegrations, {
+  studioId: z.string().uuid("Valid studio ID is required"),
+}).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export const insertAiPolicySchema = createInsertSchema(aiPolicies, {
+  studioId: z.string().uuid("Valid studio ID is required"),
+  mode: z.enum(["read_only", "propose", "auto_safe", "auto_all"]),
+}).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export const insertAgentActionLogSchema = createInsertSchema(agentActionLog, {
+  studioId: z.string().uuid("Valid studio ID is required"),
+  action_type: z.string().min(1, "Action type is required"),
+}).omit({ 
+  id: true, 
+  createdAt: true 
+});
+
+// Type exports for new tables
+export type Studio = typeof studios.$inferSelect;
+export type InsertStudio = z.infer<typeof insertStudioSchema>;
+export type StudioIntegration = typeof studioIntegrations.$inferSelect;
+export type InsertStudioIntegration = z.infer<typeof insertStudioIntegrationSchema>;
+export type AiPolicy = typeof aiPolicies.$inferSelect;
+export type InsertAiPolicy = z.infer<typeof insertAiPolicySchema>;
+export type AgentActionLog = typeof agentActionLog.$inferSelect;
+export type InsertAgentActionLog = z.infer<typeof insertAgentActionLogSchema>;
