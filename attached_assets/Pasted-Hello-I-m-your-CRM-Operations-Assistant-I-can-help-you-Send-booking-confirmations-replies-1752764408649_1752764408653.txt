@@ -1,0 +1,61 @@
+Hello! I'm your CRM Operations Assistant. I can help you:
+
+📧 Send booking confirmations & replies
+📅 Manage appointments & schedules  
+👥 Create & update client records
+💰 Generate & send invoices
+📊 Run reports & analyze data
+⚡ Automate routine tasks
+
+What would you like me to help you with today?
+
+09:58 PM
+
+how many bookings do we have in the diary?
+
+09:58 PM
+
+I can help you manage bookings and appointments:
+
+• **View calendar**: See all upcoming photography sessions
+• **Schedule sessions**: Book new client appointments
+• **Manage availability**: Update your booking calendar
+• **Session details**: Track session types, locations, and requirements
+• **Client communications**: Send booking confirmations and reminders
+
+What booking management task can I assist with?
+
+09:58 PM
+
+how much money have we made this month
+
+09:58 PM
+
+Hello! I'm your CRM Operations Assistant. I can help you with:
+
+• **Client Management**: Add, edit, and organize client records
+• **Invoice Processing**: Create, send, and track invoices and payments
+• **Booking Management**: Schedule appointments and manage your calendar
+• **Email Communications**: Handle inbox, send emails, and manage campaigns
+• **Business Analytics**: Generate reports and track performance metrics
+• **Data Management**: Import/export client data and manage databases
+
+What would you like help with today? Just describe the task and I'll guide you through it.
+
+09:58 PM
+
+how many clients in the crm do we gave
+
+09:59 PM
+
+I can help you manage clients in your CRM system:
+
+• **View all clients**: Go to Clients page to see your complete client database
+• **Add new client**: Use the "New Client" button to create client records
+• **Import clients**: Bulk import from CSV/Excel files
+• **Client details**: View contact info, booking history, and revenue data
+• **High-value clients**: See your top clients by revenue
+
+What specific client management task can I help you with?
+
+09:59 PM

@@ -4251,6 +4251,46 @@ Was interessiert Sie am meisten?`;
     }
   });
 
+  // AI Agent Chat Endpoint
+  app.post('/api/agent/chat', async (req: Request, res: Response) => {
+    try {
+      const { message, studioId, userId } = req.body;
+      
+      if (!message || !studioId || !userId) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+
+      // Import runAgent dynamically to avoid module loading issues
+      const { runAgent } = await import('../agent/run-agent');
+      
+      // Run the AI agent with the user's message
+      const response = await runAgent(studioId, userId, message);
+      
+      res.json({ 
+        response: response,
+        actionPerformed: false // Could enhance this to detect if agent performed actions
+      });
+    } catch (error) {
+      console.error('Agent chat error:', error);
+      
+      // Fallback response for CRM Operations Assistant
+      const fallbackResponse = `I'm your CRM Operations Assistant. I can help you with:
+
+📧 **Email Management**: Reply to client emails, send booking confirmations
+📅 **Appointment Management**: Create, modify, cancel bookings
+👥 **Client Management**: Add, update, search client records  
+💰 **Invoice Operations**: Generate, send, track invoices and payments
+📊 **Business Analytics**: Run reports, analyze data, export information
+
+Current system status: The AI agent system is temporarily unavailable. Please try again shortly or describe what specific task you'd like help with.`;
+      
+      res.json({ 
+        response: fallbackResponse,
+        actionPerformed: false 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

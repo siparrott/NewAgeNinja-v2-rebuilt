@@ -76,38 +76,22 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
   }, [isMinimized]);
 
   const createThread = async () => {
-    try {
-      const response = await fetch('/api/openai/chat/thread', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create thread');
-      }
-      
-      const data = await response.json();
-      return data.threadId;
-    } catch (error) {
-      console.error('Failed to create thread:', error);
-      throw error;
-    }
+    // No thread creation needed for AI agent system
+    return 'agent-session-' + Date.now();
   };
 
   const sendMessage = async (message: string, currentThreadId: string) => {
     try {
-      const response = await fetch('/api/openai/chat/message', {
+      // Connect to our AI agent system instead of OpenAI Assistant API
+      const response = await fetch('/api/agent/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          threadId: currentThreadId,
           message,
-          assistantId,
+          studioId: 'e5dc81e8-7073-4041-8814-affb60f4ef6c', // Default studio ID
+          userId: 'admin-user',
         }),
       });
 
