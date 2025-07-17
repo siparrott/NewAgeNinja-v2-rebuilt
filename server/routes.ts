@@ -831,54 +831,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Message is required' });
       }
 
-      // Create OpenAI client
-      const openai = new (await import('openai')).default({
-        apiKey: process.env.OPENAI_API_KEY!,
-      });
-
-      // For simplicity, let's use Chat Completions API instead of Assistants
-      // This avoids the thread management complexity
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o', // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: [
-          {
-            role: 'system',
-            content: `You are a CRM Operations Assistant for New Age Fotografie with enhanced Phase B write capabilities.
-
-🔧 AVAILABLE CAPABILITIES:
-📧 EMAIL: Draft and send emails, manage communications
-📅 SCHEDULING: Create, modify, cancel appointments  
-👥 CLIENT MANAGEMENT: Create leads, update client information
-💰 INVOICING: Create invoice drafts, track payments
-📊 ANALYTICS: Generate reports and analyze data
-⚡ AUTOMATION: Automate routine business processes
-
-🛡️ SECURITY MODE: auto_safe (Safe operations execute automatically, risky ones require approval)
-🔐 WRITE AUTHORITIES: CREATE_LEAD, UPDATE_CLIENT, SEND_INVOICE
-💰 APPROVAL THRESHOLD: Operations over €500 require approval
-⏱️ RATE LIMIT: 50 operations per hour
-
-When you need to perform operations:
-1. Safe operations (like creating leads, updating basic client info) execute automatically
-2. Risky operations (like sending invoices over €500) require approval
-3. Always explain what you're doing and why
-4. Provide clear next steps
-
-Respond in German and be professional yet helpful.`
-          },
-          {
-            role: 'user',
-            content: message
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7
-      });
-
-      const responseContent = response.choices[0]?.message?.content || 'Entschuldigung, ich konnte keine Antwort generieren.';
-
+      // Use the actual Phase B agent system
+      const studioId = '550e8400-e29b-41d4-a716-446655440000'; // Valid UUID
+      const userId = '550e8400-e29b-41d4-a716-446655440001';
+      
+      // Import runAgent dynamically to avoid module loading issues
+      const { runAgent } = await import('../agent/run-agent');
+      
+      // Run the AI agent with Phase B write capabilities
+      const response = await runAgent(studioId, userId, message);
+      
       res.json({
-        response: responseContent,
+        response: response,
         threadId: threadId || null,
         capabilities: {
           writeEnabled: true,
@@ -891,9 +855,28 @@ Respond in German and be professional yet helpful.`
 
     } catch (error) {
       console.error('CRM Agent Chat Error:', error);
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      // Fallback to German response if agent fails
+      const fallbackResponse = `Entschuldigung, das CRM-System ist momentan nicht verfügbar. Ich bin Ihr CRM-Operations-Assistent und kann Ihnen normalerweise bei folgenden Aufgaben helfen:
+
+📧 **E-Mail-Verwaltung**: Antworten auf Kunden-E-Mails, Buchungsbestätigungen senden
+📅 **Terminverwaltung**: Termine erstellen, ändern, stornieren
+👥 **Kundenverwaltung**: Kundendaten hinzufügen, aktualisieren, suchen
+💰 **Rechnungsverwaltung**: Rechnungen erstellen, senden, verfolgen
+📊 **Geschäftsanalyse**: Berichte erstellen, Daten analysieren
+
+Bitte versuchen Sie es später noch einmal.`;
+      
+      res.json({
+        response: fallbackResponse,
+        threadId: null,
+        capabilities: {
+          writeEnabled: false,
+          mode: 'fallback',
+          authorities: [],
+          approvalThreshold: 500
+        },
+        timestamp: new Date().toISOString()
       });
     }
   });

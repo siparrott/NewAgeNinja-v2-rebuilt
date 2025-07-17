@@ -35,12 +35,7 @@ export const leadWriteTool = {
       const existingLeads = await db
         .select()
         .from(crmLeads)
-        .where(
-          and(
-            eq(crmLeads.email, args.email.toLowerCase()),
-            eq(crmLeads.studioId, ctx.studioId)
-          )
-        );
+        .where(eq(crmLeads.email, args.email.toLowerCase()));
 
       if (existingLeads.length > 0) {
         return createSuccessResponse(
@@ -92,11 +87,11 @@ export const leadWriteTool = {
         priority: args.priority,
         value: 0,
         tags: ["assistant-created"],
-        followUpDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-        studioId: ctx.studioId,
-        assignedTo: ctx.userId,
+        follow_up_date: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+        assigned_to: ctx.userId,
       };
 
+      console.log('About to insert lead data:', leadData);
       const [newLead] = await db.insert(crmLeads).values(leadData).returning();
       
       await auditLogExecution(

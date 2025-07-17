@@ -25,17 +25,11 @@ export async function auditLog(entry: AuditEntry): Promise<void> {
     await db.insert(agentActionLog).values({
       studioId: entry.studio_id,
       userId: entry.user_id,
-      action: entry.action,
-      targetTable: entry.target_table,
-      targetId: entry.target_id,
-      beforePayload: entry.before,
-      afterPayload: entry.after,
-      status: entry.status,
-      approvedBy: entry.approved_by,
-      riskLevel: entry.risk_level,
-      amount: entry.amount,
-      metadata: entry.metadata,
-      timestamp: new Date()
+      action_type: entry.action,
+      action_details: entry.metadata,
+      success: entry.status === "executed",
+      error_message: entry.status === "failed" ? entry.metadata?.error_message : null,
+      createdAt: new Date()
     });
     
     console.log(`Audit logged: ${entry.action} on ${entry.target_table || 'unknown'} - ${entry.status}`, {

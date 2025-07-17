@@ -4,7 +4,7 @@ import { createSystemPrompt } from "./prompts/system";
 import { openaiForStudio } from "./core/openai";
 import { toolRegistry } from "./core/tools";
 import { createLogger } from "./util/logger";
-import { logAgentAction } from "./core/audit";
+import { auditLog } from "./core/audit";
 
 const logger = createLogger("agent-runner");
 
@@ -57,12 +57,12 @@ export async function runAgent(studioId: string, userId: string, userMessage: st
             const result = await tool.handler(args, ctx);
             
             // Log the action
-            await logAgentAction({
-              studioId: ctx.studioId,
-              userId: ctx.userId,
+            await auditLog({
+              studio_id: ctx.studioId,
+              user_id: ctx.userId,
               action: toolCall.function.name,
-              details: { args, result },
-              timestamp: new Date(),
+              status: "executed",
+              metadata: { args, result }
             });
             
             toolResults.push({
