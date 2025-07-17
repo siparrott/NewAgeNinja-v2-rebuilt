@@ -213,7 +213,7 @@ WICHTIG: Antworte NUR mit einem gültigen JSON-Objekt in diesem exakten Format:
   "title": "SEO-optimierter deutscher Titel",
   "seo_title": "SEO-optimierter Titel für Meta-Tags",
   "meta_description": "155-Zeichen Meta-Beschreibung mit Keywords",
-  "content_html": "Vollständiger HTML Blog-Post Inhalt mit H1 und 6-8 H2-Abschnitten",
+  "content_html": "Vollständiger HTML Blog-Post Inhalt mit H1 und 6-8 H2-Abschnitten (KEINE Bild-Platzhalter oder Bild-Tags verwenden - die echten Bilder werden automatisch eingefügt)",
   "excerpt": "Kurze Zusammenfassung (150 Zeichen)",
   "tags": ["tag1", "tag2", "tag3"],
   "seo_keywords": ["keyword1", "keyword2", "keyword3"],
@@ -326,12 +326,46 @@ WICHTIG: Antworte NUR mit einem gültigen JSON-Objekt in diesem exakten Format:
       
       console.log('Final HTML content length before database save:', sanitizedHtml?.length || 0);
 
+      // Replace image placeholders with actual uploaded images
+      let finalHtml = sanitizedHtml;
+      
+      // Replace generic image placeholders with actual uploaded images
+      if (images && images.length > 0) {
+        // Replace common image placeholder patterns
+        finalHtml = finalHtml.replace(/🏻Photography session image \d+/g, '');
+        finalHtml = finalHtml.replace(/Photography session image \d+/g, '');
+        finalHtml = finalHtml.replace(/🌟Photography session image \d+/g, '');
+        finalHtml = finalHtml.replace(/📸Photography session image \d+/g, '');
+        finalHtml = finalHtml.replace(/Image \d+/g, '');
+        
+        // Insert actual images strategically into the content
+        const imageHtml = images.map((img, index) => 
+          `<img src="${img.publicUrl}" alt="Professionelle Familienfotografie bei New Age Fotografie in Wien" class="blog-image" style="width: 100%; height: auto; margin: 20px 0; border-radius: 8px;">`
+        ).join('\n');
+        
+        // Insert first image after the first H2 section
+        const firstH2Match = finalHtml.match(/(<h2[^>]*>.*?<\/h2>.*?<\/p>)/s);
+        if (firstH2Match) {
+          const afterFirstH2 = firstH2Match.index + firstH2Match[0].length;
+          finalHtml = finalHtml.substring(0, afterFirstH2) + '\n\n' + imageHtml + '\n\n' + finalHtml.substring(afterFirstH2);
+        } else {
+          // Fallback: insert after first paragraph
+          const firstPMatch = finalHtml.match(/(<p[^>]*>.*?<\/p>)/s);
+          if (firstPMatch) {
+            const afterFirstP = firstPMatch.index + firstPMatch[0].length;
+            finalHtml = finalHtml.substring(0, afterFirstP) + '\n\n' + imageHtml + '\n\n' + finalHtml.substring(afterFirstP);
+          }
+        }
+      }
+      
+      console.log('Final HTML with embedded images length:', finalHtml.length);
+
       // Prepare blog post data with publishing logic
       const blogPostData = {
         title: aiContent.title,
         slug: uniqueSlug,
-        content: sanitizedHtml, // Plain text version for search
-        contentHtml: sanitizedHtml, // HTML version for display
+        content: finalHtml, // Plain text version for search
+        contentHtml: finalHtml, // HTML version for display with embedded images
         excerpt: aiContent.excerpt,
         imageUrl: images[0]?.publicUrl || null,
         seoTitle: aiContent.seo_title,
