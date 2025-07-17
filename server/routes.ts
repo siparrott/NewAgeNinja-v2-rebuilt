@@ -3757,35 +3757,17 @@ New Age Fotografie CRM System
         return res.status(400).json({ error: "Message is required" });
       }
 
-      // Get knowledge base articles for context
-      const knowledgeArticles = await db.select().from(knowledgeBase)
-        .where(eq(knowledgeBase.isActive, true));
-
-      // Always use fallback for now since OpenAI API key has issues
-      const response = generateFallbackResponse(message, knowledgeArticles);
-      return res.json({ response });
-
-      // Original OpenAI logic (commented out until API key is fixed)
-      /*
       if (!process.env.OPENAI_API_KEY) {
-        const response = generateFallbackResponse(message, knowledgeArticles);
-        return res.json({ response });
+        return res.status(400).json({ error: "OpenAI API key not configured" });
       }
 
       if (!threadId) {
-        return res.status(400).json({ error: "ThreadId required for OpenAI" });
+        return res.status(400).json({ error: "Thread ID is required" });
       }
 
-      // Get the assistant from database
-      const [assistant] = await db.select().from(openaiAssistants)
-        .where(eq(openaiAssistants.isActive, true))
-        .limit(1);
-
-      if (!assistant) {
-        const response = generateFallbackResponse(message, knowledgeArticles);
-        return res.json({ response });
-      }
-      */
+      // Use the provided assistantId or default to the CRM assistant
+      const finalAssistantId = assistantId || 'asst_CH4vIbZPs7gUD36Lxf7vlfIV';
+      console.log('Using assistant ID:', finalAssistantId);
 
       // Add message to thread
       await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
@@ -3810,8 +3792,7 @@ New Age Fotografie CRM System
           'OpenAI-Beta': 'assistants=v2'
         },
         body: JSON.stringify({
-          assistant_id: assistant.openaiAssistantId || assistantId || 'asst_default',
-          instructions: assistant.instructions
+          assistant_id: finalAssistantId
         })
       });
 
@@ -3868,15 +3849,86 @@ New Age Fotografie CRM System
     } catch (error) {
       console.error("Error sending message:", error);
       
-      // Get knowledge base for fallback
-      const knowledgeArticles = await db.select().from(knowledgeBase)
-        .where(eq(knowledgeBase.isActive, true));
-      
-      // Fallback response
-      const fallbackResponse = generateFallbackResponse(req.body.message, knowledgeArticles);
-      res.json({ response: fallbackResponse });
+      // Provide CRM-focused fallback response for admin users
+      const crmFallbackResponse = generateCRMFallbackResponse(req.body.message);
+      res.json({ response: crmFallbackResponse });
     }
   });
+
+  function generateCRMFallbackResponse(message: string): string {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('client') || lowerMessage.includes('kunden') || lowerMessage.includes('customer')) {
+      return `I can help you manage clients in your CRM system:
+
+• **View all clients**: Go to Clients page to see your complete client database
+• **Add new client**: Use the "New Client" button to create client records
+• **Import clients**: Bulk import from CSV/Excel files
+• **Client details**: View contact info, booking history, and revenue data
+• **High-value clients**: See your top clients by revenue
+
+What specific client management task can I help you with?`;
+    }
+    
+    if (lowerMessage.includes('invoice') || lowerMessage.includes('rechnung') || lowerMessage.includes('payment')) {
+      return `I can assist with invoice and payment management:
+
+• **Create invoices**: Generate professional invoices with company branding
+• **Track payments**: Monitor paid, pending, and overdue invoices
+• **Send invoices**: Email invoices directly to clients
+• **Payment status**: Update payment status and track revenue
+• **Download invoices**: Generate PDF copies for your records
+
+Which invoice task would you like help with?`;
+    }
+    
+    if (lowerMessage.includes('booking') || lowerMessage.includes('appointment') || lowerMessage.includes('calendar') || lowerMessage.includes('termin')) {
+      return `I can help you manage bookings and appointments:
+
+• **View calendar**: See all upcoming photography sessions
+• **Schedule sessions**: Book new client appointments
+• **Manage availability**: Update your booking calendar
+• **Session details**: Track session types, locations, and requirements
+• **Client communications**: Send booking confirmations and reminders
+
+What booking management task can I assist with?`;
+    }
+    
+    if (lowerMessage.includes('email') || lowerMessage.includes('mail') || lowerMessage.includes('message')) {
+      return `I can help with email and communication management:
+
+• **Inbox management**: View and organize client emails
+• **Send emails**: Compose and send professional communications
+• **Email campaigns**: Create marketing campaigns for clients
+• **Templates**: Use predefined templates for common responses
+• **Lead notifications**: Track new lead inquiries automatically
+
+What email task would you like assistance with?`;
+    }
+    
+    if (lowerMessage.includes('report') || lowerMessage.includes('analytics') || lowerMessage.includes('revenue') || lowerMessage.includes('dashboard')) {
+      return `I can help you with business analytics and reporting:
+
+• **Revenue reports**: Track total revenue and payment status
+• **Client analytics**: See your highest-value clients and booking patterns
+• **Performance metrics**: Monitor business growth and key indicators
+• **Dashboard overview**: Get a quick summary of your business status
+• **Export data**: Download reports for external analysis
+
+Which analytics or reporting task can I help you with?`;
+    }
+    
+    return `Hello! I'm your CRM Operations Assistant. I can help you with:
+
+• **Client Management**: Add, edit, and organize client records
+• **Invoice Processing**: Create, send, and track invoices and payments
+• **Booking Management**: Schedule appointments and manage your calendar
+• **Email Communications**: Handle inbox, send emails, and manage campaigns
+• **Business Analytics**: Generate reports and track performance metrics
+• **Data Management**: Import/export client data and manage databases
+
+What would you like help with today? Just describe the task and I'll guide you through it.`;
+  }
 
   function generateFallbackResponse(message: string, knowledgeArticles: any[] = []): string {
     const lowerMessage = message.toLowerCase();
