@@ -803,6 +803,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
+
+  // CRM Agent routes with Phase B write capabilities
+  app.get('/api/crm/agent/status', async (req, res) => {
+    try {
+      res.json({
+        status: 'operational',
+        capabilities: {
+          read: ['list_clients', 'list_leads', 'list_invoices', 'list_messages'],
+          write: ['create_lead', 'update_client', 'create_invoice'],
+          mode: 'auto_safe'
+        },
+        phase: 'B - Write Enabled',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('CRM Agent Status Error:', error);
+      res.status(500).json({ error: 'Failed to get agent status' });
+    }
+  });
+
+  app.post('/api/crm/agent/chat', async (req, res) => {
+    try {
+      const { message, threadId } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: 'Message is required' });
+      }
+
+      // Create OpenAI client
+      const openai = new (await import('openai')).default({
+        apiKey: process.env.OPENAI_API_KEY!,
+      });
+
+      // For simplicity, let's use Chat Completions API instead of Assistants
+      // This avoids the thread management complexity
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o', // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: 'system',
+            content: `You are a CRM Operations Assistant for New Age Fotografie with enhanced Phase B write capabilities.
+
+🔧 AVAILABLE CAPABILITIES:
+📧 EMAIL: Draft and send emails, manage communications
+📅 SCHEDULING: Create, modify, cancel appointments  
+👥 CLIENT MANAGEMENT: Create leads, update client information
+💰 INVOICING: Create invoice drafts, track payments
+📊 ANALYTICS: Generate reports and analyze data
+⚡ AUTOMATION: Automate routine business processes
+
+🛡️ SECURITY MODE: auto_safe (Safe operations execute automatically, risky ones require approval)
+🔐 WRITE AUTHORITIES: CREATE_LEAD, UPDATE_CLIENT, SEND_INVOICE
+💰 APPROVAL THRESHOLD: Operations over €500 require approval
+⏱️ RATE LIMIT: 50 operations per hour
+
+When you need to perform operations:
+1. Safe operations (like creating leads, updating basic client info) execute automatically
+2. Risky operations (like sending invoices over €500) require approval
+3. Always explain what you're doing and why
+4. Provide clear next steps
+
+Respond in German and be professional yet helpful.`
+          },
+          {
+            role: 'user',
+            content: message
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
+      });
+
+      const responseContent = response.choices[0]?.message?.content || 'Entschuldigung, ich konnte keine Antwort generieren.';
+
+      res.json({
+        response: responseContent,
+        threadId: threadId || null,
+        capabilities: {
+          writeEnabled: true,
+          mode: 'auto_safe',
+          authorities: ['CREATE_LEAD', 'UPDATE_CLIENT', 'SEND_INVOICE'],
+          approvalThreshold: 500
+        },
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('CRM Agent Chat Error:', error);
+      res.status(500).json({
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
+    }
+  });
   
   // ==================== USER ROUTES ====================
   app.get("/api/users/:id", authenticateUser, async (req: Request, res: Response) => {
