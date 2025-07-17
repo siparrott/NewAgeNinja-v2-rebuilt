@@ -218,10 +218,31 @@ const BlogPostPage: React.FC = () => {
           
           {/* Post Content */}
           <div className="bg-white rounded-lg shadow-lg p-6 md:p-8 mb-8">
-            <div 
-              className="prose prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content }}
-            />
+            {(post.contentHtml || post.content) ? (
+              <div 
+                className="prose prose-lg max-w-none"
+                dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content }}
+              />
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-medium text-gray-700 mb-2">Content Coming Soon</h3>
+                <p className="text-gray-600 mb-4">
+                  {post.excerpt || 'This blog post is being prepared. Please check back soon for the full content.'}
+                </p>
+                <Link 
+                  to="/blog" 
+                  className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <ArrowLeft size={16} className="mr-2" />
+                  Back to Blog
+                </Link>
+              </div>
+            )}
           </div>
           
           {/* Related Posts */}
