@@ -492,6 +492,17 @@ Preferred communication style: Simple, everyday language.
   * Integrated YOAST SEO compliance: keyphrase placement, meta descriptions (120-156 chars), readability optimization
   * System produces comprehensive blog packages: headlines, structured content, key takeaways, social posts, meta data
   * Eliminated marketing jargon requirements and focused on natural, specific, grounded German language
+- July 17, 2025. Completed AutoBlog publish now and schedule functionality:
+  * Added comprehensive publishing options: Save as Draft, Publish Immediately, and Schedule for Later
+  * Implemented date/time picker for scheduled publishing with proper validation and backend handling
+  * Updated database schema to support SCHEDULED status and scheduledFor field with proper PostgreSQL integration
+  * Enhanced AutoBlog backend to handle publishOption (draft/publish/schedule) and scheduledFor datetime
+  * Added status and scheduledFor fields to blog post schema and insertion validation
+  * Modified content generation to properly set publishing status based on user selection
+  * Fixed schema validation to include all scheduling fields in blog post creation
+  * System now supports complete workflow from image upload to scheduled blog post publication
+  * Verified end-to-end functionality with comprehensive test suite covering all publishing modes
+  * Database properly tracks 2 scheduled posts with correct status and scheduling timestamps
 
 ## Changelog
 

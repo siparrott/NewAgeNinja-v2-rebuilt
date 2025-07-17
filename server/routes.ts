@@ -917,7 +917,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const postData = { 
         ...req.body,
         // Convert publishedAt string to Date if present
-        publishedAt: req.body.publishedAt ? new Date(req.body.publishedAt) : null
+        publishedAt: req.body.publishedAt ? new Date(req.body.publishedAt) : null,
+        // Convert scheduledFor string to Date if present
+        scheduledFor: req.body.scheduledFor ? new Date(req.body.scheduledFor) : null
       };
       // Remove authorId from validation data
       delete postData.authorId;

@@ -665,6 +665,8 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).pick({
   imageUrl: true,
   tags: true,
   publishedAt: true,
+  scheduledFor: true,
+  status: true,
   seoTitle: true,
   metaDescription: true,
   authorId: true,

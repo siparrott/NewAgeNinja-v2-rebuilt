@@ -293,7 +293,7 @@ WICHTIG: Antworte NUR mit einem gültigen JSON-Objekt in diesem exakten Format:
   /**
    * Create blog post in database
    */
-  async createBlogPost(aiContent: AutoBlogParsed, images: ProcessedImage[], authorId: string): Promise<any> {
+  async createBlogPost(aiContent: AutoBlogParsed, images: ProcessedImage[], authorId: string, input: AutoBlogInput): Promise<any> {
     try {
       // Get existing slugs to ensure uniqueness
       const existingSlugs = await storage.getAllBlogSlugs();
@@ -399,7 +399,7 @@ WICHTIG: Antworte NUR mit einem gültigen JSON-Objekt in diesem exakten Format:
       // Step 4: Create blog post
       console.log('Creating blog post...');
       console.log('AI content before creating post - HTML length:', aiContent.content_html?.length || 0);
-      const createdPost = await this.createBlogPost(aiContent, processedImages, authorId);
+      const createdPost = await this.createBlogPost(aiContent, processedImages, authorId, input);
       console.log('Blog post created successfully with ID:', createdPost.id);
 
       return {
