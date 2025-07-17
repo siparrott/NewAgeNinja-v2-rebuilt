@@ -82,16 +82,15 @@ const EmbeddedCRMChat: React.FC<EmbeddedCRMChatProps> = ({
 
   const sendMessage = async (message: string, currentThreadId: string) => {
     try {
-      // Connect to our AI agent system instead of OpenAI Assistant API
-      const response = await fetch('/api/agent/chat', {
+      // Connect to our CRM Agent system with Phase B write capabilities
+      const response = await fetch('/api/crm/agent/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message,
-          studioId: 'e5dc81e8-7073-4041-8814-affb60f4ef6c', // Default studio ID
-          userId: 'admin-user',
+          threadId: currentThreadId,
         }),
       });
 
