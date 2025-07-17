@@ -179,7 +179,7 @@ Generate blog post for uploaded photography session images.`;
       
       console.log('Successfully processed', imageContents.length, 'images for analysis');
 
-      // Simplified German prompt to avoid content policy issues
+      // Improved German prompt for better content structure
       const customPrompt = `You are a professional photography content writer for New Age Fotografie, a photography studio in Vienna specializing in family, newborn, and portrait photography.
 
 IMPORTANT: Write ONLY in German language. All content must be in German.
@@ -202,11 +202,13 @@ Output Format (Use this EXACT structure):
 **Headline (H1):** [German main headline]
 **Outline:** [brief outline of content structure]
 **Key Takeaways:** [3-5 key points readers will learn]
-**Blog Article:** [full blog article with H1 and 6-8 H2 sections, 300-500 words each]
+**Blog Article:** [full blog article with H1 and 6-8 H2 sections, 300-500 words each - DO NOT include image tags, they will be added automatically]
 **Review Snippets:** [2-3 short review-style snippets]
 **Meta Description:** [120-156 character meta description]
 **Excerpt:** [brief excerpt for preview]
 **Tags:** [relevant tags for the post]
+
+IMPORTANT: In the Blog Article section, write clean HTML with proper H1 and H2 structure. Do NOT include any <img> tags as images will be automatically embedded later.
 
 Analyze the uploaded images carefully and create comprehensive content about this photography session. Describe authentic details from the images (clothing, setting, mood, emotions, location details, etc.) and write in German for the Vienna market.`;
 
@@ -458,19 +460,22 @@ Analysiere die hochgeladenen Bilder und erstelle authentischen deutschen Content
       
       console.log('Final HTML content length before database save:', sanitizedHtml?.length || 0);
 
-      // Replace image placeholders with actual uploaded images
+      // Clean up HTML content and replace image placeholders with actual uploaded images
       let finalHtml = sanitizedHtml;
+      
+      // Clean up any broken image tags and placeholders
+      finalHtml = finalHtml.replace(/<img[^>]*src="[^"]*"/blog-images\/[^"]*"[^>]*>/g, '');
+      finalHtml = finalHtml.replace(/<img[^>]*src=""[^"]*"[^>]*>/g, '');
+      finalHtml = finalHtml.replace(/Photography session image \d+/g, '');
+      finalHtml = finalHtml.replace(/Image \d+/g, '');
+      finalHtml = finalHtml.replace(/\[Image \d+\]/g, '');
+      finalHtml = finalHtml.replace(/\[Foto \d+\]/g, '');
       
       // Replace generic image placeholders with actual uploaded images
       if (images && images.length > 0) {
-        // Replace common image placeholder patterns
-        finalHtml = finalHtml.replace(/Photography session image \d+/g, '');
-        finalHtml = finalHtml.replace(/Image \d+/g, '');
-        
-        // Insert actual images strategically into the content
-        const imageHtml = images.map((img, index) => 
-          `<img src="${img.publicUrl}" alt="Professionelle Familienfotografie bei New Age Fotografie in Wien" class="blog-image" style="width: 100%; height: auto; margin: 20px 0; border-radius: 8px;">`
-        ).join('\n');
+        // Insert only the first image to avoid repetition
+        const firstImage = images[0];
+        const imageHtml = `<img src="${firstImage.publicUrl}" alt="Professionelle Fotografie-Session bei New Age Fotografie in Wien" style="width: 100%; height: auto; margin: 20px 0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">`;
         
         // Insert first image after the first H2 section
         const firstH2Match = finalHtml.match(/(<h2[^>]*>.*?<\/h2>.*?<\/p>)/s);
