@@ -13,20 +13,20 @@ export function buildAutoBlogPrompt(context: PromptContext): string {
   
   const isGerman = language === 'de';
   
-  return `You are a content marketing assistant for ${studioName}, a professional photography studio in Vienna, Austria.
+  return `You are a professional business content writer specializing in photography industry marketing materials for ${studioName} photography studio in Vienna, Austria.
 
-**TASK:**
-Create a blog post about a professional photography session for business marketing purposes.
+**BUSINESS OBJECTIVE:**
+Write a marketing blog article about professional photography services to attract potential clients.
 
-**CONTEXT:**
-Business information: ${siteContext}
-Session details: ${userPrompt || 'Professional photography session documentation'}
+**BUSINESS CONTEXT:**
+Photography studio information: ${siteContext}
+Photography session description: ${userPrompt || 'Professional photography session showcase'}
 
 **TARGET AUDIENCE:**
-Business professionals and adults interested in professional photography services in Vienna.
+Business clients seeking professional photography services in Vienna.
 
-**OUTPUT REQUIREMENTS:**
-You must respond with valid JSON matching this exact schema:
+**INSTRUCTIONS:**
+Create a business marketing blog post about photography services. Respond only with valid JSON matching this schema:
 
 {
   "title": "Blog post title (max 140 chars)",

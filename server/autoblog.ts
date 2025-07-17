@@ -142,49 +142,80 @@ Generate blog post for uploaded photography session images.`;
     }));
 
     try {
-      console.log('Using Chat Completions API for image analysis with custom instructions');
-      console.log('Image content count:', images.length);
+      console.log('Using reliable Chat Completions API with vision analysis');
+      console.log('Image count:', images.length);
       console.log('User context:', userMessage);
-      
-      const prompt = buildAutoBlogPrompt({
-        studioName: this.studioName,
-        internalBookingPath: this.internalBookingPath,
-        siteContext,
-        userPrompt: input.userPrompt,
-        language: input.language
-      });
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: prompt
-              },
-              ...imageContent
-            ]
+      // Convert images to base64 for Chat Completions API
+      const imageContents = [];
+      for (let i = 0; i < images.length; i++) {
+        console.log(`Processing image ${i + 1}/${images.length}...`);
+        
+        // Convert buffer to base64
+        const base64Image = images[i].buffer.toString('base64');
+        imageContents.push({
+          type: "image_url",
+          image_url: {
+            url: `data:image/jpeg;base64,${base64Image}`,
+            detail: "high"
           }
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 4000,
-        temperature: 0.7
+        });
+      }
+      
+      console.log('Successfully processed', imageContents.length, 'images for analysis');
+
+      // Create comprehensive prompt for image analysis and blog generation
+      const systemPrompt = `Du bist ein erfahrener Fotografie-Content-Experte für New Age Fotografie in Wien. 
+      
+Deine Aufgabe:
+1. Analysiere die hochgeladenen Fotografie-Session-Bilder sorgfältig
+2. Erstelle einen SEO-optimierten deutschen Blog-Post über die Fotosession
+3. Verwende authentische Details aus den Bildern (Kleidung, Setting, Stimmung, etc.)
+4. Halte einen professionellen, warmen Ton ein
+
+WICHTIG: Antworte NUR mit einem gültigen JSON-Objekt in diesem exakten Format:
+{
+  "title": "SEO-optimierter deutscher Titel",
+  "seo_title": "SEO-optimierter Titel für Meta-Tags",
+  "meta_description": "155-Zeichen Meta-Beschreibung mit Keywords",
+  "content_html": "Vollständiger HTML Blog-Post Inhalt",
+  "excerpt": "Kurze Zusammenfassung (150 Zeichen)",
+  "tags": ["tag1", "tag2", "tag3"],
+  "seo_keywords": ["keyword1", "keyword2", "keyword3"],
+  "keyphrase": "Haupt-SEO-Keyphrase für YOAST",
+  "slug": "url-freundlicher-slug"
+}`;
+
+      // Prepare messages with text and images
+      const messages = [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user", 
+          content: [
+            {
+              type: "text",
+              text: `${userMessage}\n\nAnalysiere die Bilder und erstelle einen professionellen Blog-Post über diese Fotosession. Beschreibe authentische Details aus den Bildern und erstelle SEO-optimierten Content für einen Familienfotografen in Wien.`
+            },
+            ...imageContents
+          ]
+        }
+      ];
+
+      // Make API call with images
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // Latest model that supports vision
+        messages: messages,
+        max_tokens: 3000,
+        temperature: 0.7,
+        response_format: { type: "json_object" }
       });
 
-      const content = response.choices[0]?.message?.content;
-      console.log('Chat Completions response received');
-      console.log('Response structure:', JSON.stringify(response, null, 2));
-      console.log('First choice message:', response.choices[0]?.message);
+      const content = response.choices[0].message.content;
       
       if (!content) {
-        console.error('No content received from Chat Completions API');
-        console.error('Response details:', {
-          choices: response.choices?.length || 0,
-          firstChoice: response.choices[0],
-          message: response.choices[0]?.message
-        });
         throw new Error('No content received from OpenAI');
       }
 
