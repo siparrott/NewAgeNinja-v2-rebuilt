@@ -464,8 +464,8 @@ Analysiere die hochgeladenen Bilder und erstelle authentischen deutschen Content
       let finalHtml = sanitizedHtml;
       
       // Clean up any broken image tags and placeholders
-      finalHtml = finalHtml.replace(/<img[^>]*src="[^"]*"/blog-images\/[^"]*"[^>]*>/g, '');
-      finalHtml = finalHtml.replace(/<img[^>]*src=""[^"]*"[^>]*>/g, '');
+      finalHtml = finalHtml.replace(/<img[^>]*src="[^"]*\/blog-images\/[^"]*"[^>]*>/g, '');
+      finalHtml = finalHtml.replace(/<img[^>]*src=""[^>]*>/g, '');
       finalHtml = finalHtml.replace(/Photography session image \d+/g, '');
       finalHtml = finalHtml.replace(/Image \d+/g, '');
       finalHtml = finalHtml.replace(/\[Image \d+\]/g, '');
