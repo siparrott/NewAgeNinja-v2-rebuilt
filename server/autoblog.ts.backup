@@ -208,7 +208,7 @@ Create a full content package, structured for SEO and real-human storytelling:
 
 YOAST SEO COMPLIANCE (Built-in):
 - Keyphrase in SEO title, slug, H1, first paragraph, at least one H2, twice minimum in body
-- Meta description: 120-156 chars
+- Meta description: 120–156 chars
 - Flesch Reading Ease > 60
 - Passive voice < 10%
 - Long sentences < 25%
@@ -233,6 +233,7 @@ Output Format (Use this EXACT structure):
 
 Analyze the uploaded images carefully and create comprehensive content about this photography session. Describe authentic details from the images (clothing, setting, mood, emotions, location details, etc.) and write in German for the Vienna market.`;
 
+      // Prepare messages for Chat Completions API
       const messages = [
         {
           role: "system",

@@ -1,55 +1,62 @@
-// Test AutoBlog with OpenAI Assistant integration
+// Test AutoBlog with Assistant API and structured output
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 
 async function testAssistantAutoBlog() {
   try {
-    console.log('Testing AutoBlog with OpenAI Assistant integration...');
+    console.log('=== Testing AutoBlog with Assistant API Integration ===');
     
     const testImageBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', 'base64');
     
     const formData = new FormData();
     formData.append('images', testImageBuffer, {
-      filename: 'family-portrait.png',
+      filename: 'test-family-session.png',
       contentType: 'image/png'
     });
-    formData.append('userPrompt', 'Beautiful family portrait session showcasing authentic moments');
+    formData.append('userPrompt', 'Professional family portrait session in Vienna park with autumn colors, children playing, natural moments');
     formData.append('language', 'de');
-    formData.append('publishNow', 'false');
+    formData.append('publishOption', 'publish');
     formData.append('siteUrl', 'https://www.newagefotografie.com');
 
-    console.log('Making request to AutoBlog with Assistant...');
     const response = await fetch('http://localhost:5000/api/autoblog/generate', {
       method: 'POST',
       body: formData
     });
-
-    console.log('Response status:', response.status);
+    
     const result = await response.json();
+    console.log('Response status:', response.status);
+    console.log('Success:', result.success);
     
     if (result.success) {
-      console.log('✅ AutoBlog with Assistant successful!');
+      console.log('✅ Blog post created successfully!');
       console.log('Post ID:', result.post.id);
       console.log('Title:', result.post.title);
+      console.log('SEO Title:', result.post.seoTitle);
       console.log('Slug:', result.post.slug);
-      console.log('Content length:', result.post.contentHtml?.length || 0);
+      console.log('Content HTML length:', result.post.contentHtml?.length || 0);
+      console.log('Content preview:', result.post.contentHtml?.substring(0, 400) + '...');
+      console.log('Meta Description:', result.post.metaDescription);
       console.log('Tags:', result.post.tags);
+      console.log('Status:', result.post.status);
       
-      // Test the blog post URL
-      console.log('\nTesting blog post access...');
-      const blogResponse = await fetch(`http://localhost:5000/api/blog/posts/${result.post.slug}`);
-      console.log('Blog access status:', blogResponse.status);
+      // Check if content contains structured sections
+      const hasStructuredContent = result.post.contentHtml?.includes('<h1>') && result.post.contentHtml?.includes('<h2>');
+      console.log('Contains structured HTML:', hasStructuredContent);
       
-      if (blogResponse.ok) {
-        const blogData = await blogResponse.json();
-        console.log('✅ Blog post accessible via API');
-        console.log('Final content length:', blogData.contentHtml?.length || 0);
-        console.log('Published:', blogData.published);
+      // Check if content contains actual image tags
+      const hasImageTags = result.post.contentHtml?.includes('<img src=');
+      console.log('Contains embedded images:', hasImageTags);
+      
+      if (hasStructuredContent && hasImageTags) {
+        console.log('✅ Complete success: Structured content with embedded images!');
+      } else {
+        console.log('⚠️ Partial success: Missing structured content or images');
       }
+      
     } else {
-      console.log('❌ AutoBlog failed:', result.error);
+      console.log('❌ Failed:', result.error);
     }
-
+    
   } catch (error) {
     console.error('Test failed:', error.message);
   }
