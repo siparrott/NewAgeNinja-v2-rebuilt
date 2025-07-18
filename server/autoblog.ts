@@ -439,24 +439,7 @@ Analysiere die hochgeladenen Bilder und erstelle authentischen deutschen Content
       let sanitizedHtml = stripDangerousHtml(aiContent.content_html);
       console.log('Sanitized HTML length:', sanitizedHtml?.length || 0);
       
-      // Add images to the blog content if they were uploaded
-      if (images.length > 0) {
-        const imageElements = images.map((img, index) => {
-          const altText = aiContent.image_alts?.[index] || `Photography session image ${index + 1}`;
-          return `<img src="${img.publicUrl}" alt="${altText}" style="max-width: 100%; height: auto; margin: 20px 0; border-radius: 8px;" />`;
-        }).join('\n');
-        
-        // Insert images after the first paragraph
-        const firstParagraphEnd = sanitizedHtml.indexOf('</p>');
-        if (firstParagraphEnd !== -1) {
-          sanitizedHtml = sanitizedHtml.slice(0, firstParagraphEnd + 4) + 
-                         '\n\n' + imageElements + '\n\n' + 
-                         sanitizedHtml.slice(firstParagraphEnd + 4);
-        } else {
-          // If no paragraphs found, add images at the beginning
-          sanitizedHtml = imageElements + '\n\n' + sanitizedHtml;
-        }
-      }
+      // Don't embed images here - we'll do it strategically later
       
       console.log('Final HTML content length before database save:', sanitizedHtml?.length || 0);
 
@@ -471,25 +454,60 @@ Analysiere die hochgeladenen Bilder und erstelle authentischen deutschen Content
       finalHtml = finalHtml.replace(/\[Image \d+\]/g, '');
       finalHtml = finalHtml.replace(/\[Foto \d+\]/g, '');
       
-      // Replace generic image placeholders with actual uploaded images
+      // Strategically embed all uploaded images throughout the blog post
       if (images && images.length > 0) {
-        // Insert only the first image to avoid repetition
-        const firstImage = images[0];
-        const imageHtml = `<img src="${firstImage.publicUrl}" alt="Professionelle Fotografie-Session bei New Age Fotografie in Wien" style="width: 100%; height: auto; margin: 20px 0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">`;
+        console.log(`Embedding ${images.length} images strategically throughout the blog post`);
         
-        // Insert first image after the first H2 section
-        const firstH2Match = finalHtml.match(/(<h2[^>]*>.*?<\/h2>.*?<\/p>)/s);
-        if (firstH2Match) {
-          const afterFirstH2 = firstH2Match.index + firstH2Match[0].length;
-          finalHtml = finalHtml.substring(0, afterFirstH2) + '\n\n' + imageHtml + '\n\n' + finalHtml.substring(afterFirstH2);
+        // Find all H2 sections to distribute images
+        const h2Matches = [...finalHtml.matchAll(/(<h2[^>]*>.*?<\/h2>)/gs)];
+        console.log(`Found ${h2Matches.length} H2 sections for image distribution`);
+        
+        if (h2Matches.length > 0) {
+          // Distribute images across H2 sections
+          const sectionsPerImage = Math.ceil(h2Matches.length / images.length);
+          
+          // Process in reverse order to maintain correct indices
+          for (let i = images.length - 1; i >= 0; i--) {
+            const sectionIndex = Math.min(i * sectionsPerImage, h2Matches.length - 1);
+            const targetSection = h2Matches[sectionIndex];
+            
+            if (targetSection && targetSection.index !== undefined) {
+              const imageHtml = `<img src="${images[i].publicUrl}" alt="Professionelle Familienfotografie Session bei New Age Fotografie in Wien - Bild ${i + 1}" style="width: 100%; height: auto; margin: 25px 0; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">`;
+              
+              // Find the end of the paragraph after this H2
+              const afterH2Start = targetSection.index + targetSection[0].length;
+              const nextParagraphEnd = finalHtml.indexOf('</p>', afterH2Start);
+              
+              if (nextParagraphEnd !== -1) {
+                const insertPoint = nextParagraphEnd + 4;
+                finalHtml = finalHtml.substring(0, insertPoint) + '\n\n' + imageHtml + '\n\n' + finalHtml.substring(insertPoint);
+                console.log(`Embedded image ${i + 1} after H2 section ${sectionIndex + 1}`);
+              }
+            }
+          }
         } else {
-          // Fallback: insert after first paragraph
-          const firstPMatch = finalHtml.match(/(<p[^>]*>.*?<\/p>)/s);
-          if (firstPMatch) {
-            const afterFirstP = firstPMatch.index + firstPMatch[0].length;
-            finalHtml = finalHtml.substring(0, afterFirstP) + '\n\n' + imageHtml + '\n\n' + finalHtml.substring(afterFirstP);
+          // Fallback: distribute images throughout the content by paragraphs
+          const paragraphs = [...finalHtml.matchAll(/(<p[^>]*>.*?<\/p>)/gs)];
+          if (paragraphs.length > 0) {
+            const paragraphsPerImage = Math.ceil(paragraphs.length / images.length);
+            
+            // Process in reverse order to maintain correct indices
+            for (let i = images.length - 1; i >= 0; i--) {
+              const paragraphIndex = Math.min(i * paragraphsPerImage, paragraphs.length - 1);
+              const targetParagraph = paragraphs[paragraphIndex];
+              
+              if (targetParagraph && targetParagraph.index !== undefined) {
+                const imageHtml = `<img src="${images[i].publicUrl}" alt="Professionelle Familienfotografie Session bei New Age Fotografie in Wien - Bild ${i + 1}" style="width: 100%; height: auto; margin: 25px 0; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">`;
+                
+                const insertPoint = targetParagraph.index + targetParagraph[0].length;
+                finalHtml = finalHtml.substring(0, insertPoint) + '\n\n' + imageHtml + '\n\n' + finalHtml.substring(insertPoint);
+                console.log(`Embedded image ${i + 1} after paragraph ${paragraphIndex + 1}`);
+              }
+            }
           }
         }
+        
+        console.log('Successfully distributed all images throughout the blog post');
       }
       
       console.log('Final HTML with embedded images length:', finalHtml.length);
