@@ -124,7 +124,7 @@ Key Features: High-quality photography, professional editing, personal service
   }
 
   /**
-   * Generate blog content using OpenAI Chat Completions API
+   * Generate blog content using OpenAI Chat Completions API with sophisticated prompt
    */
   async generateBlogContent(
     images: ProcessedImage[], 
@@ -134,12 +134,12 @@ Key Features: High-quality photography, professional editing, personal service
     console.log('🤖 Generating content with OpenAI Chat Completions API...');
 
     const imageAnalysis = await this.analyzeImages(images);
-    const prompt = this.buildPrompt(imageAnalysis, input, siteContext);
+    const prompt = this.buildSophisticatedPrompt(imageAnalysis, input, siteContext);
 
     const messages = [
       {
         role: "system" as const,
-        content: "You are a professional content writer specializing in photography blog posts. Create engaging, SEO-optimized content in German for New Age Fotografie."
+        content: `You are a professional content writer specializing in photography blog posts using the exact sophisticated prompt format. You MUST follow the exact output format with **Section Name:** headers and include ALL required sections: SEO Title, Slug, Headline, Outline, Key Takeaways, Blog Article, Review Snippets, Meta Description, Excerpt, Tags.`
       },
       {
         role: "user" as const,
@@ -149,14 +149,14 @@ Key Features: High-quality photography, professional editing, personal service
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o", 
         messages: messages,
-        max_tokens: 3000,
+        max_tokens: 4000,
         temperature: 0.7
       });
 
       const content = response.choices[0]?.message?.content || '';
-      return this.parseResponse(content);
+      return this.parseStructuredResponse(content);
     } catch (error) {
       console.error('OpenAI API error:', error);
       throw new Error('Failed to generate content with OpenAI');
@@ -347,14 +347,14 @@ ADDITIONAL CONTEXT SOURCES:
       // STEP 2: Use REAL Assistant API with context as DATA (not prompt override)
       console.log('🎯 SENDING CONTEXT TO REAL ASSISTANT - NO PROMPT OVERRIDE');
       
-      // MINIMAL context message - let TOGNINJA use its trained sophisticated prompt
-      const userMessage = `Here's the context data for creating a German blog post about this photography session:
+      // Provide context but let TOGNINJA use its sophisticated trained prompt
+      const userMessage = `Context data for blog creation:
 
 ${comprehensiveContext}
 
-Additional guidance: ${input.contentGuidance || 'No specific guidance provided'}
+User guidance: ${input.contentGuidance || 'No specific guidance provided'}
 
-Please create a blog post using your trained instructions.`;
+Please create a comprehensive German blog post package using your sophisticated trained prompt with all required sections: SEO Title, Slug, Headline, Outline, Key Takeaways, Blog Article, Review Snippets, Meta Description, Excerpt, Tags.`;
 - Using first-person perspective (unless user requests brand voice)
 - Writing as if it was manually written over 3 days, not generated in 30 seconds
 
