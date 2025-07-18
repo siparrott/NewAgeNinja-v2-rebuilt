@@ -108,10 +108,10 @@ function AutoBlogChatInterface({ assistantId }: { assistantId: string }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wand2 className="h-5 w-5" />
-          Direct Claude Chat - AutoBlog Assistant
+          OpenAI Assistant - AutoBlog Assistant
         </CardTitle>
         <CardDescription>
-          Upload photography session images and chat directly with Claude to generate authentic blog content
+          Upload photography session images and chat with OpenAI Assistant to generate authentic blog content
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
@@ -120,7 +120,7 @@ function AutoBlogChatInterface({ assistantId }: { assistantId: string }) {
           {messages.length === 0 && (
             <div className="text-center text-muted-foreground">
               <Wand2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>Start a conversation with Claude!</p>
+              <p>Start a conversation with OpenAI Assistant!</p>
               <p className="text-sm">Upload session images and ask for blog content generation.</p>
             </div>
           )}
@@ -190,7 +190,7 @@ function AutoBlogChatInterface({ assistantId }: { assistantId: string }) {
             <Textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Ask Claude to generate blog content from your images..."
+              placeholder="Ask OpenAI Assistant to generate blog content from your images..."
               className="flex-1"
               rows={3}
               onKeyDown={(e) => {
@@ -431,12 +431,12 @@ export default function AdminAutoBlogPage() {
         <div>
           <h1 className="text-3xl font-bold">AI AutoBlog Assistant</h1>
           <p className="text-muted-foreground">
-            Chat directly with Claude to generate authentic blog content from your photography session images
+            Chat with OpenAI Assistant to generate authentic blog content from your photography session images
           </p>
         </div>
         <Badge variant="secondary" className="flex items-center gap-1">
           <Wand2 className="h-4 w-4" />
-          Direct Claude Chat
+          OpenAI Assistant Chat
         </Badge>
       </div>
 
