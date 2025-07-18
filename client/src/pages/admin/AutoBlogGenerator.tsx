@@ -280,15 +280,41 @@ export default function AutoBlogGenerator() {
     if (!generatedContent) return;
 
     try {
-      // Here you would save to database
-      toast({
-        title: "Content published",
-        description: `Blog post ${publishingOption === 'draft' ? 'saved as draft' : publishingOption === 'publish' ? 'published immediately' : 'scheduled for later'}`,
+      console.log('📝 Publishing/updating blog post with status:', publishingOption);
+      
+      // The blog post was already created during generation, now we update its status
+      const response = await fetch('/api/blog/posts', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          slug: generatedContent.slug,
+          status: publishingOption === 'draft' ? 'DRAFT' : publishingOption === 'publish' ? 'PUBLISHED' : 'SCHEDULED',
+          publishingOption: publishingOption
+        })
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to update blog post status');
+      }
+
+      const result = await response.json();
+      console.log('✅ Blog post status updated:', result);
+
+      toast({
+        title: "Success!",
+        description: `Blog post ${publishingOption === 'draft' ? 'saved as draft' : publishingOption === 'publish' ? 'published successfully' : 'scheduled for publication'}`,
+      });
+
+      // Navigate to blog management page or show success state
+      window.open('/admin/blog', '_blank');
+      
     } catch (error) {
+      console.error('❌ Publishing error:', error);
       toast({
         title: "Publishing failed",
-        description: "Failed to publish content. Please try again.",
+        description: error.message || "Failed to publish content. Please try again.",
         variant: "destructive",
       });
     }
@@ -559,9 +585,10 @@ export default function AutoBlogGenerator() {
                     </div>
                     
                     <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg max-h-64 overflow-y-auto">
-                      <div className="prose prose-sm max-w-none dark:prose-invert">
-                        {generatedContent.content}
-                      </div>
+                      <div 
+                        className="prose prose-sm max-w-none dark:prose-invert"
+                        dangerouslySetInnerHTML={{ __html: generatedContent.content }}
+                      />
                     </div>
 
                     <div className="flex gap-2 pt-4">
