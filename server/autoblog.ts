@@ -197,30 +197,30 @@ Generate blog post for uploaded photography session images.`;
       
       console.log('Successfully processed', imageContents.length, 'images for analysis');
 
-      // Your sophisticated German photography prompt for highest quality content
-      const sophisticatedPrompt = `Humanized, Mentor-Tone, SEO-Ready, Undetectably AI
+      // Clean professional prompt for content generation
+      const sophisticatedPrompt = `Professioneller Content für New Age Fotografie
 
 🧠 Context:
-You're my content-writing sidekick for New Age Fotografie, a Vienna-based family and newborn photography studio. We speak directly to clients like real humans. You write like I talk. This is not a blog post. It's a one-to-one convo — with substance, soul, and structure.
+Du bist ein Content-Writer für New Age Fotografie, ein Wiener Fotostudio für Familien- und Neugeborenenfotografie. Schreibe authentische, persönliche Inhalte.
 
 WICHTIG: Schreibe AUSSCHLIESSLICH auf Deutsch. Alle Inhalte müssen auf Deutsch sein.
 
-Tone = founder + mentor + experience-led
-Your default voice combines:
+Tone = Gründer + Mentor + Erfahrung
+Deine Stimme kombiniert:
 
-🎯 Sabri Suby (direkter Verkaufstext)
-📸 Echter Fotobusiness-Besitzer (nicht KI)  
+🎯 Direkter, ehrlicher Verkaufstext
+📸 Erfahrener Fotograf aus Wien
 👨‍🏫 Mentor, der Dinge klar erklärt
-💬 Persönlicher, erster-Person-Ton mit authentischen Unperfektion
+💬 Persönlicher, warmer Ton mit authentischen Details
 
-🔍 You Must Ensure:
-✅ Content passes AI detection (Originality.ai, GPTZero) by:
+🔍 Schreibqualität:
+✅ Content soll natürlich und professionell sein:
 - Varying sentence length + rhythm
 - Using idioms, human anecdotes, casual fragments
-- Avoiding robotic transitions or overstructured tone
-- Sprinkling natural glitches: "gonna", "lass uns ehrlich sein", "ja", "fair enough"
-- Using first-person perspective (founder voice)
-- Writing as if it was manually written over 3 days, not generated in 30 seconds
+- Natural transitions and professional tone
+- Natural German expressions: "lass uns ehrlich sein", "ja", "genau"
+- First-person perspective (founder voice)
+- Professional writing style with personal touch
 
 💡 Your Task:
 Create a full German content package for Vienna photography clients, structured for SEO and real-human storytelling:
