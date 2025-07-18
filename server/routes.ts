@@ -661,6 +661,22 @@ const upload = multer({
   }
 });
 
+// Configure multer for audio uploads (voice transcription)
+const audioUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25MB limit for audio files
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/webm', 'audio/ogg'];
+    if (allowedTypes.includes(file.mimetype) || file.originalname.endsWith('.wav') || file.originalname.endsWith('.mp3')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid audio file type. Only WAV, MP3, MP4, WebM, and OGG audio files are allowed.'));
+    }
+  }
+});
+
 // IMAP Email Import Function
 async function importEmailsFromIMAP(config: {
   host: string;
@@ -806,7 +822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Audio transcription endpoint using OpenAI Whisper
-  app.post("/api/transcribe", authenticateUser, upload.single('audio'), async (req: Request, res: Response) => {
+  app.post("/api/transcribe", authenticateUser, audioUpload.single('audio'), async (req: Request, res: Response) => {
     try {
       const audioFile = req.file;
       
