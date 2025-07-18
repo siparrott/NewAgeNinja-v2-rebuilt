@@ -175,9 +175,9 @@ Generate blog post for uploaded photography session images.`;
         console.log('Falling back to Chat Completions API...');
       }
 
-      // Fallback to Chat Completions API with your exact prompt structure
-      console.log('=== USING CHAT COMPLETIONS API FALLBACK ===');
-      console.log('This means Assistant API failed - content will be generic');
+      // Chat Completions API with sophisticated German photography prompts
+      console.log('=== USING CHAT COMPLETIONS API ===');
+      console.log('This uses your sophisticated German photography prompts for high-quality content');
       
       // Convert images to base64 for Chat Completions API
       const imageContents = [];
@@ -247,7 +247,13 @@ Analyze the uploaded images carefully and create comprehensive content about thi
         }
       ];
 
-      // Make API call with images
+      // Make API call with sophisticated German photography prompts
+      console.log('Sending', imageContents.length, 'images to Chat Completions API');
+      console.log('Using sophisticated German prompt with:', 
+                  customPrompt.includes('Vienna') ? '✓ Vienna context' : '✗ No Vienna',
+                  customPrompt.includes('German') ? '✓ German language' : '✗ No German',
+                  customPrompt.includes('New Age Fotografie') ? '✓ Studio branding' : '✗ No branding');
+      
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // Latest model that supports vision
         messages: messages,
