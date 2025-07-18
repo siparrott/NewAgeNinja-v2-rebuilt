@@ -154,9 +154,16 @@ Generate blog post for uploaded photography session images.`;
       // Try OpenAI Assistant API first
       try {
         console.log('=== ATTEMPTING ASSISTANT API ===');
+        console.log('Assistant ID:', assistantId);
+        console.log('Number of images:', images.length);
+        console.log('Image URLs:', images.map(img => img.publicUrl));
+        
         const assistantResult = await this.generateWithAssistantAPI(assistantId, images, input, siteContext);
+        
         if (assistantResult) {
           console.log('=== ASSISTANT API SUCCESS ===');
+          console.log('Generated content length:', assistantResult.content?.length || 0);
+          console.log('Title generated:', assistantResult.seoTitle || 'No title');
           return assistantResult;
         } else {
           console.log('=== ASSISTANT API RETURNED NULL ===');
@@ -164,11 +171,13 @@ Generate blog post for uploaded photography session images.`;
       } catch (assistantError) {
         console.error('=== ASSISTANT API FAILED ===');
         console.error('Assistant API error details:', assistantError);
+        console.error('Error stack:', assistantError.stack);
         console.log('Falling back to Chat Completions API...');
       }
 
       // Fallback to Chat Completions API with your exact prompt structure
-      console.log('Using Chat Completions API with your custom prompt structure');
+      console.log('=== USING CHAT COMPLETIONS API FALLBACK ===');
+      console.log('This means Assistant API failed - content will be generic');
       
       // Convert images to base64 for Chat Completions API
       const imageContents = [];
@@ -405,8 +414,12 @@ WICHTIG:
       }
 
       if (runStatus.status === 'completed') {
+        console.log('=== ASSISTANT RUN COMPLETED SUCCESSFULLY ===');
         const messages = await openai.beta.threads.messages.list(thread.id);
         const lastMessage = messages.data[0];
+        console.log('Assistant response message count:', messages.data.length);
+        console.log('Last message role:', lastMessage?.role);
+        console.log('Last message content preview:', lastMessage?.content?.[0]?.text?.value?.substring(0, 200) + '...');
         
         if (lastMessage.content[0].type === 'text') {
           const content = lastMessage.content[0].text.value;
