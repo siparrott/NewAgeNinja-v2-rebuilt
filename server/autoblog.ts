@@ -280,7 +280,7 @@ Analyze the uploaded images carefully and create comprehensive content about thi
     try {
       console.log('Attempting OpenAI Assistant API...');
       
-      // Build user message with your custom prompt structure in German
+      // Enhanced prompt to match your sophisticated test output
       const userMessage = `Du bist mein Content-Schreibpartner für New Age Fotografie, ein professionelles Fotostudio in Wien, das sich auf Familien-, Neugeborenen- und Porträtfotografie spezialisiert hat.
 
 WICHTIG: Schreibe AUSSCHLIESSLICH auf DEUTSCH. Alle Inhalte müssen vollständig in deutscher Sprache sein.
@@ -289,34 +289,93 @@ Business Context: ${siteContext}
 Session Details: ${input.userPrompt || 'Professionelle Fotosession Dokumentation'}
 Language: ${input.language || 'de'}
 
+SCHREIBSTIL = Humanisiert, Mentor-Ton, SEO-bereit, unentdeckbar KI
+Kontext: Du bist mein Content-Schreibpartner. Ich brauche authentische, spezifische, bodenständige deutsche Inhalte.
+
 Ton = Gründer + Mentor + Erfahrung-basiert
 Deine Stimme kombiniert:
 - Sabri Suby (direkter Verkaufstext)
 - Echter Fotobusiness-Besitzer (nicht KI)
 - Mentor, der Dinge klar erklärt
-- Persönlicher, erster-Person-Ton mit leichten Unperfektion
+- Persönlicher, erster-Person-Ton mit authentischen Unperfektion
+
+YOAST SEO-konform:
+- H1 + 6-8 H2-Abschnitte (300-500 Wörter pro Abschnitt)
+- Natürliche Keyword-Platzierung 
+- Variierende Satzlängen (kurz, mittel, lang)
+- Echte Idiome, Erste-Person-Perspektive
+- Authentische kleine "Unperfektion"
 
 Erstelle ein vollständiges Content-Paket mit dieser EXAKTEN Struktur:
-**SEO Title:** [SEO-optimierter deutscher Titel]
-**Slug:** [url-freundlicher-slug]
-**Headline (H1):** [Hauptüberschrift auf deutsch]
-**Outline:** [kurze Gliederung der Inhaltsstruktur]
-**Key Takeaways:** [3-5 wichtige Punkte, die Leser lernen werden]
-**Blog Article:** [vollständiger Blog-Artikel mit H1 und 6-8 H2-Abschnitten, 300-500 Wörter pro Abschnitt]
-**Review Snippets:** [2-3 kurze Review-ähnliche Snippets]
-**Meta Description:** [120-156 Zeichen Meta-Beschreibung]
-**Excerpt:** [kurzer Auszug für Vorschau]
-**Tags:** [relevante Tags für den Beitrag]
+**SEO Title:** [German SEO title with Vienna/photography keywords]
+**Slug:** [url-friendly-slug]
+**Headline (H1):** [Catchy German headline with quotes or emotional hook]
+**Outline:** [Brief section outline showing H2 structure]
+**Key Takeaways:** [5-point table with takeaway and "Warum es wichtig ist" explanation]
+**Blog Article:** [Full German blog with H1 and 6-8 H2 sections, authentic storytelling, specific image details, customer reviews/testimonials, pricing hints, FAQs]
+**Review Snippets:** [3 authentic customer review quotes with names]
+**Meta Description:** [120-156 character German meta description]
+**Excerpt:** [Brief German preview text]
+**Tags:** [relevant German photography tags]
 
-Analysiere die hochgeladenen Bilder und erstelle authentischen deutschen Content über diese Fotosession.`;
+WICHTIG: 
+- Analysiere die Bilder im Detail (Kleidung, Setting, Emotionen, Posen)
+- Verwende spezifische Details aus den Bildern in deinem Content
+- Schreibe wie ein echter Wiener Fotograf, nicht wie KI
+- Eingebaute interne Links zu /warteliste/
+- Pro-Tipps für Outfit/Posen einbauen
+- Echte Wiener Referenzen (Bezirke, Locations)
+- Preise erwähnen (€149+ Pakete)
+- Kundenstimmen einbauen (5-Sterne-Reviews)`;
+
+      // Upload images to OpenAI for Assistant API
+      const fileIds: string[] = [];
+      
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        console.log(`Uploading image ${i + 1} to OpenAI...`);
+        
+        try {
+          // Create a File object from buffer for upload
+          const file = await openai.files.create({
+            file: new File([image.buffer], image.filename, { type: 'image/jpeg' }),
+            purpose: 'vision'
+          });
+          
+          fileIds.push(file.id);
+          console.log(`Successfully uploaded image ${i + 1} with file ID: ${file.id}`);
+        } catch (uploadError) {
+          console.warn(`Failed to upload image ${i + 1}:`, uploadError);
+          // Continue without this image
+        }
+      }
+      
+      console.log(`Successfully uploaded ${fileIds.length} out of ${images.length} images to OpenAI`);
 
       // Create thread
       const thread = await openai.beta.threads.create();
       
-      // For now, send message without images since Assistant API base64 limitation
+      // Create message with images and user message
+      const messageContent: any[] = [
+        {
+          type: "text",
+          text: userMessage
+        }
+      ];
+      
+      // Add image file attachments if we have them
+      if (fileIds.length > 0) {
+        messageContent.push(...fileIds.map(fileId => ({
+          type: "image_file",
+          image_file: {
+            file_id: fileId
+          }
+        })));
+      }
+      
       const message = await openai.beta.threads.messages.create(thread.id, {
         role: "user",
-        content: userMessage
+        content: messageContent
       });
 
       // Run the assistant
@@ -346,15 +405,47 @@ Analysiere die hochgeladenen Bilder und erstelle authentischen deutschen Content
 
           // Parse the structured response
           const parsedContent = this.parseStructuredResponse(content);
+          
+          // Clean up uploaded files after successful processing
+          for (const fileId of fileIds) {
+            try {
+              await openai.files.del(fileId);
+              console.log(`Cleaned up uploaded file: ${fileId}`);
+            } catch (cleanupError) {
+              console.warn(`Failed to cleanup file ${fileId}:`, cleanupError);
+            }
+          }
+          
           return parsedContent;
         }
       }
 
       console.log('Assistant API failed or timed out, status:', runStatus.status);
+      
+      // Clean up uploaded files
+      for (const fileId of fileIds) {
+        try {
+          await openai.files.del(fileId);
+          console.log(`Cleaned up uploaded file: ${fileId}`);
+        } catch (cleanupError) {
+          console.warn(`Failed to cleanup file ${fileId}:`, cleanupError);
+        }
+      }
+      
       return null;
       
     } catch (error) {
       console.error('Assistant API error:', error);
+      
+      // Clean up uploaded files in case of error
+      for (const fileId of fileIds) {
+        try {
+          await openai.files.del(fileId);
+        } catch (cleanupError) {
+          console.warn(`Failed to cleanup file ${fileId}:`, cleanupError);
+        }
+      }
+      
       return null;
     }
   }
