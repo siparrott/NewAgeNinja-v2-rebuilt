@@ -26,10 +26,198 @@ interface AutoBlogStatus {
   features: string[];
 }
 
+// Chat Interface Component
+function AutoBlogChatInterface({ assistantId }: { assistantId: string }) {
+  const [messages, setMessages] = useState<Array<{id: string, role: string, content: string, images?: string[]}>>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 3) {
+      toast({
+        title: "Too many images",
+        description: "Please select up to 3 images only.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setSelectedImages(files);
+  };
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim() && selectedImages.length === 0) return;
+
+    const messageId = Date.now().toString();
+    const userMessage = {
+      id: messageId,
+      role: 'user',
+      content: inputMessage,
+      images: selectedImages.map(file => URL.createObjectURL(file))
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('message', inputMessage);
+      formData.append('assistantId', assistantId);
+      
+      selectedImages.forEach((file, index) => {
+        formData.append(`image_${index}`, file);
+      });
+
+      const response = await fetch('/api/autoblog/chat', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to send message');
+
+      const data = await response.json();
+      
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.response || 'Sorry, I could not generate a response.'
+      }]);
+
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast({
+        title: "Chat Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+      setSelectedImages([]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  return (
+    <Card className="h-[600px] flex flex-col">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Wand2 className="h-5 w-5" />
+          Direct Claude Chat - AutoBlog Assistant
+        </CardTitle>
+        <CardDescription>
+          Upload photography session images and chat directly with Claude to generate authentic blog content
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex-1 flex flex-col">
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto border rounded-lg p-4 mb-4 space-y-4 bg-gray-50">
+          {messages.length === 0 && (
+            <div className="text-center text-muted-foreground">
+              <Wand2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>Start a conversation with Claude!</p>
+              <p className="text-sm">Upload session images and ask for blog content generation.</p>
+            </div>
+          )}
+          
+          {messages.map((message) => (
+            <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] p-3 rounded-lg ${
+                message.role === 'user' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-white border shadow-sm'
+              }`}>
+                {message.images && message.images.length > 0 && (
+                  <div className="mb-2 flex gap-2">
+                    {message.images.map((img, idx) => (
+                      <img key={idx} src={img} alt="Uploaded" className="w-16 h-16 object-cover rounded" />
+                    ))}
+                  </div>
+                )}
+                <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+              </div>
+            </div>
+          ))}
+          
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-white border shadow-sm p-3 rounded-lg">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input Area */}
+        <div className="space-y-3">
+          {/* Image Upload */}
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1"
+            >
+              <Upload className="h-4 w-4" />
+              Upload Images ({selectedImages.length}/3)
+            </Button>
+            {selectedImages.length > 0 && (
+              <div className="flex gap-1">
+                {selectedImages.map((file, idx) => (
+                  <div key={idx} className="text-xs bg-blue-100 px-2 py-1 rounded">
+                    {file.name.slice(0, 15)}...
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Message Input */}
+          <div className="flex gap-2">
+            <Textarea
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder="Ask Claude to generate blog content from your images..."
+              className="flex-1"
+              rows={3}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+            />
+            <Button 
+              onClick={sendMessage} 
+              disabled={isLoading || (!inputMessage.trim() && selectedImages.length === 0)}
+              className="self-end"
+            >
+              Send
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function AdminAutoBlogPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  const [activeTab, setActiveTab] = useState('chat');
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -242,17 +430,43 @@ export default function AdminAutoBlogPage() {
         <div>
           <h1 className="text-3xl font-bold">AI AutoBlog Assistant</h1>
           <p className="text-muted-foreground">
-            Generate YOAST-ready blog content from your photography session images
+            Chat directly with Claude to generate authentic blog content from your photography session images
           </p>
         </div>
         <Badge variant="secondary" className="flex items-center gap-1">
           <Wand2 className="h-4 w-4" />
-          AI Powered
+          Direct Claude Chat
         </Badge>
       </div>
 
-      {/* Features Overview */}
-      <Card>
+      {/* Tab Navigation */}
+      <div className="flex border-b">
+        <Button 
+          variant={activeTab === 'chat' ? 'default' : 'ghost'} 
+          onClick={() => setActiveTab('chat')}
+          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+        >
+          Direct Chat Interface
+        </Button>
+        <Button 
+          variant={activeTab === 'automated' ? 'default' : 'ghost'} 
+          onClick={() => setActiveTab('automated')}
+          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+        >
+          Automated Generation
+        </Button>
+      </div>
+
+      {/* Chat Interface Tab */}
+      {activeTab === 'chat' && (
+        <AutoBlogChatInterface assistantId="asst_nlyO3yRav2oWtyTvkq0cHZaU" />
+      )}
+
+      {/* Automated Generation Tab (existing functionality) */}
+      {activeTab === 'automated' && (
+        <div className="space-y-6">
+          {/* Features Overview */}
+          <Card>
         <CardHeader>
           <CardTitle className="text-lg">AutoBlog Features</CardTitle>
         </CardHeader>
@@ -615,6 +829,8 @@ export default function AdminAutoBlogPage() {
           </CardContent>
         </Card>
       </div>
+        </div>
+      )}
     </div>
   );
 }

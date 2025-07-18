@@ -4244,6 +4244,21 @@ Was interessiert Sie am meisten?`;
     }
   });
 
+  // AutoBlog status endpoint
+  app.get("/api/autoblog/status", async (req: Request, res: Response) => {
+    try {
+      res.json({
+        available: !!process.env.OPENAI_API_KEY,
+        maxImages: 3,
+        supportedLanguages: ['de', 'en'],
+        features: ['AI Content Generation', 'SEO Optimization', 'Multi-language Support', 'Direct Chat Interface']
+      });
+    } catch (error) {
+      console.error('AutoBlog status error:', error);
+      res.status(500).json({ error: 'Failed to get AutoBlog status' });
+    }
+  });
+
   // AutoBlog generation endpoint
   app.post("/api/autoblog/generate", authenticateUser, autoblogUpload.array('images', 3), async (req: Request, res: Response) => {
     try {
@@ -4299,6 +4314,103 @@ Was interessiert Sie am meisten?`;
       res.status(500).json({ 
         success: false, 
         error: errorMessage 
+      });
+    }
+  });
+
+  // AutoBlog Chat Interface - Direct OpenAI Assistant Communication
+  app.post("/api/autoblog/chat", authenticateUser, autoblogUpload.array('images', 3), async (req: Request, res: Response) => {
+    try {
+      const { message, assistantId } = req.body;
+      const images = req.files as Express.Multer.File[];
+
+      console.log('AutoBlog chat request:', { message, assistantId, imageCount: images?.length || 0 });
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: 'OpenAI API key not configured' });
+      }
+
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Convert images to base64 for OpenAI
+      const imageContents = [];
+      if (images && images.length > 0) {
+        for (const image of images) {
+          const base64Image = image.buffer.toString('base64');
+          imageContents.push({
+            type: "image_url",
+            image_url: {
+              url: `data:${image.mimetype};base64,${base64Image}`
+            }
+          });
+        }
+      }
+
+      // Create message content array
+      const messageContent = [
+        {
+          type: "text",
+          text: message || "Please analyze these photography session images and generate authentic blog content for New Age Fotografie Wien. Include specific details about what you see in the images, Vienna context, pricing mentions (€149+ packages), and /warteliste/ booking links. Create comprehensive, detailed content following YOAST SEO best practices."
+        },
+        ...imageContents
+      ];
+
+      console.log('Sending request to OpenAI with', imageContents.length, 'images');
+
+      // Use Chat Completions API for reliability with enhanced system prompt
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a professional photography blog content creator for New Age Fotografie, a Vienna-based family and newborn photography studio. 
+
+Create authentic, engaging blog content that:
+- Uses specific details from the uploaded images (clothing colors, settings, emotions, poses, lighting)
+- Includes Vienna-specific context and references (parks, locations, culture)
+- Mentions pricing (starting at €149 for family sessions) and includes /warteliste/ booking links
+- Uses natural founder voice with professional expertise and personal touch
+- Follows YOAST SEO best practices for photography keywords
+- Creates comprehensive, detailed content (1500+ words when requested)
+- Uses authentic German language for Vienna audience
+- Includes real business details: Schönbrunner Str. 25, 1050 Wien, hallo@newagefotografie.com
+
+When generating content:
+1. Analyze images in detail - what do you actually see?
+2. Create engaging stories around the real visual elements
+3. Include technical photography insights
+4. Add emotional storytelling elements
+5. Ensure all business information is accurate
+6. Use proper German language and Vienna cultural references
+
+Format your response as structured blog content with clear H1/H2 headings, engaging paragraphs, and authentic storytelling.`
+          },
+          {
+            role: "user",
+            content: messageContent
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.7
+      });
+
+      const aiResponse = response.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+      
+      console.log('OpenAI response length:', aiResponse.length, 'characters');
+
+      res.json({ 
+        success: true, 
+        response: aiResponse,
+        imageCount: imageContents.length,
+        model: "gpt-4o"
+      });
+
+    } catch (error) {
+      console.error('AutoBlog chat error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to process chat message' 
       });
     }
   });
