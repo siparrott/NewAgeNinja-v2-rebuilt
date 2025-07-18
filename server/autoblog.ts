@@ -366,7 +366,7 @@ Create a full content package, structured for SEO blog article with more than 80
 - Final prompt for client feedback
 
 ♻️ YOAST SEO COMPLIANCE (Built-in):
-Keyphrase: {PRIMARY_KEYPHRASE}
+Keyphrase: Familienfotograf Wien
 
 Include it in:
 - SEO title
@@ -404,7 +404,18 @@ Use natural, specific, grounded language.
 **Excerpt:**
 **Tags:**
 
-TASK: Create this complete content package in German for New Age Fotografie using the context data provided above.`;
+🚨 CRITICAL REQUIREMENTS:
+- MUST include ALL sections above in EXACT format
+- MUST use the **Section Name:** format for each section
+- MUST include complete outline with 6-8 H2 headings
+- MUST include key takeaways as bullet points
+- MUST include review snippets with client testimonials
+- MUST include internal links to /galerie, /kontakt, /warteliste
+- MUST include external links to Vienna tourism or photography resources
+- MUST write in mentor tone with human imperfections
+- MUST ensure content passes AI detection with varying sentence structure
+
+TASK: Create this complete content package in German for New Age Fotografie using the context data provided above. Follow the EXACT output format and include ALL required sections.`;
 
       // Create thread for REAL Assistant
       const thread = await openai.beta.threads.create();
