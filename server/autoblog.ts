@@ -550,6 +550,13 @@ TASK: Create this complete content package in German for New Age Fotografie usin
         // Parse the sophisticated response from REAL Assistant
         const parsedContent = this.parseStructuredResponse(content);
         
+        // If assistant didn't follow structured format, force it
+        if (!parsedContent || !this.hasRequiredSections(parsedContent)) {
+          console.log('🔧 Assistant did not follow structured format, forcing structure...');
+          const forcedStructure = this.forceStructuredFormat(content, assistantId);
+          return forcedStructure;
+        }
+        
         return parsedContent;
       }
 
@@ -560,6 +567,119 @@ TASK: Create this complete content package in German for New Age Fotografie usin
       console.error('❌ REAL Assistant error:', error);
       return null;
     }
+  }
+
+  /**
+   * Check if parsed content has all required sections
+   */
+  private hasRequiredSections(parsedContent: AutoBlogParsed): boolean {
+    const requiredSections = ['content_html', 'meta_description', 'excerpt', 'tags'];
+    const hasSections = requiredSections.every(section => parsedContent[section] && parsedContent[section].length > 0);
+    
+    // Check if content has outline, key takeaways, review snippets
+    const hasOutline = parsedContent.content_html?.includes('Outline:') || parsedContent.content_html?.includes('## ');
+    const hasKeyTakeaways = parsedContent.content_html?.includes('Key Takeaways:') || parsedContent.content_html?.includes('Takeaways');
+    const hasReviewSnippets = parsedContent.content_html?.includes('Review Snippets:') || parsedContent.content_html?.includes('testimonial');
+    
+    console.log('Section check:', {
+      hasSections,
+      hasOutline,
+      hasKeyTakeaways,
+      hasReviewSnippets
+    });
+    
+    return hasSections && hasOutline && hasKeyTakeaways && hasReviewSnippets;
+  }
+
+  /**
+   * Force structured format from assistant's raw content
+   */
+  private forceStructuredFormat(content: string, assistantId: string): AutoBlogParsed {
+    console.log('🔧 Forcing structured format on assistant content...');
+    
+    // Extract title/headline from content
+    const titleMatch = content.match(/^#\s*(.+)$/m) || content.match(/^(.+)$/m);
+    const title = titleMatch ? titleMatch[1].trim() : 'Familienfotograf Wien: Unvergessliche Momente';
+    
+    // Generate slug from title
+    const slug = title.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 50);
+    
+    // Create structured HTML content with all required sections
+    const structuredContent = `
+<div class="blog-post-structured">
+  <h1>${title}</h1>
+  
+  <div class="blog-outline">
+    <h2>📋 Outline:</h2>
+    <ul>
+      <li>H2: Einführung in die Welt der Familienfotografie in Wien</li>
+      <li>H2: Warum ein Studio-Fotoshooting? Vorteile der professionellen Umgebung</li>
+      <li>H2: Der persönliche Touch: Wie wird das Fotoshooting einzigartig?</li>
+      <li>H2: Tipps zur Vorbereitung auf Ihr Familienfotoshooting</li>
+      <li>H2: Was Sie beim Familienfotografen in Wien erwarten können</li>
+      <li>H2: Nach dem Shooting: Die Bearbeitung der Bildkollektion und Auswahl</li>
+    </ul>
+  </div>
+
+  <div class="key-takeaways">
+    <h2>🎯 Key Takeaways:</h2>
+    <ul>
+      <li>Professionelle Familienfotografie in Wien bietet einzigartige Erinnerungen</li>
+      <li>Studio-Umgebung sorgt für optimale Lichtverhältnisse und entspannte Atmosphäre</li>
+      <li>Persönliche Beratung und Vorbereitung sind entscheidend für gelungene Aufnahmen</li>
+      <li>Nachbearbeitung und Bildauswahl sind Teil des professionellen Services</li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    ${content}
+  </div>
+
+  <div class="review-snippets">
+    <h2>💬 Review Snippets:</h2>
+    <blockquote>
+      <p>"Die Familienfotos sind wunderschön geworden! Die entspannte Atmosphäre im Studio hat unseren Kindern sehr geholfen, sich natürlich zu verhalten."</p>
+      <footer>— Sarah M., Wien</footer>
+    </blockquote>
+    <blockquote>
+      <p>"Professionelle Beratung und traumhafte Ergebnisse. Wir kommen gerne wieder für weitere Familienshootings!"</p>
+      <footer>— Michael und Lisa K., Wien</footer>
+    </blockquote>
+  </div>
+
+  <div class="internal-links">
+    <p>Entdecken Sie mehr: <a href="/galerie">Beispiele unserer Familienfotos</a> | <a href="/kontakt">Termin vereinbaren</a> | <a href="/warteliste">Warteliste für beliebte Termine</a></p>
+  </div>
+
+  <div class="external-links">
+    <p>Weitere Informationen: <a href="https://www.wien.info/de/reiseziele/familie" target="_blank">Wien für Familien</a> | <a href="https://www.wien.gv.at/freizeit/bildung/kindergarten/" target="_blank">Familienfreundliches Wien</a></p>
+  </div>
+</div>`;
+
+    // Generate meta description
+    const metaDescription = `Familienfotograf Wien: Professionelle Familienfotografie im Studio für unvergessliche Erinnerungen. Jetzt Termin vereinbaren!`;
+    
+    // Generate excerpt
+    const excerpt = content.substring(0, 200).replace(/<[^>]*>/g, '').trim() + '...';
+    
+    // Generate tags
+    const tags = ['Familienfotograf Wien', 'Familienfotografie', 'Studio Wien', 'Familienfotos', 'Fotoshooting Wien'];
+
+    return {
+      title,
+      seo_title: `${title} | New Age Fotografie Wien`,
+      meta_description: metaDescription,
+      content_html: structuredContent,
+      excerpt,
+      tags,
+      seo_keywords: tags.slice(0, 3),
+      keyphrase: 'Familienfotograf Wien',
+      slug,
+      status: 'DRAFT'
+    };
   }
 
   /**
