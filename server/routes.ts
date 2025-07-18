@@ -4318,99 +4318,251 @@ Was interessiert Sie am meisten?`;
     }
   });
 
-  // AutoBlog Chat Interface - Direct OpenAI Assistant Communication
+  // AutoBlog Chat Interface - OpenAI Assistant API Communication
   app.post("/api/autoblog/chat", authenticateUser, autoblogUpload.array('images', 3), async (req: Request, res: Response) => {
     try {
-      const { message, assistantId } = req.body;
+      const { 
+        message, 
+        assistantId, 
+        threadId, 
+        publishOption = 'draft',
+        customSlug,
+        scheduledFor 
+      } = req.body;
       const images = req.files as Express.Multer.File[];
 
-      console.log('AutoBlog chat request:', { message, assistantId, imageCount: images?.length || 0 });
+      console.log('AutoBlog Assistant chat request:', { message, assistantId, threadId, imageCount: images?.length || 0 });
 
       if (!process.env.OPENAI_API_KEY) {
         return res.status(500).json({ error: 'OpenAI API key not configured' });
       }
 
+      if (!assistantId) {
+        return res.status(400).json({ error: 'Assistant ID is required' });
+      }
+
       const OpenAI = require('openai');
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      // Convert images to base64 for OpenAI
-      const imageContents = [];
+      // Create or use existing thread
+      let currentThreadId = threadId;
+      if (!currentThreadId) {
+        const thread = await openai.beta.threads.create();
+        currentThreadId = thread.id;
+        console.log('Created new thread:', currentThreadId);
+      }
+
+      let messageText = message || "Please analyze these photography session images and generate comprehensive blog content for New Age Fotografie Wien. Include specific details about what you see in the images, Vienna context, pricing mentions (€149+ packages), and /warteliste/ booking links. Create 2000+ words of detailed, authentic content following YOAST SEO best practices.";
+      
+      // Upload images to OpenAI for Assistant API
+      const uploadedFiles = [];
       if (images && images.length > 0) {
+        console.log('Uploading', images.length, 'images to OpenAI...');
+        
         for (const image of images) {
-          const base64Image = image.buffer.toString('base64');
-          imageContents.push({
-            type: "image_url",
-            image_url: {
-              url: `data:${image.mimetype};base64,${base64Image}`
-            }
-          });
+          try {
+            // OpenAI Assistant API requires actual File objects, not just buffers
+            // Create a temporary file-like object that OpenAI can accept
+            const fs = require('fs');
+            const path = require('path');
+            const os = require('os');
+            
+            // Create a temporary file
+            const tempDir = os.tmpdir();
+            const tempFilePath = path.join(tempDir, `temp_${Date.now()}_${image.originalname}`);
+            
+            // Write buffer to temporary file
+            fs.writeFileSync(tempFilePath, image.buffer);
+            
+            // Create a ReadStream for OpenAI
+            const fileStream = fs.createReadStream(tempFilePath);
+            
+            const uploadedFile = await openai.files.create({
+              file: fileStream,
+              purpose: 'vision'
+            });
+            
+            uploadedFiles.push(uploadedFile.id);
+            console.log('Uploaded file:', uploadedFile.id);
+            
+            // Clean up temporary file
+            fs.unlinkSync(tempFilePath);
+            
+          } catch (uploadError) {
+            console.error('Failed to upload image:', uploadError);
+          }
+        }
+        
+        if (uploadedFiles.length > 0) {
+          messageText += `\n\nI have uploaded ${uploadedFiles.length} photography session images for analysis.`;
         }
       }
 
-      // Create message content array
-      const messageContent = [
-        {
-          type: "text",
-          text: message || "Please analyze these photography session images and generate authentic blog content for New Age Fotografie Wien. Include specific details about what you see in the images, Vienna context, pricing mentions (€149+ packages), and /warteliste/ booking links. Create comprehensive, detailed content following YOAST SEO best practices."
-        },
-        ...imageContents
-      ];
+      console.log('Adding message to thread:', currentThreadId);
 
-      console.log('Sending request to OpenAI with', imageContents.length, 'images');
+      // Add message to thread
+      const messageCreate = await openai.beta.threads.messages.create(currentThreadId, {
+        role: 'user',
+        content: messageText,
+        attachments: uploadedFiles.map(fileId => ({
+          file_id: fileId,
+          tools: [{ type: 'file_search' }]
+        }))
+      });
 
-      // Use Chat Completions API for reliability with enhanced system prompt
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a professional photography blog content creator for New Age Fotografie, a Vienna-based family and newborn photography studio. 
+      console.log('Message created:', messageCreate.id);
 
-Create authentic, engaging blog content that:
-- Uses specific details from the uploaded images (clothing colors, settings, emotions, poses, lighting)
-- Includes Vienna-specific context and references (parks, locations, culture)
-- Mentions pricing (starting at €149 for family sessions) and includes /warteliste/ booking links
-- Uses natural founder voice with professional expertise and personal touch
-- Follows YOAST SEO best practices for photography keywords
-- Creates comprehensive, detailed content (1500+ words when requested)
-- Uses authentic German language for Vienna audience
-- Includes real business details: Schönbrunner Str. 25, 1050 Wien, hallo@newagefotografie.com
+      // Run assistant
+      console.log('Starting assistant run with ID:', assistantId);
+      const run = await openai.beta.threads.runs.create(currentThreadId, {
+        assistant_id: assistantId
+      });
 
-When generating content:
-1. Analyze images in detail - what do you actually see?
-2. Create engaging stories around the real visual elements
-3. Include technical photography insights
-4. Add emotional storytelling elements
-5. Ensure all business information is accurate
-6. Use proper German language and Vienna cultural references
+      console.log('Run created:', run.id);
 
-Format your response as structured blog content with clear H1/H2 headings, engaging paragraphs, and authentic storytelling.`
-          },
-          {
-            role: "user",
-            content: messageContent
+      // Wait for completion with timeout
+      let runStatus = await openai.beta.threads.runs.retrieve(currentThreadId, run.id);
+      let attempts = 0;
+      const maxAttempts = 30; // 60 seconds timeout
+
+      while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
+        if (attempts >= maxAttempts) {
+          throw new Error('Assistant run timeout - exceeded 60 seconds');
+        }
+        
+        console.log(`Run status: ${runStatus.status}, attempt ${attempts + 1}/${maxAttempts}`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        runStatus = await openai.beta.threads.runs.retrieve(currentThreadId, run.id);
+        attempts++;
+      }
+
+      console.log('Final run status:', runStatus.status);
+
+      if (runStatus.status !== 'completed') {
+        throw new Error(`Assistant run failed with status: ${runStatus.status}`);
+      }
+
+      // Get messages
+      const messages = await openai.beta.threads.messages.list(currentThreadId);
+      const assistantMessage = messages.data.find(
+        (msg) => msg.role === 'assistant' && msg.run_id === run.id
+      );
+
+      if (!assistantMessage) {
+        throw new Error('No assistant response found');
+      }
+
+      const responseText = assistantMessage.content
+        .filter((content) => content.type === 'text')
+        .map((content) => content.text.value)
+        .join('\n');
+
+      console.log('Assistant response length:', responseText.length, 'characters');
+
+      // If the response looks like blog content (long enough), save it to database
+      if (responseText.length > 500) {
+        try {
+          // Process the blog content for publication
+          const blogTitle = responseText.split('\n')[0].replace(/^#+\s*/, '').trim() || 'New Blog Post';
+          const blogContent = responseText;
+          
+          // Create a slug from title or use custom slug
+          const slug = customSlug || blogTitle
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .substring(0, 50);
+
+          // Determine publication status
+          let status = 'DRAFT';
+          let publishedAt = null;
+          let scheduledAt = null;
+
+          if (publishOption === 'publish') {
+            status = 'PUBLISHED';
+            publishedAt = new Date();
+          } else if (publishOption === 'schedule' && scheduledFor) {
+            status = 'SCHEDULED';
+            scheduledAt = new Date(scheduledFor);
           }
-        ],
-        max_tokens: 4000,
-        temperature: 0.7
-      });
 
-      const aiResponse = response.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
-      
-      console.log('OpenAI response length:', aiResponse.length, 'characters');
+          // Save blog post
+          const blogPost = await storage.createBlogPost({
+            title: blogTitle,
+            content: blogContent,
+            excerpt: blogContent.substring(0, 200) + '...',
+            slug: slug,
+            status: status,
+            authorId: req.user.id,
+            publishedAt: publishedAt,
+            scheduledFor: scheduledAt,
+            tags: ['autoblog', 'photography', 'vienna'],
+            metaTitle: blogTitle,
+            metaDescription: blogContent.substring(0, 155) + '...',
+            featuredImage: null,
+            imageUrl: null
+          });
 
-      res.json({ 
-        success: true, 
-        response: aiResponse,
-        imageCount: imageContents.length,
-        model: "gpt-4o"
-      });
+          console.log('Blog post saved:', blogPost.id, 'with status:', status);
+
+          res.json({ 
+            success: true, 
+            response: responseText,
+            threadId: currentThreadId,
+            imageCount: uploadedFiles.length,
+            blogPost: {
+              id: blogPost.id,
+              title: blogPost.title,
+              slug: blogPost.slug,
+              status: blogPost.status,
+              url: `/blog/${blogPost.slug}`
+            },
+            metadata: {
+              assistantId: assistantId,
+              runId: run.id,
+              status: runStatus.status,
+              model: 'Assistant API'
+            }
+          });
+
+        } catch (dbError) {
+          console.error('Failed to save blog post:', dbError);
+          // Still return the response even if save failed
+          res.json({ 
+            success: true, 
+            response: responseText,
+            threadId: currentThreadId,
+            imageCount: uploadedFiles.length,
+            warning: 'Content generated but failed to save to database',
+            metadata: {
+              assistantId: assistantId,
+              runId: run.id,
+              status: runStatus.status,
+              model: 'Assistant API'
+            }
+          });
+        }
+      } else {
+        // Response too short, just return the response
+        res.json({ 
+          success: true, 
+          response: responseText,
+          threadId: currentThreadId,
+          imageCount: uploadedFiles.length,
+          metadata: {
+            assistantId: assistantId,
+            runId: run.id,
+            status: runStatus.status,
+            model: 'Assistant API'
+          }
+        });
+      }
 
     } catch (error) {
-      console.error('AutoBlog chat error:', error);
+      console.error('AutoBlog Assistant chat error:', error);
       res.status(500).json({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Failed to process chat message' 
+        error: error instanceof Error ? error.message : 'Assistant API error occurred'
       });
     }
   });

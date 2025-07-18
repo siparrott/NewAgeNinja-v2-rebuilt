@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, Image, Wand2, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+
 interface AutoBlogResult {
   success: boolean;
   post?: any;
