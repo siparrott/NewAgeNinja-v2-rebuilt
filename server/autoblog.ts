@@ -124,84 +124,14 @@ Key Features: High-quality photography, professional editing, personal service
   }
 
   /**
-   * Generate blog content using OpenAI Assistant
+   * DISABLED: Generic blog content generation removed - ONLY REAL TOGNINJA ASSISTANT ALLOWED
    */
   async generateBlogContent(
     images: ProcessedImage[], 
     input: AutoBlogInput, 
     siteContext: string
   ): Promise<AutoBlogParsed> {
-    const assistantId = 'asst_nlyO3yRav2oWtyTvkq0cHZaU'; // AutoBlog Assistant
-    
-    // Build user message with context
-    const userMessage = `Business Context: ${siteContext}
-Session Details: ${input.userPrompt || 'Professional photography session documentation'}
-Language: ${input.language}
-Generate blog post for uploaded photography session images.`;
-
-    // Prepare image content with public URLs
-    const imageContent = images.map((img, index) => {
-      console.log(`Processing image ${index + 1}: ${img.publicUrl}`);
-      return {
-        type: "image_url" as const,
-        image_url: {
-          url: img.publicUrl,
-          detail: "high"
-        }
-      };
-    });
-
-    try {
-      console.log('Attempting to use OpenAI Assistant API first...');
-      console.log('Assistant ID:', assistantId);
-      console.log('Image count:', images.length);
-      console.log('User context:', userMessage);
-
-      // Force use of REAL TOGNINJA BLOG WRITER Assistant - NO FALLBACKS!
-      console.log('🚀 FORCING USE OF REAL TOGNINJA BLOG WRITER ASSISTANT');
-      console.log('🎯 Assistant ID:', assistantId);
-      console.log('📸 Number of images:', images.length);
-      console.log('🔗 Image URLs:', images.map(img => img.publicUrl));
-      
-      // PRIORITY: Use your REAL Assistant first and ONLY
-      const assistantResult = await this.generateWithAssistantAPI(assistantId, images, input, siteContext);
-      
-      if (assistantResult) {
-        console.log('✅ REAL ASSISTANT SUCCESS - RETURNING AUTHENTIC CONTENT!');
-        console.log('📝 Generated content length:', assistantResult.content_html?.length || 0);
-        console.log('🏷️ Title generated:', assistantResult.seo_title || assistantResult.title || 'No title');
-        return assistantResult;
-      } else {
-        console.log('❌ REAL ASSISTANT RETURNED NULL - INVESTIGATING...');
-        
-        // Add extra debugging to understand why Assistant fails
-        console.log('🔍 OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
-        console.log('🔍 API Key starts with:', process.env.OPENAI_API_KEY?.substring(0, 10) + '...');
-        
-        // Try once more with additional error handling
-        console.log('🔄 RETRYING REAL ASSISTANT WITH ENHANCED DEBUGGING...');
-        try {
-          const retryResult = await this.generateWithAssistantAPI(assistantId, images, input, siteContext);
-          if (retryResult) {
-            console.log('✅ RETRY SUCCESS - RETURNING REAL ASSISTANT CONTENT!');
-            return retryResult;
-          }
-        } catch (retryError) {
-          console.error('🚨 ASSISTANT RETRY FAILED:', retryError);
-          console.error('🚨 Stack trace:', retryError.stack);
-        }
-        
-        console.error('🚨 CRITICAL: REAL ASSISTANT COMPLETELY FAILED');
-        console.error('🚨 This should never happen - your TOGNINJA BLOG WRITER is not responding');
-        console.error('🚨 Check: 1) OpenAI API Key, 2) Assistant ID, 3) Network connectivity');
-        throw new Error('❌ REAL TOGNINJA BLOG WRITER ASSISTANT FAILED - No fallback allowed. Please check OpenAI API configuration.');
-      }
-
-      // This fallback code has been REMOVED - only REAL Assistant allowed
-    } catch (error) {
-      console.error('❌ CRITICAL ERROR in Assistant generation method:', error);
-      throw error;
-    }
+    throw new Error('❌ Generic blog content generation DISABLED - Only REAL TOGNINJA BLOG WRITER Assistant allowed. Use generateWithAssistantAPI() instead.');
   }
 
   /**
@@ -827,9 +757,14 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       console.log('Scraping site context...');
       const siteContext = await this.scrapeSiteContext(input.siteUrl);
 
-      // Step 3: Generate content with OpenAI
-      console.log('Generating content with OpenAI...');
-      const aiContent = await this.generateBlogContent(processedImages, input, siteContext);
+      // Step 3: Generate content with REAL TOGNINJA BLOG WRITER ASSISTANT ONLY
+      console.log('🚀 GENERATING CONTENT WITH REAL TOGNINJA BLOG WRITER ASSISTANT ONLY...');
+      const assistantId = 'asst_nlyO3yRav2oWtyTvkq0cHZaU'; // YOUR REAL Assistant
+      const aiContent = await this.generateWithAssistantAPI(assistantId, processedImages, input, siteContext);
+      
+      if (!aiContent) {
+        throw new Error('❌ REAL TOGNINJA BLOG WRITER ASSISTANT FAILED - No fallback allowed. Check OpenAI API configuration.');
+      }
 
       // Step 4: Create blog post
       console.log('Creating blog post...');
