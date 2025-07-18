@@ -124,14 +124,43 @@ Key Features: High-quality photography, professional editing, personal service
   }
 
   /**
-   * DISABLED: Generic blog content generation removed - ONLY REAL TOGNINJA ASSISTANT ALLOWED
+   * Generate blog content using OpenAI Chat Completions API
    */
   async generateBlogContent(
     images: ProcessedImage[], 
     input: AutoBlogInput, 
     siteContext: string
   ): Promise<AutoBlogParsed> {
-    throw new Error('❌ Generic blog content generation DISABLED - Only REAL TOGNINJA BLOG WRITER Assistant allowed. Use generateWithAssistantAPI() instead.');
+    console.log('🤖 Generating content with OpenAI Chat Completions API...');
+
+    const imageAnalysis = await this.analyzeImages(images);
+    const prompt = this.buildPrompt(imageAnalysis, input, siteContext);
+
+    const messages = [
+      {
+        role: "system" as const,
+        content: "You are a professional content writer specializing in photography blog posts. Create engaging, SEO-optimized content in German for New Age Fotografie."
+      },
+      {
+        role: "user" as const,
+        content: prompt
+      }
+    ];
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: messages,
+        max_tokens: 3000,
+        temperature: 0.7
+      });
+
+      const content = response.choices[0]?.message?.content || '';
+      return this.parseResponse(content);
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      throw new Error('Failed to generate content with OpenAI');
+    }
   }
 
   /**
@@ -318,31 +347,14 @@ ADDITIONAL CONTEXT SOURCES:
       // STEP 2: Use REAL Assistant API with context as DATA (not prompt override)
       console.log('🎯 SENDING CONTEXT TO REAL ASSISTANT - NO PROMPT OVERRIDE');
       
-      const userMessage = `CONTEXT DATA FOR BLOG CREATION:
+      // MINIMAL context message - let TOGNINJA use its trained sophisticated prompt
+      const userMessage = `Here's the context data for creating a German blog post about this photography session:
 
 ${comprehensiveContext}
 
----
+Additional guidance: ${input.contentGuidance || 'No specific guidance provided'}
 
-Humanized, Mentor-Tone, SEO-Ready, Undetectably AI
-
-🧠 Context:
-You're my content-writing sidekick for New Age Fotografie, a professional photography studio in Vienna. We speak directly to clients and students like real humans. You write like I talk. This is not a blog post. It's a one-to-one convo — with substance, soul, and structure.
-
-Tone = founder + mentor + experience-led
-Your default voice combines:
-
-🎯 Sabri Suby (no-BS sales copy)
-📸 Real-world photo biz owner (not an AI)
-👨‍🏫 Mentor explaining things clearly to a student
-💬 Relatable, first-person tone with light imperfection
-
-🔍 You Must Ensure:
-✅ Content passes AI detection (Originality.ai, GPTZero) by:
-- Varying sentence length + rhythm
-- Using idioms, human anecdotes, casual fragments
-- Avoiding robotic transitions or overstructured tone
-- Sprinkling natural glitches: "gonna", "let's be real", "yep", "fair enough"
+Please create a blog post using your trained instructions.`;
 - Using first-person perspective (unless user requests brand voice)
 - Writing as if it was manually written over 3 days, not generated in 30 seconds
 

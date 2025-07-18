@@ -175,33 +175,50 @@ export default function AutoBlogGeneratorFixed() {
     if (!generatedContent) return;
 
     try {
-      console.log('📝 Publishing/updating blog post with status:', publishingOption);
+      console.log('📝 Publishing blog post with status:', publishingOption);
       
+      // Create new blog post with generated content
       const response = await fetch('/api/blog/posts', {
-        method: 'PATCH',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          title: generatedContent.title,
           slug: generatedContent.slug,
+          content: generatedContent.content,
+          content_html: generatedContent.content,
+          excerpt: generatedContent.excerpt,
+          meta_description: generatedContent.metaDescription,
+          tags: generatedContent.tags,
           status: publishingOption === 'draft' ? 'DRAFT' : publishingOption === 'publish' ? 'PUBLISHED' : 'SCHEDULED',
-          publishingOption: publishingOption
+          published_at: publishingOption === 'publish' ? new Date().toISOString() : null
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update blog post status');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create blog post');
       }
 
       const result = await response.json();
-      console.log('✅ Blog post status updated:', result);
+      console.log('✅ Blog post created:', result);
 
       toast({
-        title: "Success! 🎉",
+        title: "Success!",
         description: `Blog post ${publishingOption === 'draft' ? 'saved as draft' : publishingOption === 'publish' ? 'published successfully' : 'scheduled for publication'}`,
       });
 
-      window.open('/admin/blog', '_blank');
+      // Reset the form
+      setGeneratedContent(null);
+      setUploadedImages([]);
+      setContentGuidance('');
+      setCustomSlug('');
+      
+      // Open blog management page
+      setTimeout(() => {
+        window.open('/admin/blog', '_blank');
+      }, 1000);
       
     } catch (error) {
       console.error('❌ Publishing error:', error);
