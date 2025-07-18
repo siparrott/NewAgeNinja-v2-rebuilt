@@ -90,7 +90,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: Calendar, label: 'Calendar', path: '/admin/calendar' },
     { icon: FolderOpen, label: 'Digital Files', path: '/admin/pro-files' },
     { icon: PenTool, label: 'Blog', path: '/admin/blog' },
-    { icon: Sparkles, label: 'AutoBlog Generator', path: '/admin/autoblog-v3' },
+    { icon: Sparkles, label: 'AutoBlog Generator FIXED', path: '/admin/autoblog-v4' },
     { icon: Mail, label: 'Email Campaigns', path: '/admin/campaigns' },
     { icon: Inbox, label: 'Inbox', path: '/admin/inbox', badge: unreadEmailsCount },
     { icon: ClipboardList, label: 'Questionnaires', path: '/admin/questionnaires' },

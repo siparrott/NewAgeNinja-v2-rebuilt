@@ -404,6 +404,14 @@ function App() {
                   } 
                 />
                 <Route 
+                  path="/admin/autoblog-v4" 
+                  element={
+                    <ProtectedRoute>
+                      <AutoBlogGeneratorFixed />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
                   path="/admin/clients/new" 
                   element={
                     <ProtectedRoute>
