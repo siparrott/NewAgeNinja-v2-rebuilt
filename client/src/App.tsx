@@ -56,6 +56,7 @@ import KnowledgeBasePage from './pages/admin/KnowledgeBasePage';
 import CRMOperationsAssistant from './pages/admin/CRMOperationsAssistant';
 import AdminAutoBlogPage from './pages/admin/AdminAutoBlogPage';
 import AutoBlogGenerator from './pages/admin/AutoBlogGenerator';
+import AutoBlogGeneratorFixed from './pages/admin/AutoBlogGeneratorFixed';
 import TestPage from './pages/admin/TestPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CartPage from './pages/CartPage';
@@ -398,7 +399,7 @@ function App() {
                   path="/admin/autoblog-v3" 
                   element={
                     <ProtectedRoute>
-                      <AutoBlogGenerator />
+                      <AutoBlogGeneratorFixed />
                     </ProtectedRoute>
                   } 
                 />
