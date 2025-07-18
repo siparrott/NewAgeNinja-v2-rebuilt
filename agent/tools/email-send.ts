@@ -8,7 +8,7 @@ import nodemailer from 'nodemailer';
 
 export const emailSendTool = {
   name: "send_email",
-  description: "Send email using configured SMTP server. Requires SEND_EMAIL authority.",
+  description: "Send email immediately using configured SMTP server. Use this tool when user asks to send or confirm an email. Requires SEND_EMAIL authority.",
   parameters: z.object({
     to: z.string().email("Valid recipient email is required"),
     subject: z.string().min(1, "Subject is required"),
@@ -28,8 +28,8 @@ export const emailSendTool = {
         port: 465,
         secure: true,
         auth: {
-          user: 'hallo@newagefotografie.com',
-          pass: process.env.SMTP_PASSWORD || 'default-password'
+          user: '30840mail10',
+          pass: process.env.EMAIL_PASSWORD || 'default-password'
         }
       });
 

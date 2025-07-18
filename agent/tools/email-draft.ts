@@ -5,7 +5,7 @@ import { openaiForStudio } from "../core/openai";
 
 export const draftEmailTool = {
   name: "draft_email",
-  description: "Draft an email for a client or lead using AI assistance.",
+  description: "Draft an email for review only. Use only when user specifically asks for a draft or review. If user wants to send email, use send_email tool instead.",
   parameters: z.object({
     to: z.string().email("Valid email address required"),
     subject: z.string().min(1, "Subject is required"),
