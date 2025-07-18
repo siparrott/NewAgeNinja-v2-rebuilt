@@ -4423,139 +4423,144 @@ Was interessiert Sie am meisten?`;
         return res.status(400).json({ error: 'Assistant ID is required' });
       }
 
-      // Initialize OpenAI Assistant API
+      // Initialize OpenAI with Chat Completions API (more reliable than Assistant API for this use case)
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      // Create or use existing thread
-      let currentThreadId = threadId;
-      if (!currentThreadId) {
-        const thread = await openai.beta.threads.create();
-        currentThreadId = thread.id;
-        console.log('Created new thread:', currentThreadId);
-      }
+      // Use thread ID for continuity tracking
+      let currentThreadId = threadId || `thread_${Date.now()}`;
 
-      // Prepare message content
-      let messageContent: any[] = [];
+      // Prepare message content for Chat Completions API
+      let messages: any[] = [];
+      
+      // Add system message for AutoBlog Assistant context
+      messages.push({
+        role: "system",
+        content: `Du bist der AutoBlog Assistant für New Age Fotografie, ein professioneller Fotograf in Wien. 
+        
+        Du erstellst deutsche Blog-Inhalte für Familienfotografie-Sessions basierend auf hochgeladenen Bildern. 
+        
+        Verwende einen warmen, einladenden Ton und erwähne:
+        - Wien/Wiener Kontext für lokale SEO
+        - Preise ab €149+ für Familienshootings
+        - Buchungslinks mit /warteliste/
+        - Professionelle Fotografie-Begriffe
+        - Emotionale Aspekte der Familienfotografie
+        
+        Erstelle strukturierte Blog-Posts mit:
+        - H1 Titel mit Wien-Bezug
+        - 3-5 H2 Abschnitte
+        - 800-1200 Wörter
+        - SEO-optimiert für "Familienfotograf Wien"
+        - Meta-Description unter 155 Zeichen`
+      });
+
+      // Add user message with images
+      let userContent: any[] = [];
       
       if (message && message.trim()) {
-        messageContent.push({
+        userContent.push({
           type: "text",
           text: message
         });
       }
 
-      // Handle image uploads for Assistant API
+      // Handle image uploads
       if (images && images.length > 0) {
-        console.log(`Processing ${images.length} images for Assistant API`);
+        console.log(`Processing ${images.length} images for vision analysis`);
         
         for (const image of images) {
           try {
-            // Upload image to OpenAI for Assistant API
-            const file = await openai.files.create({
-              file: fs.createReadStream(image.path),
-              purpose: "vision"
-            });
+            // Convert image to base64
+            const imageBuffer = fs.readFileSync(image.path);
+            const base64Image = imageBuffer.toString('base64');
+            const mimeType = image.mimetype || 'image/jpeg';
             
-            messageContent.push({
-              type: "image_file",
-              image_file: { file_id: file.id }
-            });
-            
-            console.log(`Uploaded image file: ${file.id}`);
-          } catch (imageError) {
-            console.error('Error uploading image to OpenAI:', imageError);
-            // Continue with other images
-          }
-        }
-      }
-
-      // Add message to thread
-      await openai.beta.threads.messages.create(currentThreadId, {
-        role: "user",
-        content: messageContent
-      });
-
-      // Run the assistant
-      const run = await openai.beta.threads.runs.create(currentThreadId, {
-        assistant_id: assistantId
-      });
-
-      console.log('Started assistant run:', run.id);
-
-      // Wait for completion
-      let runStatus = await openai.beta.threads.runs.retrieve(currentThreadId, run.id);
-      while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        runStatus = await openai.beta.threads.runs.retrieve(currentThreadId, run.id);
-      }
-
-      if (runStatus.status === 'completed') {
-        // Get the latest messages
-        const messages = await openai.beta.threads.messages.list(currentThreadId);
-        const latestMessage = messages.data[0];
-        
-        if (latestMessage.role === 'assistant') {
-          let responseText = '';
-          
-          // Extract text from message content
-          for (const content of latestMessage.content) {
-            if (content.type === 'text') {
-              responseText += content.text.value;
-            }
-          }
-
-          // Handle blog post creation if this is a generation request
-          let blogPost = null;
-          if (images && images.length > 0 && publishOption) {
-            try {
-              // Parse blog content from assistant response and create blog post
-              const title = extractTitle(responseText);
-              const content = responseText;
-              const excerpt = extractExcerpt(responseText);
-              
-              if (title && content) {
-                const slug = customSlug || title.toLowerCase().replace(/[^a-z0-9äöüß]/g, '-').replace(/-+/g, '-').trim('-');
-                
-                const blogPostData = {
-                  title,
-                  content,
-                  excerpt,
-                  slug,
-                  author: 'AutoBlog Assistant',
-                  status: publishOption.toUpperCase() as 'DRAFT' | 'PUBLISHED' | 'SCHEDULED',
-                  tags: 'Familienfotografie,Wien,Fotoshooting',
-                  metaDescription: excerpt?.substring(0, 155) || '',
-                  scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
-                  imageUrl: `/blog-images/${Date.now()}-blog-header.jpg`
-                };
-
-                // Save to database
-                const [newPost] = await db.insert(storage.schema.blogPosts).values(blogPostData).returning();
-                blogPost = newPost;
-                console.log('Created blog post:', blogPost.id);
+            userContent.push({
+              type: "image_url",
+              image_url: {
+                url: `data:${mimeType};base64,${base64Image}`
               }
-            } catch (blogError) {
-              console.error('Error creating blog post:', blogError);
-            }
+            });
+            
+            console.log(`Added image to content: ${image.originalname}`);
+          } catch (imageError) {
+            console.error('Error processing image:', imageError);
           }
-
-          res.json({
-            success: true,
-            response: responseText,
-            threadId: currentThreadId,
-            blogPost,
-            metadata: {
-              model: 'gpt-4-vision-preview',
-              assistantId,
-              runId: run.id
-            }
-          });
-        } else {
-          throw new Error('No assistant response found');
         }
-      } else {
-        throw new Error(`Assistant run failed with status: ${runStatus.status}`);
       }
+
+      // Add user message
+      if (userContent.length > 0) {
+        messages.push({
+          role: "user",
+          content: userContent
+        });
+      } else {
+        messages.push({
+          role: "user", 
+          content: "Erstelle einen professionellen Blog-Post für New Age Fotografie in Wien."
+        });
+      }
+
+      // Call OpenAI Chat Completions API
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o", // Use GPT-4o for vision capabilities
+        messages: messages,
+        max_tokens: 2000,
+        temperature: 0.7
+      });
+
+      const responseText = completion.choices[0]?.message?.content || '';
+      console.log('Generated blog content length:', responseText.length);
+
+      // Handle blog post creation if this is a generation request
+      let blogPost = null;
+      if (responseText && publishOption) {
+        try {
+          // Parse blog content and create blog post
+          const title = extractTitle(responseText);
+          const content = responseText;
+          const excerpt = extractExcerpt(responseText);
+          
+          if (title && content) {
+            const slug = customSlug || title.toLowerCase().replace(/[^a-z0-9äöüß]/g, '-').replace(/-+/g, '-').trim('-');
+            
+            const blogPostData = {
+              title,
+              content,
+              excerpt,
+              slug,
+              status: publishOption.toUpperCase() as 'DRAFT' | 'PUBLISHED' | 'SCHEDULED',
+              tags: ['Familienfotografie', 'Wien', 'Fotoshooting'],
+              metaDescription: excerpt?.substring(0, 155) || '',
+              scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
+              imageUrl: `/blog-images/${Date.now()}-blog-header.jpg`,
+              published: publishOption === 'publish',
+              publishedAt: publishOption === 'publish' ? new Date() : null
+            };
+
+            // Save to database  
+            const { blogPosts } = await import('@shared/schema');
+            const [newPost] = await db.insert(blogPosts).values(blogPostData).returning();
+            blogPost = newPost;
+            console.log('Created blog post:', blogPost.id);
+          }
+        } catch (blogError) {
+          console.error('Error creating blog post:', blogError);
+        }
+      }
+
+      res.json({
+        success: true,
+        response: responseText,
+        threadId: currentThreadId,
+        blogPost,
+        metadata: {
+          model: 'gpt-4o',
+          assistantId: 'chat-completions-fallback', // Indicate we used Chat Completions
+          tokens: completion.usage?.total_tokens || 0
+        }
+      });
       
     } catch (error: any) {
       console.error('AutoBlog Assistant chat error:', error);
