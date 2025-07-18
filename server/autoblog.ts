@@ -872,25 +872,47 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
     // Special handling for Blog Article - look for content after the header until next ** section
     if (sectionHeader === 'Blog Article') {
       const blogPatterns = [
-        // Pattern 1: **Blog Article:** followed by content (most common)
-        /\*\*Blog Article:\*\*\s*\n*([\s\S]*?)(?=\n\*\*[A-Z][^*]*\*\*|$)/i,
-        // Pattern 2: **Blog Article:** without newline
-        /\*\*Blog Article:\*\*\s*([\s\S]*?)(?=\n\*\*[A-Z][^*]*\*\*|$)/i,
-        // Pattern 3: Look for content between Blog Article and Review Snippets
-        /\*\*Blog Article:\*\*\s*\n*([\s\S]*?)(?=\*\*Review Snippets\*\*|$)/i
+        // Pattern 1: **Blog Article:** followed by content until next section or end
+        /\*\*Blog Article:\*\*\s*\n*([\s\S]*?)(?=\n\*\*(?:Review Snippets|Meta Description|Excerpt|Tags|Key Takeaways)\*\*|$)/i,
+        // Pattern 2: **Blog Article:** without newline, greedy capture
+        /\*\*Blog Article:\*\*\s*([\s\S]*?)(?=\n\*\*(?:Review Snippets|Meta Description|Excerpt|Tags|Key Takeaways)\*\*|$)/i,
+        // Pattern 3: Capture everything after Blog Article until any subsequent section
+        /\*\*Blog Article:\*\*\s*\n*([\s\S]*?)(?=\n\*\*[A-Z][^:]*\*\*|$)/i,
+        // Pattern 4: Most greedy - capture everything after Blog Article to end of content
+        /\*\*Blog Article:\*\*\s*([\s\S]*)/i
       ];
       
       for (let i = 0; i < blogPatterns.length; i++) {
         const match = content.match(blogPatterns[i]);
         if (match && match[1] && match[1].trim().length > 100) {
-          const extracted = match[1].trim();
+          let extracted = match[1].trim();
+          
+          // Clean up the extracted content - remove subsequent section headers that might have been captured
+          extracted = extracted.replace(/\n\*\*(?:Review Snippets|Meta Description|Excerpt|Tags|Key Takeaways).*$/s, '');
+          
           console.log(`Blog Article Pattern ${i + 1} matched: ${extracted.length} chars`);
+          console.log('Blog Article preview:', extracted.substring(0, 200) + '...');
           return extracted;
         }
       }
       
       console.log('Blog Article patterns failed, checking content structure...');
       console.log('Content preview:', content.substring(0, 500));
+      console.log('Looking for any substantial German content sections...');
+      
+      // Enhanced fallback: Look for substantial German content blocks
+      const contentSections = content.split(/\*\*[^*]+\*\*/);
+      for (const section of contentSections) {
+        const trimmed = section.trim();
+        if (trimmed.length > 500 && 
+            (trimmed.includes('Wien') || trimmed.includes('Fotografi') || 
+             trimmed.includes('Familie') || trimmed.includes('##') ||
+             trimmed.includes('Als ') || trimmed.includes('Die ') ||
+             trimmed.includes('Bei '))) {
+          console.log('Found substantial German content section:', trimmed.length, 'chars');
+          return trimmed;
+        }
+      }
     }
     
     // Standard patterns for other sections
