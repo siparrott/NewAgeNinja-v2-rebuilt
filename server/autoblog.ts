@@ -133,8 +133,7 @@ Key Features: High-quality photography, professional editing, personal service
   ): Promise<AutoBlogParsed> {
     console.log('🤖 Generating content with OpenAI Chat Completions API (fallback)...');
 
-    const imageAnalysis = await this.analyzeImages(images);
-    const prompt = this.buildPrompt(imageAnalysis, input, siteContext);
+    const prompt = `Create a German blog post about these photography images. Site context: ${siteContext}. User guidance: ${input.contentGuidance || 'Create a German blog post about this photography session.'}`;
 
     const messages = [
       {
@@ -156,7 +155,7 @@ Key Features: High-quality photography, professional editing, personal service
       });
 
       const content = response.choices[0]?.message?.content || '';
-      return this.parseResponse(content);
+      return this.parseStructuredResponse(content);
     } catch (error) {
       console.error('OpenAI API error:', error);
       throw new Error('Failed to generate content with OpenAI');
@@ -600,7 +599,7 @@ Create a blog post using your training.`;
       content_html: structuredContent,
       excerpt,
       tags,
-      seo_keywords: tags.slice(0, 3),
+
       keyphrase: 'Familienfotograf Wien',
       slug,
       status: 'DRAFT'
@@ -990,7 +989,7 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       content_html: htmlContent,
       excerpt: sections.excerpt || 'Professional photography session',
       tags: sections.tags,
-      seo_keywords: sections.tags.slice(0, 3),
+
       keyphrase: sections.tags[0] || 'photography',
       slug: sections.slug || 'photography-session',
       status: 'DRAFT'
@@ -1022,7 +1021,7 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
           let extracted = match[1].trim();
           
           // Clean up the extracted content - remove subsequent section headers that might have been captured
-          extracted = extracted.replace(/\n\*\*(?:Review Snippets|Meta Description|Excerpt|Tags|Key Takeaways).*$/s, '');
+          extracted = extracted.replace(/\n\*\*(?:Review Snippets|Meta Description|Excerpt|Tags|Key Takeaways)[\s\S]*$/, '');
           
           console.log(`Blog Article Pattern ${i + 1} matched: ${extracted.length} chars`);
           console.log('Blog Article preview:', extracted.substring(0, 200) + '...');
@@ -1149,7 +1148,12 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
         console.log(`Embedding ${images.length} images strategically throughout the blog post`);
         
         // Find all H2 sections to distribute images
-        const h2Matches = [...finalHtml.matchAll(/(<h2[^>]*>.*?<\/h2>)/gs)];
+        const h2Pattern = /<h2[^>]*>.*?<\/h2>/g;
+        const h2Matches: RegExpExecArray[] = [];
+        let match;
+        while ((match = h2Pattern.exec(finalHtml)) !== null) {
+          h2Matches.push(match);
+        }
         console.log(`Found ${h2Matches.length} H2 sections for image distribution`);
         
         if (h2Matches.length > 0) {
@@ -1177,7 +1181,12 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
           }
         } else {
           // Fallback: distribute images throughout the content by paragraphs
-          const paragraphs = [...finalHtml.matchAll(/(<p[^>]*>.*?<\/p>)/gs)];
+          const paragraphPattern = /<p[^>]*>.*?<\/p>/g;
+          const paragraphs: RegExpExecArray[] = [];
+          let paragraphMatch;
+          while ((paragraphMatch = paragraphPattern.exec(finalHtml)) !== null) {
+            paragraphs.push(paragraphMatch);
+          }
           if (paragraphs.length > 0) {
             const paragraphsPerImage = Math.ceil(paragraphs.length / images.length);
             

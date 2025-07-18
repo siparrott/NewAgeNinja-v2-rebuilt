@@ -21,6 +21,7 @@ export type AutoBlogParsed = z.infer<typeof autoBlogSchema>;
 // Input validation schema for the API endpoint
 export const autoBlogInputSchema = z.object({
   userPrompt: z.string().optional(),
+  contentGuidance: z.string().optional(),
   language: z.enum(["de", "en"]).default("de"),
   siteUrl: z.string().url().optional(),
   publishOption: z.enum(["draft", "publish", "schedule"]).default("draft"),
