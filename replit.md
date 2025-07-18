@@ -630,6 +630,14 @@ Preferred communication style: Simple, everyday language.
   * System automatically saves generated content to database with proper status tracking (DRAFT, PUBLISHED, SCHEDULED)
   * Complete end-to-end workflow: image upload → Assistant API analysis → content generation → database storage → publishing
   * Assistant API provides superior image analysis and content generation compared to Chat Completions API
+- July 18, 2025. Implemented voice-to-text functionality for AutoBlog prompt input:
+  * Added comprehensive voice recording interface with microphone access and MediaRecorder API
+  * Integrated OpenAI Whisper API for high-quality German language transcription
+  * Created browser compatibility checks and graceful fallback for unsupported browsers
+  * Added real-time recording timer, visual recording indicators, and transcription status badges
+  * Voice input automatically appends to text input for seamless hybrid voice/text workflow
+  * Supports German language transcription optimized for Austrian photography business context
+  * Complete voice-to-text workflow: record audio → upload to Whisper API → transcribe to German text → append to prompt
 
 ## Changelog
 

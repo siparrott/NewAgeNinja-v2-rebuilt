@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Upload, Send, Loader2, Calendar, Globe, FileText } from 'lucide-react';
+import { Upload, Send, Loader2, Calendar, Globe, FileText, Mic, MicOff, Volume2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface AutoBlogChatInterfaceProps {
@@ -34,7 +34,116 @@ export function AutoBlogChatInterface({ assistantId }: AutoBlogChatInterfaceProp
   const [scheduledTime, setScheduledTime] = useState('');
   const [customSlug, setCustomSlug] = useState('');
   
+  // Voice-to-text functionality
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [supportsSpeechRecognition, setSupportsSpeechRecognition] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check for browser support on component mount
+  useEffect(() => {
+    const checkSupport = () => {
+      const hasMediaRecorder = typeof MediaRecorder !== 'undefined';
+      const hasGetUserMedia = navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
+      setSupportsSpeechRecognition(hasMediaRecorder && hasGetUserMedia);
+    };
+    checkSupport();
+  }, []);
+
+  // Cleanup recording interval on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+        setAudioChunks([]);
+        await transcribeAudio(audioBlob);
+        
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      setRecordingTime(0);
+      setAudioChunks(chunks);
+
+      // Start recording timer
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('Unable to access microphone. Please check your permissions.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    }
+  };
+
+  const transcribeAudio = async (audioBlob: Blob) => {
+    setIsTranscribing(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (result.success && result.text) {
+        // Add transcribed text to input message
+        setInputMessage(prev => prev + (prev ? ' ' : '') + result.text);
+      } else {
+        throw new Error(result.error || 'Transcription failed');
+      }
+    } catch (error) {
+      console.error('Transcription error:', error);
+      alert('Failed to transcribe audio. Please try again.');
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const formatRecordingTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -311,13 +420,57 @@ export function AutoBlogChatInterface({ assistantId }: AutoBlogChatInterfaceProp
 
           {/* Message Input */}
           <div className="space-y-2">
-            <Label>Message</Label>
+            <div className="flex items-center justify-between">
+              <Label>Message</Label>
+              {supportsSpeechRecognition && (
+                <div className="flex items-center gap-2">
+                  {isRecording && (
+                    <Badge variant="destructive" className="flex items-center gap-1">
+                      <Volume2 className="h-3 w-3" />
+                      Recording: {formatRecordingTime(recordingTime)}
+                    </Badge>
+                  )}
+                  {isTranscribing && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Transcribing...
+                    </Badge>
+                  )}
+                  <Button
+                    type="button"
+                    variant={isRecording ? "destructive" : "outline"}
+                    size="sm"
+                    onClick={isRecording ? stopRecording : startRecording}
+                    disabled={isTranscribing}
+                    className="flex items-center gap-1"
+                  >
+                    {isRecording ? (
+                      <>
+                        <MicOff className="h-4 w-4" />
+                        Stop
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="h-4 w-4" />
+                        Voice
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
             <Textarea
-              placeholder="Describe what kind of blog content you want to generate from the uploaded images..."
+              placeholder="Describe what kind of blog content you want to generate from the uploaded images... (or use voice input)"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               rows={3}
+              disabled={isRecording}
             />
+            {!supportsSpeechRecognition && (
+              <p className="text-xs text-muted-foreground">
+                Voice input not supported in this browser. Please use a modern browser with microphone access.
+              </p>
+            )}
           </div>
 
           <Button

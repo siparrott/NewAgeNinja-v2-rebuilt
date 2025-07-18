@@ -804,6 +804,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  // Audio transcription endpoint using OpenAI Whisper
+  app.post("/api/transcribe", authenticateUser, upload.single('audio'), async (req: Request, res: Response) => {
+    try {
+      const audioFile = req.file;
+      
+      if (!audioFile) {
+        return res.status(400).json({ success: false, error: 'No audio file provided' });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ success: false, error: 'OpenAI API key not configured' });
+      }
+
+      console.log('Transcribing audio file:', audioFile.originalname, 'Size:', audioFile.size, 'bytes');
+
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Create a temporary file for OpenAI Whisper API
+      const fs = require('fs');
+      const path = require('path');
+      const os = require('os');
+      
+      const tempDir = os.tmpdir();
+      const tempFilePath = path.join(tempDir, `audio_${Date.now()}_${audioFile.originalname}`);
+      
+      // Write buffer to temporary file
+      fs.writeFileSync(tempFilePath, audioFile.buffer);
+      
+      // Create a ReadStream for OpenAI
+      const fileStream = fs.createReadStream(tempFilePath);
+      
+      // Transcribe using Whisper API
+      const transcription = await openai.audio.transcriptions.create({
+        file: fileStream,
+        model: "whisper-1",
+        language: "de", // German language for Austrian photography business
+        response_format: "text"
+      });
+
+      // Clean up temporary file
+      fs.unlinkSync(tempFilePath);
+
+      const transcribedText = transcription.trim();
+      console.log('Transcription successful:', transcribedText.substring(0, 100) + '...');
+
+      res.json({ 
+        success: true, 
+        text: transcribedText,
+        metadata: {
+          duration: audioFile.size,
+          model: 'whisper-1',
+          language: 'de'
+        }
+      });
+
+    } catch (error) {
+      console.error('Transcription error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Transcription failed' 
+      });
+    }
+  });
+
   // CRM Agent routes with Phase B write capabilities
   app.get('/api/crm/agent/status', async (req, res) => {
     try {
