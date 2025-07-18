@@ -4303,6 +4303,19 @@ Was interessiert Sie am meisten?`;
     }
   });
 
+  // Test endpoint for debugging
+  app.get("/api/autoblog/debug", async (req: Request, res: Response) => {
+    try {
+      res.json({
+        message: "AutoBlog system debug",
+        openaiAvailable: !!process.env.OPENAI_API_KEY,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // AutoBlog status endpoint
   app.get("/api/autoblog/status", authenticateUser, async (req: Request, res: Response) => {
     try {

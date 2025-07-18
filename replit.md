@@ -595,6 +595,14 @@ Preferred communication style: Simple, everyday language.
   * Improved image styling with enhanced shadows, borders, and responsive design
   * System now properly embeds all 3 uploaded images instead of duplicating one image
   * AutoBlog generates blog posts with properly distributed photography session images
+- July 18, 2025. Fixed critical AutoBlog system routing issue preventing Assistant API usage:
+  * Identified root cause: Vite middleware's catch-all route was intercepting ALL requests, including API endpoints
+  * API routes were returning HTML pages instead of JSON responses, preventing AutoBlog system from functioning
+  * Fixed server routing order to ensure API endpoints are processed before Vite's catch-all middleware
+  * Added debugging endpoint to verify API routing functionality and OpenAI connection status
+  * AutoBlog system now properly accesses /api/autoblog/generate endpoint and can use OpenAI Assistant API
+  * Resolved issue where sophisticated Assistant responses were falling back to generic Chat Completions
+  * System now ready to generate high-quality German content with actual image analysis using Assistant API
 
 ## Changelog
 
