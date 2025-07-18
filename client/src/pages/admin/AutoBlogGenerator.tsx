@@ -88,7 +88,17 @@ export default function AutoBlogGenerator() {
   };
 
   const generateBlogPost = async () => {
+    console.log('🔵 Generate button clicked - starting process...');
+    console.log('📊 Current state:', {
+      uploadedImages: uploadedImages.length,
+      contentGuidance: contentGuidance?.length || 0,
+      publishingOption,
+      contentLanguage,
+      websiteUrl
+    });
+
     if (uploadedImages.length === 0) {
+      console.log('❌ No images found - showing error toast');
       toast({
         title: "No images selected",
         description: "Please upload at least one image to generate content",
@@ -97,6 +107,7 @@ export default function AutoBlogGenerator() {
       return;
     }
 
+    console.log('✅ Images validated - proceeding with generation');
     setIsGenerating(true);
     
     try {
@@ -105,11 +116,13 @@ export default function AutoBlogGenerator() {
       
       // Add images to FormData
       uploadedImages.forEach((img, index) => {
+        console.log(`📎 Adding image ${index + 1}: ${img.name} (${img.file.size} bytes)`);
         formData.append('images', img.file);
       });
       
       // Add other form data
-      formData.append('userPrompt', contentGuidance || 'Professional photography session in Vienna studio');
+      const userPrompt = contentGuidance || 'Professional photography session in Vienna studio';
+      formData.append('userPrompt', userPrompt);
       formData.append('assistantId', 'asst_nlyO3yRav2oWtyTvkq0cHZaU');
       formData.append('publishOption', publishingOption);
       formData.append('language', contentLanguage === 'deutsch' ? 'de' : 'en');
@@ -118,22 +131,50 @@ export default function AutoBlogGenerator() {
         formData.append('customSlug', customSlug);
       }
 
-      console.log('🚀 Sending request to AutoBlog API with', uploadedImages.length, 'images');
+      console.log('🚀 Sending request to AutoBlog API with FormData:');
+      console.log('  - Images:', uploadedImages.length);
+      console.log('  - Prompt:', userPrompt);
+      console.log('  - Assistant ID: asst_nlyO3yRav2oWtyTvkq0cHZaU');
+      console.log('  - Language:', contentLanguage === 'deutsch' ? 'de' : 'en');
+
+      const startTime = Date.now();
+      console.log('⏰ Request started at:', new Date().toISOString());
 
       const response = await fetch('/api/autoblog/generate', {
         method: 'POST',
         body: formData, // No Content-Type header - browser sets it automatically with boundary
       });
 
+      const requestDuration = Date.now() - startTime;
+      console.log(`⏱️ Request completed in ${requestDuration}ms`);
+      console.log('📡 Response status:', response.status, response.statusText);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate content');
+        console.log('❌ Response not OK - reading error data...');
+        const errorText = await response.text();
+        console.log('🔴 Error response:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
+      console.log('✅ Response OK - parsing JSON...');
       const data = await response.json();
-      console.log('✅ AutoBlog response received:', data);
+      console.log('📄 AutoBlog response received:', {
+        success: data.success,
+        postId: data.post?.id,
+        aiMethod: data.ai?.method,
+        dataKeys: Object.keys(data)
+      });
 
       if (data.success && data.post) {
+        console.log('🎉 Success! Parsing blog post data...');
         // Parse the structured content from the real AutoBlog response
         const generatedPost = data.post;
         const structuredContent: GeneratedContent = {
@@ -145,24 +186,40 @@ export default function AutoBlogGenerator() {
           tags: generatedPost.tags || []
         };
 
+        console.log('📝 Structured content created:', {
+          title: structuredContent.title.substring(0, 50) + '...',
+          contentLength: structuredContent.content.length,
+          tagsCount: structuredContent.tags.length
+        });
+
         setGeneratedContent(structuredContent);
         
         toast({
           title: "Content generated successfully",
           description: `Blog post created using TOGNINJA BLOG WRITER Assistant (${data.ai?.method || 'Assistant API'})`,
         });
+        
+        console.log('🎊 Generation completed successfully!');
       } else {
-        throw new Error(data.error || 'Failed to generate structured content');
+        console.log('❌ Response missing success/post data:', data);
+        throw new Error(data.error || 'Failed to generate structured content - invalid response format');
       }
 
     } catch (error) {
-      console.error('Generation error:', error);
+      console.error('💥 Generation error caught:', error);
+      console.error('🔍 Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      
       toast({
         title: "Generation failed",
         description: error.message || "Failed to generate content. Please try again.",
         variant: "destructive",
       });
     } finally {
+      console.log('🏁 Finally block - resetting isGenerating to false');
       setIsGenerating(false);
     }
   };
