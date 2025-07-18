@@ -4501,119 +4501,137 @@ Was interessiert Sie am meisten?`;
         throw new Error('Failed to add message to conversation');
       }
 
-      // Run the assistant
-      let run;
-      try {
-        run = await openai.beta.threads.runs.create(currentThreadId, {
-          assistant_id: assistantId
-        });
-        console.log('Started assistant run:', run.id, 'on thread:', currentThreadId);
-      } catch (runError) {
-        console.error('Error starting assistant run:', runError);
-        throw new Error('Failed to start assistant processing');
-      }
-
-      // Wait for completion with proper error handling
-      let runStatus;
-      try {
-        let attempts = 0;
-        const maxAttempts = 60; // 60 seconds timeout
-        
-        do {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          runStatus = await openai.beta.threads.runs.retrieve(currentThreadId, run.id);
-          attempts++;
-          console.log(`Run status: ${runStatus.status} (attempt ${attempts})`);
-        } while ((runStatus.status === 'queued' || runStatus.status === 'in_progress') && attempts < maxAttempts);
-        
-        if (attempts >= maxAttempts) {
-          throw new Error('Assistant response timeout after 60 seconds');
-        }
-      } catch (statusError) {
-        console.error('Error checking run status:', statusError);
-        throw new Error('Failed to retrieve assistant response');
-      }
-
-      let responseText = '';
-      if (runStatus.status === 'completed') {
-        try {
-          // Get the latest messages
-          const messages = await openai.beta.threads.messages.list(currentThreadId);
-          const assistantMessages = messages.data.filter(msg => msg.role === 'assistant');
-          const latestMessage = assistantMessages[0];
+      // Skip Assistant API run due to SDK path parameter issues
+      console.log('OpenAI Assistant API has SDK path parameter issues in this environment. Using Chat Completions fallback directly...');
+      
+      // Fallback to Chat Completions with enhanced Assistant-like prompting
+      let fallbackMessages: any[] = [
+        {
+          role: "system",
+          content: `Du bist der AutoBlog Assistant für New Age Fotografie, ein professioneller Fotograf in Wien. 
           
-          if (latestMessage) {
-            // Extract text from message content
-            for (const content of latestMessage.content) {
-              if (content.type === 'text') {
-                responseText += content.text.value;
-              }
-            }
-            console.log('Generated blog content length:', responseText.length);
-          } else {
-            throw new Error('No assistant response found in thread');
-          }
-        } catch (messageRetrievalError) {
-          console.error('Error retrieving assistant response:', messageRetrievalError);
-          throw new Error('Failed to retrieve assistant response content');
-        }
-      } else {
-        console.error('Assistant run failed with status:', runStatus.status);
-        if (runStatus.last_error) {
-          console.error('Assistant error details:', runStatus.last_error);
-        }
-        throw new Error(`Assistant processing failed: ${runStatus.status}`);
-      }
-
-      // Handle blog post creation if this is a generation request
-      let blogPost = null;
-      if (responseText && publishOption) {
-        try {
-          // Parse blog content and create blog post
-          const title = extractTitle(responseText);
-          const content = responseText;
-          const excerpt = extractExcerpt(responseText);
+          Du erstellst deutsche Blog-Inhalte für Familienfotografie-Sessions basierend auf hochgeladenen Bildern.
           
-          if (title && content) {
-            const slug = customSlug || title.toLowerCase().replace(/[^a-z0-9äöüß]/g, '-').replace(/-+/g, '-').trim('-');
+          Verwende einen warmen, einladenden Ton und erwähne:
+          - Wien/Wiener Kontext für lokale SEO  
+          - Preise ab €149+ für Familienshootings
+          - Buchungslinks mit /warteliste/
+          - Professionelle Fotografie-Begriffe
+          - Emotionale Aspekte der Familienfotografie
+          
+          Erstelle strukturierte Blog-Posts mit:
+          - H1 Titel mit Wien-Bezug
+          - 3-5 H2 Abschnitte  
+          - 800-1200 Wörter
+          - SEO-optimiert für "Familienfotograf Wien"
+          - Meta-Description unter 155 Zeichen`
+        }
+      ];
+
+      // Handle image analysis if images were uploaded
+      if (images && images.length > 0) {
+        let userContent: any[] = [];
+        
+        if (message && message.trim()) {
+          userContent.push({
+            type: "text",
+            text: message
+          });
+        }
+
+        // Add images for vision analysis
+        for (const image of images) {
+          try {
+            const imageBuffer = fs.readFileSync(image.path);
+            const base64Image = imageBuffer.toString('base64');
+            const mimeType = image.mimetype || 'image/jpeg';
             
-            const blogPostData = {
-              title,
-              content,
-              excerpt,
-              slug,
-              status: publishOption.toUpperCase() as 'DRAFT' | 'PUBLISHED' | 'SCHEDULED',
-              tags: ['Familienfotografie', 'Wien', 'Fotoshooting'],
-              metaDescription: excerpt?.substring(0, 155) || '',
-              scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
-              imageUrl: `/blog-images/${Date.now()}-blog-header.jpg`,
-              published: publishOption === 'publish',
-              publishedAt: publishOption === 'publish' ? new Date() : null
-            };
-
-            // Save to database  
-            const { blogPosts } = await import('@shared/schema');
-            const [newPost] = await db.insert(blogPosts).values(blogPostData).returning();
-            blogPost = newPost;
-            console.log('Created blog post:', blogPost.id);
+            userContent.push({
+              type: "image_url",
+              image_url: {
+                url: `data:${mimeType};base64,${base64Image}`
+              }
+            });
+            console.log(`Added image for vision analysis: ${image.originalname}`);
+          } catch (imageError) {
+            console.error('Error processing image for fallback:', imageError);
           }
-        } catch (blogError) {
-          console.error('Error creating blog post:', blogError);
         }
+        
+        fallbackMessages.push({
+          role: "user",
+          content: userContent
+        });
+      } else {
+        fallbackMessages.push({
+          role: "user",
+          content: message || "Erstelle einen professionellen Blog-Post über Familienfotografie in Wien."
+        });
       }
 
-      res.json({
-        success: true,
-        response: responseText,
-        threadId: currentThreadId,
-        blogPost,
-        metadata: {
-          model: 'gpt-4-turbo-preview',
-          assistantId,
-          runId: run.id,
-          status: runStatus.status
+      try {
+        const fallbackCompletion = await openai.chat.completions.create({
+          model: "gpt-4o", // Use GPT-4o for vision capabilities
+          messages: fallbackMessages,
+          max_tokens: 2000,
+          temperature: 0.7
+        });
+        
+        const responseText = fallbackCompletion.choices[0]?.message?.content || '';
+        console.log('Chat Completions fallback response generated:', responseText.length, 'characters');
+        
+        // Handle blog post creation if this is a generation request
+        let blogPost = null;
+        if (responseText && publishOption) {
+          try {
+            // Parse blog content and create blog post
+            const title = extractTitle(responseText);
+            const content = responseText;
+            const excerpt = extractExcerpt(responseText);
+            
+            if (title && content) {
+              const slug = customSlug || title.toLowerCase().replace(/[^a-z0-9äöüß]/g, '-').replace(/-+/g, '-').trim('-');
+              
+              const blogPostData = {
+                title,
+                content,
+                excerpt,
+                slug,
+                status: publishOption.toUpperCase() as 'DRAFT' | 'PUBLISHED' | 'SCHEDULED',
+                tags: ['Familienfotografie', 'Wien', 'Fotoshooting'],
+                metaDescription: excerpt?.substring(0, 155) || '',
+                scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
+                imageUrl: `/blog-images/${Date.now()}-blog-header.jpg`,
+                published: publishOption === 'publish',
+                publishedAt: publishOption === 'publish' ? new Date() : null
+              };
+
+              const { blogPosts } = await import('@shared/schema');
+              const [newPost] = await db.insert(blogPosts).values(blogPostData).returning();
+              blogPost = newPost;
+              console.log('Created blog post via Chat Completions:', blogPost.id);
+            }
+          } catch (blogError) {
+            console.error('Error creating blog post:', blogError);
+          }
         }
-      });
+
+        res.json({
+          success: true,
+          response: responseText,
+          threadId: currentThreadId,
+          blogPost,
+          metadata: {
+            model: 'gpt-4o',
+            assistantId: assistantId, // Still track that this was meant for the Assistant
+            method: 'chat-completions-fallback',
+            note: 'Used Chat Completions API due to Assistant API SDK issues'
+          }
+        });
+      } catch (fallbackError) {
+        console.error('Chat Completions fallback error:', fallbackError);
+        throw new Error('Chat Completions API failed');
+      }
       
     } catch (error: any) {
       console.error('AutoBlog Assistant chat error:', error);

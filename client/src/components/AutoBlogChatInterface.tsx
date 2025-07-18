@@ -365,7 +365,7 @@ export function AutoBlogChatInterface({ assistantId }: AutoBlogChatInterfaceProp
           <CardTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
             Direct Assistant Chat
-            <Badge variant="secondary">Assistant ID: {assistantId.slice(-8)}</Badge>
+            <Badge variant="secondary">Assistant ID: {assistantId}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
