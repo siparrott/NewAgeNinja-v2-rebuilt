@@ -4515,45 +4515,89 @@ Was interessiert Sie am meisten?`;
         throw new Error('Failed to start assistant processing');
       }
 
-      // For now, let's use a working Chat Completions approach with Assistant ID tracking
-      console.log('Using Chat Completions API with Assistant ID tracking due to SDK compatibility issues');
+      // Use direct HTTP API calls to bypass SDK parameter ordering issues
+      console.log('Using direct HTTP API calls to work around SDK compatibility issues...');
       
-      const fallbackMessages: any[] = [
-        {
-          role: 'system',
-          content: `Du bist der AutoBlog Assistant für New Age Fotografie (Assistant ID: ${assistantId}), ein professioneller Fotograf in Wien. 
+      // Wait for the Assistant run to complete using direct HTTP API
+      let attempts = 0;
+      const maxAttempts = 60; // 2 minutes max
+      let runCompleted = false;
+      
+      while (attempts < maxAttempts && !runCompleted) {
+        try {
+          console.log(`Checking run status (attempt ${attempts + 1}) with threadId: ${currentThreadId}, runId: ${run.id}`);
           
-          Du erstellst deutsche Blog-Inhalte für Familienfotografie-Sessions basierend auf hochgeladenen Bildern.
+          const statusResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs/${run.id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+              'OpenAI-Beta': 'assistants=v2'
+            }
+          });
           
-          Verwende einen warmen, einladenden Ton und erwähne:
-          - Wien/Wiener Kontext für lokale SEO  
-          - Preise ab €149+ für Familienshootings
-          - Buchungslinks mit /warteliste/
-          - Professionelle Fotografie-Begriffe
-          - Emotionale Aspekte der Familienfotografie
+          if (!statusResponse.ok) {
+            throw new Error(`HTTP ${statusResponse.status}: ${statusResponse.statusText}`);
+          }
           
-          Erstelle strukturierte Blog-Posts mit:
-          - H1 Titel mit Wien-Bezug
-          - 3-5 H2 Abschnitte  
-          - 800-1200 Wörter
-          - SEO-optimiert für "Familienfotograf Wien"
-          - Meta-Description unter 155 Zeichen`
-        },
-        {
-          role: 'user',
-          content: message || "Erstelle einen professionellen Blog-Post über Familienfotografie in Wien."
+          const runStatus = await statusResponse.json();
+          console.log(`Assistant run status: ${runStatus.status} (attempt ${attempts + 1})`);
+          
+          if (runStatus.status === 'completed') {
+            console.log('Assistant run completed successfully!');
+            runCompleted = true;
+            break;
+          } else if (runStatus.status === 'failed' || runStatus.status === 'cancelled' || runStatus.status === 'expired') {
+            throw new Error(`Assistant run failed with status: ${runStatus.status}`);
+          }
+          
+          // Wait 2 seconds before checking again
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          attempts++;
+        } catch (statusError) {
+          console.error('Error checking run status via HTTP API:', statusError);
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
-      ];
-
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: fallbackMessages,
-        max_tokens: 4000,
-        temperature: 0.7
+      }
+      
+      if (!runCompleted) {
+        throw new Error('Assistant run timed out after 2 minutes');
+      }
+      
+      // Retrieve messages using direct HTTP API
+      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        }
       });
-
-      const responseText = completion.choices[0].message.content || '';
-      console.log('Generated blog content via Chat Completions with Assistant ID tracking:', responseText.length, 'characters');
+      
+      if (!messagesResponse.ok) {
+        throw new Error(`Failed to retrieve messages: ${messagesResponse.statusText}`);
+      }
+      
+      const messagesData = await messagesResponse.json();
+      const assistantMessages = messagesData.data.filter(msg => msg.role === 'assistant');
+      
+      if (assistantMessages.length === 0) {
+        throw new Error('No response from assistant');
+      }
+      
+      const latestMessage = assistantMessages[0];
+      let responseText = '';
+      
+      // Extract text content from the message
+      for (const content of latestMessage.content) {
+        if (content.type === 'text') {
+          responseText += content.text.value + '\n';
+        }
+      }
+      
+      responseText = responseText.trim();
+      console.log('Generated blog content via OpenAI Assistant API (HTTP):', responseText.length, 'characters');
 
       // Handle blog post creation if this is a generation request
       let blogPost = null;
@@ -4601,8 +4645,8 @@ Was interessiert Sie am meisten?`;
           assistantId: assistantId,
           runId: run.id,
           status: 'completed',
-          method: 'chat-completions-with-assistant-id-tracking',
-          note: 'Generated using Chat Completions API with your specific OpenAI Assistant ID tracking due to SDK compatibility issues'
+          method: 'openai-assistant-api',
+          note: 'Generated using your specific OpenAI Assistant (TOGNINJA BLOG WRITER) with full capabilities'
         }
       });
       
