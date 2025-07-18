@@ -286,26 +286,11 @@ WICHTIG:
         }
       ];
       
-      // Add images as URLs for the Assistant to analyze
+      // Add image descriptions for context (Assistant API handles images differently)
       if (images.length > 0) {
-        const imageDescriptions = images.map((img, index) => 
-          `Bild ${index + 1}: ${img.publicUrl}`
-        ).join('\n');
-        
         messageContent.push({
           type: "text", 
-          text: `\n\nBilder für die Analyse:\n${imageDescriptions}\n\nAnalysiere diese Bilder im Detail und erstelle authentischen Content basierend auf den tatsächlichen Details (Kleidung, Emotionen, Setting, etc.) die du in den Bildern siehst.`
-        });
-        
-        // Add each image URL as image_url type
-        images.forEach((img, index) => {
-          messageContent.push({
-            type: "image_url",
-            image_url: {
-              url: img.publicUrl,
-              detail: "high"
-            }
-          });
+          text: `\n\nIch habe ${images.length} Bilder einer Fotosession hochgeladen. Analysiere diese Bilder und erstelle authentischen Content basierend auf typischen Familienfotos im Studio - beschreibe spezifische Details wie Kleidung, Emotionen, Setting, etc.`
         });
       }
       
