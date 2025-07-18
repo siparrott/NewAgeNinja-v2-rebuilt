@@ -429,9 +429,24 @@ Analysiere die hochgeladenen Bilder und erstelle authentischen deutschen Content
    */
   async createBlogPost(aiContent: AutoBlogParsed, images: ProcessedImage[], authorId: string, input: AutoBlogInput): Promise<any> {
     try {
-      // Get existing slugs to ensure uniqueness
-      const existingSlugs = await storage.getAllBlogSlugs();
-      const uniqueSlug = generateUniqueSlug(cleanSlug(aiContent.slug), existingSlugs);
+      // Use custom slug if provided, otherwise generate from AI content
+      let finalSlug: string;
+      if (input.customSlug) {
+        console.log('Using custom slug:', input.customSlug);
+        const existingSlugs = await storage.getAllBlogSlugs();
+        const cleanedCustomSlug = cleanSlug(input.customSlug);
+        
+        // Check if custom slug already exists
+        if (existingSlugs.includes(cleanedCustomSlug)) {
+          throw new Error(`Custom slug "${cleanedCustomSlug}" already exists. Please choose a different URL slug.`);
+        }
+        
+        finalSlug = cleanedCustomSlug;
+      } else {
+        // Generate unique slug from AI content
+        const existingSlugs = await storage.getAllBlogSlugs();
+        finalSlug = generateUniqueSlug(cleanSlug(aiContent.slug), existingSlugs);
+      }
 
       console.log('Original AI content HTML length:', aiContent.content_html?.length || 0);
       
@@ -512,24 +527,32 @@ Analysiere die hochgeladenen Bilder und erstelle authentischen deutschen Content
       
       console.log('Final HTML with embedded images length:', finalHtml.length);
 
-      // Prepare blog post data with publishing logic
+      // Prepare blog post data with publishing logic and complete SEO metadata
       const blogPostData = {
-        title: aiContent.title,
-        slug: uniqueSlug,
+        title: aiContent.title || 'Generated Photography Blog Post',
+        slug: finalSlug,
         content: finalHtml, // Plain text version for search
         contentHtml: finalHtml, // HTML version for display with embedded images
-        excerpt: aiContent.excerpt,
+        excerpt: aiContent.excerpt || aiContent.meta_description || 'Professional photography session documentation',
         imageUrl: images[0]?.publicUrl || null,
-        seoTitle: aiContent.seo_title,
-        metaDescription: aiContent.meta_description,
+        seoTitle: aiContent.seo_title || aiContent.title || 'Professional Photography Session',
+        metaDescription: aiContent.meta_description || aiContent.excerpt || 'Explore our professional photography services in Vienna.',
         published: input.publishOption === 'publish',
         publishedAt: input.publishOption === 'publish' ? new Date() : null,
         scheduledFor: input.publishOption === 'schedule' && input.scheduledFor ? new Date(input.scheduledFor) : null,
         status: input.publishOption === 'publish' ? 'PUBLISHED' : 
                 input.publishOption === 'schedule' ? 'SCHEDULED' : 'DRAFT',
-        tags: aiContent.tags || [],
-        authorId: authorId,
+        tags: aiContent.tags || ['photography', 'vienna', 'family'],
+        authorId: authorId
       };
+      
+      console.log('Blog post SEO metadata check:');
+      console.log('- Title:', !!blogPostData.title, blogPostData.title?.length || 0, 'chars');
+      console.log('- SEO Title:', !!blogPostData.seoTitle, blogPostData.seoTitle?.length || 0, 'chars');
+      console.log('- Meta Description:', !!blogPostData.metaDescription, blogPostData.metaDescription?.length || 0, 'chars');
+      console.log('- Excerpt:', !!blogPostData.excerpt, blogPostData.excerpt?.length || 0, 'chars');
+      console.log('- Tags:', blogPostData.tags?.length || 0, 'tags');
+      console.log('- Custom slug used:', !!input.customSlug, 'Final slug:', finalSlug);
 
       // Validate blog post data before insertion
       const { insertBlogPostSchema } = await import('../shared/schema');

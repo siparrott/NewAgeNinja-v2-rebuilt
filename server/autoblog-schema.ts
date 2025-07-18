@@ -24,7 +24,8 @@ export const autoBlogInputSchema = z.object({
   language: z.enum(["de", "en"]).default("de"),
   siteUrl: z.string().url().optional(),
   publishOption: z.enum(["draft", "publish", "schedule"]).default("draft"),
-  scheduledFor: z.string().optional() // ISO string for scheduled publishing
+  scheduledFor: z.string().optional(), // ISO string for scheduled publishing
+  customSlug: z.string().optional() // Custom URL slug override
 });
 
 export type AutoBlogInput = z.infer<typeof autoBlogInputSchema>;

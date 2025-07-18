@@ -39,6 +39,7 @@ export default function AdminAutoBlogPage() {
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
   const [siteUrl, setSiteUrl] = useState('https://www.newagefotografie.com');
+  const [customSlug, setCustomSlug] = useState('');
   const [result, setResult] = useState<AutoBlogResult | null>(null);
   const [status, setStatus] = useState<AutoBlogStatus | null>(null);
 
@@ -138,6 +139,9 @@ export default function AdminAutoBlogPage() {
       formData.append('language', language);
       formData.append('publishOption', publishOption);
       formData.append('siteUrl', siteUrl);
+      if (customSlug) {
+        formData.append('customSlug', customSlug);
+      }
       
       // Add scheduling info if needed
       if (publishOption === 'schedule' && scheduleDate && scheduleTime) {
@@ -166,6 +170,7 @@ export default function AdminAutoBlogPage() {
         // Clear form
         setSelectedImages([]);
         setUserPrompt('');
+        setCustomSlug('');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -377,6 +382,21 @@ export default function AdminAutoBlogPage() {
                 placeholder="https://www.newagefotografie.com"
                 disabled={isGenerating}
               />
+            </div>
+
+            {/* Custom URL Slug */}
+            <div>
+              <Label htmlFor="customSlug">Custom URL Slug (Optional)</Label>
+              <Input
+                id="customSlug"
+                value={customSlug}
+                onChange={(e) => setCustomSlug(e.target.value)}
+                placeholder="e.g., my-custom-blog-post-url"
+                disabled={isGenerating}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                If specified, this exact URL slug will be used instead of auto-generating one from the title
+              </p>
             </div>
 
             {/* Publishing Options */}
