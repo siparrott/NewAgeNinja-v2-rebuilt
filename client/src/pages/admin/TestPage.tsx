@@ -39,15 +39,18 @@ const TestPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      console.log('🚀 FRONTEND: Making request to /api/test/chat');
+      console.log('🎯 FRONTEND: Making request to /api/togninja/chat - TOGNINJA BLOG WRITER ONLY');
       console.log('Request payload:', { message: input.trim(), threadId: threadId });
+      console.log('Target Assistant: asst_nlyO3yRav2oWtyTvkq0cHZaU');
       
-      const response = await fetch('/api/togninja/chat', {
+      const response = await fetch('/api/togninja/chat?' + new Date().getTime(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({
           message: input.trim(),

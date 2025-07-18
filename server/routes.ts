@@ -2968,12 +2968,11 @@ Bitte versuchen Sie es später noch einmal.`;
     }
   });
 
+  // REDIRECT OLD TEST CHAT TO TOGNINJA ENDPOINT
   app.post("/api/test/chat", async (req: Request, res: Response) => {
-    console.log("🔥🔥🔥 REAL TEST CHAT ENDPOINT HIT - TOGNINJA ASSISTANT 🔥🔥🔥");
+    console.log("🔄 REDIRECTING OLD /api/test/chat TO TOGNINJA ENDPOINT");
     console.log("Request body:", req.body);
-    console.log("Headers:", req.headers);
-    console.log("URL:", req.url);
-    console.log("Method:", req.method);
+    
     try {
       const { message, threadId } = req.body;
 
@@ -2985,169 +2984,122 @@ Bitte versuchen Sie es später noch einmal.`;
         return res.status(500).json({ error: "OpenAI API key not configured" });
       }
 
-      // Your specific assistant ID
-      const assistantId = 'asst_nlyO3yRav2oWtyTvkq0cHZaU';
+      const assistantId = "asst_nlyO3yRav2oWtyTvkq0cHZaU"; // TOGNINJA BLOG WRITER
+      let currentThreadId = threadId;
 
-      try {
-        // Create thread if not provided
-        let currentThreadId = threadId;
-        if (!currentThreadId) {
-          const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-              'Content-Type': 'application/json',
-              'OpenAI-Beta': 'assistants=v2'
-            }
-          });
-
-          if (!threadResponse.ok) {
-            throw new Error(`Failed to create thread: ${threadResponse.status}`);
-          }
-
-          const thread = await threadResponse.json();
-          currentThreadId = thread.id;
-        }
-
-        // Add message to thread
-        const messageResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
+      // Create new thread if needed
+      if (!currentThreadId) {
+        const threadResponse = await fetch('https://api.openai.com/v1/threads', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
             'Content-Type': 'application/json',
             'OpenAI-Beta': 'assistants=v2'
           },
-          body: JSON.stringify({
-            role: 'user',
-            content: message
-          })
+          body: JSON.stringify({})
         });
 
-        if (!messageResponse.ok) {
-          throw new Error(`Failed to add message: ${messageResponse.status}`);
+        if (!threadResponse.ok) {
+          throw new Error(`Failed to create thread: ${threadResponse.status}`);
         }
 
-        // Create run with your assistant
-        const runResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-            'OpenAI-Beta': 'assistants=v2'
-          },
-          body: JSON.stringify({
-            assistant_id: assistantId
-          })
-        });
-
-        if (!runResponse.ok) {
-          throw new Error(`Failed to create run: ${runResponse.status}`);
-        }
-
-        const run = await runResponse.json();
-
-        // Poll for completion
-        let runStatus = run.status;
-        let attempts = 0;
-        const maxAttempts = 30; // 30 seconds max
-
-        while (runStatus === 'queued' || runStatus === 'in_progress') {
-          if (attempts >= maxAttempts) {
-            throw new Error('Assistant response timeout');
-          }
-
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          const statusResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs/${run.id}`, {
-            headers: {
-              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-              'OpenAI-Beta': 'assistants=v2'
-            }
-          });
-
-          if (!statusResponse.ok) {
-            throw new Error(`Failed to check run status: ${statusResponse.status}`);
-          }
-
-          const statusData = await statusResponse.json();
-          runStatus = statusData.status;
-          attempts++;
-        }
-
-        if (runStatus !== 'completed') {
-          throw new Error(`Assistant run failed with status: ${runStatus}`);
-        }
-
-        // Get the assistant's response
-        const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            'OpenAI-Beta': 'assistants=v2'
-          }
-        });
-
-        if (!messagesResponse.ok) {
-          throw new Error(`Failed to get messages: ${messagesResponse.status}`);
-        }
-
-        const messagesData = await messagesResponse.json();
-        const assistantMessage = messagesData.data.find((msg: any) => msg.role === 'assistant');
-        
-        const response = assistantMessage?.content?.[0]?.text?.value || "I apologize, but I couldn't generate a response.";
-
-        console.log("🎯 SENDING TOGNINJA RESPONSE:", response.slice(0, 100));
-        res.json({ 
-          response,
-          threadId: currentThreadId,
-          assistantId: assistantId,
-          source: "TOGNINJA_BLOG_WRITER_ASSISTANT"
-        });
-
-      } catch (error) {
-        console.error("ERROR WITH OPENAI ASSISTANT API - FALLING BACK:", error);
-        console.error("Assistant ID attempted:", assistantId);
-        console.error("Thread ID attempted:", currentThreadId);
-        
-        // Fallback to Chat Completions API if Assistant API fails
-        const openai = new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY,
-        });
-
-        const fallbackCompletion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            {
-              role: "system",
-              content: "You are the TOGNINJA BLOG WRITER Assistant for New Age Fotografie photography studio in Vienna, Austria. Respond professionally about photography services, content creation, and business management."
-            },
-            {
-              role: "user",
-              content: message
-            }
-          ],
-          max_tokens: 1000,
-          temperature: 0.7,
-        });
-
-        const fallbackResponse = fallbackCompletion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
-
-        console.log("⚠️ SENDING FALLBACK RESPONSE:", fallbackResponse.slice(0, 100));
-        res.json({ 
-          response: fallbackResponse,
-          fallback: true,
-          assistantId: assistantId,
-          source: "FALLBACK_CHAT_COMPLETIONS"
-        });
+        const threadData = await threadResponse.json();
+        currentThreadId = threadData.id;
       }
 
+      // Add user message to thread
+      await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content: message
+        })
+      });
+
+      // Create run with TOGNINJA assistant
+      const runResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          assistant_id: assistantId
+        })
+      });
+
+      if (!runResponse.ok) {
+        throw new Error(`Failed to create run: ${runResponse.status}`);
+      }
+
+      const runData = await runResponse.json();
+      const runId = runData.id;
+
+      // Wait for completion
+      let runStatus = 'queued';
+      let attempts = 0;
+      const maxAttempts = 60;
+
+      while (runStatus !== 'completed' && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const statusResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs/${runId}`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+
+        if (!statusResponse.ok) {
+          throw new Error(`Failed to check run status: ${statusResponse.status}`);
+        }
+
+        const statusData = await statusResponse.json();
+        runStatus = statusData.status;
+        attempts++;
+      }
+
+      if (runStatus !== 'completed') {
+        throw new Error(`TOGNINJA assistant run failed with status: ${runStatus}`);
+      }
+
+      // Get response
+      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+
+      if (!messagesResponse.ok) {
+        throw new Error(`Failed to get messages: ${messagesResponse.status}`);
+      }
+
+      const messagesData = await messagesResponse.json();
+      const assistantMessage = messagesData.data.find((msg: any) => msg.role === 'assistant');
+      
+      const response = assistantMessage?.content?.[0]?.text?.value || "I apologize, but I couldn't generate a response.";
+
+      console.log("🎯 TOGNINJA RESPONSE VIA REDIRECT:", response.slice(0, 100));
+      res.json({ 
+        response,
+        threadId: currentThreadId,
+        assistantId: assistantId,
+        source: "TOGNINJA_BLOG_WRITER_ASSISTANT_REDIRECT"
+      });
+      
     } catch (error) {
-      console.error("Error in test chat:", error);
-      
-      if (error instanceof Error && error.message.includes('API key')) {
-        return res.status(500).json({ error: "OpenAI API configuration error" });
-      }
-      
-      res.status(500).json({ error: "Internal server error" });
+      console.error("TOGNINJA Assistant redirect error:", error);
+      res.status(500).json({ 
+        error: "TOGNINJA Assistant redirect failed",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
