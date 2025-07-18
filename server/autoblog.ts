@@ -142,8 +142,116 @@ Key Features: High-quality photography, professional editing, personal service
   }
 
   /**
-   * Generate content using Chat Completions API with your REAL TOGNINJA ASSISTANT INSTRUCTIONS
-   * (Assistant API doesn't support vision - using Chat API with your exact sophisticated instructions)
+   * Gather comprehensive context for REAL Assistant
+   */
+  async gatherComprehensiveContext(images: ProcessedImage[], input: AutoBlogInput): Promise<string> {
+    console.log('🔍 === GATHERING COMPREHENSIVE CONTEXT FOR REAL ASSISTANT ===');
+    
+    // 1. Analyze images with Chat Completions API (for vision capabilities)
+    let imageAnalysis = '';
+    if (images.length > 0) {
+      console.log('📸 STEP 1: Analyzing uploaded images...');
+      try {
+        const imageMessages = [
+          {
+            role: "user" as const,
+            content: [
+              {
+                type: "text" as const,
+                text: "Analyze these photography session images. What type of session is this? Describe the subjects, setting, emotions, clothing, and any specific details you can see. Be very specific about whether this is newborn, family, maternity, business headshots, etc."
+              },
+              ...images.map(img => ({
+                type: "image_url" as const,
+                image_url: {
+                  url: `data:image/jpeg;base64,${img.buffer.toString('base64')}`
+                }
+              }))
+            ]
+          }
+        ];
+
+        const imageResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: imageMessages,
+          max_tokens: 500
+        });
+
+        imageAnalysis = imageResponse.choices[0]?.message?.content || '';
+        console.log('✅ Image Analysis Complete:', imageAnalysis.substring(0, 200) + '...');
+      } catch (error) {
+        console.error('❌ Image analysis failed:', error);
+        imageAnalysis = 'General photography session';
+      }
+    }
+
+    // 2. Scrape homepage for business voice and context
+    console.log('🌐 STEP 2: Gathering website context...');
+    let websiteContext = '';
+    try {
+      const homepageResponse = await fetch('https://www.newagefotografie.com');
+      if (homepageResponse.ok) {
+        const htmlContent = await homepageResponse.text();
+        // Extract key content for voice analysis
+        const textContent = htmlContent
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .substring(0, 2000);
+        
+        websiteContext = `WEBSITE VOICE ANALYSIS: ${textContent}`;
+        console.log('✅ Website context gathered:', websiteContext.substring(0, 150) + '...');
+      }
+    } catch (error) {
+      console.error('❌ Website scraping failed:', error);
+    }
+
+    // 3. Competitor research (limited to avoid rate limits)
+    console.log('🔍 STEP 3: Basic SEO context...');
+    const seoContext = `
+VIENNA PHOTOGRAPHY SEO CONTEXT:
+- Location: Wien (Vienna), Austria
+- Key areas: 1050 Wien, Schönbrunner Straße, Kettenbrückengasse
+- Competitors: Family photographers in Vienna, newborn photographers Vienna
+- Target keywords: Familienfotograf Wien, Neugeborenenfotos Wien, Familienshooting Wien
+- Pricing range: €95-€295 for sessions
+- Unique selling points: Studio location, professional equipment, personalized experience
+`;
+
+    // 4. Business details and reviews context
+    const businessContext = `
+NEW AGE FOTOGRAFIE BUSINESS DETAILS:
+- Studio: Schönbrunner Str. 25, 1050 Wien, Austria
+- Contact: hallo@newagefotografie.com, +43 677 933 99210
+- Hours: Fr-So: 09:00 - 17:00
+- Website: https://www.newagefotografie.com
+- Booking: /warteliste/ (waitlist page)
+- Specialties: Family portraits, newborn photography, maternity sessions, business headshots
+- Location benefits: 5 minutes from Kettenbrückengasse, street parking available
+- Studio features: Professional lighting, props, comfortable environment
+`;
+
+    const comprehensiveContext = `
+IMAGE ANALYSIS:
+${imageAnalysis}
+
+${websiteContext}
+
+${seoContext}
+
+${businessContext}
+
+USER SESSION DETAILS:
+${input.userPrompt || 'Professional photography session in Vienna studio'}
+`;
+
+    console.log('✅ COMPREHENSIVE CONTEXT COMPLETE - Ready for REAL Assistant');
+    return comprehensiveContext;
+  }
+
+  /**
+   * Generate content using REAL TOGNINJA ASSISTANT with comprehensive context
    */
   async generateWithAssistantAPI(
     assistantId: string, 
@@ -152,183 +260,133 @@ Key Features: High-quality photography, professional editing, personal service
     siteContext: string
   ): Promise<AutoBlogParsed | null> {
     try {
-      console.log('🎯 === USING YOUR REAL TOGNINJA BLOG WRITER INSTRUCTIONS ===');
-      console.log('🔑 Assistant ID (YOUR SOPHISTICATED TRAINING):', assistantId);
-      console.log('📸 Processing', images.length, 'images with REAL image analysis');
-      console.log('🌐 Language:', input.language);
-      console.log('📝 User prompt:', input.userPrompt?.substring(0, 100) + '...');
+      console.log('🎯 === REAL TOGNINJA BLOG WRITER ASSISTANT WITH FULL CONTEXT ===');
+      console.log('🔑 Assistant ID:', assistantId);
+      console.log('📸 Processing', images.length, 'images');
       
-      // Use your EXACT TOGNINJA BLOG WRITER ASSISTANT INSTRUCTIONS for proper content
-      console.log('🎯 USING YOUR REAL SOPHISTICATED ASSISTANT INSTRUCTIONS WITH IMAGE ANALYSIS');
+      // STEP 1: Gather comprehensive context
+      const comprehensiveContext = await this.gatherComprehensiveContext(images, input);
       
-      // Your EXACT Assistant instructions from the API response
-      const assistantInstructions = `Humanized, Mentor-Tone, SEO-Ready, Undetectably AI
+      // STEP 2: Use REAL Assistant API with context as DATA (not prompt override)
+      console.log('🎯 SENDING CONTEXT TO REAL ASSISTANT - NO PROMPT OVERRIDE');
+      
+      const userMessage = `CONTEXT DATA FOR BLOG CREATION:
 
-🧠 Context:
-You're my content-writing sidekick for New Age Fotografie, a Vienna photography studio specializing in family, newborn, and portrait photography. We speak directly to clients and students like real humans. You write like I talk. This is not a blog post. It's a one-to-one convo — with substance, soul, and structure.
+${comprehensiveContext}
 
-Tone = founder + mentor + experience-led
-Your default voice combines:
+TASK: Create an authentic German blog post using your sophisticated training and the above context data. Use your internal prompts and knowledge to generate the complete content package with all sections.`;
 
-🎯 Sabri Suby (no-BS sales copy)
-📸 Real-world photo biz owner (not an AI)  
-👨‍🏫 Mentor explaining things clearly to a student
-💬 Relatable, first-person tone with light imperfection
-
-🔍 You Must Ensure:
-✅ Content passes AI detection (Originality.ai, GPTZero) by:
-- Varying sentence length + rhythm
-- Using idioms, human anecdotes, casual fragments
-- Avoiding robotic transitions or overstructured tone
-- Sprinkling natural glitches: "gonna", "let's be real", "yep", "fair enough"
-- Using first-person perspective
-- Writing as if it was manually written over 3 days, not generated in 30 seconds
-
-💡 Your Task:
-Create a full content package, structured for SEO blog article with more than 800 words and real-human storytelling:
-- Headline
-- Slug  
-- H1
-- 6–8 H2s (each 300–500 words)
-- Key takeaways
-- Full blog article (informal, personal tone)
-- Review table
-- Social posts
-- Meta description
-- Final prompt for client feedback
-
-♻️ YOAST SEO COMPLIANCE (Built-in):
-Keyphrase: Based on image content and Vienna location
-Include it in:
-- SEO title
-- Slug
-- H1
-- First image ALT
-- First paragraph
-- At least one H2
-- Twice minimum in the body
-- Meta description (CTA included)
-- Meta description: 120–156 chars
-- Flesch Reading Ease > 60
-- Passive voice < 10%
-- Long sentences < 25%
-- Transition words > 30%
-- Paragraphs < 150 words
-- Internal + external links
-
-🚫 NEVER USE:
-Words or phrases from marketing language list:
-"Step into," "unleash," "embrace your journey," "buckle up," "believe it or not," "elevate," "transform," "revolutionary," etc.
-
-Use natural, specific, grounded language.
-
-✅ Output Format (Markdown):
-**SEO Title:**  
-**Slug:**  
-**Headline (H1):**  
-**Outline:**  
-**Key Takeaways:**  
-**Blog Article:**  
-**Review Snippets:**  
-**Meta Description:**  
-**Excerpt:**
-**Tags:**
-
-Business Context: New Age Fotografie, Schönbrunner Str. 25, 1050 Wien, Austria. Professional photography studio specializing in family portraits, newborn photography, maternity sessions, and business headshots. Contact: hallo@newagefotografie.com, +43 677 933 99210. Website: https://www.newagefotografie.com, Booking: /warteliste/
-
-CRITICAL: Analyze the uploaded images carefully to determine the photo session type (newborn, family, maternity, etc.) and create content specifically about what you see in the images.`;
-
-      const userMessage = `Fotosession Details: ${input.userPrompt || 'Professionelle Fotosession Wien Studio'}
-
-Additional Context: ${siteContext}
-
-IMPORTANT: Analyze the uploaded photography session images and create an authentic German blog post about the specific type of session shown in the images (newborn, family, maternity, etc.). Include Vienna-specific references, pricing hints, and links to /warteliste/ for bookings.`;
-
-      // Create thread
+      // Create thread for REAL Assistant
       const thread = await openai.beta.threads.create();
       
-      // Upload images to OpenAI Files API for Assistant usage
-      const uploadedFileIds: string[] = [];
-      
-      if (images.length > 0) {
-        console.log('🖼️ UPLOADING IMAGES TO OPENAI FOR REAL ASSISTANT ANALYSIS...');
-        
-        for (let i = 0; i < images.length; i++) {
-          const image = images[i];
-          try {
-            console.log(`Uploading image ${i + 1}: ${image.filename}`);
-            
-            // Create a buffer from the image for OpenAI File upload
-            const fs = await import('fs');
-            const path = await import('path');
-            
-            // Read the saved image file
-            const imagePath = path.join(process.cwd(), 'server/public/blog-images', image.filename);
-            const imageBuffer = fs.readFileSync(imagePath);
-            
-            // Create a readable stream for OpenAI File upload (Node.js compatible)
-            const { Readable } = await import('stream');
-            const imageStream = Readable.from(imageBuffer);
-            (imageStream as any).path = image.filename; // Add filename for OpenAI
-            
-            // Upload to OpenAI Files API
-            const file = await openai.files.create({
-              file: imageStream,
-              purpose: 'vision'
-            });
-            
-            uploadedFileIds.push(file.id);
-            console.log(`✅ Image ${i + 1} uploaded successfully: ${file.id}`);
-            
-          } catch (uploadError) {
-            console.error(`❌ Failed to upload image ${i + 1}:`, uploadError);
-          }
-        }
-      }
-      
-      // Create message content with text and uploaded image references
-      const messageContent = [
-        {
-          type: "text",
-          text: userMessage
-        }
-      ];
-      
-      // Add image file references if uploaded successfully
-      if (uploadedFileIds.length > 0) {
-        uploadedFileIds.forEach(fileId => {
-          messageContent.push({
-            type: "image_file",
-            image_file: {
-              file_id: fileId
-            }
-          });
-        });
-        
-        console.log(`📸 REAL ASSISTANT NOW HAS ACCESS TO ${uploadedFileIds.length} ACTUAL IMAGES!`);
-      }
-      
+      // Send message to REAL Assistant (no file uploads needed - context is in text)
       const message = await openai.beta.threads.messages.create(thread.id, {
         role: "user",
-        content: messageContent
+        content: userMessage
       });
 
-      // Run the assistant
-      console.log('Creating assistant run...');
+      // Run the REAL Assistant
+      console.log('🚀 Running REAL TOGNINJA BLOG WRITER Assistant...');
       const run = await openai.beta.threads.runs.create(thread.id, {
         assistant_id: assistantId
       });
-      console.log('Run created with ID:', run.id);
+      console.log('✅ Assistant run created:', run.id);
 
-      // Wait for completion using direct HTTP API to avoid SDK parameter ordering bugs
-      console.log('Using direct HTTP API calls to work around SDK compatibility issues...');
-      let attempts = 0;
-      const maxAttempts = 30;
+      // Wait for completion using direct HTTP API calls (avoiding SDK bugs)
+      console.log('⏳ Waiting for REAL Assistant to complete...');
       let runCompleted = false;
-      
-      while (attempts < maxAttempts && !runCompleted) {
+      let attempts = 0;
+      const maxAttempts = 30; // 60 seconds max wait
+
+      while (!runCompleted && attempts < maxAttempts) {
         try {
-          console.log(`Checking run status (attempt ${attempts + 1}) with threadId: ${thread.id}, runId: ${run.id}`);
+          const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+              'OpenAI-Beta': 'assistants=v2'
+            }
+          });
+          
+          if (!statusResponse.ok) {
+            throw new Error(`Status check failed: ${statusResponse.statusText}`);
+          }
+          
+          const runStatus = await statusResponse.json();
+          console.log(`🔄 Assistant status: ${runStatus.status} (attempt ${attempts + 1}/${maxAttempts})`);
+          
+          if (runStatus.status === 'completed') {
+            runCompleted = true;
+            console.log('🎉 REAL Assistant completed successfully!');
+            break;
+          } else if (runStatus.status === 'failed' || runStatus.status === 'cancelled' || runStatus.status === 'expired') {
+            console.error('❌ Assistant run failed with status:', runStatus.status);
+            if (runStatus.last_error) {
+              console.error('❌ Error details:', runStatus.last_error);
+            }
+            throw new Error(`Assistant run failed with status: ${runStatus.status}`);
+          }
+          
+          // Wait 2 seconds before checking again
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          attempts++;
+        } catch (statusError) {
+          console.error('❌ Error checking Assistant status:', statusError);
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+      
+      if (!runCompleted) {
+        console.log('⏰ Assistant timed out after maximum attempts');
+        return null;
+      }
+
+      // Retrieve messages from REAL Assistant
+      console.log('📥 Retrieving REAL Assistant response...');
+      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+      
+      if (!messagesResponse.ok) {
+        throw new Error(`Failed to retrieve messages: ${messagesResponse.statusText}`);
+      }
+      
+      const messagesData = await messagesResponse.json();
+      const assistantMessages = messagesData.data.filter(msg => msg.role === 'assistant');
+      
+      if (assistantMessages.length === 0) {
+        throw new Error('No response from REAL Assistant');
+      }
+      
+      const lastMessage = assistantMessages[0];
+      console.log('📝 REAL Assistant response received!');
+      console.log('📊 Response length:', lastMessage?.content?.[0]?.text?.value?.length || 0, 'characters');
+      
+      if (lastMessage.content[0].type === 'text') {
+        const content = lastMessage.content[0].text.value;
+        console.log('✅ REAL Assistant content preview:', content.substring(0, 300) + '...');
+
+        // Parse the sophisticated response from REAL Assistant
+        const parsedContent = this.parseStructuredResponse(content);
+        
+        return parsedContent;
+      }
+
+      console.log('❌ REAL Assistant failed to return text content');
+      return null;
+      
+    } catch (error) {
+      console.error('❌ REAL Assistant error:', error);
+      return null;
+    }
+  }
           
           const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
             method: 'GET',
