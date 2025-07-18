@@ -55,6 +55,7 @@ import AdminBlogEditPage from './pages/admin/AdminBlogEditPage';
 import KnowledgeBasePage from './pages/admin/KnowledgeBasePage';
 import CRMOperationsAssistant from './pages/admin/CRMOperationsAssistant';
 import AdminAutoBlogPage from './pages/admin/AdminAutoBlogPage';
+import AutoBlogGenerator from './pages/admin/AutoBlogGenerator';
 import TestPage from './pages/admin/TestPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CartPage from './pages/CartPage';
@@ -382,6 +383,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <AdminAutoBlogPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/autoblog-generator" 
+                  element={
+                    <ProtectedRoute>
+                      <AutoBlogGenerator />
                     </ProtectedRoute>
                   } 
                 />
