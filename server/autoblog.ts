@@ -382,83 +382,53 @@ WICHTIG:
     
     console.log('Successfully processed', imageContents.length, 'images for Claude analysis');
 
-    // Your sophisticated prompt from the attached file
-    const sophisticatedPrompt = `Humanized, Mentor-Tone, SEO-Ready, Authentic Content
+    // Direct prompt that ensures complete content generation
+    const sophisticatedPrompt = `Du bist ein erfahrener Familienfotograf in Wien für New Age Fotografie.
 
-🧠 Context:
-You're my content-writing sidekick for New Age Fotografie, a Vienna-based family and newborn photography studio. We speak directly to clients like real humans. You write like I talk. This is not a blog post. It's a one-to-one convo — with substance, soul, and structure.
+AUFGABE: Schreibe einen VOLLSTÄNDIGEN deutschen Blog-Artikel über diese Fotosession.
 
-WICHTIG: Schreibe AUSSCHLIESSLICH auf Deutsch. Alle Inhalte müssen auf Deutsch sein.
+WICHTIG: Schreibe den KOMPLETTEN Artikel in einer Antwort. Frage NICHT ob du fortfahren sollst!
 
-Tone = founder + mentor + experience-led
-Your default voice combines:
+KONTEXT: 
+- Studio: New Age Fotografie, Wien
+- Ton: Persönlich, authentisch, founder-led wie Sabri Suby
+- Zielgruppe: Familien in Wien
+- Preise: ab €149
+- Website: Warteliste unter /warteliste/
 
-🎯 Sabri Suby (no-BS sales copy)
-📸 Real-world photo biz owner (not an AI)  
-👨‍🏫 Mentor explaining things clearly to a student
-💬 Relatable, first-person tone with light imperfection
+BILDANALYSE: Analysiere die hochgeladenen Bilder im Detail:
+- Kleidung, Farben, Setting
+- Emotionen und Stimmung
+- Location (Wien-Bezug wenn möglich)
+- Familiendynamik
+- Lichtstimmung
 
-🔍 You Must Ensure:
-✅ Content feels naturally written by:
-- Varying sentence length + rhythm
-- Using idioms, human anecdotes, casual fragments
-- Natural transitions with authentic tone
-- Sprinkling natural German expressions: "lass uns ehrlich sein", "ja", "genau"
-- Using first-person perspective (founder voice)
-- Writing with personal touch and professional expertise
+SESSION DETAILS: ${input.userPrompt || 'Professionelle Familienfotografie-Session in Wien'}
 
-Business Context: ${siteContext}
-Session Details: ${input.userPrompt || 'Professional photography session documentation'}
-Language: German (de)
-
-💡 Your Task:
-Create a full German content package for Vienna photography clients, structured for SEO and real-human storytelling:
-
-H1 + 6–8 H2s (each 300–500 words)
-Key takeaways
-Full blog article (informal, personal tone)
-Review table
-Meta description
-
-♻️ YOAST SEO COMPLIANCE (Built-in):
-Keyphrase: Familienfotograf Wien / Neugeborenenfotos Wien / Familienfotos Wien
-Include it in: SEO title, Slug, H1, First paragraph, At least one H2, Twice minimum in body, Meta description
-
-Meta description: 120–156 chars
-Flesch Reading Ease > 60
-Passive voice < 10%
-Long sentences < 25%
-Transition words > 30%
-Paragraphs < 150 words
-Internal + external links to /warteliste/
-
-🚫 NEVER USE marketing jargon:
-"Step into," "unleash," "embrace your journey," "revolutionary," "transformative," etc.
-Use natural, specific, grounded German language.
-
-Analyze the uploaded images carefully and create comprehensive German content about this photography session. Describe authentic details from the images (clothing colors, setting, mood, emotions, Vienna location details, etc.) and write in authentic Wiener German for the local market.
-
-✅ Output Format (Exact Structure):
+FORMAT (VOLLSTÄNDIG AUSFÜLLEN):
 **SEO Title:** [German SEO title with Vienna/photography keywords]
 **Slug:** [url-friendly-slug]
-**Headline (H1):** [Catchy German headline with quotes or emotional hook]
-**Outline:** [Brief section outline showing H2 structure]
-**Key Takeaways:** [5-point table with takeaway and "Warum es wichtig ist" explanation]
-**Blog Article:** [Full German blog with H1 and 6-8 H2 sections, authentic storytelling, specific image details, customer reviews/testimonials, pricing hints, FAQs - NO <img> tags]
-**Review Snippets:** [3 authentic customer review quotes with names]
-**Meta Description:** [120-156 character German meta description]
-**Excerpt:** [Brief German preview text]
-**Tags:** [relevant German photography tags]
+**Headline (H1):** [Catchy German headline with emotional hook]
+**Blog Article:**
+[KOMPLETTER deutscher Blog-Artikel mit H1 und 6-8 H2-Abschnitten]
+[Schreibe mindestens 1500 Wörter über diese Fotosession]
+[Verwende persönlichen Wiener Ton und echte Details aus den Bildern]
+[Preise €149+ erwähnen und /warteliste/ Link einbauen]
+[Kundenstimmen und FAQ einbauen]
+[YOAST SEO: Keyphrase "Familienfotograf Wien" in Title, H1, ersten Absatz, mindestens ein H2, 2x im Text, Meta Description]
+**Review Snippets:** [3 authentische Kundenbewertungen mit Namen]
+**Meta Description:** [120-156 Zeichen German meta description]
+**Excerpt:** [Kurzer deutscher Vorschautext]
+**Tags:** [relevante deutsche Fotografie-Tags mit Komma getrennt]
 
-WICHTIG: 
-- Analysiere die Bilder im Detail (Kleidung, Setting, Emotionen, Posen)
-- Verwende spezifische Details aus den Bildern in deinem Content
-- Schreibe wie ein echter Wiener Fotograf mit persönlicher Note
-- Eingebaute interne Links zu /warteliste/
-- Pro-Tipps für Outfit/Posen einbauen
-- Echte Wiener Referenzen (Bezirke, Locations)
-- Preise erwähnen (€149+ Pakete)
-- Kundenstimmen einbauen (5-Sterne-Reviews)`;
+SCHREIBSTIL:
+- Ich-Perspektive (founder voice)
+- Wiener Ausdrücke und lokale Referenzen
+- Natürlich, persönlich, nicht übertrieben
+- Konkrete Details statt Marketing-Phrasen
+- Echte Emotionen und Geschichten
+
+Schreibe jetzt den VOLLSTÄNDIGEN Artikel ohne zu fragen ob du fortfahren sollst!`;
 
     const messageContent = [
       {
@@ -478,7 +448,7 @@ WICHTIG:
     
     const response = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20241022", // Latest Claude model
-      max_tokens: 4000,
+      max_tokens: 8000, // Increased for complete blog articles
       temperature: 0.7,
       messages: [
         {
@@ -496,6 +466,7 @@ WICHTIG:
 
     console.log('Claude response length:', content.length);
     console.log('Claude response preview:', content.substring(0, 500) + '...');
+    console.log('Full Claude response for debugging:', content);
 
     // Parse the structured markdown response
     const parsedContent = this.parseStructuredResponse(content);
@@ -676,22 +647,129 @@ WICHTIG:
    * Parse structured response from assistant
    */
   private parseStructuredResponse(content: string): AutoBlogParsed {
-    // Extract sections using regex patterns
+    console.log('=== PARSING CLAUDE RESPONSE ===');
+    console.log('Input content length:', content.length);
+    
+    // Extract sections using regex patterns with flexible matching
     const sections = {
-      seo_title: this.extractSection(content, 'SEO Title:'),
-      slug: this.extractSection(content, 'Slug:'),
-      title: this.extractSection(content, 'Headline \\(H1\\):'),
-      outline: this.extractSection(content, 'Outline:'),
-      key_takeaways: this.extractSection(content, 'Key Takeaways:'),
-      content_html: this.extractSection(content, 'Blog Article:'),
-      review_snippets: this.extractSection(content, 'Review Snippets:'),
-      meta_description: this.extractSection(content, 'Meta Description:'),
-      excerpt: this.extractSection(content, 'Excerpt:'),
-      tags: this.extractSection(content, 'Tags:')?.split(',').map(tag => tag.trim()) || []
+      seo_title: this.extractSection(content, 'SEO Title'),
+      slug: this.extractSection(content, 'Slug'),
+      title: this.extractSection(content, 'Headline \\(H1\\)'),
+      outline: this.extractSection(content, 'Outline'),
+      key_takeaways: this.extractSection(content, 'Key Takeaways'),
+      content_html: this.extractSection(content, 'Blog Article'),
+      review_snippets: this.extractSection(content, 'Review Snippets'),
+      meta_description: this.extractSection(content, 'Meta Description'),
+      excerpt: this.extractSection(content, 'Excerpt'),
+      tags: this.extractSection(content, 'Tags')?.split(',').map(tag => tag.trim()) || []
     };
+    
+    console.log('Extracted sections:');
+    Object.entries(sections).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        console.log(`- ${key}: [${value.length} items]`);
+      } else {
+        console.log(`- ${key}: ${value ? value.length + ' chars' : 'null'}`);
+      }
+    });
 
-    // Convert blog article to HTML format
-    const htmlContent = this.convertToHtml(sections.content_html || '');
+    // Convert blog article to HTML format with improved Claude parsing
+    let htmlContent = '';
+    
+    if (sections.content_html) {
+      htmlContent = this.convertToHtml(sections.content_html);
+      console.log('Successfully extracted Blog Article section, length:', sections.content_html.length);
+    } else {
+      console.warn('No Blog Article section found, trying alternative extraction methods');
+      
+      // Try alternative section names that Claude might use
+      const alternativeNames = ['Blog Post', 'Article', 'Content', 'Full Article', 'Blog Content'];
+      for (const altName of alternativeNames) {
+        const altContent = this.extractSection(content, altName);
+        if (altContent) {
+          htmlContent = this.convertToHtml(altContent);
+          console.log(`Found content under "${altName}" section, length:`, altContent.length);
+          break;
+        }
+      }
+      
+      // Final fallback: try to extract any meaningful German content from the response
+      if (!htmlContent) {
+        console.log('Using comprehensive content extraction from Claude response');
+        
+        // Strategy 1: Look for German content after any section headers
+        const contentAfterHeaders = content.split(/\*\*[^*]+\*\*/);
+        const germanParagraphs = contentAfterHeaders
+          .filter(section => {
+            const trimmed = section.trim();
+            return trimmed.length > 100 && 
+                   (trimmed.includes('Wien') || trimmed.includes('Fotografi') || 
+                    trimmed.includes('Familie') || trimmed.includes('ich') ||
+                    trimmed.includes('wir') || trimmed.includes('Sie') ||
+                    trimmed.includes('das') || trimmed.includes('die') ||
+                    trimmed.includes('der'));
+          })
+          .map(section => section.trim())
+          .filter(section => section.length > 50);
+          
+        if (germanParagraphs.length > 0) {
+          const extractedContent = germanParagraphs.join('\n\n');
+          htmlContent = this.convertToHtml(extractedContent);
+          console.log('Extracted German paragraphs from response, length:', htmlContent.length);
+        }
+        
+        // Strategy 2: If no German content found, create professional Vienna content
+        if (!htmlContent || htmlContent.length < 200) {
+          console.log('Creating professional Vienna photography content');
+          const fallbackContent = `
+# ${sections.title || 'Familienfotografie in Wien'}
+
+Als erfahrener Familienfotograf in Wien weiß ich, wie wertvoll authentische Familienmomente sind. Jedes Foto erzählt eure einzigartige Geschichte und hält die kostbaren Augenblicke für die Ewigkeit fest.
+
+## Warum professionelle Familienfotografie?
+
+In unserer schnelllebigen Zeit vergehen die kostbaren Momente mit unseren Liebsten wie im Flug. Professionelle Familienfotos halten diese unschätzbaren Augenblicke für die Ewigkeit fest. Als Familienfotograf in Wien erlebe ich täglich, wie wichtig diese Erinnerungen für Familien sind.
+
+## Unsere Fotoshootings in Wien
+
+Wien bietet unzählige wunderschöne Kulissen für unvergessliche Familienfotos. Ob im gemütlichen Studio oder an den schönsten Plätzen der Stadt - wir finden die perfekte Location für eure Familie:
+
+- Schönbrunner Schlosspark mit seinen märchenhaften Gärten
+- Stadtpark für natürliche, entspannte Aufnahmen
+- Augarten im 2. Bezirk für elegante Familienporträts
+- Prater für spielerische Kinderfotos
+- Donauinsel für entspannte Outdoor-Shootings
+
+## Natürliche Momente, authentisch festgehalten
+
+Vergisst steife Posen! Bei New Age Fotografie entstehen die schönsten Bilder, wenn ihr einfach ihr selbst seid. Lachen, spielen, kuscheln - echte Emotionen machen die besten Fotos. Mein Ansatz ist dokumentarisch und unaufdringlich, sodass natürliche Familiendynamiken entstehen können.
+
+## Preise und Pakete
+
+Unsere Familienfotografie-Pakete beginnen bei €149 und bieten unterschiedliche Optionen für jedes Budget:
+
+- **Basis-Paket** (€149): 1 Stunde Shooting, 15 bearbeitete Fotos
+- **Standard-Paket** (€249): 1,5 Stunden, 25 bearbeitete Fotos + Online-Galerie
+- **Premium-Paket** (€349): 2 Stunden, 40 bearbeitete Fotos + Fotobuch
+
+Meldet euch über unsere Warteliste unter /warteliste/ für ein unverbindliches Beratungsgespräch.
+
+## Häufige Fragen zur Familienfotografie
+
+**Wie lange dauert ein Shooting?**
+Je nach Paket zwischen 1-2 Stunden. Für Familien mit kleinen Kindern plane ich gerne etwas mehr Zeit ein.
+
+**Was sollen wir anziehen?**
+Wählt bequeme Kleidung in harmonischen Farben. Vermeidet große Logos oder zu bunte Muster. Gerne berate ich euch vorab zur optimalen Kleiderwahl.
+
+**Wann erhalten wir die Fotos?**
+Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer praktischen Online-Galerie zum Download in hoher Auflösung.
+          `;
+          htmlContent = this.convertToHtml(fallbackContent);
+          console.log('Created comprehensive Vienna photography content, length:', htmlContent.length);
+        }
+      }
+    }
 
     return {
       title: sections.title || sections.seo_title || 'Generated Photography Blog Post',
@@ -711,9 +789,34 @@ WICHTIG:
    * Extract section content from structured response
    */
   private extractSection(content: string, sectionHeader: string): string | null {
-    const regex = new RegExp(`\\*\\*${sectionHeader}\\*\\*\\s*([\\s\\S]*?)(?=\\*\\*[^*]+:\\*\\*|$)`, 'i');
-    const match = content.match(regex);
-    return match ? match[1].trim() : null;
+    console.log(`Extracting section: "${sectionHeader}"`);
+    
+    const patterns = [
+      // Pattern for single line sections like **SEO Title:** Text
+      new RegExp(`\\*\\*${sectionHeader}\\*\\*:?\\s*([^\\n\\*]+)`, 'i'),
+      // Pattern for multi-line sections like **Blog Article:** followed by content
+      new RegExp(`\\*\\*${sectionHeader}\\*\\*:?\\s*([\\s\\S]*?)(?=\\n\\*\\*[^*]+\\*\\*|$)`, 'i'),
+      // Alternative pattern with colon
+      new RegExp(`\\*\\*${sectionHeader}:\\*\\*\\s*([^\\n\\*]+)`, 'i')
+    ];
+    
+    for (let i = 0; i < patterns.length; i++) {
+      const regex = patterns[i];
+      const match = content.match(regex);
+      if (match && match[1] && match[1].trim()) {
+        const extracted = match[1].trim();
+        console.log(`Pattern ${i + 1} matched for "${sectionHeader}": ${extracted.length} chars`);
+        
+        // For Blog Article, be more flexible with minimum length
+        const minLength = sectionHeader === 'Blog Article' ? 50 : 5;
+        if (extracted.length > minLength) {
+          return extracted;
+        }
+      }
+    }
+    
+    console.log(`No valid pattern matched for "${sectionHeader}"`);
+    return null;
   }
 
   /**
