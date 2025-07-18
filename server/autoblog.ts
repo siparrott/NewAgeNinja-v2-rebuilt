@@ -197,38 +197,77 @@ Generate blog post for uploaded photography session images.`;
       
       console.log('Successfully processed', imageContents.length, 'images for analysis');
 
-      // Improved German prompt for better content structure
-      const customPrompt = `You are a professional photography content writer for New Age Fotografie, a photography studio in Vienna specializing in family, newborn, and portrait photography.
+      // Your sophisticated German photography prompt for highest quality content
+      const sophisticatedPrompt = `Humanized, Mentor-Tone, SEO-Ready, Undetectably AI
 
-IMPORTANT: Write ONLY in German language. All content must be in German.
+🧠 Context:
+You're my content-writing sidekick for New Age Fotografie, a Vienna-based family and newborn photography studio. We speak directly to clients like real humans. You write like I talk. This is not a blog post. It's a one-to-one convo — with substance, soul, and structure.
+
+WICHTIG: Schreibe AUSSCHLIESSLICH auf Deutsch. Alle Inhalte müssen auf Deutsch sein.
+
+Tone = founder + mentor + experience-led
+Your default voice combines:
+
+🎯 Sabri Suby (direkter Verkaufstext)
+📸 Echter Fotobusiness-Besitzer (nicht KI)  
+👨‍🏫 Mentor, der Dinge klar erklärt
+💬 Persönlicher, erster-Person-Ton mit authentischen Unperfektion
+
+🔍 You Must Ensure:
+✅ Content passes AI detection (Originality.ai, GPTZero) by:
+- Varying sentence length + rhythm
+- Using idioms, human anecdotes, casual fragments
+- Avoiding robotic transitions or overstructured tone
+- Sprinkling natural glitches: "gonna", "lass uns ehrlich sein", "ja", "fair enough"
+- Using first-person perspective (founder voice)
+- Writing as if it was manually written over 3 days, not generated in 30 seconds
+
+💡 Your Task:
+Create a full German content package for Vienna photography clients, structured for SEO and real-human storytelling:
+
+♻️ YOAST SEO COMPLIANCE (Built-in):
+Keyphrase: Familienfotograf Wien / Neugeborenenfotos Wien / Familienfotos Wien
+Include it in: SEO title, Slug, H1, First paragraph, At least one H2, Twice minimum in body, Meta description
+
+Meta description: 120–156 chars
+Flesch Reading Ease > 60
+Passive voice < 10%
+Long sentences < 25%
+Transition words > 30%
+Paragraphs < 150 words
+Internal + external links to /warteliste/
+
+🚫 NEVER USE marketing jargon:
+"Step into," "unleash," "embrace your journey," "revolutionär," "transformativ," etc.
+Use natural, specific, grounded German language.
 
 Business Context: ${siteContext}
 Session Details: ${input.userPrompt || 'Professional photography session documentation'}
-Language: ${input.language || 'de'}
+Language: German (de)
 
-Create professional German blog content about photography sessions. Use a warm, personal tone that connects with families in Vienna.
+Analyze the uploaded images carefully and create comprehensive German content about this photography session. Describe authentic details from the images (clothing colors, setting, mood, emotions, Vienna location details, etc.) and write in authentic Wiener German for the local market.
 
-Write in German and create a structured blog post with:
-- Professional photography expertise
-- Local Vienna context
-- Family-friendly tone
-- Personal storytelling approach
-
-Output Format (Use this EXACT structure):
-**SEO Title:** [German SEO-optimized title]
+✅ Output Format (Exact Structure):
+**SEO Title:** [German SEO title with Vienna/photography keywords]
 **Slug:** [url-friendly-slug]
-**Headline (H1):** [German main headline]
-**Outline:** [brief outline of content structure]
-**Key Takeaways:** [3-5 key points readers will learn]
-**Blog Article:** [full blog article with H1 and 6-8 H2 sections, 300-500 words each - DO NOT include image tags, they will be added automatically]
-**Review Snippets:** [2-3 short review-style snippets]
-**Meta Description:** [120-156 character meta description]
-**Excerpt:** [brief excerpt for preview]
-**Tags:** [relevant tags for the post]
+**Headline (H1):** [Catchy German headline with quotes or emotional hook]
+**Outline:** [Brief section outline showing H2 structure]
+**Key Takeaways:** [5-point table with takeaway and "Warum es wichtig ist" explanation]
+**Blog Article:** [Full German blog with H1 and 6-8 H2 sections, authentic storytelling, specific image details, customer reviews/testimonials, pricing hints, FAQs - NO <img> tags]
+**Review Snippets:** [3 authentic customer review quotes with names]
+**Meta Description:** [120-156 character German meta description]
+**Excerpt:** [Brief German preview text]
+**Tags:** [relevant German photography tags]
 
-IMPORTANT: In the Blog Article section, write clean HTML with proper H1 and H2 structure. Do NOT include any <img> tags as images will be automatically embedded later.
-
-Analyze the uploaded images carefully and create comprehensive content about this photography session. Describe authentic details from the images (clothing, setting, mood, emotions, location details, etc.) and write in German for the Vienna market.`;
+WICHTIG: 
+- Analysiere die Bilder im Detail (Kleidung, Setting, Emotionen, Posen)
+- Verwende spezifische Details aus den Bildern in deinem Content
+- Schreibe wie ein echter Wiener Fotograf, nicht wie KI
+- Eingebaute interne Links zu /warteliste/
+- Pro-Tipps für Outfit/Posen einbauen
+- Echte Wiener Referenzen (Bezirke, Locations)
+- Preise erwähnen (€149+ Pakete)
+- Kundenstimmen einbauen (5-Sterne-Reviews)`;
 
       const messages = [
         {
@@ -240,7 +279,7 @@ Analyze the uploaded images carefully and create comprehensive content about thi
           content: [
             {
               type: "text",
-              text: customPrompt
+              text: sophisticatedPrompt
             },
             ...imageContents
           ]
@@ -249,10 +288,12 @@ Analyze the uploaded images carefully and create comprehensive content about thi
 
       // Make API call with sophisticated German photography prompts
       console.log('Sending', imageContents.length, 'images to Chat Completions API');
-      console.log('Using sophisticated German prompt with:', 
-                  customPrompt.includes('Vienna') ? '✓ Vienna context' : '✗ No Vienna',
-                  customPrompt.includes('German') ? '✓ German language' : '✗ No German',
-                  customPrompt.includes('New Age Fotografie') ? '✓ Studio branding' : '✗ No branding');
+      console.log('Using your sophisticated German prompt with:', 
+                  sophisticatedPrompt.includes('Wien') ? '✓ Vienna context' : '✗ No Vienna',
+                  sophisticatedPrompt.includes('Deutsch') ? '✓ German language' : '✗ No German',
+                  sophisticatedPrompt.includes('New Age Fotografie') ? '✓ Studio branding' : '✗ No branding',
+                  sophisticatedPrompt.includes('Sabri Suby') ? '✓ Mentor tone' : '✗ No mentor tone',
+                  sophisticatedPrompt.includes('€149') ? '✓ Pricing context' : '✗ No pricing');
       
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // Latest model that supports vision
