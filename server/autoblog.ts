@@ -382,53 +382,82 @@ WICHTIG:
     
     console.log('Successfully processed', imageContents.length, 'images for Claude analysis');
 
-    // Direct prompt that ensures complete content generation
-    const sophisticatedPrompt = `Du bist ein erfahrener Familienfotograf in Wien für New Age Fotografie.
+    // Use the sophisticated prompt that generates high-quality content like your examples
+    const sophisticatedPrompt = `Humanized, Mentor-Tone, SEO-Ready, Authentic Content
 
-AUFGABE: Schreibe einen VOLLSTÄNDIGEN deutschen Blog-Artikel über diese Fotosession.
+🧠 Context:
+You're my content-writing sidekick for New Age Fotografie, a Vienna-based family and newborn photography studio. We speak directly to clients like real humans. You write like I talk. This is not a blog post. It's a one-to-one convo — with substance, soul, and structure.
 
-WICHTIG: Schreibe den KOMPLETTEN Artikel in einer Antwort. Frage NICHT ob du fortfahren sollst!
+Tone = founder + mentor + experience-led
+Your default voice combines:
 
-KONTEXT: 
-- Studio: New Age Fotografie, Wien
-- Ton: Persönlich, authentisch, founder-led wie Sabri Suby
-- Zielgruppe: Familien in Wien
-- Preise: ab €149
-- Website: Warteliste unter /warteliste/
+🎯 Sabri Suby (no-BS sales copy)
+📸 Real-world photo biz owner (not an AI)  
+👨‍🏫 Mentor explaining things clearly to a student
+💬 Relatable, first-person tone with light imperfection
 
-BILDANALYSE: Analysiere die hochgeladenen Bilder im Detail:
-- Kleidung, Farben, Setting
-- Emotionen und Stimmung
-- Location (Wien-Bezug wenn möglich)
-- Familiendynamik
-- Lichtstimmung
+🔍 You Must Ensure:
+✅ Content feels naturally written by:
+- Varying sentence length + rhythm
+- Using idioms, human anecdotes, casual fragments
+- Natural transitions with authentic tone
+- Sprinkling natural expressions: "look", "honestly", "here's the thing"
+- Using first-person perspective (founder voice)
+- Writing with personal touch and professional expertise
 
-SESSION DETAILS: ${input.userPrompt || 'Professionelle Familienfotografie-Session in Wien'}
+Business Context: ${siteContext}
+Session Details: ${input.userPrompt || 'Professional photography session documentation'}
+Language: English (your example shows English works best)
 
-FORMAT (VOLLSTÄNDIG AUSFÜLLEN):
-**SEO Title:** [German SEO title with Vienna/photography keywords]
+💡 Your Task:
+Create a COMPLETE content package for Vienna photography clients. PROVIDE ALL SECTIONS IN FULL - DO NOT TRUNCATE OR ASK FOR CONTINUATION.
+
+CRITICAL: Write the ENTIRE blog article in one response. Do not say "would you like me to continue" or truncate content.
+
+♻️ YOAST SEO COMPLIANCE (Built-in):
+Keyphrase: Familienfotograf Wien / Family Photography Vienna / Familienfotos Wien
+Include it in: SEO title, Slug, H1, First paragraph, At least one H2, Twice minimum in body, Meta description
+
+Meta description: 120–156 chars
+Flesch Reading Ease > 60
+Passive voice < 10%
+Long sentences < 25%
+Transition words > 30%
+Paragraphs < 150 words
+Internal + external links to /warteliste/
+
+🚫 NEVER USE marketing jargon:
+"Step into," "unleash," "embrace your journey," "revolutionary," "transformative," etc.
+Use natural, specific, grounded language.
+
+Analyze the uploaded images carefully and create comprehensive content about this photography session. Describe authentic details from the images (clothing colors, setting, mood, emotions, Vienna location details, etc.) and write in authentic tone for the local market.
+
+✅ Output Format (COMPLETE ALL SECTIONS - NO TRUNCATION):
+**SEO Title:** [SEO title with Vienna/photography keywords]
 **Slug:** [url-friendly-slug]
-**Headline (H1):** [Catchy German headline with emotional hook]
-**Blog Article:**
-[KOMPLETTER deutscher Blog-Artikel mit H1 und 6-8 H2-Abschnitten]
-[Schreibe mindestens 1500 Wörter über diese Fotosession]
-[Verwende persönlichen Wiener Ton und echte Details aus den Bildern]
-[Preise €149+ erwähnen und /warteliste/ Link einbauen]
-[Kundenstimmen und FAQ einbauen]
-[YOAST SEO: Keyphrase "Familienfotograf Wien" in Title, H1, ersten Absatz, mindestens ein H2, 2x im Text, Meta Description]
-**Review Snippets:** [3 authentische Kundenbewertungen mit Namen]
-**Meta Description:** [120-156 Zeichen German meta description]
-**Excerpt:** [Kurzer deutscher Vorschautext]
-**Tags:** [relevante deutsche Fotografie-Tags mit Komma getrennt]
+**Headline (H1):** [Catchy headline with emotional hook]
+**Outline:** [Brief section outline showing H2 structure]
+**Key Takeaways:** [5-point list with takeaway and why it matters explanation]
+**Blog Article:** 
+[WRITE COMPLETE FULL ARTICLE HERE - MINIMUM 1500 WORDS]
+Write the entire blog article with H1 and 6-8 H2 sections
+Include authentic storytelling, specific image details, customer testimonials, pricing hints, FAQs
+Use natural founder voice with professional expertise - NO <img> tags
+**Review Snippets:** [3 authentic customer review quotes with names]
+**Meta Description:** [120-156 character meta description]
+**Excerpt:** [Brief preview text]
+**Tags:** [relevant photography tags separated by commas]
 
-SCHREIBSTIL:
-- Ich-Perspektive (founder voice)
-- Wiener Ausdrücke und lokale Referenzen
-- Natürlich, persönlich, nicht übertrieben
-- Konkrete Details statt Marketing-Phrasen
-- Echte Emotionen und Geschichten
-
-Schreibe jetzt den VOLLSTÄNDIGEN Artikel ohne zu fragen ob du fortfahren sollst!`;
+WICHTIG: 
+- COMPLETE ALL SECTIONS IN FULL - NO TRUNCATION
+- Analyze the images in detail (clothing, setting, emotions, poses)
+- Use specific details from the images in your content
+- Write like a real Vienna photographer with personal touch
+- Include internal links to /warteliste/
+- Pro tips for outfits/poses
+- Real Vienna references (districts, locations)
+- Mention pricing (€149+ packages)
+- Include customer testimonials (5-star reviews)`;
 
     const messageContent = [
       {
@@ -791,10 +820,35 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
   private extractSection(content: string, sectionHeader: string): string | null {
     console.log(`Extracting section: "${sectionHeader}"`);
     
+    // Special handling for Blog Article - look for content after the header until next ** section
+    if (sectionHeader === 'Blog Article') {
+      const blogPatterns = [
+        // Pattern 1: **Blog Article:** followed by content (most common)
+        /\*\*Blog Article:\*\*\s*\n*([\s\S]*?)(?=\n\*\*[A-Z][^*]*\*\*|$)/i,
+        // Pattern 2: **Blog Article:** without newline
+        /\*\*Blog Article:\*\*\s*([\s\S]*?)(?=\n\*\*[A-Z][^*]*\*\*|$)/i,
+        // Pattern 3: Look for content between Blog Article and Review Snippets
+        /\*\*Blog Article:\*\*\s*\n*([\s\S]*?)(?=\*\*Review Snippets\*\*|$)/i
+      ];
+      
+      for (let i = 0; i < blogPatterns.length; i++) {
+        const match = content.match(blogPatterns[i]);
+        if (match && match[1] && match[1].trim().length > 100) {
+          const extracted = match[1].trim();
+          console.log(`Blog Article Pattern ${i + 1} matched: ${extracted.length} chars`);
+          return extracted;
+        }
+      }
+      
+      console.log('Blog Article patterns failed, checking content structure...');
+      console.log('Content preview:', content.substring(0, 500));
+    }
+    
+    // Standard patterns for other sections
     const patterns = [
       // Pattern for single line sections like **SEO Title:** Text
       new RegExp(`\\*\\*${sectionHeader}\\*\\*:?\\s*([^\\n\\*]+)`, 'i'),
-      // Pattern for multi-line sections like **Blog Article:** followed by content
+      // Pattern for multi-line sections 
       new RegExp(`\\*\\*${sectionHeader}\\*\\*:?\\s*([\\s\\S]*?)(?=\\n\\*\\*[^*]+\\*\\*|$)`, 'i'),
       // Alternative pattern with colon
       new RegExp(`\\*\\*${sectionHeader}:\\*\\*\\s*([^\\n\\*]+)`, 'i')
@@ -807,8 +861,8 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
         const extracted = match[1].trim();
         console.log(`Pattern ${i + 1} matched for "${sectionHeader}": ${extracted.length} chars`);
         
-        // For Blog Article, be more flexible with minimum length
-        const minLength = sectionHeader === 'Blog Article' ? 50 : 5;
+        // Minimum length check
+        const minLength = sectionHeader === 'Blog Article' ? 100 : 5;
         if (extracted.length > minLength) {
           return extracted;
         }
