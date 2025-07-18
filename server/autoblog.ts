@@ -159,16 +159,55 @@ Key Features: High-quality photography, professional editing, personal service
       
       // MINIMAL CONTEXT - Let the REAL TOGNINJA BLOG WRITER Assistant use its sophisticated training!
       console.log('🎯 ACTIVATING REAL ASSISTANT TRAINED CAPABILITIES - NO PROMPT OVERRIDE');
-      const userMessage = `Fotosession Details: ${input.userPrompt || 'Familienfotosession Wien Studio'}
+      const userMessage = `Fotosession Details: ${input.userPrompt || 'Professionelle Fotosession Wien Studio'}
 
 Business: ${siteContext}
 
-Erstelle einen authentischen deutschen Blog-Post für die hochgeladenen Familienfotos.`;
+Erstelle einen authentischen deutschen Blog-Post für die hochgeladenen Fotos.`;
 
       // Create thread
       const thread = await openai.beta.threads.create();
       
-      // Create message content with text and image URLs
+      // Upload images to OpenAI Files API for Assistant usage
+      const uploadedFileIds: string[] = [];
+      
+      if (images.length > 0) {
+        console.log('🖼️ UPLOADING IMAGES TO OPENAI FOR REAL ASSISTANT ANALYSIS...');
+        
+        for (let i = 0; i < images.length; i++) {
+          const image = images[i];
+          try {
+            console.log(`Uploading image ${i + 1}: ${image.filename}`);
+            
+            // Create a buffer from the image for OpenAI File upload
+            const fs = await import('fs');
+            const path = await import('path');
+            
+            // Read the saved image file
+            const imagePath = path.join(process.cwd(), 'server/public/blog-images', image.filename);
+            const imageBuffer = fs.readFileSync(imagePath);
+            
+            // Create a readable stream for OpenAI File upload (Node.js compatible)
+            const { Readable } = await import('stream');
+            const imageStream = Readable.from(imageBuffer);
+            (imageStream as any).path = image.filename; // Add filename for OpenAI
+            
+            // Upload to OpenAI Files API
+            const file = await openai.files.create({
+              file: imageStream,
+              purpose: 'vision'
+            });
+            
+            uploadedFileIds.push(file.id);
+            console.log(`✅ Image ${i + 1} uploaded successfully: ${file.id}`);
+            
+          } catch (uploadError) {
+            console.error(`❌ Failed to upload image ${i + 1}:`, uploadError);
+          }
+        }
+      }
+      
+      // Create message content with text and uploaded image references
       const messageContent = [
         {
           type: "text",
@@ -176,15 +215,19 @@ Erstelle einen authentischen deutschen Blog-Post für die hochgeladenen Familien
         }
       ];
       
-      // Let the REAL Assistant use its trained image analysis capabilities
-      if (images.length > 0) {
-        messageContent.push({
-          type: "text", 
-          text: `\n\n${images.length} Familienfotos hochgeladen für Blog-Content.`
+      // Add image file references if uploaded successfully
+      if (uploadedFileIds.length > 0) {
+        uploadedFileIds.forEach(fileId => {
+          messageContent.push({
+            type: "image_file",
+            image_file: {
+              file_id: fileId
+            }
+          });
         });
+        
+        console.log(`📸 REAL ASSISTANT NOW HAS ACCESS TO ${uploadedFileIds.length} ACTUAL IMAGES!`);
       }
-      
-      console.log(`Sending ${images.length} image URLs to Assistant API`);
       
       const message = await openai.beta.threads.messages.create(thread.id, {
         role: "user",
@@ -284,6 +327,20 @@ Erstelle einen authentischen deutschen Blog-Post für die hochgeladenen Familien
         console.log('Raw Assistant response length:', content.length);
         console.log('Raw Assistant response preview:', content.substring(0, 1000) + '...');
         const parsedContent = this.parseStructuredResponse(content);
+        
+        // Cleanup uploaded OpenAI files to avoid accumulation
+        if (uploadedFileIds.length > 0) {
+          console.log('🧹 CLEANING UP UPLOADED OPENAI FILES...');
+          for (const fileId of uploadedFileIds) {
+            try {
+              await openai.files.del(fileId);
+              console.log(`✅ Cleaned up file: ${fileId}`);
+            } catch (cleanupError) {
+              console.warn(`⚠️ Could not cleanup file ${fileId}:`, cleanupError.message);
+            }
+          }
+        }
+        
         return parsedContent;
       }
 
@@ -292,6 +349,20 @@ Erstelle einen authentischen deutschen Blog-Post für die hochgeladenen Familien
       
     } catch (error) {
       console.error('Assistant API error:', error);
+      
+      // Cleanup uploaded OpenAI files even in error cases
+      if (uploadedFileIds.length > 0) {
+        console.log('🧹 CLEANING UP UPLOADED FILES AFTER ERROR...');
+        for (const fileId of uploadedFileIds) {
+          try {
+            await openai.files.del(fileId);
+            console.log(`✅ Cleaned up file after error: ${fileId}`);
+          } catch (cleanupError) {
+            console.warn(`⚠️ Could not cleanup file ${fileId} after error:`, cleanupError.message);
+          }
+        }
+      }
+      
       return null;
     }
   }
