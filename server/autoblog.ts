@@ -157,50 +157,44 @@ Generate blog post for uploaded photography session images.`;
       console.log('Image count:', images.length);
       console.log('User context:', userMessage);
 
-      // Try OpenAI Assistant API first
-      try {
-        console.log('=== ATTEMPTING ASSISTANT API ===');
-        console.log('Assistant ID:', assistantId);
-        console.log('Number of images:', images.length);
-        console.log('Image URLs:', images.map(img => img.publicUrl));
-        
-        const assistantResult = await this.generateWithAssistantAPI(assistantId, images, input, siteContext);
-        
-        if (assistantResult) {
-          console.log('=== ASSISTANT API SUCCESS ===');
-          console.log('Generated content length:', assistantResult.content?.length || 0);
-          console.log('Title generated:', assistantResult.seoTitle || 'No title');
-          return assistantResult;
-        } else {
-          console.log('=== ASSISTANT API RETURNED NULL ===');
-        }
-      } catch (assistantError) {
-        console.error('=== ASSISTANT API FAILED ===');
-        console.error('Assistant API error details:', assistantError);
-        console.error('Error stack:', assistantError.stack);
-        console.log('Falling back to Chat Completions API...');
-      }
-
-      // Try Claude first for highest quality content, then fallback to OpenAI
-      console.log('=== TRYING CLAUDE 3.5 SONNET FIRST ===');
-      console.log('Using your sophisticated German photography prompts for maximum quality');
+      // Force use of REAL TOGNINJA BLOG WRITER Assistant - NO FALLBACKS!
+      console.log('🚀 FORCING USE OF REAL TOGNINJA BLOG WRITER ASSISTANT');
+      console.log('🎯 Assistant ID:', assistantId);
+      console.log('📸 Number of images:', images.length);
+      console.log('🔗 Image URLs:', images.map(img => img.publicUrl));
       
-      try {
-        const claudeResult = await this.generateContentWithClaude(images, input, siteContext);
-        if (claudeResult) {
-          console.log('=== CLAUDE SUCCESS ===');
-          console.log('Generated content length:', claudeResult.content_html?.length || 0);
-          return claudeResult;
+      // PRIORITY: Use your REAL Assistant first and ONLY
+      const assistantResult = await this.generateWithAssistantAPI(assistantId, images, input, siteContext);
+      
+      if (assistantResult) {
+        console.log('✅ REAL ASSISTANT SUCCESS - RETURNING AUTHENTIC CONTENT!');
+        console.log('📝 Generated content length:', assistantResult.content_html?.length || 0);
+        console.log('🏷️ Title generated:', assistantResult.seo_title || assistantResult.title || 'No title');
+        return assistantResult;
+      } else {
+        console.log('❌ REAL ASSISTANT RETURNED NULL - INVESTIGATING...');
+        
+        // Add extra debugging to understand why Assistant fails
+        console.log('🔍 OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
+        console.log('🔍 API Key starts with:', process.env.OPENAI_API_KEY?.substring(0, 10) + '...');
+        
+        // Try once more with additional error handling
+        console.log('🔄 RETRYING REAL ASSISTANT WITH ENHANCED DEBUGGING...');
+        try {
+          const retryResult = await this.generateWithAssistantAPI(assistantId, images, input, siteContext);
+          if (retryResult) {
+            console.log('✅ RETRY SUCCESS - RETURNING REAL ASSISTANT CONTENT!');
+            return retryResult;
+          }
+        } catch (retryError) {
+          console.error('🚨 ASSISTANT RETRY FAILED:', retryError);
+          console.error('🚨 Stack trace:', retryError.stack);
         }
-      } catch (claudeError) {
-        console.error('=== CLAUDE FAILED ===');
-        console.error('Claude error:', claudeError.message);
-        console.log('Falling back to OpenAI Chat Completions API...');
+        
+        throw new Error('❌ REAL TOGNINJA BLOG WRITER ASSISTANT FAILED - No fallback allowed. Please check OpenAI API configuration.');
       }
 
-      // OpenAI Chat Completions API fallback
-      console.log('=== USING OPENAI CHAT COMPLETIONS API (FALLBACK) ===');
-      console.log('This uses simplified prompts to avoid content policy issues');
+      // NO FALLBACKS - This should never be reached since Assistant must work
       
       // Convert images to base64 for Chat Completions API
       const imageContents = [];
@@ -525,7 +519,11 @@ WICHTIG:
     siteContext: string
   ): Promise<AutoBlogParsed | null> {
     try {
-      console.log('Attempting OpenAI Assistant API...');
+      console.log('🎯 === REAL TOGNINJA BLOG WRITER ASSISTANT API ===');
+      console.log('🔑 Assistant ID (YOURS):', assistantId);
+      console.log('📸 Processing', images.length, 'images');
+      console.log('🌐 Language:', input.language);
+      console.log('📝 User prompt:', input.userPrompt?.substring(0, 100) + '...');
       
       // Enhanced prompt to match your sophisticated test output
       const userMessage = `Du bist mein Content-Schreibpartner für New Age Fotografie, ein professionelles Fotostudio in Wien, das sich auf Familien-, Neugeborenen- und Porträtfotografie spezialisiert hat.
