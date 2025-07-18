@@ -545,8 +545,12 @@ export class DatabaseStorage implements IStorage {
     const filePath = path.join(uploadDir, filename);
     await fs.writeFile(filePath, buffer);
     
-    // Return public URL
-    return `/${bucket}/${filename}`;
+    // Return absolute public URL that OpenAI can access
+    const baseUrl = process.env.PUBLIC_SITE_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+      : 'http://localhost:5000';
+    
+    return `${baseUrl}/${bucket}/${filename}`;
   }
 }
 

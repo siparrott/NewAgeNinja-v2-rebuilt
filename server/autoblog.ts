@@ -328,50 +328,41 @@ WICHTIG:
 - Preise erwähnen (€149+ Pakete)
 - Kundenstimmen einbauen (5-Sterne-Reviews)`;
 
-      // Upload images to OpenAI for Assistant API
-      const fileIds: string[] = [];
-      
-      for (let i = 0; i < images.length; i++) {
-        const image = images[i];
-        console.log(`Uploading image ${i + 1} to OpenAI...`);
-        
-        try {
-          // Create a File object from buffer for upload
-          const file = await openai.files.create({
-            file: new File([image.buffer], image.filename, { type: 'image/jpeg' }),
-            purpose: 'vision'
-          });
-          
-          fileIds.push(file.id);
-          console.log(`Successfully uploaded image ${i + 1} with file ID: ${file.id}`);
-        } catch (uploadError) {
-          console.warn(`Failed to upload image ${i + 1}:`, uploadError);
-          // Continue without this image
-        }
-      }
-      
-      console.log(`Successfully uploaded ${fileIds.length} out of ${images.length} images to OpenAI`);
-
       // Create thread
       const thread = await openai.beta.threads.create();
       
-      // Create message with images and user message
-      const messageContent: any[] = [
+      // Create message content with text and image URLs
+      const messageContent = [
         {
           type: "text",
           text: userMessage
         }
       ];
       
-      // Add image file attachments if we have them
-      if (fileIds.length > 0) {
-        messageContent.push(...fileIds.map(fileId => ({
-          type: "image_file",
-          image_file: {
-            file_id: fileId
-          }
-        })));
+      // Add images as URLs for the Assistant to analyze
+      if (images.length > 0) {
+        const imageDescriptions = images.map((img, index) => 
+          `Bild ${index + 1}: ${img.publicUrl}`
+        ).join('\n');
+        
+        messageContent.push({
+          type: "text", 
+          text: `\n\nBilder für die Analyse:\n${imageDescriptions}\n\nAnalysiere diese Bilder im Detail und erstelle authentischen Content basierend auf den tatsächlichen Details (Kleidung, Emotionen, Setting, etc.) die du in den Bildern siehst.`
+        });
+        
+        // Add each image URL as image_url type
+        images.forEach((img, index) => {
+          messageContent.push({
+            type: "image_url",
+            image_url: {
+              url: img.publicUrl,
+              detail: "high"
+            }
+          });
+        });
       }
+      
+      console.log(`Sending ${images.length} image URLs to Assistant API`);
       
       const message = await openai.beta.threads.messages.create(thread.id, {
         role: "user",
@@ -405,47 +396,15 @@ WICHTIG:
 
           // Parse the structured response
           const parsedContent = this.parseStructuredResponse(content);
-          
-          // Clean up uploaded files after successful processing
-          for (const fileId of fileIds) {
-            try {
-              await openai.files.del(fileId);
-              console.log(`Cleaned up uploaded file: ${fileId}`);
-            } catch (cleanupError) {
-              console.warn(`Failed to cleanup file ${fileId}:`, cleanupError);
-            }
-          }
-          
           return parsedContent;
         }
       }
 
       console.log('Assistant API failed or timed out, status:', runStatus.status);
-      
-      // Clean up uploaded files
-      for (const fileId of fileIds) {
-        try {
-          await openai.files.del(fileId);
-          console.log(`Cleaned up uploaded file: ${fileId}`);
-        } catch (cleanupError) {
-          console.warn(`Failed to cleanup file ${fileId}:`, cleanupError);
-        }
-      }
-      
       return null;
       
     } catch (error) {
       console.error('Assistant API error:', error);
-      
-      // Clean up uploaded files in case of error
-      for (const fileId of fileIds) {
-        try {
-          await openai.files.del(fileId);
-        } catch (cleanupError) {
-          console.warn(`Failed to cleanup file ${fileId}:`, cleanupError);
-        }
-      }
-      
       return null;
     }
   }
