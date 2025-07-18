@@ -133,13 +133,17 @@ Session Details: ${input.userPrompt || 'Professional photography session documen
 Language: ${input.language}
 Generate blog post for uploaded photography session images.`;
 
-    // Prepare image content for OpenAI vision
-    const imageContent = images.map((img, index) => ({
-      type: "image_url" as const,
-      image_url: {
-        url: `data:image/jpeg;base64,${img.buffer.toString('base64')}`
-      }
-    }));
+    // Prepare image content with public URLs
+    const imageContent = images.map((img, index) => {
+      console.log(`Processing image ${index + 1}: ${img.publicUrl}`);
+      return {
+        type: "image_url" as const,
+        image_url: {
+          url: img.publicUrl,
+          detail: "high"
+        }
+      };
+    });
 
     try {
       console.log('Attempting to use OpenAI Assistant API first...');
@@ -149,12 +153,17 @@ Generate blog post for uploaded photography session images.`;
 
       // Try OpenAI Assistant API first
       try {
+        console.log('=== ATTEMPTING ASSISTANT API ===');
         const assistantResult = await this.generateWithAssistantAPI(assistantId, images, input, siteContext);
         if (assistantResult) {
+          console.log('=== ASSISTANT API SUCCESS ===');
           return assistantResult;
+        } else {
+          console.log('=== ASSISTANT API RETURNED NULL ===');
         }
       } catch (assistantError) {
-        console.error('Assistant API failed:', assistantError);
+        console.error('=== ASSISTANT API FAILED ===');
+        console.error('Assistant API error details:', assistantError);
         console.log('Falling back to Chat Completions API...');
       }
 
@@ -370,19 +379,29 @@ WICHTIG:
       });
 
       // Run the assistant
+      console.log('Creating assistant run...');
       const run = await openai.beta.threads.runs.create(thread.id, {
         assistant_id: assistantId
       });
+      console.log('Run created with ID:', run.id);
 
       // Wait for completion
       let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
       let attempts = 0;
       const maxAttempts = 30;
       
+      console.log('Initial run status:', runStatus.status);
+      
       while ((runStatus.status === 'queued' || runStatus.status === 'in_progress') && attempts < maxAttempts) {
+        console.log(`Waiting for completion... attempt ${attempts + 1}/${maxAttempts}, status: ${runStatus.status}`);
         await new Promise(resolve => setTimeout(resolve, 2000));
         runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
         attempts++;
+      }
+      
+      console.log('Final run status:', runStatus.status);
+      if (runStatus.status === 'failed') {
+        console.error('Run failed with error:', runStatus.last_error);
       }
 
       if (runStatus.status === 'completed') {
