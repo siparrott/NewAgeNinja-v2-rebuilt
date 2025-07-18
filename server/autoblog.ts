@@ -549,14 +549,20 @@ TASK: Create this complete content package in German for New Age Fotografie usin
 
         // Parse the sophisticated response from REAL Assistant
         const parsedContent = this.parseStructuredResponse(content);
+        console.log('📋 Parsed content keys:', Object.keys(parsedContent || {}));
         
         // If assistant didn't follow structured format, force it
         if (!parsedContent || !this.hasRequiredSections(parsedContent)) {
-          console.log('🔧 Assistant did not follow structured format, forcing structure...');
+          console.log('🔧 ===== FORCING STRUCTURED FORMAT =====');
+          console.log('🔧 Reason: Missing structured sections');
+          console.log('🔧 Original content length:', content.length);
           const forcedStructure = this.forceStructuredFormat(content, assistantId);
+          console.log('🔧 Forced structure content length:', forcedStructure.content_html.length);
+          console.log('🔧 ===== FORCED STRUCTURE APPLIED =====');
           return forcedStructure;
         }
         
+        console.log('✅ Assistant followed structured format - using original response');
         return parsedContent;
       }
 
@@ -573,22 +579,37 @@ TASK: Create this complete content package in German for New Age Fotografie usin
    * Check if parsed content has all required sections
    */
   private hasRequiredSections(parsedContent: AutoBlogParsed): boolean {
-    const requiredSections = ['content_html', 'meta_description', 'excerpt', 'tags'];
-    const hasSections = requiredSections.every(section => parsedContent[section] && parsedContent[section].length > 0);
+    if (!parsedContent || !parsedContent.content_html) {
+      console.log('❌ No parsed content or content_html');
+      return false;
+    }
     
-    // Check if content has outline, key takeaways, review snippets
-    const hasOutline = parsedContent.content_html?.includes('Outline:') || parsedContent.content_html?.includes('## ');
-    const hasKeyTakeaways = parsedContent.content_html?.includes('Key Takeaways:') || parsedContent.content_html?.includes('Takeaways');
-    const hasReviewSnippets = parsedContent.content_html?.includes('Review Snippets:') || parsedContent.content_html?.includes('testimonial');
+    const content = parsedContent.content_html;
     
-    console.log('Section check:', {
-      hasSections,
+    // Check for required structured sections
+    const hasOutline = content.includes('📋 Outline:') || content.includes('**Outline:**');
+    const hasKeyTakeaways = content.includes('🎯 Key Takeaways:') || content.includes('**Key Takeaways:**');
+    const hasReviewSnippets = content.includes('💬 Review Snippets:') || content.includes('**Review Snippets:**');
+    const hasInternalLinks = content.includes('/galerie') || content.includes('/kontakt') || content.includes('/warteliste');
+    const hasExternalLinks = content.includes('wien.info') || content.includes('target="_blank"');
+    
+    console.log('🔍 Structured section check:', {
       hasOutline,
       hasKeyTakeaways,
-      hasReviewSnippets
+      hasReviewSnippets,
+      hasInternalLinks,
+      hasExternalLinks,
+      contentLength: content.length
     });
     
-    return hasSections && hasOutline && hasKeyTakeaways && hasReviewSnippets;
+    // Must have ALL structured sections
+    const hasStructuredFormat = hasOutline && hasKeyTakeaways && hasReviewSnippets && hasInternalLinks;
+    
+    if (!hasStructuredFormat) {
+      console.log('❌ Missing structured format - will force structure');
+    }
+    
+    return hasStructuredFormat;
   }
 
   /**
