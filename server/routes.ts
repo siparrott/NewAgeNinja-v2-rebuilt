@@ -2831,9 +2831,9 @@ Bitte versuchen Sie es später noch einmal.`;
 
   // ==================== TEST CHAT ROUTES ====================
   
-  // URGENT FIX: Add a new unique route to bypass any caching/proxy issues
-  app.post("/api/test/chat-direct", async (req: Request, res: Response) => {
-    console.log("🆘 DIRECT BYPASS ROUTE HIT - TOGNINJA ASSISTANT");
+  // DEDICATED TOGNINJA BLOG WRITER ASSISTANT ENDPOINT
+  app.post("/api/togninja/chat", async (req: Request, res: Response) => {
+    console.log("🎯 TOGNINJA BLOG WRITER ASSISTANT ENDPOINT HIT");
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
@@ -2849,20 +2849,122 @@ Bitte versuchen Sie es später noch einmal.`;
         return res.status(500).json({ error: "OpenAI API key not configured" });
       }
 
-      const assistantId = "asst_nlyO3yRav2oWtyTvkq0cHZaU";
+      const assistantId = "asst_nlyO3yRav2oWtyTvkq0cHZaU"; // TOGNINJA BLOG WRITER
+      let currentThreadId = threadId;
+
+      // Create new thread if needed
+      if (!currentThreadId) {
+        const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2'
+          },
+          body: JSON.stringify({})
+        });
+
+        if (!threadResponse.ok) {
+          throw new Error(`Failed to create thread: ${threadResponse.status}`);
+        }
+
+        const threadData = await threadResponse.json();
+        currentThreadId = threadData.id;
+      }
+
+      // Add user message to thread
+      await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content: message
+        })
+      });
+
+      // Create run with TOGNINJA assistant
+      const runResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          assistant_id: assistantId
+        })
+      });
+
+      if (!runResponse.ok) {
+        throw new Error(`Failed to create run: ${runResponse.status}`);
+      }
+
+      const runData = await runResponse.json();
+      const runId = runData.id;
+
+      // Wait for completion
+      let runStatus = 'queued';
+      let attempts = 0;
+      const maxAttempts = 60;
+
+      while (runStatus !== 'completed' && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const statusResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs/${runId}`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+
+        if (!statusResponse.ok) {
+          throw new Error(`Failed to check run status: ${statusResponse.status}`);
+        }
+
+        const statusData = await statusResponse.json();
+        runStatus = statusData.status;
+        attempts++;
+      }
+
+      if (runStatus !== 'completed') {
+        throw new Error(`TOGNINJA assistant run failed with status: ${runStatus}`);
+      }
+
+      // Get response
+      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+
+      if (!messagesResponse.ok) {
+        throw new Error(`Failed to get messages: ${messagesResponse.status}`);
+      }
+
+      const messagesData = await messagesResponse.json();
+      const assistantMessage = messagesData.data.find((msg: any) => msg.role === 'assistant');
       
-      // Simple direct response to test
-      res.json({
-        response: "✅ DIRECT ROUTE SUCCESS - This is your TOGNINJA BLOG WRITER Assistant responding via direct bypass route!",
-        threadId: threadId || "test-thread",
+      const response = assistantMessage?.content?.[0]?.text?.value || "I apologize, but I couldn't generate a response.";
+
+      console.log("🎯 TOGNINJA RESPONSE:", response.slice(0, 100));
+      res.json({ 
+        response,
+        threadId: currentThreadId,
         assistantId: assistantId,
-        source: "DIRECT_BYPASS_ROUTE",
-        timestamp: new Date().toISOString()
+        source: "TOGNINJA_BLOG_WRITER_ASSISTANT"
       });
       
     } catch (error) {
-      console.error("Direct route error:", error);
-      res.status(500).json({ error: "Direct route failed" });
+      console.error("TOGNINJA Assistant error:", error);
+      res.status(500).json({ 
+        error: "TOGNINJA Assistant failed",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
