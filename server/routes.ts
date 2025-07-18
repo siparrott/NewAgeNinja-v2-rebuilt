@@ -2959,7 +2959,9 @@ Bitte versuchen Sie es später noch einmal.`;
         });
 
       } catch (error) {
-        console.error("Error with OpenAI Assistant API:", error);
+        console.error("ERROR WITH OPENAI ASSISTANT API - FALLING BACK:", error);
+        console.error("Assistant ID attempted:", assistantId);
+        console.error("Thread ID attempted:", currentThreadId);
         
         // Fallback to Chat Completions API if Assistant API fails
         const openai = new OpenAI({

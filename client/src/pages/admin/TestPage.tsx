@@ -56,6 +56,12 @@ const TestPage: React.FC = () => {
 
       const data = await response.json();
 
+      // Debug logging
+      console.log('API Response:', data);
+      console.log('Thread ID received:', data.threadId);
+      console.log('Assistant ID received:', data.assistantId);
+      console.log('Fallback used:', data.fallback);
+
       // Store thread ID for conversation continuity
       if (data.threadId && !threadId) {
         setThreadId(data.threadId);
