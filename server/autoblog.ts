@@ -404,7 +404,7 @@ Use natural, specific, grounded language.
 **Excerpt:**
 **Tags:**
 
-🚨 CRITICAL REQUIREMENTS:
+🚨 CRITICAL REQUIREMENTS - FAILURE TO FOLLOW RESULTS IN REJECTION:
 - MUST include ALL sections above in EXACT format
 - MUST use the **Section Name:** format for each section
 - MUST include complete outline with 6-8 H2 headings
@@ -415,7 +415,40 @@ Use natural, specific, grounded language.
 - MUST write in mentor tone with human imperfections
 - MUST ensure content passes AI detection with varying sentence structure
 
-TASK: Create this complete content package in German for New Age Fotografie using the context data provided above. Follow the EXACT output format and include ALL required sections.`;
+EXAMPLE OUTPUT START:
+**SEO Title:** Your title here
+**Slug:** your-slug-here
+**Headline (H1):** Your headline here
+**Outline:**
+- H2: First main section
+- H2: Second main section
+- H2: Third main section
+- H2: Fourth main section
+- H2: Fifth main section
+- H2: Sixth main section
+
+**Key Takeaways:**
+- First key takeaway
+- Second key takeaway
+- Third key takeaway
+
+**Blog Article:**
+Your full article content here with H2 sections
+
+**Review Snippets:**
+"Client testimonial quote here" - Client Name
+
+**Meta Description:**
+Your meta description here
+
+**Excerpt:**
+Your excerpt here
+
+**Tags:**
+tag1, tag2, tag3
+EXAMPLE OUTPUT END
+
+TASK: Create this complete content package in German for New Age Fotografie using the context data provided above. YOU MUST FOLLOW THE EXACT OUTPUT FORMAT SHOWN IN THE EXAMPLE.`;
 
       // Create thread for REAL Assistant
       const thread = await openai.beta.threads.create();
