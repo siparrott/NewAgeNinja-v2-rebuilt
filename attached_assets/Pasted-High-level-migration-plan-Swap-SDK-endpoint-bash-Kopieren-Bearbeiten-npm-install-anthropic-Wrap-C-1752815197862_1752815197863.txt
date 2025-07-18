@@ -1,0 +1,85 @@
+High-level migration plan
+Swap SDK & endpoint
+
+bash
+Kopieren
+Bearbeiten
+npm install anthropic
+Wrap Claude in your existing agent service
+
+Keep your toolRegistry; just expose it to Claude via the tools array.
+
+Persist messages and your working_memory table exactly as you do now.
+
+Change run loop
+
+ts
+Kopieren
+Bearbeiten
+import Anthropic from 'anthropic';
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_KEY });
+
+const resp = await anthropic.messages.create({
+  model: "claude-3-sonnet-20240229",
+  max_tokens: 1024,
+  temperature: 0.7,
+  tools: Object.values(toolRegistry).map(t => ({
+    name: t.name,
+    description: t.description,
+    input_schema: zodToJsonSchema(t.parameters)
+  })),
+  messages: [
+    { role: "user", content: systemPrompt },
+    { role: "user", content: `[[WORKING_MEMORY]]\n${JSON.stringify(memory)}`},
+    { role: "user", content: userInput }
+  ]
+});
+Claude will return either a normal answer or:
+
+json
+Kopieren
+Bearbeiten
+{
+  "type":"tool",
+  "id":"call_001",
+  "name":"propose_or_create_lead",
+  "input":{ ...args... }
+}
+Handle it exactly like required_action.tool_calls in OpenAI.
+
+Stream back & forth until no more tool messages (Anthropic docs call this a “loop” just like Assistants). 
+docs.anthropic.com
+
+Prompt tweak for Claude
+Claude likes an explicit TOOLS: list in the system or developer message:
+
+ruby
+Kopieren
+Bearbeiten
+TOOLS:
+1. list_clients – Reads client table. Input: {"search":string,"limit":int}
+2. propose_or_create_lead – Creates a lead (guardrails applied) …
+RULES:
+- Only call a tool when needed.
+- Return `type:"tool"` JSON exactly when calling.
+Then include your Phase-B memory contract as usual.
+
+Pricing snapshot (July 2025)
+Model	Input / Output tokens	Notes
+Claude 3 Opus	$15 / M	Highest quality
+Claude 3 Sonnet	$3 / M	Mid-tier (≈ GPT-4 Turbo)
+Claude 3 Haiku	$0.25 / M	Fastest / cheapest
+
+When Claude might help with “content violations”
+Anthropic’s moderation is anchored in its Constitutional AI. Marketing copy with mild persuasion usually passes.
+
+They still block disallowed sexual, extremist, personal data, etc.
+
+If OpenAI flagged the exact phrasing, Claude might let it through — but guard your own compliance.
+
+Quick test script
+bash
+Kopieren
+Bearbeiten
+node test-claude-chat.js "Please invoice Anna for €350, remember this task."
+If the console shows a tool-call JSON, you’re in business.

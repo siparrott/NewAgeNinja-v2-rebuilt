@@ -2,6 +2,7 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
 import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import FormData from 'form-data';
 import { autoBlogSchema, type AutoBlogParsed, type AutoBlogInput } from './autoblog-schema';
 import { buildAutoBlogPrompt } from './autoblog-prompt';
@@ -11,6 +12,11 @@ import { storage } from './storage';
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY 
+});
+
+// Claude 4.0 Sonnet as alternative LLM for higher quality content
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY
 });
 
 interface ProcessedImage {
@@ -175,9 +181,26 @@ Generate blog post for uploaded photography session images.`;
         console.log('Falling back to Chat Completions API...');
       }
 
-      // Chat Completions API with sophisticated German photography prompts
-      console.log('=== USING CHAT COMPLETIONS API ===');
-      console.log('This uses your sophisticated German photography prompts for high-quality content');
+      // Try Claude first for highest quality content, then fallback to OpenAI
+      console.log('=== TRYING CLAUDE 3.5 SONNET FIRST ===');
+      console.log('Using your sophisticated German photography prompts for maximum quality');
+      
+      try {
+        const claudeResult = await this.generateContentWithClaude(images, input, siteContext);
+        if (claudeResult) {
+          console.log('=== CLAUDE SUCCESS ===');
+          console.log('Generated content length:', claudeResult.content_html?.length || 0);
+          return claudeResult;
+        }
+      } catch (claudeError) {
+        console.error('=== CLAUDE FAILED ===');
+        console.error('Claude error:', claudeError.message);
+        console.log('Falling back to OpenAI Chat Completions API...');
+      }
+
+      // OpenAI Chat Completions API fallback
+      console.log('=== USING OPENAI CHAT COMPLETIONS API (FALLBACK) ===');
+      console.log('This uses simplified prompts to avoid content policy issues');
       
       // Convert images to base64 for Chat Completions API
       const imageContents = [];
@@ -333,6 +356,163 @@ WICHTIG:
       console.error('Error generating blog content with Chat Completions:', error);
       throw new Error('Failed to generate blog content');
     }
+  }
+
+  /**
+   * Generate content using Claude with sophisticated prompts
+   */
+  async generateContentWithClaude(images: ProcessedImage[], input: AutoBlogInput, siteContext: string): Promise<AutoBlogParsed> {
+    const imageContents = [];
+
+    // Process images for Claude
+    for (let i = 0; i < images.length; i++) {
+      console.log(`Processing image ${i + 1}/${images.length} for Claude...`);
+      
+      // Convert buffer to base64
+      const base64Image = images[i].buffer.toString('base64');
+      imageContents.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: "image/jpeg", 
+          data: base64Image
+        }
+      });
+    }
+    
+    console.log('Successfully processed', imageContents.length, 'images for Claude analysis');
+
+    // Your sophisticated prompt from the attached file
+    const sophisticatedPrompt = `Humanized, Mentor-Tone, SEO-Ready, Authentic Content
+
+🧠 Context:
+You're my content-writing sidekick for New Age Fotografie, a Vienna-based family and newborn photography studio. We speak directly to clients like real humans. You write like I talk. This is not a blog post. It's a one-to-one convo — with substance, soul, and structure.
+
+WICHTIG: Schreibe AUSSCHLIESSLICH auf Deutsch. Alle Inhalte müssen auf Deutsch sein.
+
+Tone = founder + mentor + experience-led
+Your default voice combines:
+
+🎯 Sabri Suby (no-BS sales copy)
+📸 Real-world photo biz owner (not an AI)  
+👨‍🏫 Mentor explaining things clearly to a student
+💬 Relatable, first-person tone with light imperfection
+
+🔍 You Must Ensure:
+✅ Content feels naturally written by:
+- Varying sentence length + rhythm
+- Using idioms, human anecdotes, casual fragments
+- Natural transitions with authentic tone
+- Sprinkling natural German expressions: "lass uns ehrlich sein", "ja", "genau"
+- Using first-person perspective (founder voice)
+- Writing with personal touch and professional expertise
+
+Business Context: ${siteContext}
+Session Details: ${input.userPrompt || 'Professional photography session documentation'}
+Language: German (de)
+
+💡 Your Task:
+Create a full German content package for Vienna photography clients, structured for SEO and real-human storytelling:
+
+H1 + 6–8 H2s (each 300–500 words)
+Key takeaways
+Full blog article (informal, personal tone)
+Review table
+Meta description
+
+♻️ YOAST SEO COMPLIANCE (Built-in):
+Keyphrase: Familienfotograf Wien / Neugeborenenfotos Wien / Familienfotos Wien
+Include it in: SEO title, Slug, H1, First paragraph, At least one H2, Twice minimum in body, Meta description
+
+Meta description: 120–156 chars
+Flesch Reading Ease > 60
+Passive voice < 10%
+Long sentences < 25%
+Transition words > 30%
+Paragraphs < 150 words
+Internal + external links to /warteliste/
+
+🚫 NEVER USE marketing jargon:
+"Step into," "unleash," "embrace your journey," "revolutionary," "transformative," etc.
+Use natural, specific, grounded German language.
+
+Analyze the uploaded images carefully and create comprehensive German content about this photography session. Describe authentic details from the images (clothing colors, setting, mood, emotions, Vienna location details, etc.) and write in authentic Wiener German for the local market.
+
+✅ Output Format (Exact Structure):
+**SEO Title:** [German SEO title with Vienna/photography keywords]
+**Slug:** [url-friendly-slug]
+**Headline (H1):** [Catchy German headline with quotes or emotional hook]
+**Outline:** [Brief section outline showing H2 structure]
+**Key Takeaways:** [5-point table with takeaway and "Warum es wichtig ist" explanation]
+**Blog Article:** [Full German blog with H1 and 6-8 H2 sections, authentic storytelling, specific image details, customer reviews/testimonials, pricing hints, FAQs - NO <img> tags]
+**Review Snippets:** [3 authentic customer review quotes with names]
+**Meta Description:** [120-156 character German meta description]
+**Excerpt:** [Brief German preview text]
+**Tags:** [relevant German photography tags]
+
+WICHTIG: 
+- Analysiere die Bilder im Detail (Kleidung, Setting, Emotionen, Posen)
+- Verwende spezifische Details aus den Bildern in deinem Content
+- Schreibe wie ein echter Wiener Fotograf mit persönlicher Note
+- Eingebaute interne Links zu /warteliste/
+- Pro-Tipps für Outfit/Posen einbauen
+- Echte Wiener Referenzen (Bezirke, Locations)
+- Preise erwähnen (€149+ Pakete)
+- Kundenstimmen einbauen (5-Sterne-Reviews)`;
+
+    const messageContent = [
+      {
+        type: "text",
+        text: sophisticatedPrompt
+      },
+      ...imageContents
+    ];
+
+    console.log(`Sending ${images.length} images to Claude 3.5 Sonnet`);
+    console.log('Using your sophisticated German prompt with:', 
+                sophisticatedPrompt.includes('Wien') ? '✓ Vienna context' : '✗ No Vienna',
+                sophisticatedPrompt.includes('Deutsch') ? '✓ German language' : '✗ No German',
+                sophisticatedPrompt.includes('New Age Fotografie') ? '✓ Studio branding' : '✗ No branding',
+                sophisticatedPrompt.includes('Sabri Suby') ? '✓ Mentor tone' : '✗ No mentor tone',
+                sophisticatedPrompt.includes('€149') ? '✓ Pricing context' : '✗ No pricing');
+    
+    const response = await anthropic.messages.create({
+      model: "claude-3-5-sonnet-20241022", // Latest Claude model
+      max_tokens: 4000,
+      temperature: 0.7,
+      messages: [
+        {
+          role: "user",
+          content: messageContent
+        }
+      ]
+    });
+
+    const content = response.content[0].text;
+    
+    if (!content) {
+      throw new Error('No content received from Claude');
+    }
+
+    console.log('Claude response length:', content.length);
+    console.log('Claude response preview:', content.substring(0, 500) + '...');
+
+    // Parse the structured markdown response
+    const parsedContent = this.parseStructuredResponse(content);
+    console.log('Parsed Claude content keys:', Object.keys(parsedContent));
+    console.log('Content HTML length:', parsedContent.content_html?.length || 0);
+
+    // Override status based on publishing option
+    if (input.publishOption === 'publish') {
+      parsedContent.status = 'PUBLISHED';
+    } else if (input.publishOption === 'schedule') {
+      parsedContent.status = 'SCHEDULED';
+      parsedContent.scheduledFor = input.scheduledFor;
+    } else {
+      parsedContent.status = 'DRAFT';
+    }
+
+    return parsedContent;
   }
 
   /**
