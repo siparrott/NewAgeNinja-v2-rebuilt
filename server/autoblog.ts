@@ -623,47 +623,96 @@ WICHTIG:
       });
       console.log('Run created with ID:', run.id);
 
-      // Wait for completion
-      let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+      // Wait for completion using direct HTTP API to avoid SDK parameter ordering bugs
+      console.log('Using direct HTTP API calls to work around SDK compatibility issues...');
       let attempts = 0;
       const maxAttempts = 30;
+      let runCompleted = false;
       
-      console.log('Initial run status:', runStatus.status);
-      
-      while ((runStatus.status === 'queued' || runStatus.status === 'in_progress') && attempts < maxAttempts) {
-        console.log(`Waiting for completion... attempt ${attempts + 1}/${maxAttempts}, status: ${runStatus.status}`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-        attempts++;
-      }
-      
-      console.log('Final run status:', runStatus.status);
-      if (runStatus.status === 'failed') {
-        console.error('Run failed with error:', runStatus.last_error);
-      }
-
-      if (runStatus.status === 'completed') {
-        console.log('=== ASSISTANT RUN COMPLETED SUCCESSFULLY ===');
-        const messages = await openai.beta.threads.messages.list(thread.id);
-        const lastMessage = messages.data[0];
-        console.log('Assistant response message count:', messages.data.length);
-        console.log('Last message role:', lastMessage?.role);
-        console.log('Last message content preview:', lastMessage?.content?.[0]?.text?.value?.substring(0, 200) + '...');
-        
-        if (lastMessage.content[0].type === 'text') {
-          const content = lastMessage.content[0].text.value;
-          console.log('Assistant response length:', content.length);
-          console.log('Assistant response preview:', content.substring(0, 500) + '...');
-
-          // Parse the structured response
-          console.log('Raw Assistant response length:', content.length);
-          console.log('Raw Assistant response preview:', content.substring(0, 1000) + '...');
-          const parsedContent = this.parseStructuredResponse(content);
-          return parsedContent;
+      while (attempts < maxAttempts && !runCompleted) {
+        try {
+          console.log(`Checking run status (attempt ${attempts + 1}) with threadId: ${thread.id}, runId: ${run.id}`);
+          
+          const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+              'OpenAI-Beta': 'assistants=v2'
+            }
+          });
+          
+          if (!statusResponse.ok) {
+            throw new Error(`HTTP ${statusResponse.status}: ${statusResponse.statusText}`);
+          }
+          
+          const runStatus = await statusResponse.json();
+          console.log(`Assistant run status: ${runStatus.status} (attempt ${attempts + 1})`);
+          
+          if (runStatus.status === 'completed') {
+            console.log('Assistant run completed successfully!');
+            runCompleted = true;
+            break;
+          } else if (runStatus.status === 'failed' || runStatus.status === 'cancelled' || runStatus.status === 'expired') {
+            console.error('Run failed with error:', runStatus.last_error);
+            throw new Error(`Assistant run failed with status: ${runStatus.status}`);
+          }
+          
+          // Wait 2 seconds before checking again
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          attempts++;
+        } catch (statusError) {
+          console.error('Error checking run status via HTTP API:', statusError);
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
+      
+      if (!runCompleted) {
+        console.log('Assistant API timed out after maximum attempts');
+        return null;
+      }
 
-      console.log('Assistant API failed or timed out, status:', runStatus.status);
+      // Retrieve messages using direct HTTP API
+      console.log('=== ASSISTANT RUN COMPLETED SUCCESSFULLY ===');
+      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+      
+      if (!messagesResponse.ok) {
+        throw new Error(`Failed to retrieve messages: ${messagesResponse.statusText}`);
+      }
+      
+      const messagesData = await messagesResponse.json();
+      const assistantMessages = messagesData.data.filter(msg => msg.role === 'assistant');
+      
+      if (assistantMessages.length === 0) {
+        throw new Error('No response from assistant');
+      }
+      
+      const lastMessage = assistantMessages[0];
+      console.log('Assistant response message count:', messagesData.data.length);
+      console.log('Last message role:', lastMessage?.role);
+      console.log('Last message content preview:', lastMessage?.content?.[0]?.text?.value?.substring(0, 200) + '...');
+      
+      if (lastMessage.content[0].type === 'text') {
+        const content = lastMessage.content[0].text.value;
+        console.log('Assistant response length:', content.length);
+        console.log('Assistant response preview:', content.substring(0, 500) + '...');
+
+        // Parse the structured response
+        console.log('Raw Assistant response length:', content.length);
+        console.log('Raw Assistant response preview:', content.substring(0, 1000) + '...');
+        const parsedContent = this.parseStructuredResponse(content);
+        return parsedContent;
+      }
+
+      console.log('Assistant API failed to return text content');
       return null;
       
     } catch (error) {
