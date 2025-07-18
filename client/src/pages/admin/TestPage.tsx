@@ -39,10 +39,15 @@ const TestPage: React.FC = () => {
     setIsLoading(true);
 
     try {
+      console.log('🚀 FRONTEND: Making request to /api/test/chat');
+      console.log('Request payload:', { message: input.trim(), threadId: threadId });
+      
       const response = await fetch('/api/test/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         },
         body: JSON.stringify({
           message: input.trim(),

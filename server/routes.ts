@@ -2831,6 +2831,8 @@ Bitte versuchen Sie es später noch einmal.`;
 
   // ==================== TEST CHAT ROUTES ====================
   app.post("/api/test/chat", async (req: Request, res: Response) => {
+    console.log("🔥 TEST CHAT ENDPOINT HIT - Using TOGNINJA ASSISTANT");
+    console.log("Request body:", req.body);
     try {
       const { message, threadId } = req.body;
 
