@@ -312,8 +312,10 @@ WICHTIG:
       console.log('Chat Completions response preview:', content.substring(0, 500) + '...');
 
       // Parse the structured markdown response
+      console.log('RAW OpenAI Response Preview:', content.substring(0, 1000) + '...');
       const parsedContent = this.parseStructuredResponse(content);
       console.log('Parsed structured content keys:', Object.keys(parsedContent));
+      console.log('Content HTML exists:', !!parsedContent.content_html);
       console.log('Content HTML length:', parsedContent.content_html?.length || 0);
       console.log('Content HTML preview:', parsedContent.content_html?.substring(0, 200) + '...');
 
@@ -474,6 +476,8 @@ WICHTIG:
           console.log('Assistant response preview:', content.substring(0, 500) + '...');
 
           // Parse the structured response
+          console.log('Raw Assistant response length:', content.length);
+          console.log('Raw Assistant response preview:', content.substring(0, 1000) + '...');
           const parsedContent = this.parseStructuredResponse(content);
           return parsedContent;
         }
