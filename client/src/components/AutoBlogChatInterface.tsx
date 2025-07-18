@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
+// Note: Using div separator instead of missing @/components/ui/separator
 import { Upload, Send, Loader2, Calendar, Globe, FileText, Mic, MicOff, Volume2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -370,7 +370,7 @@ export function AutoBlogChatInterface({ assistantId }: AutoBlogChatInterfaceProp
             )}
           </div>
 
-          <Separator />
+          <div className="border-t my-4" />
 
           {/* Image Upload */}
           <div className="space-y-2">
