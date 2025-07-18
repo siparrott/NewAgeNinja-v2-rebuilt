@@ -2829,6 +2829,66 @@ Bitte versuchen Sie es später noch einmal.`;
     });
   });
 
+  // ==================== TEST CHAT ROUTES ====================
+  app.post("/api/test/chat", async (req: Request, res: Response) => {
+    try {
+      const { message, conversationHistory } = req.body;
+
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      // Initialize OpenAI
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      // Build messages array for conversation context
+      const messages: any[] = [
+        {
+          role: "system",
+          content: "You are a helpful AI assistant for New Age Fotografie, a professional photography studio in Vienna, Austria. You help with general photography questions, booking inquiries, and studio information. Respond in a friendly and professional manner."
+        }
+      ];
+
+      // Add conversation history
+      if (conversationHistory && Array.isArray(conversationHistory)) {
+        messages.push(...conversationHistory);
+      }
+
+      // Add current message
+      messages.push({
+        role: "user",
+        content: message
+      });
+
+      // Make API call to OpenAI
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: messages,
+        max_tokens: 1000,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
+
+      res.json({ response });
+
+    } catch (error) {
+      console.error("Error in test chat:", error);
+      
+      if (error instanceof Error && error.message.includes('API key')) {
+        return res.status(500).json({ error: "OpenAI API configuration error" });
+      }
+      
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // ==================== AUTOMATIC EMAIL REFRESH ====================
   app.post("/api/email/refresh", authenticateUser, async (req: Request, res: Response) => {
     try {

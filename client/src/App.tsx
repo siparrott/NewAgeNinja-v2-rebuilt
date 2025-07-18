@@ -55,6 +55,7 @@ import AdminBlogEditPage from './pages/admin/AdminBlogEditPage';
 import KnowledgeBasePage from './pages/admin/KnowledgeBasePage';
 import CRMOperationsAssistant from './pages/admin/CRMOperationsAssistant';
 import AdminAutoBlogPage from './pages/admin/AdminAutoBlogPage';
+import TestPage from './pages/admin/TestPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CartPage from './pages/CartPage';
 import FamilyGutscheinPage from './pages/gutschein/FamilyGutscheinPage';
@@ -293,6 +294,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <KnowledgeBasePage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/test" 
+                  element={
+                    <ProtectedRoute>
+                      <TestPage />
                     </ProtectedRoute>
                   } 
                 />
