@@ -715,6 +715,13 @@ Preferred communication style: Simple, everyday language.
   * System now guarantees structured output regardless of assistant's response format
   * Complete blog packages include: outline (6 H2s), key takeaways, review snippets, strategic links, meta data
   * Eliminates inconsistency issues by forcing proper structure when assistant doesn't comply
+- July 18, 2025. **CRITICAL FIX**: Fixed parseStructuredResponse to properly trigger force-structured format:
+  * Identified root cause: parseStructuredResponse was always returning valid objects even for unstructured content
+  * Modified method to return null when no structured format markers (**SEO Title:**, **Outline:**, etc.) are detected
+  * Enhanced detection logic to check for specific structured format markers before parsing
+  * System now properly identifies unstructured assistant responses and triggers force-structured format
+  * Eliminates false positives where unstructured content was incorrectly parsed as structured
+  * Force-structured format system now activates reliably for every unstructured assistant response
 
 ## Changelog
 

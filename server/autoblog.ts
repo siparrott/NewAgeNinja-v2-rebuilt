@@ -549,10 +549,10 @@ TASK: Create this complete content package in German for New Age Fotografie usin
 
         // Parse the sophisticated response from REAL Assistant
         const parsedContent = this.parseStructuredResponse(content);
-        console.log('📋 Parsed content keys:', Object.keys(parsedContent || {}));
+        console.log('📋 Parsed content result:', parsedContent ? 'Structured format detected' : 'No structured format');
         
         // If assistant didn't follow structured format, force it
-        if (!parsedContent || !this.hasRequiredSections(parsedContent)) {
+        if (!parsedContent) {
           console.log('🔧 ===== FORCING STRUCTURED FORMAT =====');
           console.log('🔧 Reason: Missing structured sections');
           console.log('🔧 Original content length:', content.length);
@@ -793,9 +793,23 @@ INTERNAL BUSINESS CONTEXT:
   /**
    * Parse structured response from assistant
    */
-  private parseStructuredResponse(content: string): AutoBlogParsed {
-    console.log('=== PARSING CLAUDE RESPONSE ===');
+  private parseStructuredResponse(content: string): AutoBlogParsed | null {
+    console.log('=== PARSING ASSISTANT RESPONSE ===');
     console.log('Input content length:', content.length);
+    
+    // First check if content has structured format markers
+    const hasStructuredMarkers = content.includes('**SEO Title:**') || 
+                                content.includes('**Headline (H1):**') ||
+                                content.includes('**Outline:**') ||
+                                content.includes('**Key Takeaways:**') ||
+                                content.includes('**Blog Article:**') ||
+                                content.includes('**Review Snippets:**') ||
+                                content.includes('**Meta Description:**');
+    
+    if (!hasStructuredMarkers) {
+      console.log('❌ No structured format markers found - content is unstructured');
+      return null;
+    }
     
     // Extract sections using regex patterns with flexible matching for the structured output format
     const sections = {
