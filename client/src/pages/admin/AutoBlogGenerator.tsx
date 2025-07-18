@@ -140,7 +140,14 @@ export default function AutoBlogGenerator() {
       const startTime = Date.now();
       console.log('⏰ Request started at:', new Date().toISOString());
 
-      const response = await fetch('/api/autoblog/generate', {
+      // Force localhost URL for development
+      const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'http://localhost:5000/api/autoblog/generate'
+        : '/api/autoblog/generate';
+      
+      console.log('🌐 Using API URL:', apiUrl);
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData, // No Content-Type header - browser sets it automatically with boundary
       });
@@ -232,7 +239,12 @@ export default function AutoBlogGenerator() {
     setChatMessages(prev => [...prev, { role: "user", content: userMessage }]);
 
     try {
-      const response = await fetch('/api/togninja/chat', {
+      // Force localhost URL for development and use autoblog chat endpoint
+      const chatApiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'http://localhost:5000/api/autoblog/chat'
+        : '/api/autoblog/chat';
+
+      const response = await fetch(chatApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -240,6 +252,7 @@ export default function AutoBlogGenerator() {
         body: JSON.stringify({
           message: userMessage,
           threadId,
+          assistantId: 'asst_nlyO3yRav2oWtyTvkq0cHZaU'
         }),
       });
 
