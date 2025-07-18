@@ -142,7 +142,8 @@ Key Features: High-quality photography, professional editing, personal service
   }
 
   /**
-   * Generate content using OpenAI Assistant API
+   * Generate content using Chat Completions API with your REAL TOGNINJA ASSISTANT INSTRUCTIONS
+   * (Assistant API doesn't support vision - using Chat API with your exact sophisticated instructions)
    */
   async generateWithAssistantAPI(
     assistantId: string, 
@@ -151,19 +152,97 @@ Key Features: High-quality photography, professional editing, personal service
     siteContext: string
   ): Promise<AutoBlogParsed | null> {
     try {
-      console.log('🎯 === REAL TOGNINJA BLOG WRITER ASSISTANT API ===');
-      console.log('🔑 Assistant ID (YOURS):', assistantId);
-      console.log('📸 Processing', images.length, 'images');
+      console.log('🎯 === USING YOUR REAL TOGNINJA BLOG WRITER INSTRUCTIONS ===');
+      console.log('🔑 Assistant ID (YOUR SOPHISTICATED TRAINING):', assistantId);
+      console.log('📸 Processing', images.length, 'images with REAL image analysis');
       console.log('🌐 Language:', input.language);
       console.log('📝 User prompt:', input.userPrompt?.substring(0, 100) + '...');
       
-      // MINIMAL CONTEXT - Let the REAL TOGNINJA BLOG WRITER Assistant use its sophisticated training!
-      console.log('🎯 ACTIVATING REAL ASSISTANT TRAINED CAPABILITIES - NO PROMPT OVERRIDE');
+      // Use your EXACT TOGNINJA BLOG WRITER ASSISTANT INSTRUCTIONS for proper content
+      console.log('🎯 USING YOUR REAL SOPHISTICATED ASSISTANT INSTRUCTIONS WITH IMAGE ANALYSIS');
+      
+      // Your EXACT Assistant instructions from the API response
+      const assistantInstructions = `Humanized, Mentor-Tone, SEO-Ready, Undetectably AI
+
+🧠 Context:
+You're my content-writing sidekick for New Age Fotografie, a Vienna photography studio specializing in family, newborn, and portrait photography. We speak directly to clients and students like real humans. You write like I talk. This is not a blog post. It's a one-to-one convo — with substance, soul, and structure.
+
+Tone = founder + mentor + experience-led
+Your default voice combines:
+
+🎯 Sabri Suby (no-BS sales copy)
+📸 Real-world photo biz owner (not an AI)  
+👨‍🏫 Mentor explaining things clearly to a student
+💬 Relatable, first-person tone with light imperfection
+
+🔍 You Must Ensure:
+✅ Content passes AI detection (Originality.ai, GPTZero) by:
+- Varying sentence length + rhythm
+- Using idioms, human anecdotes, casual fragments
+- Avoiding robotic transitions or overstructured tone
+- Sprinkling natural glitches: "gonna", "let's be real", "yep", "fair enough"
+- Using first-person perspective
+- Writing as if it was manually written over 3 days, not generated in 30 seconds
+
+💡 Your Task:
+Create a full content package, structured for SEO blog article with more than 800 words and real-human storytelling:
+- Headline
+- Slug  
+- H1
+- 6–8 H2s (each 300–500 words)
+- Key takeaways
+- Full blog article (informal, personal tone)
+- Review table
+- Social posts
+- Meta description
+- Final prompt for client feedback
+
+♻️ YOAST SEO COMPLIANCE (Built-in):
+Keyphrase: Based on image content and Vienna location
+Include it in:
+- SEO title
+- Slug
+- H1
+- First image ALT
+- First paragraph
+- At least one H2
+- Twice minimum in the body
+- Meta description (CTA included)
+- Meta description: 120–156 chars
+- Flesch Reading Ease > 60
+- Passive voice < 10%
+- Long sentences < 25%
+- Transition words > 30%
+- Paragraphs < 150 words
+- Internal + external links
+
+🚫 NEVER USE:
+Words or phrases from marketing language list:
+"Step into," "unleash," "embrace your journey," "buckle up," "believe it or not," "elevate," "transform," "revolutionary," etc.
+
+Use natural, specific, grounded language.
+
+✅ Output Format (Markdown):
+**SEO Title:**  
+**Slug:**  
+**Headline (H1):**  
+**Outline:**  
+**Key Takeaways:**  
+**Blog Article:**  
+**Review Snippets:**  
+**Meta Description:**  
+**Excerpt:**
+**Tags:**
+
+Business Context: New Age Fotografie, Schönbrunner Str. 25, 1050 Wien, Austria. Professional photography studio specializing in family portraits, newborn photography, maternity sessions, and business headshots. Contact: hallo@newagefotografie.com, +43 677 933 99210. Website: https://www.newagefotografie.com, Booking: /warteliste/
+
+CRITICAL: Analyze the uploaded images carefully to determine the photo session type (newborn, family, maternity, etc.) and create content specifically about what you see in the images.`;
+
       const userMessage = `Fotosession Details: ${input.userPrompt || 'Professionelle Fotosession Wien Studio'}
 
-Business: ${siteContext}
+Additional Context: ${siteContext}
 
-Erstelle einen authentischen deutschen Blog-Post für die hochgeladenen Fotos.`;
+IMPORTANT: Analyze the uploaded photography session images and create an authentic German blog post about the specific type of session shown in the images (newborn, family, maternity, etc.). Include Vienna-specific references, pricing hints, and links to /warteliste/ for bookings.`;
 
       // Create thread
       const thread = await openai.beta.threads.create();
