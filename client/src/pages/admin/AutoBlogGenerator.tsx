@@ -100,56 +100,66 @@ export default function AutoBlogGenerator() {
     setIsGenerating(true);
     
     try {
-      // Convert images to base64 for API
-      const imageData = await Promise.all(uploadedImages.map(async (img) => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(img.file);
-        });
-      }));
+      // Create FormData for file upload
+      const formData = new FormData();
+      
+      // Add images to FormData
+      uploadedImages.forEach((img, index) => {
+        formData.append('images', img.file);
+      });
+      
+      // Add other form data
+      formData.append('userPrompt', contentGuidance || 'Professional photography session in Vienna studio');
+      formData.append('assistantId', 'asst_nlyO3yRav2oWtyTvkq0cHZaU');
+      formData.append('publishOption', publishingOption);
+      formData.append('language', contentLanguage === 'deutsch' ? 'de' : 'en');
+      formData.append('websiteUrl', websiteUrl);
+      if (customSlug) {
+        formData.append('customSlug', customSlug);
+      }
 
-      const response = await fetch('/api/togninja/chat', {
+      console.log('🚀 Sending request to AutoBlog API with', uploadedImages.length, 'images');
+
+      const response = await fetch('/api/autoblog/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: `Generate a German blog post for New Age Fotografie photography studio. Session details: ${contentGuidance}. Website: ${websiteUrl}. Create SEO-optimized content with title, meta description, structured content, and tags.`,
-          threadId,
-          images: imageData
-        }),
+        body: formData, // No Content-Type header - browser sets it automatically with boundary
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate content');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate content');
       }
 
       const data = await response.json();
-      setThreadId(data.threadId);
+      console.log('✅ AutoBlog response received:', data);
 
-      // Parse the response into structured content
-      const mockContent: GeneratedContent = {
-        title: "Professionelle Familienfotografie in Wien - Authentische Momente festhalten",
-        content: data.response,
-        excerpt: "Entdecken Sie unsere professionelle Familienfotografie in Wien. Authentische Momente, die ein Leben lang halten.",
-        metaDescription: "Professionelle Familienfotografie in Wien ✓ Authentische Momente ✓ Erfahrener Fotograf ✓ Jetzt Termin buchen",
-        slug: customSlug || "familienfotografie-wien-authentische-momente",
-        tags: ["Familienfotografie", "Wien", "Professionell", "Authentisch"]
-      };
+      if (data.success && data.post) {
+        // Parse the structured content from the real AutoBlog response
+        const generatedPost = data.post;
+        const structuredContent: GeneratedContent = {
+          title: generatedPost.title || "Professionelle Familienfotografie in Wien",
+          content: generatedPost.content_html || generatedPost.content || "",
+          excerpt: generatedPost.excerpt || "",
+          metaDescription: generatedPost.meta_description || "",
+          slug: generatedPost.slug || customSlug || "familienfotografie-wien",
+          tags: generatedPost.tags || []
+        };
 
-      setGeneratedContent(mockContent);
-      
-      toast({
-        title: "Content generated successfully",
-        description: "Your blog post has been created using TOGNINJA assistant",
-      });
+        setGeneratedContent(structuredContent);
+        
+        toast({
+          title: "Content generated successfully",
+          description: `Blog post created using TOGNINJA BLOG WRITER Assistant (${data.ai?.method || 'Assistant API'})`,
+        });
+      } else {
+        throw new Error(data.error || 'Failed to generate structured content');
+      }
 
     } catch (error) {
       console.error('Generation error:', error);
       toast({
         title: "Generation failed",
-        description: "Failed to generate content. Please try again.",
+        description: error.message || "Failed to generate content. Please try again.",
         variant: "destructive",
       });
     } finally {
