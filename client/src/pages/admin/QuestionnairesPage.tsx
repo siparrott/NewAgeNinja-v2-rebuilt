@@ -494,55 +494,6 @@ const QuestionnairesPage: React.FC = () => {
       )}
     </AdminLayout>
   );
-            </div>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No questionnaires found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || statusFilter !== 'all'
-                ? 'Try adjusting your search or filter criteria.'
-                : 'Get started by creating a new questionnaire.'}
-            </p>
-            <div className="mt-6">
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-              >
-                <Plus className="-ml-1 mr-2 h-5 w-5" />
-                Create Questionnaire
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h3>
-            <p className="text-gray-500 mb-6">
-              Are you sure you want to delete this questionnaire? This action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => setDeleteConfirmation(null)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteConfirmation && handleDeleteQuestionnaire(deleteConfirmation)}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Questionnaire Modal would go here */}
-    </AdminLayout>
-  );
 };
 
 export default QuestionnairesPage;

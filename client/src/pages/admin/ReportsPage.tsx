@@ -521,18 +521,7 @@ const ReportsPage: React.FC = () => {
     }
   };
 
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
-
-const ReportsPage: React.FC = () => {
-  const [reportData, setReportData] = useState<ComprehensiveReportData | null>(null);
-  const [dateRange, setDateRange] = useState({
-    from: new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1).toISOString().split('T')[0],
-    to: new Date().toISOString().split('T')[0]
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedTimeRange, setSelectedTimeRange] = useState<string>('12months');
-  const [selectedCategory, setSelectedCategory] = useState<string>('overview');
+  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   useEffect(() => {
     fetchComprehensiveReports();

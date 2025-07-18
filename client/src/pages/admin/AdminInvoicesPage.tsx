@@ -58,52 +58,6 @@ const AdminInvoicesPage: React.FC = () => {
       setLoading(false);
     }
   };
-          createdAt: '2025-01-20T10:30:00Z'
-        },
-        {
-          id: '2',
-          invoiceNumber: 'INV-2025-002',
-          clientName: 'Michael Schmidt',
-          clientId: '2',
-          amount: 495.00,
-          taxAmount: 99.00,
-          totalAmount: 594.00,
-          status: 'sent',
-          dueDate: '2025-02-20',
-          createdAt: '2025-01-18T09:15:00Z'
-        },
-        {
-          id: '3',
-          invoiceNumber: 'INV-2025-003',
-          clientName: 'Anna Weber',
-          clientId: '3',
-          amount: 95.00,
-          taxAmount: 19.00,
-          totalAmount: 114.00,
-          status: 'draft',
-          dueDate: '2025-02-25',
-          createdAt: '2025-01-15T16:45:00Z'
-        },
-        {
-          id: '4',
-          invoiceNumber: 'INV-2025-004',
-          clientName: 'Thomas Huber',
-          clientId: '4',
-          amount: 150.00,
-          taxAmount: 30.00,
-          totalAmount: 180.00,
-          status: 'overdue',
-          dueDate: '2025-01-15',
-          createdAt: '2025-01-10T14:20:00Z'
-        }
-      ];
-      setInvoices(mockInvoices);
-    } catch (error) {
-      // console.error removed
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filterInvoices = () => {
     let filtered = invoices;

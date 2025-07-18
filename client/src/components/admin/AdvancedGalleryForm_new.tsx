@@ -278,7 +278,9 @@ const AdvancedGalleryForm: React.FC<GalleryFormProps> = ({ gallery, isEditing = 
           .from('gallery_images')
           .insert(imageRecords);
         
-        if (imageError) // console.log removed
+        if (imageError) {
+          throw imageError;
+        }
       }
       
       setTimeout(() => {
