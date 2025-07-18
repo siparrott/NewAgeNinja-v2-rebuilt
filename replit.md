@@ -746,6 +746,12 @@ Preferred communication style: Simple, everyday language.
   * All 6 contextual data sources feeding into TOGNINJA BLOG WRITER Assistant for maximum authenticity
   * Blog post database integration working: ID f740baaf-fb03-41ac-b7b3-b1422b8193aa created successfully
   * AutoBlog Generator now fully operational with comprehensive Vienna photography market intelligence
+- July 18, 2025. Fixed AutoBlog navigation conflict causing wrong endpoint usage:
+  * Identified root cause: User was clicking "AI AutoBlog" (old component) instead of "AutoBlog Generator" (new component)
+  * Removed conflicting "AI AutoBlog" navigation item pointing to old /admin/autoblog route with wrong endpoints
+  * User should now click "AutoBlog Generator" with ✨ Sparkles icon for the working comprehensive system
+  * Eliminated navigation confusion between AdminAutoBlogPage (old) and AutoBlogGenerator (new) components
+  * Clear path: use "AutoBlog Generator" → /admin/autoblog-generator → working TOGNINJA BLOG WRITER integration
 - July 18, 2025. **BREAKTHROUGH**: Implemented force-structured format solution for complete blog packages:
   * Created automatic detection system to identify when assistant doesn't follow structured format
   * Built forceStructuredFormat() method that creates complete blog packages with all required sections

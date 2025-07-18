@@ -88,7 +88,7 @@ export default function AutoBlogGenerator() {
   };
 
   const generateBlogPost = async () => {
-    console.log('🔵 Generate button clicked - starting process...');
+    console.log('🔵 FIXED Generate button clicked - version 2.0 starting process...');
     console.log('📊 Current state:', {
       uploadedImages: uploadedImages.length,
       contentGuidance: contentGuidance?.length || 0,

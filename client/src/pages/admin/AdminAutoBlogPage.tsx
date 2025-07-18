@@ -110,6 +110,7 @@ export default function AdminAutoBlogPage() {
   };
 
   const generateBlogPost = async () => {
+    console.log('🔴 OLD AdminAutoBlogPage function called - this should NOT be happening!');
     if (selectedImages.length === 0) {
       toast({
         title: "No images selected",
