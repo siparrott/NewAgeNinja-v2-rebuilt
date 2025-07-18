@@ -12,6 +12,8 @@ const TestPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [assistantId, setAssistantId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -44,10 +46,7 @@ const TestPage: React.FC = () => {
         },
         body: JSON.stringify({
           message: input.trim(),
-          conversationHistory: messages.map(m => ({
-            role: m.role,
-            content: m.content
-          }))
+          threadId: threadId
         }),
       });
 
@@ -56,6 +55,16 @@ const TestPage: React.FC = () => {
       }
 
       const data = await response.json();
+
+      // Store thread ID for conversation continuity
+      if (data.threadId && !threadId) {
+        setThreadId(data.threadId);
+      }
+
+      // Store assistant ID for reference
+      if (data.assistantId && !assistantId) {
+        setAssistantId(data.assistantId);
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -91,7 +100,17 @@ const TestPage: React.FC = () => {
       {/* Header */}
       <div className="border-b border-gray-200 p-4 bg-gray-50">
         <h1 className="text-2xl font-bold text-gray-900">OpenAI Assistant Test</h1>
-        <p className="text-gray-600 mt-1">Test your OpenAI assistant integration</p>
+        <p className="text-gray-600 mt-1">Testing TOGNINJA BLOG WRITER Assistant (asst_nlyO3yRav2oWtyTvkq0cHZaU)</p>
+        {threadId && (
+          <p className="text-xs text-green-600 mt-1">
+            Connected to thread: {threadId.substring(0, 20)}...
+          </p>
+        )}
+        {assistantId && (
+          <p className="text-xs text-blue-600">
+            Using assistant: {assistantId}
+          </p>
+        )}
       </div>
 
       {/* Messages Area */}

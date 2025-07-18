@@ -2832,51 +2832,164 @@ Bitte versuchen Sie es später noch einmal.`;
   // ==================== TEST CHAT ROUTES ====================
   app.post("/api/test/chat", async (req: Request, res: Response) => {
     try {
-      const { message, conversationHistory } = req.body;
+      const { message, threadId } = req.body;
 
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: "Message is required" });
       }
 
-      // Initialize OpenAI
-      const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-
       if (!process.env.OPENAI_API_KEY) {
         return res.status(500).json({ error: "OpenAI API key not configured" });
       }
 
-      // Build messages array for conversation context
-      const messages: any[] = [
-        {
-          role: "system",
-          content: "You are a helpful AI assistant for New Age Fotografie, a professional photography studio in Vienna, Austria. You help with general photography questions, booking inquiries, and studio information. Respond in a friendly and professional manner."
+      // Your specific assistant ID
+      const assistantId = 'asst_nlyO3yRav2oWtyTvkq0cHZaU';
+
+      try {
+        // Create thread if not provided
+        let currentThreadId = threadId;
+        if (!currentThreadId) {
+          const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+              'OpenAI-Beta': 'assistants=v2'
+            }
+          });
+
+          if (!threadResponse.ok) {
+            throw new Error(`Failed to create thread: ${threadResponse.status}`);
+          }
+
+          const thread = await threadResponse.json();
+          currentThreadId = thread.id;
         }
-      ];
 
-      // Add conversation history
-      if (conversationHistory && Array.isArray(conversationHistory)) {
-        messages.push(...conversationHistory);
+        // Add message to thread
+        const messageResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2'
+          },
+          body: JSON.stringify({
+            role: 'user',
+            content: message
+          })
+        });
+
+        if (!messageResponse.ok) {
+          throw new Error(`Failed to add message: ${messageResponse.status}`);
+        }
+
+        // Create run with your assistant
+        const runResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2'
+          },
+          body: JSON.stringify({
+            assistant_id: assistantId
+          })
+        });
+
+        if (!runResponse.ok) {
+          throw new Error(`Failed to create run: ${runResponse.status}`);
+        }
+
+        const run = await runResponse.json();
+
+        // Poll for completion
+        let runStatus = run.status;
+        let attempts = 0;
+        const maxAttempts = 30; // 30 seconds max
+
+        while (runStatus === 'queued' || runStatus === 'in_progress') {
+          if (attempts >= maxAttempts) {
+            throw new Error('Assistant response timeout');
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          const statusResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/runs/${run.id}`, {
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'OpenAI-Beta': 'assistants=v2'
+            }
+          });
+
+          if (!statusResponse.ok) {
+            throw new Error(`Failed to check run status: ${statusResponse.status}`);
+          }
+
+          const statusData = await statusResponse.json();
+          runStatus = statusData.status;
+          attempts++;
+        }
+
+        if (runStatus !== 'completed') {
+          throw new Error(`Assistant run failed with status: ${runStatus}`);
+        }
+
+        // Get the assistant's response
+        const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${currentThreadId}/messages`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+
+        if (!messagesResponse.ok) {
+          throw new Error(`Failed to get messages: ${messagesResponse.status}`);
+        }
+
+        const messagesData = await messagesResponse.json();
+        const assistantMessage = messagesData.data.find((msg: any) => msg.role === 'assistant');
+        
+        const response = assistantMessage?.content?.[0]?.text?.value || "I apologize, but I couldn't generate a response.";
+
+        res.json({ 
+          response,
+          threadId: currentThreadId,
+          assistantId: assistantId
+        });
+
+      } catch (error) {
+        console.error("Error with OpenAI Assistant API:", error);
+        
+        // Fallback to Chat Completions API if Assistant API fails
+        const openai = new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY,
+        });
+
+        const fallbackCompletion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: "You are the TOGNINJA BLOG WRITER Assistant for New Age Fotografie photography studio in Vienna, Austria. Respond professionally about photography services, content creation, and business management."
+            },
+            {
+              role: "user",
+              content: message
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+        });
+
+        const fallbackResponse = fallbackCompletion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
+
+        res.json({ 
+          response: fallbackResponse,
+          fallback: true,
+          assistantId: assistantId
+        });
       }
-
-      // Add current message
-      messages.push({
-        role: "user",
-        content: message
-      });
-
-      // Make API call to OpenAI
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: messages,
-        max_tokens: 1000,
-        temperature: 0.7,
-      });
-
-      const response = completion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
-
-      res.json({ response });
 
     } catch (error) {
       console.error("Error in test chat:", error);
