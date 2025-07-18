@@ -27,6 +27,8 @@ interface GeneratedContent {
 }
 
 export default function AutoBlogGenerator() {
+  console.log('🟢 AutoBlogGenerator component loaded - CACHE REFRESH VERSION 3.0');
+  
   const [activeTab, setActiveTab] = useState("advanced");
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [contentGuidance, setContentGuidance] = useState("");
@@ -295,8 +297,9 @@ export default function AutoBlogGenerator() {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AutoBlog Generator</h1>
-        <p className="text-gray-600 dark:text-gray-400">Generate professional blog content using TOGNINJA assistant</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AutoBlog Generator v3.0</h1>
+        <p className="text-gray-600 dark:text-gray-400">Generate professional blog content using TOGNINJA assistant - Fixed Endpoint Version</p>
+        <div className="text-xs text-green-600 mt-1">✅ Using correct /api/autoblog/generate endpoint</div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

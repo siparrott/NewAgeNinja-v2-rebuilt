@@ -387,7 +387,15 @@ function App() {
                   } 
                 />
                 <Route 
+                  path="/admin/autoblog" 
+                  element={<Navigate to="/admin/autoblog-v3" replace />}
+                />
+                <Route 
                   path="/admin/autoblog-generator" 
+                  element={<Navigate to="/admin/autoblog-v3" replace />}
+                />
+                <Route 
+                  path="/admin/autoblog-v3" 
                   element={
                     <ProtectedRoute>
                       <AutoBlogGenerator />
