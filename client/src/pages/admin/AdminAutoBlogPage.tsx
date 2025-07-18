@@ -307,22 +307,34 @@ export default function AdminAutoBlogPage() {
               {selectedImages.length > 0 && (
                 <div className="mt-4">
                   <div className="grid grid-cols-3 gap-2">
-                    {selectedImages.map((file, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                          <Image className="h-8 w-8 text-muted-foreground" />
+                    {selectedImages.map((file, index) => {
+                      const imageUrl = URL.createObjectURL(file);
+                      return (
+                        <div key={index} className="relative group">
+                          <div className="aspect-square bg-muted rounded-lg overflow-hidden border">
+                            <img 
+                              src={imageUrl}
+                              alt={`Upload preview ${index + 1}`}
+                              className="w-full h-full object-cover transition-opacity duration-200"
+                              onLoad={() => URL.revokeObjectURL(imageUrl)}
+                              onError={() => {
+                                console.error(`Failed to load image preview: ${file.name}`);
+                                URL.revokeObjectURL(imageUrl);
+                              }}
+                            />
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeImage(index)}
+                          >
+                            ×
+                          </Button>
+                          <p className="text-xs text-center mt-1 truncate">{file.name}</p>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeImage(index)}
-                        >
-                          ×
-                        </Button>
-                        <p className="text-xs text-center mt-1 truncate">{file.name}</p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
