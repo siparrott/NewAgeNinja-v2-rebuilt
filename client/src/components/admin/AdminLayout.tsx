@@ -27,7 +27,8 @@ import {
   ExternalLink,
   Bell,
   BookOpen,
-  Bot
+  Bot,
+  TestTube
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -95,7 +96,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
     { icon: Bot, label: 'CRM Operations Assistant', path: '/admin/crm-assistant' },
     { icon: BookOpen, label: 'Knowledge Base', path: '/admin/knowledge-base' },
-    { icon: Bot, label: 'Test', path: '/admin/test' },
+    { icon: TestTube, label: 'Test Chat', path: '/admin/test' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
     { icon: Palette, label: 'Customization', path: '/admin/customization' },
     { icon: Palette, label: 'Studio Templates', path: '/admin/studio-templates' },
