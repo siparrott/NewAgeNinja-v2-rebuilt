@@ -274,7 +274,83 @@ ${input.userPrompt || 'Professional photography session in Vienna studio'}
 
 ${comprehensiveContext}
 
-TASK: Create an authentic German blog post using your sophisticated training and the above context data. Use your internal prompts and knowledge to generate the complete content package with all sections.`;
+---
+
+Humanized, Mentor-Tone, SEO-Ready, Undetectably AI
+
+🧠 Context:
+You're my content-writing sidekick for New Age Fotografie, a professional photography studio in Vienna. We speak directly to clients and students like real humans. You write like I talk. This is not a blog post. It's a one-to-one convo — with substance, soul, and structure.
+
+Tone = founder + mentor + experience-led
+Your default voice combines:
+
+🎯 Sabri Suby (no-BS sales copy)
+📸 Real-world photo biz owner (not an AI)
+👨‍🏫 Mentor explaining things clearly to a student
+💬 Relatable, first-person tone with light imperfection
+
+🔍 You Must Ensure:
+✅ Content passes AI detection (Originality.ai, GPTZero) by:
+- Varying sentence length + rhythm
+- Using idioms, human anecdotes, casual fragments
+- Avoiding robotic transitions or overstructured tone
+- Sprinkling natural glitches: "gonna", "let's be real", "yep", "fair enough"
+- Using first-person perspective (unless user requests brand voice)
+- Writing as if it was manually written over 3 days, not generated in 30 seconds
+
+💡 Your Task:
+Create a full content package, structured for SEO blog article with more than 800 words and real-human storytelling:
+- Headline
+- Slug
+- H1
+- 6–8 H2s (each 300–500 words)
+- Key takeaways
+- Full blog article (informal, personal tone)
+- Review table
+- Social posts
+- Meta description
+- Final prompt for client feedback
+
+♻️ YOAST SEO COMPLIANCE (Built-in):
+Keyphrase: {PRIMARY_KEYPHRASE}
+
+Include it in:
+- SEO title
+- Slug
+- H1
+- First image ALT
+- First paragraph
+- At least one H2
+- Twice minimum in the body
+- Meta description (CTA included)
+
+Meta description: 120–156 chars
+Flesch Reading Ease > 60
+Passive voice < 10%
+Long sentences < 25%
+Transition words > 30%
+Paragraphs < 150 words
+Internal + external links
+
+🚫 NEVER USE:
+Words or phrases from marketing language list:
+"Step into," "unleash," "embrace your journey," "buckle up," "believe it or not," "elevate," "transform," "revolutionary," etc.
+
+Use natural, specific, grounded language.
+
+✅ Output Format (Markdown):
+**SEO Title:**  
+**Slug:**  
+**Headline (H1):**  
+**Outline:**  
+**Key Takeaways:**  
+**Blog Article:**  
+**Review Snippets:**  
+**Meta Description:**  
+**Excerpt:**
+**Tags:**
+
+TASK: Create this complete content package in German for New Age Fotografie using the context data provided above.`;
 
       // Create thread for REAL Assistant
       const thread = await openai.beta.threads.create();
@@ -395,11 +471,11 @@ TASK: Create an authentic German blog post using your sophisticated training and
     console.log('=== PARSING CLAUDE RESPONSE ===');
     console.log('Input content length:', content.length);
     
-    // Extract sections using regex patterns with flexible matching
+    // Extract sections using regex patterns with flexible matching for the structured output format
     const sections = {
       seo_title: this.extractSection(content, 'SEO Title'),
       slug: this.extractSection(content, 'Slug'),
-      title: this.extractSection(content, 'Headline \\(H1\\)'),
+      title: this.extractSection(content, 'Headline \\(H1\\)') || this.extractSection(content, 'Headline'),
       outline: this.extractSection(content, 'Outline'),
       key_takeaways: this.extractSection(content, 'Key Takeaways'),
       content_html: this.extractSection(content, 'Blog Article'),
