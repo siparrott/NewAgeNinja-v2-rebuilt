@@ -157,53 +157,13 @@ Key Features: High-quality photography, professional editing, personal service
       console.log('🌐 Language:', input.language);
       console.log('📝 User prompt:', input.userPrompt?.substring(0, 100) + '...');
       
-      // Enhanced prompt to match your sophisticated test output
-      const userMessage = `Du bist mein Content-Schreibpartner für New Age Fotografie, ein professionelles Fotostudio in Wien, das sich auf Familien-, Neugeborenen- und Porträtfotografie spezialisiert hat.
+      // MINIMAL CONTEXT - Let the REAL TOGNINJA BLOG WRITER Assistant use its sophisticated training!
+      console.log('🎯 ACTIVATING REAL ASSISTANT TRAINED CAPABILITIES - NO PROMPT OVERRIDE');
+      const userMessage = `Fotosession Details: ${input.userPrompt || 'Familienfotosession Wien Studio'}
 
-WICHTIG: Schreibe AUSSCHLIESSLICH auf DEUTSCH. Alle Inhalte müssen vollständig in deutscher Sprache sein.
+Business: ${siteContext}
 
-Business Context: ${siteContext}
-Session Details: ${input.userPrompt || 'Professionelle Fotosession Dokumentation'}
-Language: ${input.language || 'de'}
-
-SCHREIBSTIL = Humanisiert, Mentor-Ton, SEO-bereit, unentdeckbar KI
-Kontext: Du bist mein Content-Schreibpartner. Ich brauche authentische, spezifische, bodenständige deutsche Inhalte.
-
-Ton = Gründer + Mentor + Erfahrung-basiert
-Deine Stimme kombiniert:
-- Sabri Suby (direkter Verkaufstext)
-- Echter Fotobusiness-Besitzer (nicht KI)
-- Mentor, der Dinge klar erklärt
-- Persönlicher, erster-Person-Ton mit authentischen Unperfektion
-
-YOAST SEO-konform:
-- H1 + 6-8 H2-Abschnitte (300-500 Wörter pro Abschnitt)
-- Natürliche Keyword-Platzierung 
-- Variierende Satzlängen (kurz, mittel, lang)
-- Echte Idiome, Erste-Person-Perspektive
-- Authentische kleine "Unperfektion"
-
-Erstelle ein vollständiges Content-Paket mit dieser EXAKTEN Struktur:
-**SEO Title:** [German SEO title with Vienna/photography keywords]
-**Slug:** [url-friendly-slug]
-**Headline (H1):** [Catchy German headline with quotes or emotional hook]
-**Outline:** [Brief section outline showing H2 structure]
-**Key Takeaways:** [5-point table with takeaway and "Warum es wichtig ist" explanation]
-**Blog Article:** [Full German blog with H1 and 6-8 H2 sections, authentic storytelling, specific image details, customer reviews/testimonials, pricing hints, FAQs]
-**Review Snippets:** [3 authentic customer review quotes with names]
-**Meta Description:** [120-156 character German meta description]
-**Excerpt:** [Brief German preview text]
-**Tags:** [relevant German photography tags]
-
-WICHTIG: 
-- Analysiere die Bilder im Detail (Kleidung, Setting, Emotionen, Posen)
-- Verwende spezifische Details aus den Bildern in deinem Content
-- Schreibe wie ein echter Wiener Fotograf, nicht wie KI
-- Eingebaute interne Links zu /warteliste/
-- Pro-Tipps für Outfit/Posen einbauen
-- Echte Wiener Referenzen (Bezirke, Locations)
-- Preise erwähnen (€149+ Pakete)
-- Kundenstimmen einbauen (5-Sterne-Reviews)`;
+Erstelle einen authentischen deutschen Blog-Post für die hochgeladenen Familienfotos.`;
 
       // Create thread
       const thread = await openai.beta.threads.create();
@@ -216,11 +176,11 @@ WICHTIG:
         }
       ];
       
-      // Add image descriptions for context (Assistant API handles images differently)
+      // Let the REAL Assistant use its trained image analysis capabilities
       if (images.length > 0) {
         messageContent.push({
           type: "text", 
-          text: `\n\nIch habe ${images.length} Bilder einer Fotosession hochgeladen. Analysiere diese Bilder und erstelle authentischen Content basierend auf typischen Familienfotos im Studio - beschreibe spezifische Details wie Kleidung, Emotionen, Setting, etc.`
+          text: `\n\n${images.length} Familienfotos hochgeladen für Blog-Content.`
         });
       }
       
