@@ -4423,26 +4423,139 @@ Was interessiert Sie am meisten?`;
         return res.status(400).json({ error: 'Assistant ID is required' });
       }
 
-      // Use working autoblog function instead of duplicating logic
-      const { generateBlogContent } = await import('./autoblog');
-      const autoblog = new (await import('./autoblog')).AutoBlogOrchestrator(
-        'New Age Fotografie',
-        'https://www.newagefotografie.com'
-      );
+      // Initialize OpenAI Assistant API
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      let responseContent = '';
-      if (!message || message === 'test') {
-        responseContent = 'Hello! I am the AutoBlog Assistant ready to help you create professional blog content from your photography session images. Please upload 1-3 images and I will analyze them to generate comprehensive German blog content optimized for SEO with Vienna photography business context, pricing mentions (€149+ packages), and proper /warteliste/ booking links.';
-      } else {
-        // For now, return a simple response while we fix the API issue
-        responseContent = `I received your message: "${message}". The AutoBlog system is being optimized. Please use the main AutoBlog page to generate content from uploaded images.`;
+      // Create or use existing thread
+      let currentThreadId = threadId;
+      if (!currentThreadId) {
+        const thread = await openai.beta.threads.create();
+        currentThreadId = thread.id;
+        console.log('Created new thread:', currentThreadId);
       }
 
-      res.json({
-        success: true,
-        response: responseContent,
-        threadId: threadId || 'new-thread'
+      // Prepare message content
+      let messageContent: any[] = [];
+      
+      if (message && message.trim()) {
+        messageContent.push({
+          type: "text",
+          text: message
+        });
+      }
+
+      // Handle image uploads for Assistant API
+      if (images && images.length > 0) {
+        console.log(`Processing ${images.length} images for Assistant API`);
+        
+        for (const image of images) {
+          try {
+            // Upload image to OpenAI for Assistant API
+            const file = await openai.files.create({
+              file: fs.createReadStream(image.path),
+              purpose: "vision"
+            });
+            
+            messageContent.push({
+              type: "image_file",
+              image_file: { file_id: file.id }
+            });
+            
+            console.log(`Uploaded image file: ${file.id}`);
+          } catch (imageError) {
+            console.error('Error uploading image to OpenAI:', imageError);
+            // Continue with other images
+          }
+        }
+      }
+
+      // Add message to thread
+      await openai.beta.threads.messages.create(currentThreadId, {
+        role: "user",
+        content: messageContent
       });
+
+      // Run the assistant
+      const run = await openai.beta.threads.runs.create(currentThreadId, {
+        assistant_id: assistantId
+      });
+
+      console.log('Started assistant run:', run.id);
+
+      // Wait for completion
+      let runStatus = await openai.beta.threads.runs.retrieve(currentThreadId, run.id);
+      while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        runStatus = await openai.beta.threads.runs.retrieve(currentThreadId, run.id);
+      }
+
+      if (runStatus.status === 'completed') {
+        // Get the latest messages
+        const messages = await openai.beta.threads.messages.list(currentThreadId);
+        const latestMessage = messages.data[0];
+        
+        if (latestMessage.role === 'assistant') {
+          let responseText = '';
+          
+          // Extract text from message content
+          for (const content of latestMessage.content) {
+            if (content.type === 'text') {
+              responseText += content.text.value;
+            }
+          }
+
+          // Handle blog post creation if this is a generation request
+          let blogPost = null;
+          if (images && images.length > 0 && publishOption) {
+            try {
+              // Parse blog content from assistant response and create blog post
+              const title = extractTitle(responseText);
+              const content = responseText;
+              const excerpt = extractExcerpt(responseText);
+              
+              if (title && content) {
+                const slug = customSlug || title.toLowerCase().replace(/[^a-z0-9äöüß]/g, '-').replace(/-+/g, '-').trim('-');
+                
+                const blogPostData = {
+                  title,
+                  content,
+                  excerpt,
+                  slug,
+                  author: 'AutoBlog Assistant',
+                  status: publishOption.toUpperCase() as 'DRAFT' | 'PUBLISHED' | 'SCHEDULED',
+                  tags: 'Familienfotografie,Wien,Fotoshooting',
+                  metaDescription: excerpt?.substring(0, 155) || '',
+                  scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
+                  imageUrl: `/blog-images/${Date.now()}-blog-header.jpg`
+                };
+
+                // Save to database
+                const [newPost] = await db.insert(storage.schema.blogPosts).values(blogPostData).returning();
+                blogPost = newPost;
+                console.log('Created blog post:', blogPost.id);
+              }
+            } catch (blogError) {
+              console.error('Error creating blog post:', blogError);
+            }
+          }
+
+          res.json({
+            success: true,
+            response: responseText,
+            threadId: currentThreadId,
+            blogPost,
+            metadata: {
+              model: 'gpt-4-vision-preview',
+              assistantId,
+              runId: run.id
+            }
+          });
+        } else {
+          throw new Error('No assistant response found');
+        }
+      } else {
+        throw new Error(`Assistant run failed with status: ${runStatus.status}`);
+      }
       
     } catch (error: any) {
       console.error('AutoBlog Assistant chat error:', error);
@@ -4458,6 +4571,17 @@ Was interessiert Sie am meisten?`;
       });
     }
   });
+
+  // Helper functions for blog content extraction
+  function extractTitle(content: string): string {
+    const titleMatch = content.match(/^#\s*(.+)$/m) || content.match(/Title:\s*(.+)$/m);
+    return titleMatch ? titleMatch[1].trim() : `Familienfotografie Wien - ${new Date().toLocaleDateString('de-DE')}`;
+  }
+
+  function extractExcerpt(content: string): string {
+    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    return sentences.slice(0, 2).join('. ').trim().substring(0, 200) + '...';
+  }
 
   // Test endpoint for debugging
   app.get("/api/autoblog/debug", async (req: Request, res: Response) => {
