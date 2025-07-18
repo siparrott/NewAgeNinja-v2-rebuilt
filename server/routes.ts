@@ -4423,95 +4423,147 @@ Was interessiert Sie am meisten?`;
         return res.status(400).json({ error: 'Assistant ID is required' });
       }
 
-      // Initialize OpenAI with Chat Completions API (more reliable than Assistant API for this use case)
+      // Initialize OpenAI Assistant API
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      // Use thread ID for continuity tracking
-      let currentThreadId = threadId || `thread_${Date.now()}`;
+      // Create or retrieve thread
+      let currentThreadId = threadId;
+      if (!currentThreadId) {
+        try {
+          const thread = await openai.beta.threads.create();
+          currentThreadId = thread.id;
+          console.log('Created new thread:', currentThreadId);
+        } catch (threadError) {
+          console.error('Error creating thread:', threadError);
+          throw new Error('Failed to create conversation thread');
+        }
+      }
 
-      // Prepare message content for Chat Completions API
-      let messages: any[] = [];
-      
-      // Add system message for AutoBlog Assistant context
-      messages.push({
-        role: "system",
-        content: `Du bist der AutoBlog Assistant für New Age Fotografie, ein professioneller Fotograf in Wien. 
-        
-        Du erstellst deutsche Blog-Inhalte für Familienfotografie-Sessions basierend auf hochgeladenen Bildern. 
-        
-        Verwende einen warmen, einladenden Ton und erwähne:
-        - Wien/Wiener Kontext für lokale SEO
-        - Preise ab €149+ für Familienshootings
-        - Buchungslinks mit /warteliste/
-        - Professionelle Fotografie-Begriffe
-        - Emotionale Aspekte der Familienfotografie
-        
-        Erstelle strukturierte Blog-Posts mit:
-        - H1 Titel mit Wien-Bezug
-        - 3-5 H2 Abschnitte
-        - 800-1200 Wörter
-        - SEO-optimiert für "Familienfotograf Wien"
-        - Meta-Description unter 155 Zeichen`
-      });
-
-      // Add user message with images
-      let userContent: any[] = [];
+      // Prepare message content for Assistant API
+      let messageContent: any[] = [];
       
       if (message && message.trim()) {
-        userContent.push({
+        messageContent.push({
           type: "text",
           text: message
         });
       }
 
-      // Handle image uploads
+      // Handle image uploads for Assistant API with file upload approach
       if (images && images.length > 0) {
-        console.log(`Processing ${images.length} images for vision analysis`);
+        console.log(`Processing ${images.length} images for Assistant API`);
         
         for (const image of images) {
           try {
-            // Convert image to base64
-            const imageBuffer = fs.readFileSync(image.path);
-            const base64Image = imageBuffer.toString('base64');
-            const mimeType = image.mimetype || 'image/jpeg';
-            
-            userContent.push({
-              type: "image_url",
-              image_url: {
-                url: `data:${mimeType};base64,${base64Image}`
-              }
+            // Upload file to OpenAI for Assistant API
+            const fileUpload = await openai.files.create({
+              file: fs.createReadStream(image.path),
+              purpose: "assistants"
             });
             
-            console.log(`Added image to content: ${image.originalname}`);
+            messageContent.push({
+              type: "image_file",
+              image_file: { file_id: fileUpload.id }
+            });
+            
+            console.log(`Uploaded file to OpenAI: ${fileUpload.id} for ${image.originalname}`);
           } catch (imageError) {
-            console.error('Error processing image:', imageError);
+            console.error('Error uploading image to OpenAI:', imageError);
+            // Fallback to base64 approach if file upload fails
+            try {
+              const imageBuffer = fs.readFileSync(image.path);
+              const base64Image = imageBuffer.toString('base64');
+              const mimeType = image.mimetype || 'image/jpeg';
+              
+              messageContent.push({
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${base64Image}`
+                }
+              });
+              console.log(`Added base64 image for ${image.originalname}`);
+            } catch (base64Error) {
+              console.error('Error converting image to base64:', base64Error);
+            }
           }
         }
       }
 
-      // Add user message
-      if (userContent.length > 0) {
-        messages.push({
+      // Add message to thread
+      try {
+        await openai.beta.threads.messages.create(currentThreadId, {
           role: "user",
-          content: userContent
+          content: messageContent.length > 0 ? messageContent : (message || "Generate a blog post")
         });
-      } else {
-        messages.push({
-          role: "user", 
-          content: "Erstelle einen professionellen Blog-Post für New Age Fotografie in Wien."
-        });
+        console.log('Added message to thread');
+      } catch (messageError) {
+        console.error('Error adding message to thread:', messageError);
+        throw new Error('Failed to add message to conversation');
       }
 
-      // Call OpenAI Chat Completions API
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o", // Use GPT-4o for vision capabilities
-        messages: messages,
-        max_tokens: 2000,
-        temperature: 0.7
-      });
+      // Run the assistant
+      let run;
+      try {
+        run = await openai.beta.threads.runs.create(currentThreadId, {
+          assistant_id: assistantId
+        });
+        console.log('Started assistant run:', run.id, 'on thread:', currentThreadId);
+      } catch (runError) {
+        console.error('Error starting assistant run:', runError);
+        throw new Error('Failed to start assistant processing');
+      }
 
-      const responseText = completion.choices[0]?.message?.content || '';
-      console.log('Generated blog content length:', responseText.length);
+      // Wait for completion with proper error handling
+      let runStatus;
+      try {
+        let attempts = 0;
+        const maxAttempts = 60; // 60 seconds timeout
+        
+        do {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          runStatus = await openai.beta.threads.runs.retrieve(currentThreadId, run.id);
+          attempts++;
+          console.log(`Run status: ${runStatus.status} (attempt ${attempts})`);
+        } while ((runStatus.status === 'queued' || runStatus.status === 'in_progress') && attempts < maxAttempts);
+        
+        if (attempts >= maxAttempts) {
+          throw new Error('Assistant response timeout after 60 seconds');
+        }
+      } catch (statusError) {
+        console.error('Error checking run status:', statusError);
+        throw new Error('Failed to retrieve assistant response');
+      }
+
+      let responseText = '';
+      if (runStatus.status === 'completed') {
+        try {
+          // Get the latest messages
+          const messages = await openai.beta.threads.messages.list(currentThreadId);
+          const assistantMessages = messages.data.filter(msg => msg.role === 'assistant');
+          const latestMessage = assistantMessages[0];
+          
+          if (latestMessage) {
+            // Extract text from message content
+            for (const content of latestMessage.content) {
+              if (content.type === 'text') {
+                responseText += content.text.value;
+              }
+            }
+            console.log('Generated blog content length:', responseText.length);
+          } else {
+            throw new Error('No assistant response found in thread');
+          }
+        } catch (messageRetrievalError) {
+          console.error('Error retrieving assistant response:', messageRetrievalError);
+          throw new Error('Failed to retrieve assistant response content');
+        }
+      } else {
+        console.error('Assistant run failed with status:', runStatus.status);
+        if (runStatus.last_error) {
+          console.error('Assistant error details:', runStatus.last_error);
+        }
+        throw new Error(`Assistant processing failed: ${runStatus.status}`);
+      }
 
       // Handle blog post creation if this is a generation request
       let blogPost = null;
@@ -4556,9 +4608,10 @@ Was interessiert Sie am meisten?`;
         threadId: currentThreadId,
         blogPost,
         metadata: {
-          model: 'gpt-4o',
-          assistantId: 'chat-completions-fallback', // Indicate we used Chat Completions
-          tokens: completion.usage?.total_tokens || 0
+          model: 'gpt-4-turbo-preview',
+          assistantId,
+          runId: run.id,
+          status: runStatus.status
         }
       });
       
