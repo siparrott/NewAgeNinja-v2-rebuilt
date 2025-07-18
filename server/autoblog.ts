@@ -274,7 +274,7 @@ NEW AGE FOTOGRAFIE COMPREHENSIVE BUSINESS DETAILS:
 
     // 5. Additional context from internal data sources
     console.log('🔍 STEP 4: Gathering internal business data...');
-    const internalContext = await this.gatherInternalBusinessContext();`;
+    const internalContext = await this.gatherInternalBusinessContext();
 
     const comprehensiveContext = `
 IMAGE ANALYSIS:
