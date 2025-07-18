@@ -2830,9 +2830,48 @@ Bitte versuchen Sie es später noch einmal.`;
   });
 
   // ==================== TEST CHAT ROUTES ====================
+  
+  // URGENT FIX: Add a new unique route to bypass any caching/proxy issues
+  app.post("/api/test/chat-direct", async (req: Request, res: Response) => {
+    console.log("🆘 DIRECT BYPASS ROUTE HIT - TOGNINJA ASSISTANT");
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    try {
+      const { message, threadId } = req.body;
+
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      const assistantId = "asst_nlyO3yRav2oWtyTvkq0cHZaU";
+      
+      // Simple direct response to test
+      res.json({
+        response: "✅ DIRECT ROUTE SUCCESS - This is your TOGNINJA BLOG WRITER Assistant responding via direct bypass route!",
+        threadId: threadId || "test-thread",
+        assistantId: assistantId,
+        source: "DIRECT_BYPASS_ROUTE",
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error("Direct route error:", error);
+      res.status(500).json({ error: "Direct route failed" });
+    }
+  });
+
   app.post("/api/test/chat", async (req: Request, res: Response) => {
-    console.log("🔥 TEST CHAT ENDPOINT HIT - Using TOGNINJA ASSISTANT");
+    console.log("🔥🔥🔥 REAL TEST CHAT ENDPOINT HIT - TOGNINJA ASSISTANT 🔥🔥🔥");
     console.log("Request body:", req.body);
+    console.log("Headers:", req.headers);
+    console.log("URL:", req.url);
+    console.log("Method:", req.method);
     try {
       const { message, threadId } = req.body;
 
@@ -2954,10 +2993,12 @@ Bitte versuchen Sie es später noch einmal.`;
         
         const response = assistantMessage?.content?.[0]?.text?.value || "I apologize, but I couldn't generate a response.";
 
+        console.log("🎯 SENDING TOGNINJA RESPONSE:", response.slice(0, 100));
         res.json({ 
           response,
           threadId: currentThreadId,
-          assistantId: assistantId
+          assistantId: assistantId,
+          source: "TOGNINJA_BLOG_WRITER_ASSISTANT"
         });
 
       } catch (error) {
@@ -2988,10 +3029,12 @@ Bitte versuchen Sie es später noch einmal.`;
 
         const fallbackResponse = fallbackCompletion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
 
+        console.log("⚠️ SENDING FALLBACK RESPONSE:", fallbackResponse.slice(0, 100));
         res.json({ 
           response: fallbackResponse,
           fallback: true,
-          assistantId: assistantId
+          assistantId: assistantId,
+          source: "FALLBACK_CHAT_COMPLETIONS"
         });
       }
 

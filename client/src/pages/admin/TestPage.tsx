@@ -42,7 +42,7 @@ const TestPage: React.FC = () => {
       console.log('🚀 FRONTEND: Making request to /api/test/chat');
       console.log('Request payload:', { message: input.trim(), threadId: threadId });
       
-      const response = await fetch('/api/test/chat', {
+      const response = await fetch('/api/test/chat-direct', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
