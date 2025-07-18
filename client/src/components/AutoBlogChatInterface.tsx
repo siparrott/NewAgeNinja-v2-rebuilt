@@ -50,7 +50,21 @@ export function AutoBlogChatInterface({ assistantId }: AutoBlogChatInterfaceProp
     const checkSupport = () => {
       const hasMediaRecorder = typeof MediaRecorder !== 'undefined';
       const hasGetUserMedia = navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
-      setSupportsSpeechRecognition(hasMediaRecorder && hasGetUserMedia);
+      const hasSupport = hasMediaRecorder && hasGetUserMedia;
+      
+      // Additional check for MediaRecorder support
+      if (hasSupport && typeof MediaRecorder !== 'undefined') {
+        try {
+          // Test MediaRecorder support with supported MIME types
+          const supportedTypes = ['audio/webm', 'audio/mp4', 'audio/wav'];
+          const hasValidType = supportedTypes.some(type => MediaRecorder.isTypeSupported(type));
+          setSupportsSpeechRecognition(hasValidType);
+        } catch (error) {
+          setSupportsSpeechRecognition(false);
+        }
+      } else {
+        setSupportsSpeechRecognition(false);
+      }
     };
     checkSupport();
   }, []);
@@ -66,8 +80,30 @@ export function AutoBlogChatInterface({ assistantId }: AutoBlogChatInterfaceProp
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      // Check for browser support first
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Your browser does not support audio recording');
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100
+        }
+      });
+
+      // Check MediaRecorder support with specific MIME types
+      let options: MediaRecorderOptions = {};
+      if (MediaRecorder.isTypeSupported('audio/webm')) {
+        options.mimeType = 'audio/webm';
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        options.mimeType = 'audio/mp4';
+      } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+        options.mimeType = 'audio/wav';
+      }
+
+      const recorder = new MediaRecorder(stream, options);
       const chunks: Blob[] = [];
 
       recorder.ondataavailable = (event) => {
@@ -77,7 +113,7 @@ export function AutoBlogChatInterface({ assistantId }: AutoBlogChatInterfaceProp
       };
 
       recorder.onstop = async () => {
-        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+        const audioBlob = new Blob(chunks, { type: options.mimeType || 'audio/webm' });
         setAudioChunks([]);
         await transcribeAudio(audioBlob);
         
@@ -85,7 +121,13 @@ export function AutoBlogChatInterface({ assistantId }: AutoBlogChatInterfaceProp
         stream.getTracks().forEach(track => track.stop());
       };
 
-      recorder.start();
+      recorder.onerror = (event) => {
+        console.error('MediaRecorder error:', event);
+        setIsRecording(false);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start(100); // Collect data every 100ms
       setMediaRecorder(recorder);
       setIsRecording(true);
       setRecordingTime(0);
@@ -98,7 +140,8 @@ export function AutoBlogChatInterface({ assistantId }: AutoBlogChatInterfaceProp
 
     } catch (error) {
       console.error('Error starting recording:', error);
-      alert('Unable to access microphone. Please check your permissions.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Unable to start recording: ${errorMessage}. Please check your microphone permissions.`);
     }
   };
 
