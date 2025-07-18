@@ -9,6 +9,7 @@ import { leadWriteTool } from "../tools/lead-write";
 import { clientUpdateTool } from "../tools/client-write";
 import { invoiceWriteTool } from "../tools/invoice-write";
 import { emailSendTool } from "../tools/email-send";
+import { updateMemoryTool } from "../tools/update-memory";
 
 export interface AgentTool {
   name: string;
@@ -54,3 +55,6 @@ toolRegistry.register(leadWriteTool);
 toolRegistry.register(clientUpdateTool);
 toolRegistry.register(invoiceWriteTool);
 toolRegistry.register(emailSendTool);
+
+// Memory management tool
+toolRegistry.register(updateMemoryTool);
