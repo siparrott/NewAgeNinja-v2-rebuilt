@@ -110,7 +110,7 @@ export default function AdminAutoBlogPage() {
   };
 
   const generateBlogPost = async () => {
-    console.log('🔴 OLD AdminAutoBlogPage function called - this should NOT be happening!');
+    console.log('🎯 AI AutoBlog system - generating with TOGNINJA Assistant...');
     if (selectedImages.length === 0) {
       toast({
         title: "No images selected",

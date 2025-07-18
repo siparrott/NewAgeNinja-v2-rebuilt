@@ -388,12 +388,20 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/admin/autoblog" 
-                  element={<Navigate to="/admin/autoblog-v3" replace />}
+                  path="/admin/autoblog-generator" 
+                  element={
+                    <ProtectedRoute>
+                      <AutoBlogGenerator />
+                    </ProtectedRoute>
+                  } 
                 />
                 <Route 
-                  path="/admin/autoblog-generator" 
-                  element={<Navigate to="/admin/autoblog-v3" replace />}
+                  path="/admin/autoblog-generator-fixed" 
+                  element={
+                    <ProtectedRoute>
+                      <AutoBlogGeneratorFixed />
+                    </ProtectedRoute>
+                  } 
                 />
                 <Route 
                   path="/admin/autoblog-v3" 
