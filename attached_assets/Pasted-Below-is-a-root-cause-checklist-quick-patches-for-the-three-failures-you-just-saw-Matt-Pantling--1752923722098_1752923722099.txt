@@ -1,0 +1,65 @@
+Below is a root-cause checklist + quick patches for the three failures you just saw
+(“Matt Pantling not found”, “couldn’t complete that task”, “need more context”).
+Work through the list top-to-bottom; 90 % of the time the problem is caught by one of the first three items.
+
+#	What usually goes wrong	2-minute test	Fix / patch
+1	Client search is too narrow – your read_crm_clients tool only matches exact lower-case concat firstName lastName, so “Matt Pantling” (capital M, extra spaces) ≠ stored row.	Replit shell:	ts\nconst res = await sb.from('crm_clients').select('*').ilike('full_name','%pantling%'); console.log(res.data);\n
+2	Policy blocks READ_CLIENTS – your ai_policies.authorities array doesn’t include "READ_CLIENTS" for this studio.	SQL: select authorities from ai_policies where studio_id='…';	Insert the missing authority or set mode='auto_safe'.
+3	Wrong studio_id in queries – service role key bypasses RLS, but your filter eq('studio_id', ctx.studioId) fails because the row was imported without studio_id.	psql: select count(*) from crm_clients where studio_id is null;	Backfill: update crm_clients set studio_id='your-studio-uuid' where studio_id is null;
+4	Generic “couldn’t complete task” comes from an uncaught Supabase error – often count() or single() returns null.	Wrap tool body in try/catch and console.error(error) .	Return a clear error so the Assistant can ask follow-up.
+5	Invoices & bookings “0” because you never added list/count tools.	Check toolRegistry – do you have count_crm_invoices, count_photography_sessions?	Add tiny read-only tools:
+ts\nexport const countInvoices={name:'count_invoices',parameters:z.object({month:z.string().optional()}),handler:async(a,ctx)=>{const q=sb.from('crm_invoices').select('*',{count:'exact',head:true}).eq('studio_id',ctx.studioId); if(a.month) q.gte('issue_date',a.month+'-01').lte('issue_date',a.month+'-31'); return q.count;}}\n
+6	Working-memory not injected → Assistant loses context between turns (“I need more info”).	Verify thread-runner: injectMemoryMessage(messages, memory) BEFORE adding latest user message.	Add the call; keep memory.current_goal, selected_client_id.
+7	Assistant tools list outdated after you regenerated CRUD	openai.beta.assistants.retrieve(id) – check tools array length.	Re-run node agent/update-assistant.js newage after every new tool.
+
+One-liner patches you can paste immediately
+A Better fuzzy client lookup
+ts
+Kopieren
+Bearbeiten
+// agent/tools/read-crm_clients.ts
+handler: async (a:any, ctx:AgentCtx) => {
+  const term = (a.search || "").trim();
+  let q = sb.from("crm_clients").select("*").eq("studio_id", ctx.studioId);
+  if (term) {
+    q = q.or(`email.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%`);
+  }
+  const { data, error } = await q.limit(a.limit ?? 25);
+  if (error) throw error;
+  return data;
+}
+B Invoice counter tool
+ts
+Kopieren
+Bearbeiten
+export const countInvoicesTool = {
+  name: "count_invoices",
+  description: "Return number of invoices optionally by month or year",
+  parameters: z.object({ year: z.number().optional(), month: z.number().optional() }),
+  handler: async (a:any, ctx:AgentCtx) => {
+    let q = sb.from("crm_invoices").select("*", { count:"exact", head:true }).eq("studio_id", ctx.studioId);
+    if (a.year) q = q.ilike("issue_date", `${a.year}-%`);
+    if (a.month && a.year) q = q.ilike("issue_date", `${a.year}-${String(a.month).padStart(2,"0")}-%`);
+    const { count } = await q;
+    return { count };
+  }
+};
+Add to registry, update assistant, restart Replit.
+
+After you do items 1–3
+Test again:
+
+sql
+Kopieren
+Bearbeiten
+User: send mattpantling@yahoo.co.uk a booking invite for 23 Dec 9 am
+Assistant → read_crm_clients(email)… finds row
+Assistant → send_email (pre-filled)
+kotlin
+Kopieren
+Bearbeiten
+User: how many invoices this month and how many bookings this year?
+Assistant → count_invoices {year:2025,month:7}
+Assistant → count_photography_sessions {year:2025}
+Assistant: "We issued 4 invoices in July and have 31 bookings this year."
+If it still fails, copy the exact console log (Supabase error or missing tool name) and I’ll zero in on the next issue.

@@ -11,16 +11,41 @@ export const listClientsTool = {
     limit: z.number().int().min(1).max(100).default(25),
   }),
   handler: async (args: any, ctx: AgentCtx) => {
-    requireAuthority(ctx, "READ_CLIENTS");
-    let clients = await getClientsForStudio(ctx.studioId);
-    if (args.search) {
-      const s = String(args.search).toLowerCase();
-      clients = clients.filter((c: any) =>
-        `${c.firstName ?? ""} ${c.lastName ?? ""}`.toLowerCase().includes(s) ||
-        (c.email?.toLowerCase().includes(s))
-      );
+    try {
+      requireAuthority(ctx, "READ_CLIENTS");
+      console.log(`🔍 list_clients: Searching for "${args.search || 'all clients'}"`);
+      let clients = await getClientsForStudio(ctx.studioId);
+      console.log(`✅ list_clients: Found ${clients.length} total clients`);
+      
+      if (args.search) {
+        const s = String(args.search).toLowerCase().trim();
+        clients = clients.filter((c: any) => {
+          // Handle both camelCase and snake_case column names
+          const firstName = (c.firstName || c.first_name || "").toLowerCase();
+          const lastName = (c.lastName || c.last_name || "").toLowerCase();
+          const email = (c.email || "").toLowerCase();
+          const fullName = `${firstName} ${lastName}`.trim();
+          
+          console.log(`🔍 Checking client: "${firstName}" "${lastName}" "${email}" against search "${s}"`);
+          
+          const match = firstName.includes(s) || 
+                       lastName.includes(s) || 
+                       email.includes(s) || 
+                       fullName.includes(s);
+          
+          if (match) {
+            console.log(`✅ MATCH found: ${firstName} ${lastName} (${email})`);
+          }
+          
+          return match;
+        });
+        console.log(`🔍 list_clients: Filtered to ${clients.length} clients matching "${s}"`);
+      }
+      return clients.slice(0, args.limit);
+    } catch (error) {
+      console.error('❌ list_clients error:', error);
+      return { error: `Failed to fetch clients: ${error instanceof Error ? error.message : "Unknown error"}` };
     }
-    return clients.slice(0, args.limit);
   }
 };
 
@@ -138,4 +163,62 @@ export const listInvoicesTool = {
     
     return invoices.slice(0, args.limit);
   }
+};
+
+// Removed duplicate client search tool - functionality merged into listClientsTool above
+
+// Add missing count tools
+export const countInvoicesTool = {
+  name: "count_invoices",
+  description: "Count invoices by month/year",
+  parameters: z.object({ 
+    year: z.number().optional(), 
+    month: z.number().optional() 
+  }),
+  handler: async (args: any, ctx: AgentCtx) => {
+    try {
+      requireAuthority(ctx, "READ_INVOICES");
+      let invoices = await getInvoicesForStudio(ctx.studioId);
+      
+      if (args.year || args.month) {
+        invoices = invoices.filter((inv: any) => {
+          const date = new Date(inv.createdAt || inv.created_at);
+          const matchYear = !args.year || date.getFullYear() === args.year;
+          const matchMonth = !args.month || (date.getMonth() + 1) === args.month;
+          return matchYear && matchMonth;
+        });
+      }
+      
+      return { count: invoices.length };
+    } catch (error) {
+      console.error('❌ count_invoices error:', error);
+      return { error: `Failed to count invoices: ${error instanceof Error ? error.message : "Unknown error"}` };
+    }
+  },
+};
+
+export const countSessionsTool = {
+  name: "count_sessions",
+  description: "Count photography sessions by year", 
+  parameters: z.object({ 
+    year: z.number().optional() 
+  }),
+  handler: async (args: any, ctx: AgentCtx) => {
+    try {
+      requireAuthority(ctx, "READ_SESSIONS");
+      let sessions = await getSessionsForStudio(ctx.studioId);
+      
+      if (args.year) {
+        sessions = sessions.filter((sess: any) => {
+          const date = new Date(sess.sessionDate || sess.session_date);
+          return date.getFullYear() === args.year;
+        });
+      }
+      
+      return { count: sessions.length };
+    } catch (error) {
+      console.error('❌ count_sessions error:', error);
+      return { error: `Failed to count sessions: ${error instanceof Error ? error.message : "Unknown error"}` };
+    }
+  },
 };

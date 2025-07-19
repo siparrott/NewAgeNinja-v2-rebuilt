@@ -20,8 +20,8 @@ async function executeDirectSQL(query: string, params: any[] = []) {
 
 async function fetchTable(table: any, studioId: string) {
   try {
-    // Note: Since this is a single-studio system, we'll fetch all data
-    // In a true multi-studio system, this would filter by studio_id
+    // FIXED: This is a single-studio system without studio_id column
+    // Fetch all data directly without studio filtering
     const data = await db.select().from(table);
     console.log(`✅ CRM Data: Fetched ${data.length} records from ${table._.name || 'table'}`);
     return data;
@@ -38,6 +38,7 @@ export const getClientsForStudio = async (sid: string) => {
     return data;
   } catch (error) {
     console.log('Drizzle failed, using direct SQL fallback for clients');
+    // Fixed: Remove studio_id filter since it doesn't exist in this database
     return await executeDirectSQL('SELECT * FROM crm_clients ORDER BY created_at DESC');
   }
 };

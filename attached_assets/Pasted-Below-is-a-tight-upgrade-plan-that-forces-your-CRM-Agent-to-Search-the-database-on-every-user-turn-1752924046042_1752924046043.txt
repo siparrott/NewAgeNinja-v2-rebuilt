@@ -1,0 +1,156 @@
+Below is a tight upgrade plan that forces your CRM Agent to:
+
+Search the database on every user turn instead of guessing from memory.
+
+Keep a concise memory object so it still remembers the “task in-hand,” but never trusts it for facts.
+
+Dynamically choose the correct read/count tool (or fall back to a generic global_search) before it speaks.
+
+All changes are server-side and prompt-side; no UI rewrite is required.
+
+① Add a single catch-all lookup tool
+agent/tools/global-search.ts
+
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+import type { AgentCtx } from "../core/ctx";
+
+const sb = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+/**
+ * Search across the main CRM tables for a free-text term.
+ * Returns buckets: clients, leads, invoices, sessions, emails.
+ */
+export const globalSearchTool = {
+  name: "global_search",
+  description:
+    "Free-text search across clients, leads, invoices, sessions and inbox. Use when you need any record and don't know the specific ID.",
+  parameters: z.object({
+    term: z.string().min(2, "Need at least 2 characters")
+  }),
+  handler: async (a: any, ctx: AgentCtx) => {
+    const term = `%${a.term.toLowerCase()}%`;
+
+    // Each query in parallel; limit to 10 rows to keep response small
+    const [clients, leads, invoices, sessions] = await Promise.all([
+      sb.from("crm_clients")
+        .select("*")
+        .ilike("email", term)
+        .or(`first_name.ilike.${term},last_name.ilike.${term}`)
+        .eq("studio_id", ctx.studioId)
+        .limit(10),
+      sb.from("crm_leads")
+        .select("*")
+        .ilike("email", term)
+        .eq("studio_id", ctx.studioId)
+        .limit(10),
+      sb.from("crm_invoices")
+        .select("*")
+        .or(`invoice_number.ilike.${term},email.ilike.${term}`)
+        .eq("studio_id", ctx.studioId)
+        .limit(10),
+      sb.from("photography_sessions")
+        .select("*")
+        .ilike("notes", term)
+        .eq("studio_id", ctx.studioId)
+        .limit(10)
+    ]);
+
+    return {
+      clients: clients.data ?? [],
+      leads: leads.data ?? [],
+      invoices: invoices.data ?? [],
+      sessions: sessions.data ?? []
+    };
+  }
+};
+Add to tool registry:
+
+ts
+Kopieren
+Bearbeiten
+import { globalSearchTool } from "../tools/global-search";
+
+export const toolRegistry = {
+  // …
+  [globalSearchTool.name]: globalSearchTool
+};
+② System-prompt “search-first” policy snippet
+Insert this block just before the RULES section of your system prompt:
+
+pgsql
+Kopieren
+Bearbeiten
+SEARCH-FIRST BEHAVIOR
+• Before answering any user question about data (“how many…”, “does X exist…”, “send invoice…”) you MUST call the most relevant read/count tool.
+    – If you know the exact table → call that read/count tool.
+    – If you are unsure which table contains the info → call global_search(term).
+• Never rely solely on working memory or previous messages for factual data.
+• After receiving tool output, decide next action (draft email, propose invoice, etc.) and respond.
+③ Update memory injection (keeps context, not facts)
+In your thread-runner keep only task-context fields:
+
+ts
+Kopieren
+Bearbeiten
+// BEFORE injectMemoryMessage...
+const slimMem = {
+  current_goal: memory.current_goal ?? null,
+  selected_client_id: memory.selected_client_id ?? null
+};
+injectMemoryMessage(messages, slimMem);
+This avoids the model hallucinating from stale cached data.
+
+④ Force assistant to retry when tool call fails
+Wrap tool loop with a simple retry:
+
+ts
+Kopieren
+Bearbeiten
+let retries = 0;
+while (run.status === "requires_action" && retries < 3) {
+  // same as before …
+  if (run.status !== "requires_action") break;
+  retries++;
+}
+If the tool throws (e.g. Supabase error), send a short error back so the model asks for clarification instead of “I couldn’t complete that task.”
+
+⑤ Make “search-first” the default even for simple counts
+Add quick count tools (example for invoices & sessions). Put them in registry so the assistant can choose them instead of global_search:
+
+ts
+Kopieren
+Bearbeiten
+export const countInvoices = { name:"count_invoices", parameters:z.object({year:z.number().optional()}), … };
+export const countSessions = { name:"count_sessions", parameters:z.object({year:z.number().optional()}), … };
+⑥ Regenerate Assistant & restart
+bash
+Kopieren
+Bearbeiten
+node agent/update-assistant.js newage
+npm run start
+Console should list global_search, count_invoices, count_sessions in the tool registration.
+
+🔄 Expected flow after patch
+vbnet
+Kopieren
+Bearbeiten
+User: can you send Matt Pantling an email…
+Assistant:
+  → global_search("matt pantling")
+  ← finds client row
+  → send_email(to:mattpantling@…)
+  Assistant: “Email drafted & sent.”
+css
+Kopieren
+Bearbeiten
+User: how many invoices issued this month?
+Assistant:
+  → count_invoices({year:2025})   (or read_crm_invoices + filter)
+  Assistant: “4 invoices issued so far this month.”

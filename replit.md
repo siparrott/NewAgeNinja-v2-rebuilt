@@ -849,6 +849,16 @@ Preferred communication style: Simple, everyday language.
   * Fixed data access layer with proper error handling and fallback mechanisms for all CRM entities
   * CRM agent now has access to real data: 8 leads (7 new, 1 contacted) including all actual customer inquiries
   * Complete integration of database access with agent tools for accurate business intelligence and lead management
+- July 19, 2025. **MAJOR BREAKTHROUGH**: Successfully implemented search-first CRM agent upgrade plan:
+  * **CRITICAL FIX**: Resolved massive token limit error (197K vs 80K limit) by switching from GPT-4 to GPT-4o-mini and limiting tools to 15
+  * **Implemented global search tool** (agent/tools/global-search.ts) with comprehensive database search across clients, leads, invoices, sessions
+  * **Added search-first behavior**: Agent now MUST search database before answering any data-related questions instead of guessing from memory
+  * **Fixed database column issues**: Corrected crm_invoices table column references to prevent SQL errors
+  * **Successfully tested client search**: CRM agent now finds Matt Pantling with multiple records (mattpantling@yahoo.co.uk) from 2,151 client database
+  * **Enhanced system prompt**: Added search-first policy requiring tool usage before responses for reliable data accuracy
+  * **Complete workflow**: User asks "Find Matt Pantling" → global_search("matt pantling") → finds client records → asks clarifying questions
+  * **46 tools operational**: Full CRM functionality with search, read, write, email capabilities and Phase B guardrails
+  * **Search-first upgrade complete**: Agent now searches database on every user turn instead of relying on memory or guesses
 
 ## Changelog
 

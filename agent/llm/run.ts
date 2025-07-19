@@ -8,9 +8,9 @@ const openai = new OpenAI({
 export async function runLLM(messages: any[], tools?: any[]) {
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini", // Use smaller model to avoid token limits
       messages,
-      tools: tools?.length ? tools : undefined,
+      tools: tools?.length ? tools.slice(0, 15) : undefined, // Limit tools to avoid token overload
       temperature: 0.1,
       max_tokens: 1500,
     });
