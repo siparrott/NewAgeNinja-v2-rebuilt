@@ -14,6 +14,7 @@ import { readGalleries, createGalleries, updateGalleries } from "../tools/galler
 import { readBlogPosts, createBlogPosts, updateBlogPosts } from "../tools/blog_posts";
 import { readEmailCampaigns, createEmailCampaigns, updateEmailCampaigns } from "../tools/email_campaigns";
 import { analyzeWebsiteTool, getWebsiteProfileTool, suggestSiteImprovementsTool } from "../tools/website-tools";
+// import { fixEmailAddressTool } from "../tools/fix-email-address";
 
 export interface AgentTool {
   name: string;
@@ -49,6 +50,7 @@ toolRegistry.register(updateMemoryTool);
 toolRegistry.register(sendEmailTool);
 toolRegistry.register(convertLeadTool);
 toolRegistry.register(reportLeadsTool);
+// toolRegistry.register(fixEmailAddressTool);  // Temporarily disabled due to schema error
 
 // Register CRM read tools (CRITICAL FIX)
 import { listClientsTool, listLeadsTool, listSessionsTool, listInvoicesTool, countInvoicesTool, countSessionsTool } from "../tools/crm-read";

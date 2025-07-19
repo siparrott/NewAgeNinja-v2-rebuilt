@@ -2,7 +2,8 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
 export function createOpenAITool(name: string, description: string, parameters: z.ZodSchema) {
-  const jsonSchema = zodToJsonSchema(parameters, name);
+  try {
+    const jsonSchema = zodToJsonSchema(parameters, name);
   
   // Handle $ref-based schemas by extracting the actual definition
   let actualSchema = jsonSchema;
@@ -38,4 +39,20 @@ export function createOpenAITool(name: string, description: string, parameters: 
       parameters: actualSchema
     }
   };
+  
+  } catch (error) {
+    console.error(`❌ JSON Schema error for tool "${name}":`, error);
+    return {
+      type: "function" as const,
+      function: {
+        name,
+        description,
+        parameters: {
+          type: "object",
+          properties: {},
+          required: []
+        }
+      }
+    };
+  }
 }

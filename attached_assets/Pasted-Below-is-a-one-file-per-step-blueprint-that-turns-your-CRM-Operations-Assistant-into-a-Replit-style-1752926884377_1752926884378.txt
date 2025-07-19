@@ -1,0 +1,194 @@
+Below is a one-file-per-step blueprint that turns your CRM Operations Assistant into a “Replit-style super-agent” — i.e. the moment a user types anything that is reasonably doable inside TogNinja, the agent:
+
+Plans what has to happen.
+
+Runs the correct read / search tools to ground itself in live data.
+
+Chooses an action tool (create / update / email / invoice / schedule, …) or drafts a proposal if guard-rails require approval.
+
+Executes and then confirms the result.
+
+Everything below is copy-pasteable into Replit.
+If you’ve followed the R5 instructions earlier, add only the pieces marked NEW.
+
+1 Auto-introspect every CRM table → auto-generate tools (NEW)
+1-a Tool generator that reads Supabase information_schema
+tools/genAutoTools.ts
+
+ts
+Kopieren
+Bearbeiten
+import { promises as fs } from "fs";
+import { createClient } from "@supabase/supabase-js";
+const sb = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+(async () => {
+  const { data: tables } = await sb.rpc("list_crm_tables"); // create a simple SQL function listing tables with studio_id column
+  for (const t of tables as string[]) {
+    const P = t.replace(/(^|_)(\w)/g, (_, __, c) => c.toUpperCase());
+    await fs.writeFile(
+      `agent/tools/${t}-auto.ts`,
+      `import { z } from "zod"; import { createClient } from "@supabase/supabase-js"; import type { AgentCtx } from "../core/ctx"; const sb=createClient(process.env.VITE_SUPABASE_URL!,process.env.SUPABASE_SERVICE_ROLE_KEY!);
+/* READ */
+export const read${P}={name:"read_${t}",description:"Read from ${t}",parameters:z.object({limit:z.number().default(25),search:z.string().optional()}),
+handler:async(a:any,ctx:AgentCtx)=>{let q=sb.from("${t}").select("*").eq("studio_id",ctx.studioId).limit(a.limit);
+if(a.search) q=q.or(${t}.columns.filter(c=>c!="studio_id").map(c=>\`${c}.ilike.%\${a.search}%\`).join(','));
+return (await q).data}};
+/* CREATE */
+export const create${P}={name:"create_${t}",description:"Create a row in ${t}",parameters:z.object({data:z.record(z.any())}),
+handler:async(a:any,ctx:AgentCtx)=>{return (await sb.from("${t}").insert({...a.data,studio_id:ctx.studioId}).select().single()).data}};
+/* UPDATE */
+export const update${P}={name:"update_${t}",description:"Update row in ${t}",parameters:z.object({id:z.string(),data:z.record(z.any())}),
+handler:async(a:any,ctx:AgentCtx)=>{return (await sb.from("${t}").update(a.data).eq("id",a.id).eq("studio_id",ctx.studioId).select().single()).data}};`
+    );
+  }
+  console.log("Auto-tools generated");
+})();
+Run:
+
+bash
+Kopieren
+Bearbeiten
+npx ts-node tools/genAutoTools.ts
+Re-import them:
+
+ts
+Kopieren
+Bearbeiten
+// agent/core/tools.ts
+import * as autoTools from "../tools/*-auto";
+export const toolRegistry = {
+  ...autoTools,
+  ...manualTools  // send_email, analyze_website, etc.
+};
+2 Planner middleware (NEW)
+Add a light-weight “function-router” so the model can ask itself which tools to call.
+
+agent/core/plan.ts
+
+ts
+Kopieren
+Bearbeiten
+import { zodToJsonSchema } from "../util/json-schema";
+import { openai } from "./openai";
+import { toolRegistry } from "./tools";
+
+/** returns modelResponse OR { toolName, args } */
+export async function planStep(userMsg: string, memory: any) {
+  const tools = Object.values(toolRegistry).map(t => ({
+    type: "function",
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: zodToJsonSchema(t.parameters)
+    }
+  }));
+  const resp = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a router. Decide whether to call a tool. If no tool, answer user directly. Only valid JSON."
+      },
+      {
+        role: "user",
+        content: `User said: ${userMsg}\nWorking memory: ${JSON.stringify(
+          memory
+        )}`
+      }
+    ],
+    tools,
+    tool_choice: "auto"
+  });
+
+  const msg = resp.choices[0].message;
+  if (msg.tool_calls?.length) {
+    const call = msg.tool_calls[0];
+    return { toolName: call.function.name, args: JSON.parse(call.function.arguments) };
+  }
+  return { modelResponse: msg.content };
+}
+3 Main run-loop upgrade
+agent/run-chat-message.ts
+
+ts
+Kopieren
+Bearbeiten
+import { planStep } from "./core/plan";
+…
+const memory = loadMemory();           // existing
+const firstPlan = await planStep(userInput, memory);
+
+if ("modelResponse" in firstPlan) {
+  return reply(firstPlan.modelResponse);          // small-talk or help message
+}
+
+const tool = toolRegistry[firstPlan.toolName];
+const output = await tool.handler(firstPlan.args, ctx, runLLM);
+
+/* Optional approval flow */
+if (output?.status === "needs_approval") {
+  return reply(`Proposed action:\n${JSON.stringify(output.proposed, null, 2)}`);
+}
+
+return reply(`✅ Done.\n${JSON.stringify(output, null, 2)}`);
+(Your previous Threads/Runs flow still works; this just adds a cheap front-router.)
+
+4 Search-first + guard rails (already patched earlier)
+Make sure the prompt still includes:
+
+pgsql
+Kopieren
+Bearbeiten
+• ALWAYS call read / count / global_search before stating a fact.
+• NEVER rely on memory for numbers.
+5 Memory policy tweak
+ts
+Kopieren
+Bearbeiten
+// when patching memory after tool success
+patchMemory(sessionId, { current_goal:null, selected_client_id: maybeId });
+Memory now stores only goal / selection, not raw data.
+
+6 Role & authority table update (optional)
+Add authority rows so the agent can create / update every table:
+
+sql
+Kopieren
+Bearbeiten
+update ai_policies
+set authorities = '{"READ_CLIENTS","UPDATE_CLIENT","CREATE_CLIENT","CREATE_LEAD","UPDATE_LEAD","SEND_EMAIL","CREATE_INVOICE","READ_INVOICES","READ_SESSIONS","CREATE_SESSION"}';
+Or expose a UI checkbox per module.
+
+7 Restart & smoke-test
+bash
+Kopieren
+Bearbeiten
+npm run start
+Test cases:
+
+“Send Simon Parrott an email and confirm his 23 Dec 9 am session”.
+Planner → search clients → send_email.
+
+“How many invoices this year?”
+Planner → count_invoices.
+
+“Update Maria’s phone number to …”
+Planner → update_crm_clients.
+
+Every natural-language request should trigger a search → an action tool → confirmation.
+If a tool throws, the agent surfaces a clear error (“No id column” or “Email invalid”), not a vague “couldn’t complete”.
+
+⚡ What you achieved
+Self-discovering tool set – any new table with studio_id automatically gets read/create/update tools.
+
+Planner tells the model how to think like the Replit agent: search-first, then act.
+
+Tiny memory keeps context (selected client, current goal) but never stores mutable facts.
+
+Guard-rails & approval still apply.

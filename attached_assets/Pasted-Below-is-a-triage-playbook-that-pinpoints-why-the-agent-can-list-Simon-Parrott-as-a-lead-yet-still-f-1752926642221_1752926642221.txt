@@ -1,0 +1,50 @@
+Below is a triage playbook that pinpoints why the agent can list Simon Parrott as a lead yet still fails when you ask it to send the e-mail.
+
+Step	What might be wrong	Quick test (≤1 min)	Patch / next action
+1	Bad e-mail field – the address in the DB is literally "siparrottyahoo.co.uk" (missing “@”). Most SMTP libraries throw “Invalid recipient” and your tool bubbles it up as a generic error.	In Replit shell:
+psql -c "select email from crm_leads where first_name ilike 'Simon%'";
+Result will show the broken string.	Fix the row (add the “@”) or add validation in create_lead/import that rejects malformed addresses.
+2	send_email tool not being called with correct args – the assistant produced a draft but you never approved; or the tool call failed JSON schema validation.	Check the request log in Replit (console.log(tool_calls) in the loop). Do you see a send_email call? Is to a valid e-mail?	Ensure assistant follows “draft → user says ‘yes’ → send_email” path. If schema mismatch, update Zod schema.
+3	Policy forbids SEND_EMAIL authority for leads table (ai_policies.email_send_mode = “draft”).	SQL:
+select email_send_mode, authorities from ai_policies where studio_id='…';	Change to trusted or auto, or add "SEND_EMAIL" to authorities.
+4	SMTP credentials invalid – Postmark/Resend key revoked, or ENV not loaded in this repl run.	Shell:
+node -e "require('./agent/integrations/email').sendEmail({to:'test@example.com',subject:'hi',html:'hi'}).catch(e=>console.error(e))"	Update POSTMARK_TOKEN in Secrets. Restart repl.
+5	Service-role RLS bypass missing – send_email tries to read lead again inside tool handler and fails because it’s using anon key not service key.	Observe Supabase error in console: “permission denied for table crm_leads”.	Pass the service‐role key or pre-load the address in the tool args so the tool doesn’t query again.
+
+90-second fix if the e-mail is malformed (most common)
+sql
+Kopieren
+Bearbeiten
+update crm_leads
+set email = 'siparrott@yahoo.co.uk'
+where email = 'siparrottyahoo.co.uk';
+Now trigger:
+
+makefile
+Kopieren
+Bearbeiten
+User: send Simon Parrott an e-mail confirming his 17 July appointment.
+Assistant should:
+
+global_search("Simon Parrott") → returns lead row
+
+Draft e-mail → you say “yes”
+
+send_email succeeds (HTTP 200) → assistant confirms
+
+Hardening so it never happens again
+1 — Add e-mail validation on lead/client creation
+ts
+Kopieren
+Bearbeiten
+import validator from "validator";
+if (!validator.isEmail(a.data.email)) throw new Error("Invalid email address");
+2 — Update the prompt (single line)
+css
+Kopieren
+Bearbeiten
+If an e-mail address is missing “@” or clearly invalid, reply: 
+“Email appears malformed – please correct it or ask me to update the contact.”
+3 — Expose fix_email_address tool (optional)
+Let the assistant autocorrect obvious typos (gmail.con → gmail.com) and push patch to DB.
+

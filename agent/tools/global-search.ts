@@ -34,7 +34,7 @@ export const globalSearchTool = {
         
         sql`
           SELECT * FROM crm_leads 
-          WHERE (LOWER(first_name) LIKE ${`%${term}%`} OR LOWER(last_name) LIKE ${`%${term}%`} OR LOWER(email) LIKE ${`%${term}%`})
+          WHERE (LOWER(name) LIKE ${`%${term}%`} OR LOWER(email) LIKE ${`%${term}%`} OR LOWER(phone) LIKE ${`%${term}%`})
           AND id IS NOT NULL
           LIMIT 10
         `,
@@ -62,6 +62,15 @@ export const globalSearchTool = {
       };
       
       console.log(`✅ global_search: Found ${results.clients.length} clients, ${results.leads.length} leads, ${results.invoices.length} invoices, ${results.sessions.length} sessions`);
+      
+      // Debug Simon Parrott specifically
+      if (term.includes('simon')) {
+        console.log('🔍 Simon search debug:', {
+          searchTerm: term,
+          leadsFound: results.leads.length,
+          leadNames: results.leads.map(l => l.name).slice(0, 5)
+        });
+      }
       
       return results;
     } catch (error) {

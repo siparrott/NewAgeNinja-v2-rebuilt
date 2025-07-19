@@ -44,6 +44,7 @@ import {
 } from "../shared/schema.js";
 import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
+import validator from "validator";
 
 export interface IStorage {
   // User management
@@ -215,6 +216,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCrmClient(client: InsertCrmClient): Promise<CrmClient> {
+    // Email validation - Fix #1 from triage playbook
+    if (client.email && !validator.isEmail(client.email)) {
+      throw new Error(`Invalid email address: ${client.email}. Please provide a valid email format.`);
+    }
+    
     const result = await db.insert(crmClients).values(client).returning();
     return result[0];
   }
@@ -245,6 +251,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCrmLead(lead: InsertCrmLead): Promise<CrmLead> {
+    // Email validation - Fix #1 from triage playbook
+    if (lead.email && !validator.isEmail(lead.email)) {
+      throw new Error(`Invalid email address: ${lead.email}. Please provide a valid email format.`);
+    }
+    
     const result = await db.insert(crmLeads).values(lead).returning();
     return result[0];
   }
