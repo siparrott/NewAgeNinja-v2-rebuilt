@@ -171,6 +171,108 @@ Key Features: High-quality photography, professional editing, personal service
   }
 
   /**
+   * Gather SEO and competitive intelligence context
+   */
+  async gatherSEOContext(baseContext: string, userGuidance: string, studioId: string): Promise<string> {
+    try {
+      console.log('🎯 Gathering SEO intelligence and competitive data...');
+      
+      // Import SEO tools
+      const { analyzeKeywordGap, getAllDiscoveredKeywords, existingBlogH1s } = await import('../agent/integrations/seo-intel');
+      const { fetchReviews } = await import('../agent/integrations/serp');
+      const { getStudioContext, rebuildStudioContext } = await import('../agent/integrations/studio-context');
+      
+      let enhancedContext = baseContext + '\n\n=== SEO & COMPETITIVE INTELLIGENCE ===\n';
+      
+      // Check for duplicate headlines
+      const existingTitles = await existingBlogH1s(studioId);
+      if (existingTitles.length > 0) {
+        enhancedContext += `Existing Blog Titles (${existingTitles.length}): Avoid similar topics\n`;
+        enhancedContext += `Recent titles: ${existingTitles.slice(-3).join(', ')}\n`;
+      }
+      
+      // Keyword gap analysis - extract main topic from user guidance
+      const mainTopic = this.extractMainTopic(userGuidance);
+      if (mainTopic) {
+        try {
+          const { unique: keywords } = await analyzeKeywordGap(studioId, `${mainTopic} wien fotografie`);
+          if (keywords.length > 0) {
+            enhancedContext += `SEO Keywords: ${keywords.slice(0, 15).join(', ')}\n`;
+          }
+        } catch (error) {
+          console.log('SEO analysis skipped (no SERP_API_KEY or rate limited)');
+        }
+      }
+      
+      // Get all discovered keywords from previous research
+      const allKeywords = await getAllDiscoveredKeywords(studioId);
+      if (allKeywords.length > 0) {
+        enhancedContext += `Historical Keywords: ${allKeywords.slice(0, 10).join(', ')}\n`;
+      }
+      
+      // Fetch business reviews for social proof
+      try {
+        const reviews = await fetchReviews('New Age Fotografie Wien');
+        if (reviews.length > 0) {
+          enhancedContext += `Customer Reviews (${reviews.length} found):\n`;
+          reviews.slice(0, 3).forEach((review, idx) => {
+            enhancedContext += `${idx + 1}. "${review.substring(0, 100)}..."\n`;
+          });
+        }
+      } catch (error) {
+        console.log('Review fetching skipped (API limitations)');
+      }
+      
+      // Get studio context cache
+      const studioContext = await getStudioContext(studioId);
+      if (studioContext && Object.keys(studioContext).length > 0) {
+        enhancedContext += `\n=== CACHED STUDIO INTELLIGENCE ===\n`;
+        if (studioContext.brand_title) {
+          enhancedContext += `Brand: ${studioContext.brand_title}\n`;
+        }
+        if (studioContext.brand_colors && studioContext.brand_colors.length > 0) {
+          enhancedContext += `Colors: ${studioContext.brand_colors.slice(0, 5).join(', ')}\n`;
+        }
+        if (studioContext.top_keywords && studioContext.top_keywords.length > 0) {
+          enhancedContext += `Top Keywords: ${studioContext.top_keywords.slice(0, 10).join(', ')}\n`;
+        }
+      }
+      
+      return enhancedContext;
+    } catch (error) {
+      console.error('Error gathering SEO context:', error);
+      return baseContext + '\n\n=== SEO Context (Limited) ===\nFocus on Vienna photography SEO and unique content angles.\n';
+    }
+  }
+
+  /**
+   * Extract main topic from user guidance for keyword research
+   */
+  private extractMainTopic(guidance: string): string {
+    const topicPatterns = [
+      /familien?(?:foto|shooting|portrait)/i,
+      /newborn|neugeboren/i,
+      /maternity|schwanger|babybauch/i,
+      /business|portrait|headshot/i,
+      /hochzeit|wedding/i,
+      /baby|kinder/i
+    ];
+    
+    const lowerGuidance = guidance.toLowerCase();
+    
+    for (const pattern of topicPatterns) {
+      if (pattern.test(lowerGuidance)) {
+        const match = lowerGuidance.match(pattern);
+        return match ? match[0] : '';
+      }
+    }
+    
+    // Fallback to first significant word
+    const words = guidance.split(/\s+/).filter(w => w.length > 3);
+    return words[0] || 'fotografie';
+  }
+
+  /**
    * BACKUP: Generate blog content using OpenAI Chat Completions API (fallback only)
    */
   async generateBlogContent(
@@ -1352,9 +1454,13 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       console.log('Processing images...');
       const processedImages = await this.processImages(files);
 
-      // Step 2: Scrape site context
-      console.log('Scraping site context...');
+      // Step 2: Gather comprehensive context (Website + SEO + Competitive Intelligence)
+      console.log('🔍 Gathering comprehensive context with SEO intelligence...');
       const siteContext = await this.scrapeSiteContext(input.siteUrl);
+      
+      // Step 2a: Add SEO and competitive intelligence
+      const studioId = "e5dc81e8-7073-4041-8814-affb60f4ef6c"; // Use actual studio ID from database
+      const enhancedContext = await this.gatherSEOContext(siteContext, input.contentGuidance || '', studioId);
 
       // Step 3: Generate content with REAL TOGNINJA BLOG WRITER ASSISTANT ONLY
       console.log('🚀 GENERATING CONTENT WITH REAL TOGNINJA BLOG WRITER ASSISTANT ONLY...');
@@ -1368,7 +1474,8 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       const fixedResult = await fixedAutoBlogGenerator.generateContent({
         userPrompt: input.contentGuidance || 'Professional photography session blog post',
         images: processedImages.map(img => img.buffer),
-        language: input.language || 'de'
+        language: input.language || 'de',
+        siteContext: enhancedContext // Pass enhanced context with SEO intelligence
       });
       
       if (!fixedResult.success) {

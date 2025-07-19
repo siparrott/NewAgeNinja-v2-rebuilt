@@ -67,3 +67,28 @@ crudTools.forEach(tool => toolRegistry.register(tool));
 toolRegistry.register(analyzeWebsiteTool);
 toolRegistry.register(getWebsiteProfileTool);
 toolRegistry.register(suggestSiteImprovementsTool);
+
+// Register SEO and competitive intelligence tools
+import {
+  searchCompetitorsTool,
+  fetchReviewsTool,
+  keywordGapTool,
+  checkDuplicateHeadlineTool,
+  getSEOInsightsTool,
+  trendingTopicsTool
+} from "../tools/seo-tools";
+import {
+  refreshStudioContextTool,
+  getStudioContextTool,
+  getIntelligenceSummaryTool
+} from "../tools/studio-context-tool";
+
+toolRegistry.register(searchCompetitorsTool);
+toolRegistry.register(fetchReviewsTool);
+toolRegistry.register(keywordGapTool);
+toolRegistry.register(checkDuplicateHeadlineTool);
+toolRegistry.register(getSEOInsightsTool);
+toolRegistry.register(trendingTopicsTool);
+toolRegistry.register(refreshStudioContextTool);
+toolRegistry.register(getStudioContextTool);
+toolRegistry.register(getIntelligenceSummaryTool);

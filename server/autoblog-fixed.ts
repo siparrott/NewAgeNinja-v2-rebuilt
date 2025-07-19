@@ -14,6 +14,7 @@ export class FixedAutoBlogGenerator {
     userPrompt: string;
     images?: Buffer[];
     language: string;
+    siteContext?: string;
   }): Promise<{
     success: boolean;
     content: string;
@@ -69,10 +70,12 @@ including H1/H2 structure, meta descriptions, and Vienna-specific content.`;
         }
       }
       
-      // Step 3: Create context-aware user message
+      // Step 3: Create context-aware user message with SEO intelligence
       const contextualPrompt = `
 Photography Session: ${imageContext}
 Studio: New Age Fotografie, Vienna
+
+${input.siteContext || 'Professional Vienna photography studio context'}
 Language: ${input.language === 'de' ? 'German' : 'English'}
 
 User Request: ${input.userPrompt}

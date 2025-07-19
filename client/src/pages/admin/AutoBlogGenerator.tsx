@@ -394,11 +394,11 @@ export default function AutoBlogGenerator() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">SEO Optimization</span>
+                  <span className="text-sm">SEO + Competitive Intelligence</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Multi-language Support</span>
+                  <span className="text-sm">Keyword Research & Review Mining</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-green-500" />

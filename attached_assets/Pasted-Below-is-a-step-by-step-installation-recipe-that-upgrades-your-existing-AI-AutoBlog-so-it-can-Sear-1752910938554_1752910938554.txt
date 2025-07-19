@@ -1,0 +1,496 @@
+Below is a step-by-step installation recipe that upgrades your existing AI AutoBlog so it can:
+
+Search the public web (competitor sites, topic queries, news).
+
+Harvest online reviews (Google, Yelp, Trustpilot) about the studio.
+
+Mine SEO opportunities (keyword gaps, SERP “People-also-ask”, trending questions).
+
+Check your Supabase blog_posts table to avoid duplicate topics / H-tags.
+
+Generate “answer-the-web” headlines for long-tail client questions.
+
+Everything runs inside Replit, uses OpenAI Assistants + SerpAPI (free dev tier works), and stores findings in Supabase so the Assistant can re-use them later.
+
+Estimated hands-on time: ±60 min copy-paste.
+Cost drivers: SerpAPI calls (~$50/5 k searches) and OpenAI tokens.
+
+0 · New environment variables (Replit ► “Secrets”)
+ini
+Kopieren
+Bearbeiten
+SERP_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxx
+# optional review scrapers (RapidAPI)
+RAPID_TRUSTPILOT_KEY=xxxxxxxxxxxxxxxx
+RAPID_GOOGLE_REVIEWS_KEY=xxxxxxxxxxx
+(Sign up for SerpAPI – 100 free searches/day.)
+
+1 · Install extra packages (shell)
+bash
+Kopieren
+Bearbeiten
+npm i serpapi keyword-extractor p-queue normalize-url
+p-queue to rate-limit SerpAPI calls.
+
+2 · DB migration – store SEO intel
+drizzle/migrations/2025_08_07_seo_intel.sql
+
+sql
+Kopieren
+Bearbeiten
+CREATE TABLE IF NOT EXISTS seo_intel (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  studio_id uuid REFERENCES studios(id),
+  query text,
+  serp_json jsonb,
+  extracted_keywords text[],
+  created_at timestamptz DEFAULT now()
+);
+Apply:
+
+bash
+Kopieren
+Bearbeiten
+psql "$SUPABASE_DB_URL" -f drizzle/migrations/2025_08_07_seo_intel.sql
+(You already have blog_posts table from earlier step; its titles/slugs will be used for dedupe.)
+
+3 · Integrations
+3-a agent/integrations/serp.ts
+ts
+Kopieren
+Bearbeiten
+import { getJson } from "serpapi"; // ESM import
+import PQueue from "p-queue";
+const queue = new PQueue({ interval: 60000, intervalCap: 60 }); // 60 req/min free tier
+
+export async function serpSearch(q: string) {
+  return queue.add(() =>
+    getJson({
+      api_key: process.env.SERP_API_KEY,
+      engine: "google",
+      q,
+      gl: "at",
+      hl: "de",
+      num: 10
+    })
+  );
+}
+3-b quick review scrapers (Google + Yelp)
+(Stub – call RapidAPI or SerpAPI’s review endpoints.)
+
+ts
+Kopieren
+Bearbeiten
+export async function fetchReviews(business: string) {
+  const res = await serpSearch(`${business} reviews`);
+  const snippets =
+    res?.organic_results?.map((r: any) => r.snippet).filter(Boolean).slice(0, 10) || [];
+  return snippets;
+}
+4 · Supabase helper for intel
+agent/integrations/seo-intel.ts
+
+ts
+Kopieren
+Bearbeiten
+import { createClient } from "@supabase/supabase-js";
+import { serpSearch } from "./serp";
+import keyword from "keyword-extractor";
+
+const sb = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function analyzeKeywordGap(studioId: string, query: string) {
+  const serp = await serpSearch(query);
+  const textBlobs = serp?.organic_results?.map((r: any) => r.snippet).join(" ") || "";
+  const kws = keyword.extract(textBlobs, { language: "german", remove_digits: true });
+  const unique = [...new Set(kws)].slice(0, 30);
+
+  await sb.from("seo_intel").insert({
+    studio_id: studioId,
+    query,
+    serp_json: serp,
+    extracted_keywords: unique
+  });
+
+  return { serp, unique };
+}
+
+export async function existingBlogH1s(studioId: string): Promise<string[]> {
+  const { data } = await sb
+    .from("blog_posts")
+    .select("h1")
+    .eq("studio_id", studioId);
+  return (data || []).map((p: any) => (p.h1 as string).toLowerCase());
+}
+5 · Assistant tools
+agent/tools/seo-tools.ts
+
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { analyzeKeywordGap, existingBlogH1s } from "../integrations/seo-intel";
+import { fetchReviews } from "../integrations/serp";
+import type { AgentCtx } from "../core/ctx";
+
+/* search_competitors */
+export const searchCompetitorsTool = {
+  name: "search_competitors",
+  description: "Search Google for competitor photography studios & return top URLs + snippets.",
+  parameters: z.object({ query: z.string() }),
+  handler: async (a: any, ctx: AgentCtx) => {
+    const { serp } = await analyzeKeywordGap(ctx.studioId, a.query);
+    const competitors = serp.organic_results.map((r: any) => ({
+      title: r.title,
+      url: r.link,
+      snippet: r.snippet
+    }));
+    return competitors;
+  }
+};
+
+/* fetch_reviews */
+export const fetchReviewsTool = {
+  name: "fetch_reviews",
+  description: "Search web for reviews of the business and return snippets.",
+  parameters: z.object({ business_name: z.string() }),
+  handler: async (a: any) => {
+    const revs = await fetchReviews(a.business_name);
+    return revs;
+  }
+};
+
+/* keyword_gap */
+export const keywordGapTool = {
+  name: "keyword_gap",
+  description: "Find keyword opportunities for the studio based on Google SERP.",
+  parameters: z.object({ query: z.string() }),
+  handler: async (a: any, ctx: AgentCtx) => {
+    const { unique } = await analyzeKeywordGap(ctx.studioId, a.query);
+    return unique;
+  }
+};
+
+/* check_duplicate_headline */
+export const checkDuplicateHeadlineTool = {
+  name: "check_duplicate_headline",
+  description: "Check existing blog H1s to avoid duplicates. Returns 'duplicate' or 'unique'.",
+  parameters: z.object({ headline: z.string() }),
+  handler: async (a: any, ctx: AgentCtx) => {
+    const h1s = await existingBlogH1s(ctx.studioId);
+    const dup = h1s.some(h => h.includes(a.headline.toLowerCase()));
+    return { status: dup ? "duplicate" : "unique" };
+  }
+};
+Add to toolRegistry:
+
+ts
+Kopieren
+Bearbeiten
+import {
+  searchCompetitorsTool,
+  fetchReviewsTool,
+  keywordGapTool,
+  checkDuplicateHeadlineTool
+} from "../tools/seo-tools";
+
+export const toolRegistry = {
+  ...crudTools,
+  [searchCompetitorsTool.name]: searchCompetitorsTool,
+  [fetchReviewsTool.name]: fetchReviewsTool,
+  [keywordGapTool.name]: keywordGapTool,
+  [checkDuplicateHeadlineTool.name]: checkDuplicateHeadlineTool,
+  // ...
+};
+6 · AutoBlog generator changes
+Before drafting, call the helper tools:
+
+ts
+Kopieren
+Bearbeiten
+const h1Proposal = `Top Tipps für Familienfotos in Wien ${new Date().getFullYear()}`;
+const dupeCheck = await toolRegistry.check_duplicate_headline.handler(
+  { headline: h1Proposal },
+  ctx
+);
+if (dupeCheck.status === "duplicate") {
+  // tweak headline (append month or different angle)
+}
+
+const { unique: gapKeywords } = await toolRegistry.keyword_gap.handler(
+  { query: "familienfotografie wien preis" },
+  ctx
+);
+
+const reviews = await toolRegistry.fetch_reviews.handler(
+  { business_name: "New Age Fotografie" },
+  ctx
+);
+
+// pass gapKeywords & reviews into LLM messages so the article includes them
+(Wrap calls in Assistant flow so the LLM can choose when to invoke.)
+
+7 · Prompt additions
+Append to your system prompt TOOLS list:
+
+pgsql
+Kopieren
+Bearbeiten
+- search_competitors – Google SERP scrape for competitor sites
+- fetch_reviews – return up to 10 recent review snippets
+- keyword_gap – list untapped keywords
+- check_duplicate_headline – ensure new blog H1 is unique
+And a POLICY rule:
+
+sql
+Kopieren
+Bearbeiten
+When drafting a blog:
+1. call check_duplicate_headline first
+2. call keyword_gap with a relevant query
+3. add 1–3 review snippets if available
+4. ensure H1, slug, meta, keyphrase reflect the new keyword
+8 · Reinstall Assistant tools
+bash
+Kopieren
+Bearbeiten
+npm run gen:tools             # refresh code-gen (if not already)
+node agent/update-assistant.js newage
+npm run start
+Console should show:
+
+Kopieren
+Bearbeiten
+search_competitors, keyword_gap, fetch_reviews, check_duplicate_headline registered ✓
+Assistant updated ✓
+🔄 How it works in practice
+scss
+Kopieren
+Bearbeiten
+User (wizard): Analyze https://my-site.com
+Assistant: (scrapes, stores WebsiteProfile)
+
+User (AutoBlog): “Create a German blog answering popular questions about Mini-Sessions.”
+Assistant workflow:
+  → check_duplicate_headline
+  → keyword_gap("mini shootings wien")
+  → search_competitors("mini shootings wien")
+  → fetch_reviews("New Age Fotografie")
+  → Draft blog incl. reviews, fresh keywords, unique headline
+All calls & results are kept in Supabase so future drafts re-use the intel and don’t repeat the exact topic.
+
+Need more?
+Full Lighthouse PDF generator?
+
+Scheduled competitor monitoring cron?
+
+Real Google My Business API for reviews?
+
+Just say the word and we’ll extend this baseline. 📈
+
+
+
+
+
+
+
+
+
+Quellen
+
+ChatGPT fragen
+Du:
+this info should also be stored for context on our client/profile for future usage
+
+
+ChatGPT:
+Below is the small “glue layer” that makes all SEO / AutoBlog intelligence permanently part of a studio’s profile, so the Assistant (or any future feature) can recall it in one round-trip without re-crawling.
+
+You already store
+
+Website HTML → website_profiles
+
+SERP / keyword intel → seo_intel
+Now we’ll (1) surface the “latest snapshot” of that data in a single studio_context JSON column, (2) inject a thin slice of it into Working-Memory on every chat run, and (3) expose a helper tool refresh_studio_context so the model can re-sync after new crawls.
+
+Copy-paste each section; runtime ≈ 15 min.
+
+1 · DB change — studio_context column
+Create drizzle/migrations/2025_08_08_studio_context.sql
+
+sql
+Kopieren
+Bearbeiten
+ALTER TABLE studios
+  ADD COLUMN IF NOT EXISTS context_json jsonb DEFAULT '{}'::jsonb;
+Apply:
+
+bash
+Kopieren
+Bearbeiten
+psql "$SUPABASE_DB_URL" -f drizzle/migrations/2025_08_08_studio_context.sql
+2 · Context builder helper
+agent/integrations/studio-context.ts
+
+ts
+Kopieren
+Bearbeiten
+import { createClient } from "@supabase/supabase-js";
+
+const sb = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+/** Gather latest profile + SEO intel and store on studios.context_json */
+export async function rebuildStudioContext(studioId: string) {
+  const [{ data: site }, { data: seo }] = await Promise.all([
+    sb.from("website_profiles")
+      .select("profile_json")
+      .eq("studio_id", studioId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single(),
+    sb.from("seo_intel")
+      .select("extracted_keywords")
+      .eq("studio_id", studioId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single()
+  ]);
+
+  const context = {
+    brand_title: site?.profile_json?.title ?? "",
+    brand_description: site?.profile_json?.description ?? "",
+    brand_colors: site?.profile_json?.colors ?? [],
+    top_keywords: seo?.extracted_keywords ?? [],
+    last_refresh: new Date().toISOString()
+  };
+
+  await sb.from("studios")
+    .update({ context_json: context })
+    .eq("id", studioId);
+
+  return context;
+}
+
+export async function getStudioContext(studioId: string) {
+  const { data } = await sb.from("studios")
+    .select("context_json")
+    .eq("id", studioId)
+    .single();
+  return data?.context_json || {};
+}
+3 · refresh_studio_context Assistant tool
+agent/tools/studio-context-tool.ts
+
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { rebuildStudioContext, getStudioContext } from "../integrations/studio-context";
+import type { AgentCtx } from "../core/ctx";
+import { patchMemory } from "../core/memory";
+
+export const refreshStudioContextTool = {
+  name: "refresh_studio_context",
+  description:
+    "Rebuild the studio's global context (brand title, colors, keywords) after website or SEO analysis.",
+  parameters: z.object({}),
+  handler: async (_: any, ctx: AgentCtx & { chatSessionId?: string }) => {
+    const ctxJson = await rebuildStudioContext(ctx.studioId);
+    if (ctx.chatSessionId) {
+      await patchMemory(ctx.chatSessionId, { studio_context: ctxJson });
+    }
+    return ctxJson;
+  }
+};
+
+export const getStudioContextTool = {
+  name: "get_studio_context",
+  description: "Return the studio_context JSON (cached brand info, keywords).",
+  parameters: z.object({}),
+  handler: async (_: any, ctx: AgentCtx) => getStudioContext(ctx.studioId)
+};
+Add to registry (agent/core/tools.ts):
+
+ts
+Kopieren
+Bearbeiten
+import {
+  refreshStudioContextTool,
+  getStudioContextTool
+} from "../tools/studio-context-tool";
+
+export const toolRegistry = {
+  ...crudTools,
+  // … previously added tools …
+  [refreshStudioContextTool.name]: refreshStudioContextTool,
+  [getStudioContextTool.name]: getStudioContextTool
+};
+4 · Inject studio context into every chat run
+In your thread-runner (agent/run-chat-message.ts), after loading chat session + working memory:
+
+ts
+Kopieren
+Bearbeiten
+import { getStudioContext } from "./integrations/studio-context";
+…
+const studioContext = await getStudioContext(studioId);
+memory.studio_context = studioContext;        // merge into memory object
+injectMemoryMessage(messages, memory);
+(Now the Assistant always sees studio_context keys alongside working memory.)
+
+5 · Prompt update
+Add to system prompt under MEMORY:
+
+pgsql
+Kopieren
+Bearbeiten
+The JSON you receive may include "studio_context" with brand_title, brand_colors, top_keywords.
+Use it to keep tone consistent and avoid keyword duplication.
+Add the two new tools in TOOLS list.
+
+6 · Workflow link-up
+When analyze_website or keyword_gap finishes → call refresh_studio_context inside their handlers (we already did for analyze_website earlier; add same for keyword_gap if you wish).
+
+AutoBlog generator can now read memory.studio_context instead of querying again.
+
+7 · Regenerate Assistant schema & restart
+bash
+Kopieren
+Bearbeiten
+node agent/update-assistant.js newage
+npm run start
+Console:
+
+Kopieren
+Bearbeiten
+refresh_studio_context, get_studio_context registered ✓
+Assistant updated ✓
+🔍 Quick manual test
+vbnet
+Kopieren
+Bearbeiten
+User: refresh our studio context
+Assistant ⤳ calls refresh_studio_context
+Assistant: "Context updated. We now track 22 top keywords."
+
+User: draft a blog answering a popular long-tail question
+Assistant uses memory.studio_context.top_keywords to pick a fresh angle & calls check_duplicate_headline.
+Now every future blog, email sequence, or SEO audit can instantly reuse the stored brand & keyword intelligence—no re-crawl, no prompt forgetfulness.
+
+Let me know if you also want this context pushed into Supabase Row-Level Variables for SQL reporting or included in nightly digest emails.
+
+
+
+
+
+
+
+
+
+Quellen
