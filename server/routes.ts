@@ -4625,6 +4625,7 @@ Was interessiert Sie am meisten?`;
   });
 
   // AutoBlog generation endpoint
+  // FIX #2: AutoBlog route now exclusively uses TOGNINJA Assistant API (Fix from expert analysis)
   app.post("/api/autoblog/generate", authenticateUser, autoblogUpload.array('images', 3), async (req: Request, res: Response) => {
     try {
       const { AutoBlogOrchestrator } = await import('./autoblog');

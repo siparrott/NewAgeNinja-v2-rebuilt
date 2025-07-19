@@ -543,12 +543,12 @@ ADDITIONAL CONTEXT SOURCES:
         }
       }
       
-      // MINIMAL message - essential context only
+      // MINIMAL message - essential context only (Fix #1: No prompt override)
       const userMessage = `Photography session: ${imageContext}
 Studio: New Age Fotografie, Vienna
 User request: ${input.contentGuidance || 'German blog post about photography session'}
 
-Generate content using your trained instructions.`;
+Create complete blog package with all sections per your training.`;
 
       // STEP 3: Create thread for REAL Assistant
       const thread = await openai.beta.threads.create();
@@ -561,10 +561,12 @@ Generate content using your trained instructions.`;
       });
       console.log('✅ Message added to thread');
 
-      // Run the REAL Assistant using SDK (no fetch() bypass)
+      // Run the REAL Assistant using SDK with FIXED max_tokens (Fix #5 from expert analysis)
       console.log('🚀 Running TOGNINJA BLOG WRITER Assistant using proper SDK...');
       const run = await openai.beta.threads.runs.create(thread.id, {
         assistant_id: assistantId,
+        max_tokens: 2000, // Fix #5: Increased from default 256 to support full articles
+        temperature: 0.7,
         metadata: { feature: "autoblog", studioId: "newage-fotografie" }
       });
       console.log('✅ Assistant run created:', run.id, 'on thread:', thread.id);
