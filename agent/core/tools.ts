@@ -35,6 +35,11 @@ import {
 } from "../tools/crm_leads-auto";
 import { readCrmMessages, createCrmMessages, updateCrmMessages } from "../tools/crm_messages-auto";
 
+// Enhanced lead tools with proper error handling
+import { readCrmLeads as readCrmLeadsEnhanced } from "../tools/read-crm-leads";
+import { findLeadTool } from "../tools/find-lead";
+import { enumerateLeadsTool } from "../tools/enumerate-leads";
+
 export interface AgentTool {
   name: string;
   description: string;
@@ -89,6 +94,11 @@ toolRegistry.register(updateCrmLeadsAuto);
 toolRegistry.register(readCrmMessages);
 toolRegistry.register(createCrmMessages);
 toolRegistry.register(updateCrmMessages);
+
+// Register enhanced lead tools with proper error handling
+toolRegistry.register(readCrmLeadsEnhanced);
+toolRegistry.register(findLeadTool);
+toolRegistry.register(enumerateLeadsTool);
 
 // Register CRM read tools (CRITICAL FIX)
 import { listClientsTool, listLeadsTool, listSessionsTool, listInvoicesTool, countInvoicesTool, countSessionsTool } from "../tools/crm-read";

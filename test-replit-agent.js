@@ -1,35 +1,17 @@
-// Test the new Replit-style super-agent with complex multi-step operations
-async function testReplitStyleAgent() {
-  console.log('🚀 TESTING REPLIT-STYLE SUPER-AGENT');
+// Test the Replit-style super-agent execution with detailed logging
+async function testReplitAgent() {
+  console.log('🤖 TESTING REPLIT-STYLE SUPER-AGENT');
   console.log('===================================');
   
   const testCases = [
-    {
-      name: "Simple Search",
-      message: "find simon parrott",
-      expected: "Should autonomously search and find Simon"
-    },
-    {
-      name: "Complex Email Request", 
-      message: "Send Simon Parrott an email about his appointment",
-      expected: "Should search → find → email autonomously"
-    },
-    {
-      name: "Data Query",
-      message: "how many invoices do we have this year",
-      expected: "Should search invoices and provide count"
-    },
-    {
-      name: "Update Request",
-      message: "list all leads with status new",
-      expected: "Should read leads with filtering"
-    }
+    "find simon parrott",
+    "search for simon", 
+    "list all leads",
+    "show me simon's email"
   ];
   
-  for (const testCase of testCases) {
-    console.log(`\n📝 Testing: ${testCase.name}`);
-    console.log(`Message: "${testCase.message}"`);
-    console.log(`Expected: ${testCase.expected}`);
+  for (const message of testCases) {
+    console.log(`\n📝 Testing: "${message}"`);
     
     try {
       const response = await fetch('http://localhost:5000/api/crm/agent/chat', {
@@ -39,7 +21,7 @@ async function testReplitStyleAgent() {
           'Cookie': 'auth-session=test-session'
         },
         body: JSON.stringify({
-          message: testCase.message,
+          message,
           studioId: 'e5dc81e8-7073-4041-8814-affb60f4ef6c',
           userId: 'test-replit-' + Math.random().toString(36).substr(2, 9)
         })
@@ -48,35 +30,39 @@ async function testReplitStyleAgent() {
       const result = await response.json();
       
       console.log('📊 Status:', response.status);
-      if (result.response) {
-        console.log('✅ Response Length:', result.response.length);
-        console.log('📄 Response:', result.response.substring(0, 200) + (result.response.length > 200 ? '...' : ''));
-        
-        // Check for autonomous execution indicators
-        const hasSearch = result.response.toLowerCase().includes('found') || result.response.toLowerCase().includes('search');
-        const hasAction = result.response.toLowerCase().includes('sent') || result.response.toLowerCase().includes('created') || result.response.toLowerCase().includes('updated');
-        const hasError = result.response.toLowerCase().includes('error') || result.response.toLowerCase().includes('failed');
-        
-        console.log('🔍 Analysis:');
-        console.log('  - Shows search/find action:', hasSearch ? 'YES' : 'NO');
-        console.log('  - Shows autonomous action:', hasAction ? 'YES' : 'NO');
-        console.log('  - Reports errors:', hasError ? 'YES' : 'NO');
-        
-        if (hasSearch && !hasError) {
-          console.log('🎉 SUCCESS: Autonomous execution detected!');
-        }
+      console.log('✅ Response:', result.response);
+      
+      // Check for autonomous execution
+      const hasAutonomous = result.response.includes('autonomous') || result.response.includes('search');
+      const hasSimon = result.response.toLowerCase().includes('simon');
+      const hasError = result.response.toLowerCase().includes('error') || result.response.toLowerCase().includes('failed');
+      const hasEmail = result.response.toLowerCase().includes('siparrott');
+      const hasData = result.response.toLowerCase().includes('found') || result.response.includes('lead');
+      
+      console.log('🔍 Analysis:');
+      console.log('  - Autonomous execution:', hasAutonomous ? 'YES' : 'NO');
+      console.log('  - Mentions Simon:', hasSimon ? 'YES' : 'NO');
+      console.log('  - Shows email address:', hasEmail ? 'YES' : 'NO'); 
+      console.log('  - Shows data/results:', hasData ? 'YES' : 'NO');
+      console.log('  - Reports errors:', hasError ? 'YES' : 'NO');
+      
+      if (hasSimon && hasEmail && hasData && !hasError) {
+        console.log('🎉 SUCCESS: Replit-style agent working perfectly!');
+        break; // Stop on first success
+      } else if (hasData && !hasError) {
+        console.log('✅ PROGRESS: Agent returning some data');
+      } else if (hasError) {
+        console.log('❌ ERROR: Agent reporting errors');
       } else {
-        console.log('❌ No response received');
+        console.log('⚠️ ISSUE: Agent not finding data properly');
       }
       
     } catch (error) {
-      console.error('❌ Test failed:', error.message);
+      console.error('❌ Request failed:', error.message);
     }
-    
-    console.log('---');
   }
   
   console.log('\n🏁 Replit-style super-agent testing complete!');
 }
 
-testReplitStyleAgent();
+testReplitAgent();

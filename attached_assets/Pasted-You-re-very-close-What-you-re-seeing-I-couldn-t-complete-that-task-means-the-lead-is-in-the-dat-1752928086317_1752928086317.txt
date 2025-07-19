@@ -1,0 +1,275 @@
+You’re very close. What you’re seeing (“I couldn’t complete that task”) means the lead is in the database, but the tool layer or planner failed before (or right after) the Supabase query and you’re swallowing the real exception. Below is a surgical debug + hardening pack. If you copy / paste these patches you’ll (a) see the real reason immediately, (b) guarantee a search actually runs every time, and (c) gracefully fall back to a brute-force enumerate if anything still breaks.
+
+1. Turn the invisible error into a visible reason
+Patch: a universal tool executor wrapper
+agent/core/runTools.ts (NEW)
+
+ts
+Kopieren
+Bearbeiten
+import { toolRegistry } from "./tools";
+
+export async function executeToolCall(call: any, ctx: any) {
+  const name = call.function.name;
+  const argsRaw = call.function.arguments || "{}";
+  let parsedArgs: any = {};
+  try {
+    parsedArgs = JSON.parse(argsRaw);
+  } catch (e) {
+    return { tool_call_id: call.id, output: JSON.stringify({ error: "bad_json_args", detail: e.message, name, raw: argsRaw }) };
+  }
+
+  const tool = toolRegistry[name];
+  if (!tool) {
+    return { tool_call_id: call.id, output: JSON.stringify({ error: "unknown_tool", name }) };
+  }
+
+  try {
+    const out = await tool.handler(parsedArgs, ctx);
+    return { tool_call_id: call.id, output: JSON.stringify({ ok: true, data: out }) };
+  } catch (e: any) {
+    // IMPORTANT: surface real error cause
+    return {
+      tool_call_id: call.id,
+      output: JSON.stringify({
+        ok: false,
+        error: e.message || String(e),
+        stack: e.stack?.split("\n").slice(0,3),
+        tool: name,
+        args: parsedArgs
+      })
+    };
+  }
+}
+Use it in your run loop
+In your thread / run handling while run.status === "requires_action":
+
+ts
+Kopieren
+Bearbeiten
+import { executeToolCall } from "./core/runTools";
+
+...
+
+const outputs = [];
+for (const call of toolCalls) {
+  const result = await executeToolCall(call, ctx);
+  console.log("[TOOL DEBUG]", result);  // <-- real-time log
+  outputs.push(result);
+}
+Now instead of the model seeing a vague failure it receives structured JSON with error. It will usually self-correct (“Retrying with global_search …”).
+
+2. Harden the lead search tool (exact cause of Simon failure)
+Typical problems:
+
+Missing ilike OR block (you filtered only email or only first_name).
+
+Typos in email (siparrott… vs siparrott@yahoo.co.uk) causing false negatives if you required “@”.
+
+Policy blocked READ_LEADS.
+
+Replace / create: agent/tools/read-crm_leads.ts
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+import type { AgentCtx } from "../core/ctx";
+const sb = createClient(process.env.VITE_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+export const readCrmLeads = {
+  name: "read_crm_leads",
+  description: "List leads (filtered by optional search across name/email/message). ALWAYS use this before stating anything about leads.",
+  parameters: z.object({
+    search: z.string().optional(),
+    limit: z.number().int().min(1).max(100).default(25)
+  }),
+  handler: async (a: any, ctx: AgentCtx) => {
+    let q = sb.from("crm_leads").select("*").eq("studio_id", ctx.studioId).order("created_at", { ascending: false });
+    if (a.search) {
+      const term = a.search.trim().toLowerCase();
+      // OR block over the columns you actually have
+      q = q.or(
+        [
+          `first_name.ilike.%${term}%`,
+          `last_name.ilike.%${term}%`,
+          `email.ilike.%${term}%`,
+          `message.ilike.%${term}%`
+        ].join(",")
+      );
+    }
+    const { data, error } = await q.limit(a.limit);
+    if (error) throw new Error("lead_query_failed: " + error.message);
+    return data;
+  }
+};
+Reminder: Add it to registry & re-update the assistant.
+
+3. Add a “high-certainty” exact lead lookup (so the model doesn’t only rely on broad search)
+agent/tools/find-lead.ts
+
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+import type { AgentCtx } from "../core/ctx";
+const sb = createClient(process.env.VITE_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+export const findLeadTool = {
+  name: "find_lead",
+  description: "Fetch a single lead by exact email or id. Use after broad search to confirm.",
+  parameters: z.object({
+    email: z.string().email().optional(),
+    id: z.string().uuid().optional()
+  }).refine(v => v.email || v.id, "email or id required"),
+  handler: async (a: any, ctx: AgentCtx) => {
+    let q = sb.from("crm_leads").select("*").eq("studio_id", ctx.studioId);
+    if (a.id) q = q.eq("id", a.id);
+    if (a.email) q = q.eq("email", a.email);
+    const { data, error } = await q.limit(1).maybeSingle();
+    if (error) throw new Error("find_lead_failed: " + error.message);
+    return data || null;
+  }
+};
+4. Force search-first with prompt reinforcement
+Add / update this section inside the system instructions:
+
+pgsql
+Kopieren
+Bearbeiten
+DATA GROUNDING PROTOCOL
+1. BEFORE answering ANY factual or record-specific request you MUST call the most specific READ or FIND tool (e.g. read_crm_leads, find_lead, read_crm_clients, count_invoices).
+2. If user supplies a name or partial name, first call read_crm_leads/search or read_crm_clients/search with that term.
+3. If exactly one candidate row appears, and an action (email / update / booking) is requested, confirm by calling the corresponding find_* tool with exact email or id before performing the action.
+4. If a tool call returns an error object, adapt: choose another tool or ask the user for the missing field. Do not say "I couldn't complete that task" without a reason.
+5. Provide CLEAR error messages to the user
+Modify your post-run assistant reply function:
+
+ts
+Kopieren
+Bearbeiten
+function surfaceToolErrors(toolOutputs: any[]) {
+  const errs = toolOutputs
+    .map(o => {
+      try { return JSON.parse(o.output); } catch { return null; }
+    })
+    .filter(r => r && r.ok === false);
+  if (!errs.length) return null;
+  return errs.map(e => `❌ ${e.tool}: ${e.error}`).join("\n");
+}
+
+// after submitting tool outputs:
+const errText = surfaceToolErrors(outputs);
+if (errText) {
+  await openai.beta.threads.messages.create(thread.id, {
+    role: "assistant",
+    content: `I hit these errors while searching:\n${errText}\nI will adjust or need clarification.`
+  });
+}
+Now you and the model both see the real problem (e.g. lead_query_failed: column "full_name" does not exist).
+
+6. Automatic fallback enumerator
+If search returns empty but user insisted “he is there”, have the model try a fallback enumeration.
+
+Add new tool:
+
+ts
+Kopieren
+Bearbeiten
+export const enumerateLeadsTool = {
+  name: "enumerate_leads_basic",
+  description: "Return just id, first_name, last_name, email of the latest 50 leads (fallback when search unexpectedly empty).",
+  parameters: {},
+  handler: async (_:any, ctx:AgentCtx)=>{
+    const { data, error } = await sb.from("crm_leads")
+      .select("id, first_name, last_name, email")
+      .eq("studio_id", ctx.studioId)
+      .order("created_at", { ascending:false })
+      .limit(50);
+    if (error) throw new Error("enumerate_leads_failed:"+error.message);
+    return data;
+  }
+};
+Prompt hint (append):
+
+pgsql
+Kopieren
+Bearbeiten
+If read_crm_leads with a search term returns 0 but user insists the record exists, call enumerate_leads_basic and scan results.
+7. Ensure authorities include READ_LEADS
+sql
+Kopieren
+Bearbeiten
+update ai_policies
+set authorities = array(select unnest(authorities) union select 'READ_LEADS')
+where studio_id='<<your_studio_uuid>>';
+(Or just manually inspect ai_policies.authorities.)
+
+8. Sanity checklist to run now (copy to shell)
+bash
+Kopieren
+Bearbeiten
+# 1. Is Simon in DB?
+psql -c "select id, first_name, last_name, email from crm_leads where lower(first_name) like 'simon%' or lower(last_name) like 'parrott%';"
+
+# 2. Are any emails malformed?
+psql -c "select id, email from crm_leads where email not like '%@%';"
+
+# 3. Does ai_policies have READ_LEADS?
+psql -c "select authorities from ai_policies where studio_id='YOUR_STUDIO';"
+Fix malformed emails; add missing studio_id if any rows null:
+
+sql
+Kopieren
+Bearbeiten
+update crm_leads set studio_id='YOUR_STUDIO' where studio_id is null;
+9. Quick regression test (after restart)
+Conversation expectation:
+
+pgsql
+Kopieren
+Bearbeiten
+User: find simon parrott in the new leads
+Agent: (tool call: read_crm_leads {"search":"simon parrott"}) -> returns rows
+Agent: (optionally find_lead email) -> confirms details
+Agent: "Found Simon Parrott: email siparrott@yahoo.co.uk ... What next?"
+If it fails, look at [TOOL DEBUG] line in console—paste it to me and we go even deeper.
+
+10. Optional: “Intention Extractor” to standardize user message before planning (helps with short “new leads?” & “how many leads?” patterns)
+ts
+Kopieren
+Bearbeiten
+export async function classifyIntent(userMsg: string) {
+  const resp = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0,
+    messages: [
+      { role: "system", content: "Extract intent JSON {intent:string, entity?:string} from the user message." },
+      { role: "user", content: userMsg }
+    ]
+  });
+  try {
+    return JSON.parse(resp.choices[0].message.content || "{}");
+  } catch {
+    return { intent: "unknown" };
+  }
+}
+Feed intent into planStep so “new leads?” always routes to read_crm_leads.
+
+Summary of Immediate Copy/Paste Actions
+Add runTools.ts wrapper → get real errors.
+
+Replace read_crm_leads with fuzzy OR version.
+
+Add find_lead + enumerate_leads_basic.
+
+Update system prompt (SEARCH-FIRST + fallback logic).
+
+Ensure READ_LEADS authority.
+
+Re-update assistant (tools only) & restart.
+
+Run the 3 psql sanity commands.
+
+Do those and repeat your conversation. You should not see “I couldn’t complete that task” again; you’ll either get the lead or a concrete error like “lead_query_failed: column message does not exist”

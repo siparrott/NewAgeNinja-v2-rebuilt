@@ -16,7 +16,10 @@ export const globalSearchTool = {
   handler: async (args: any, ctx: AgentCtx) => {
     requireAuthority(ctx, "READ_CLIENTS");
     
-    const term = args.term.toLowerCase();
+    const term = (args.term || args.searchTerm || '').toLowerCase();
+    if (!term) {
+      throw new Error('Search term is required');
+    }
     console.log(`🔍 global_search: Searching for "${term}"`);
     
     try {

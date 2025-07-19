@@ -4,6 +4,7 @@ import { toolRegistry } from "./core/tools";
 import { runLLM } from "./llm/run";
 import { addMessageToHistory, getConversationHistory, updateSession } from "./core/memory";
 import { planStep } from "./core/plan";
+import { executeToolCall, surfaceToolErrors } from "./core/runTools";
 
 const SYSTEM_PROMPT = `You are {{STUDIO_NAME}}'s Autonomous CRM Operations Agent - a Replit-style super-agent.
 
@@ -24,6 +25,13 @@ Working memory: [[WORKING_MEMORY]]
 - Track: current_goal, selected_client_id, last_action
 - Update memory when context changes
 - Reference conversation history for returning users
+
+DATA GROUNDING PROTOCOL
+1. BEFORE answering ANY factual or record-specific request you MUST call the most specific READ_crm_leads, find_lead, read_crm_clients, or count tools
+2. If user supplies a name or partial name, first call read_crm_leads with search parameter
+3. If exactly one candidate row appears, and an action is requested, confirm by calling find_lead with exact email or id before performing the action
+4. If a tool call returns an error object, adapt: choose another tool or ask the user for the missing field. Do not say "I couldn't complete that task" without a reason
+5. If read_crm_leads with a search term returns 0 but user insists the record exists, call enumerate_leads_basic and scan results
 
 AUTONOMOUS EXECUTION RULES
 ✅ ALWAYS search before stating facts ("Simon has 3 invoices" → search first, then confirm)
@@ -76,14 +84,18 @@ export async function runAgent(studioId: string, userId: string, message: string
     if (searchTerms.some(term => messageWords.includes(term))) {
       console.log('🔍 Detected search request - executing autonomous search');
       
-      // Extract search term from message
-      const searchTerm = message.replace(/find|search|look for|get|show me/gi, '').trim();
+      // Extract search term from message - improved parsing
+      let searchTerm = message.replace(/find|search for|look for|get|show me/gi, '').trim();
+      
+      // Clean up common artifacts
+      searchTerm = searchTerm.replace(/^(for|me|the|a|an)\s+/gi, '').trim();
+      searchTerm = searchTerm.replace(/'s email$/gi, '').trim();
       
       if (searchTerm) {
         try {
           const globalSearchTool = toolRegistry.get('global_search');
           if (globalSearchTool) {
-            const searchResult = await globalSearchTool.handler({ searchTerm }, ctx);
+            const searchResult = await globalSearchTool.handler({ term: searchTerm }, ctx);
             console.log('✅ Autonomous search executed successfully');
             
             // Store interaction in history
@@ -91,7 +103,16 @@ export async function runAgent(studioId: string, userId: string, message: string
               role: "user", content: message, timestamp: new Date().toISOString()
             });
             
-            const summaryResponse = await generateExecutionSummary('global_search', { searchTerm }, searchResult, ctx);
+            // Generate execution summary
+            let summaryResponse = `✅ Found ${searchResult.leads?.length || 0} leads`;
+            if (searchResult.leads && searchResult.leads.length > 0) {
+              summaryResponse += `:\n`;
+              searchResult.leads.forEach(lead => {
+                summaryResponse += `• ${lead.name} (${lead.email})\n`;
+              });
+            } else {
+              summaryResponse += ` for "${searchTerm}"`;
+            }
             
             await addMessageToHistory(ctx.chatSessionId, {
               role: "assistant", content: summaryResponse, timestamp: new Date().toISOString()
@@ -105,6 +126,7 @@ export async function runAgent(studioId: string, userId: string, message: string
           }
         } catch (error) {
           console.error('❌ Autonomous search failed:', error);
+          return `❌ Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
         }
       }
     }
@@ -148,35 +170,23 @@ export async function runAgent(studioId: string, userId: string, message: string
     const assistantMessage = completion.choices[0]?.message;
     
     if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
-      // Execute tools
+      // Execute tools with enhanced error handling
       const toolResults = [];
       
       for (const toolCall of assistantMessage.tool_calls) {
-        try {
-          const tool = toolRegistry.get(toolCall.function.name);
-          if (tool) {
-            const args = JSON.parse(toolCall.function.arguments);
-            const result = await tool.handler(args, ctx);
-            toolResults.push({
-              tool_call_id: toolCall.id,
-              role: "tool",
-              content: JSON.stringify(result)
-            });
-          } else {
-            toolResults.push({
-              tool_call_id: toolCall.id,
-              role: "tool", 
-              content: JSON.stringify({ error: "Tool not found" })
-            });
-          }
-        } catch (error) {
-          console.error(`❌ Tool execution error for ${toolCall.function.name}:`, error);
-          toolResults.push({
-            tool_call_id: toolCall.id,
-            role: "tool",
-            content: JSON.stringify({ error: error instanceof Error ? error.message : "Tool execution failed" })
-          });
-        }
+        const result = await executeToolCall(toolCall, ctx);
+        console.log("[TOOL DEBUG]", result);  // Real-time debugging
+        toolResults.push({
+          tool_call_id: result.tool_call_id,
+          role: "tool",
+          content: result.output
+        });
+      }
+      
+      // Check for tool errors and surface them
+      const errText = surfaceToolErrors(toolResults);
+      if (errText) {
+        console.error("❌ Tool execution errors detected:", errText);
       }
 
       // Get final response with tool results
