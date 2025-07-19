@@ -821,6 +821,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  // Import and register CRM agent router
+  try {
+    const { crmAgentRouter } = await import("./routes/crm-agent");
+    app.use(crmAgentRouter);
+  } catch (error) {
+    console.warn("CRM agent router not available:", error.message);
+  }
+
   // Audio transcription endpoint using OpenAI Whisper
   app.post("/api/transcribe", authenticateUser, audioUpload.single('audio'), async (req: Request, res: Response) => {
     try {

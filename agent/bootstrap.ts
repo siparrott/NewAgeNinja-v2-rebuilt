@@ -1,48 +1,42 @@
-// Bootstrap agent system - initialize and configure AI operator
-import { loadStudioCreds } from "./integrations/storage-bridge";
-import { loadPolicy } from "./core/policy";
-import { toolRegistry } from "./core/tools";
-import { createLogger } from "./util/logger";
+// Agent system bootstrap
+import { loadSession, type WorkingMemory } from "./core/memory";
+import { allowWrite } from "./core/guardrails";
 import type { AgentCtx } from "./core/ctx";
 
-const logger = createLogger("bootstrap");
-
-export async function bootstrapAgent(studioId: string, userId: string): Promise<AgentCtx> {
-  logger.info("Bootstrapping agent system", { studioId, userId });
+export async function createAgentContext(studioId: string, userId: string): Promise<AgentCtx & { chatSessionId: string, memory: WorkingMemory }> {
+  // Load or create session
+  const session = await loadSession(studioId, userId);
   
-  try {
-    // Load studio credentials and policy
-    const [creds, policy] = await Promise.all([
-      loadStudioCreds(studioId),
-      loadPolicy(studioId),
-    ]);
-    
-    // Get studio name from creds or default
-    const studioName = "New Age Fotografie"; // TODO: Get from studio table
-    
-    const ctx: AgentCtx = {
-      studioId,
-      studioName,
-      userId,
-      creds,
-      policy,
-    };
-    
-    logger.info("Agent system bootstrapped successfully", {
-      studioId,
-      studioName,
-      mode: policy.mode,
-      authorities: policy.authorities,
-      toolsAvailable: toolRegistry.list().length,
-    });
-    
-    return ctx;
-  } catch (error) {
-    logger.error("Failed to bootstrap agent system", error);
-    throw error;
-  }
-}
+  // Default policy for New Age Fotografie
+  const defaultPolicy = {
+    mode: "auto_safe" as const,
+    authorities: [
+      "READ_CLIENTS",
+      "READ_LEADS", 
+      "READ_SESSIONS",
+      "READ_INVOICES",
+      "CREATE_LEAD",
+      "UPDATE_CLIENT", 
+      "SEND_EMAIL",
+      "DRAFT_EMAIL"
+    ],
+    approval_required_over_amount: 500,
+    email_send_mode: "auto",
+    invoice_auto_limit: 1000
+  };
 
-export async function createAgentContext(studioId: string, userId: string): Promise<AgentCtx> {
-  return bootstrapAgent(studioId, userId);
+  const ctx: AgentCtx & { chatSessionId: string, memory: WorkingMemory } = {
+    studioId,
+    userId,
+    studioName: "New Age Fotografie",
+    mode: defaultPolicy.mode,
+    policy: defaultPolicy,
+    creds: {
+      currency: "EUR"
+    },
+    chatSessionId: session.id,
+    memory: session.memory_json || {}
+  };
+
+  return ctx;
 }

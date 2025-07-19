@@ -5,6 +5,7 @@ import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import "./jobs";
 
 // Override demo mode for production New Age Fotografie site
 // This is NOT a demo - it's the live business website

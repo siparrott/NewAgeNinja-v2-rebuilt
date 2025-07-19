@@ -1,0 +1,130 @@
+3. Micro-changes to close the gaps
+Below are concise snippets you can append to the repo so you don’t have to restart:
+
+3-A. Extend the CRUD generator with all tables
+Open tools/genCrudTools.ts and change:
+
+ts
+Kopieren
+Bearbeiten
+const tables=[
+  "crm_leads","crm_clients","crm_invoices","photography_sessions","galleries",
+  "blog_posts","email_campaigns","voucher_sales","top_clients","digital_files",
+  "ai_autoblog","inbox_messages","questionnaires","reports",
+  "studio_settings","studio_templates","website_pages"
+];
+Run again:
+
+bash
+Kopieren
+Bearbeiten
+npm run gen:tools
+Assistant automatically re-registers on next npm start because of postinstall.
+
+3-B. Add update_memory tool (agent/tools/update-memory.ts)
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { patchMemory } from "../core/memory";
+import type { AgentCtx } from "../core/ctx";
+
+export const updateMemoryTool={
+  name:"update_memory",
+  description:"Patch working-memory JSON (called by assistant)",
+  parameters:z.object({
+    current_goal:z.string().nullable().optional(),
+    selected_client_id:z.string().nullable().optional(),
+    note:z.string().optional()
+  }),
+  handler:async(a:any,ctx:AgentCtx & {chatSessionId:string})=>{
+    const patch:any={};
+    if("current_goal" in a) patch.current_goal=a.current_goal;
+    if("selected_client_id" in a) patch.selected_client_id=a.selected_client_id;
+    if(a.note) patch.notes=[a.note];
+    const mem=await patchMemory(ctx.chatSessionId,patch);
+    return {status:"ok",memory:mem};
+  }
+};
+Then import in core/tools.ts:
+
+ts
+Kopieren
+Bearbeiten
+import { updateMemoryTool } from "../tools/update-memory";
+export const toolRegistry={ ...crudTools, [updateMemoryTool.name]:updateMemoryTool, /*...*/ };
+3-C. Add an “update row” generator (quick patch)
+Add below the create${P} in your generator:
+
+ts
+Kopieren
+Bearbeiten
+export const update${P}={name:"update_${t}",description:"Update row in ${t}",parameters:z.object({id:z.string(),data:z.record(z.any())}),
+handler:async(a:any,ctx:AgentCtx)=>{if(allowWrite(ctx,"UPDATE_CLIENT")!=="allow")throw new Error("Not allowed");
+return (await sb.from("${t}").update(a.data).eq("id",a.id).eq("studio_id",ctx.studioId).select().single()).data;}};
+Regenerate (npm run gen:tools) → restart.
+
+3-D. Basic “convert lead to client” tool (example)
+agent/tools/convert-lead.ts
+
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod"; import { createClient } from "@supabase/supabase-js";
+import type { AgentCtx } from "../core/ctx"; import { allowWrite } from "../core/guardrails";
+const sb=createClient(process.env.VITE_SUPABASE_URL!,process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+export const convertLeadTool={
+  name:"convert_lead_to_client",
+  description:"Creates a client row from a lead and marks lead as converted",
+  parameters:z.object({lead_id:z.string()}),
+  handler:async(a:any,ctx:AgentCtx)=>{
+    if(allowWrite(ctx,"CREATE_LEAD")!=="allow")throw new Error("No perm");
+    const {data:lead}=await sb.from("crm_leads").select("*").eq("id",a.lead_id).single();
+    const {data:client}=await sb.from("crm_clients").insert({
+      studio_id:ctx.studioId,first_name:lead.first_name,last_name:lead.last_name,
+      email:lead.email,phone:lead.phone
+    }).select().single();
+    await sb.from("crm_leads").update({status:"converted"}).eq("id",a.lead_id);
+    return {status:"converted",client};
+  }
+};
+Add to registry.
+
+3-E. Simple “report” tool per table (lead count example)
+agent/tools/report-leads.ts
+
+ts
+Kopieren
+Bearbeiten
+import { createClient } from "@supabase/supabase-js"; import { z } from "zod";
+import type { AgentCtx } from "../core/ctx";
+const sb=createClient(process.env.VITE_SUPABASE_URL!,process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+export const reportLeadsTool={
+  name:"report_leads",
+  description:"Return count of leads by status",
+  parameters:z.object({}),
+  handler:async(_:any,ctx:AgentCtx)=>{
+    const {data}=await sb.rpc("count_leads_by_status",{studio_id:ctx.studioId}); // or simple selects
+    return data;
+  }
+};
+Add similar for invoices, galleries, etc.
+
+🟢 After these micro-patches
+Agent can read / create / update / convert / report / reply (via send_email) for all listed modules.
+
+Memory tool lets the model update its own session brain.
+
+Daily report + queue flush continue to run locally.
+
+Run npm start again → Assistant auto-refreshes → test the new verbs:
+
+pgsql
+Kopieren
+Bearbeiten
+Convert lead 317b… into a client.
+Report leads by status.
+Update client 123 set phone to +43...
+If the Assistant responds with a proposed_actions JSON, approve it; otherwise the tool executes immediately when guard-rails allow.

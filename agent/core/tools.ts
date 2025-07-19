@@ -1,15 +1,18 @@
 // Tool registration and management
 import { createOpenAITool } from "../util/json-schema";
-import { listClientsTool, listLeadsTool, listSessionsTool, listInvoicesTool } from "../tools/crm-read";
-import { pipelineSummaryTool } from "../tools/pipeline-summary";
-import { draftEmailTool } from "../tools/email-draft";
-import { lookupClientTool, searchCrmTool } from "../tools/crm-lookup";
-// Phase B: Write tools
-import { leadWriteTool } from "../tools/lead-write";
-import { clientUpdateTool } from "../tools/client-write";
-import { invoiceWriteTool } from "../tools/invoice-write";
-import { emailSendTool } from "../tools/email-send";
 import { updateMemoryTool } from "../tools/update-memory";
+import { sendEmailTool } from "../tools/send-email";
+import { convertLeadTool } from "../tools/convert-lead";
+import { reportLeadsTool } from "../tools/report-leads";
+
+// Import all CRUD tools
+import { readCrmLeads, createCrmLeads, updateCrmLeads } from "../tools/crm_leads";
+import { readCrmClients, createCrmClients, updateCrmClients } from "../tools/crm_clients";
+import { readCrmInvoices, createCrmInvoices, updateCrmInvoices } from "../tools/crm_invoices";
+import { readPhotographySessions, createPhotographySessions, updatePhotographySessions } from "../tools/photography_sessions";
+import { readGalleries, createGalleries, updateGalleries } from "../tools/galleries";
+import { readBlogPosts, createBlogPosts, updateBlogPosts } from "../tools/blog_posts";
+import { readEmailCampaigns, createEmailCampaigns, updateEmailCampaigns } from "../tools/email_campaigns";
 
 export interface AgentTool {
   name: string;
@@ -40,21 +43,21 @@ export class ToolRegistry {
 
 export const toolRegistry = new ToolRegistry();
 
-// Register all available tools
-toolRegistry.register(listClientsTool);
-toolRegistry.register(listLeadsTool);
-toolRegistry.register(listSessionsTool);
-toolRegistry.register(listInvoicesTool);
-toolRegistry.register(pipelineSummaryTool);
-toolRegistry.register(draftEmailTool);
-toolRegistry.register(lookupClientTool);
-toolRegistry.register(searchCrmTool);
-
-// Phase B: Register write tools
-toolRegistry.register(leadWriteTool);
-toolRegistry.register(clientUpdateTool);
-toolRegistry.register(invoiceWriteTool);
-toolRegistry.register(emailSendTool);
-
-// Memory management tool
+// Register core tools
 toolRegistry.register(updateMemoryTool);
+toolRegistry.register(sendEmailTool);
+toolRegistry.register(convertLeadTool);
+toolRegistry.register(reportLeadsTool);
+
+// Register CRUD tools
+const crudTools = [
+  readCrmLeads, createCrmLeads, updateCrmLeads,
+  readCrmClients, createCrmClients, updateCrmClients,
+  readCrmInvoices, createCrmInvoices, updateCrmInvoices,
+  readPhotographySessions, createPhotographySessions, updatePhotographySessions,
+  readGalleries, createGalleries, updateGalleries,
+  readBlogPosts, createBlogPosts, updateBlogPosts,
+  readEmailCampaigns, createEmailCampaigns, updateEmailCampaigns
+];
+
+crudTools.forEach(tool => toolRegistry.register(tool));

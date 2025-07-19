@@ -1,121 +1,104 @@
-// Main agent runner for CLI testing
+// Main agent runner
 import { createAgentContext } from "./bootstrap";
-import { createSystemPrompt } from "./prompts/system";
-import { openaiForStudio } from "./core/openai";
 import { toolRegistry } from "./core/tools";
-import { createLogger } from "./util/logger";
-import { auditLog } from "./core/audit";
+import { runLLM } from "./llm/run";
 
-const logger = createLogger("agent-runner");
+const SYSTEM_PROMPT = `You are {{STUDIO_NAME}}'s CRM Operations Assistant in TogNinja.
 
-export async function runAgent(studioId: string, userId: string, userMessage: string) {
-  logger.info("Running agent", { studioId, userId, message: userMessage });
-  
+POLICY
+- mode: {{POLICY_MODE}}
+- authorities: {{POLICY_AUTHORITIES_CSV}}
+- approval_limit: {{POLICY_AMOUNT_LIMIT}} {{STUDIO_CURRENCY}}
+
+MEMORY
+You receive [[WORKING_MEMORY]] JSON. Use silently.  
+Call the update_memory tool when goals / selections change.
+
+TOOLS
+(list supplied automatically)
+
+RULES
+- Use the most specific tool.  
+- For writes needing approval, respond with \`proposed_actions\` JSON.  
+- Confirm success when tool returns status=created/updated.
+
+Tone: founder-led, no-BS, Sabri Suby style.`;
+
+export async function runAgent(studioId: string, userId: string, message: string): Promise<string> {
   try {
-    // Bootstrap agent context
+    // Create agent context
     const ctx = await createAgentContext(studioId, userId);
     
-    // Create OpenAI client
-    const openai = openaiForStudio(ctx.creds);
-    
-    // Create system prompt
-    const systemPrompt = createSystemPrompt(ctx);
-    
+    // Prepare system prompt with context
+    let systemPrompt = SYSTEM_PROMPT
+      .replace('{{STUDIO_NAME}}', ctx.studioName)
+      .replace('{{POLICY_MODE}}', ctx.policy.mode)
+      .replace('{{POLICY_AUTHORITIES_CSV}}', ctx.policy.authorities.join(', '))
+      .replace('{{POLICY_AMOUNT_LIMIT}}', ctx.policy.approval_required_over_amount.toString())
+      .replace('{{STUDIO_CURRENCY}}', ctx.creds.currency)
+      .replace('[[WORKING_MEMORY]]', JSON.stringify(ctx.memory));
+
     // Get available tools
     const tools = toolRegistry.getOpenAITools();
+
+    // Prepare messages
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: message }
+    ];
+
+    // Run LLM
+    const completion = await runLLM(messages, tools);
     
-    logger.info("Agent initialized", {
-      mode: ctx.policy.mode,
-      authorities: ctx.policy.authorities,
-      toolsCount: tools.length,
-    });
+    // Handle tool calls if present
+    const assistantMessage = completion.choices[0]?.message;
     
-    // Create conversation
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
-      tools,
-      tool_choice: "auto",
-      temperature: 0.7,
-      max_tokens: 2000,
-    });
-    
-    const assistantMessage = response.choices[0].message;
-    
-    // Handle tool calls if any
-    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+    if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
+      // Execute tools
       const toolResults = [];
       
       for (const toolCall of assistantMessage.tool_calls) {
-        const tool = toolRegistry.get(toolCall.function.name);
-        if (tool) {
-          try {
+        try {
+          const tool = toolRegistry.get(toolCall.function.name);
+          if (tool) {
             const args = JSON.parse(toolCall.function.arguments);
             const result = await tool.handler(args, ctx);
-            
-            // Log the action
-            await auditLog({
-              studio_id: ctx.studioId,
-              user_id: ctx.userId,
-              action: toolCall.function.name,
-              status: "executed",
-              metadata: { args, result }
-            });
-            
             toolResults.push({
               tool_call_id: toolCall.id,
-              role: "tool" as const,
-              content: JSON.stringify(result),
+              role: "tool",
+              content: JSON.stringify(result)
             });
-          } catch (error) {
-            logger.error("Tool execution failed", { tool: toolCall.function.name, error });
+          } else {
             toolResults.push({
               tool_call_id: toolCall.id,
-              role: "tool" as const,
-              content: JSON.stringify({ error: error.message }),
+              role: "tool", 
+              content: JSON.stringify({ error: "Tool not found" })
             });
           }
+        } catch (error) {
+          toolResults.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            content: JSON.stringify({ error: error instanceof Error ? error.message : "Tool execution failed" })
+          });
         }
       }
-      
-      // Continue conversation with tool results
-      const finalResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
-          assistantMessage,
-          ...toolResults,
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      });
-      
-      return finalResponse.choices[0].message.content;
-    }
-    
-    return assistantMessage.content;
-    
-  } catch (error) {
-    logger.error("Agent execution failed", error);
-    throw error;
-  }
-}
 
-// CLI Test runner
-export async function runAgentCLI() {
-  const defaultStudioId = "e5dc81e8-7073-4041-8814-affb60f4ef6c"; // New Age Fotografie
-  const defaultUserId = "system"; // System user for testing
-  
-  const testMessage = "Give me a summary of our photography business pipeline for this month";
-  
-  try {
-    const result = await runAgent(defaultStudioId, defaultUserId, testMessage);
-    console.log("Agent Response:", result);
+      // Get final response with tool results
+      const finalMessages = [
+        ...messages,
+        assistantMessage,
+        ...toolResults
+      ];
+
+      const finalCompletion = await runLLM(finalMessages, tools);
+      return finalCompletion.choices[0]?.message?.content || "I apologize, but I couldn't complete that task.";
+    }
+
+    return assistantMessage?.content || "I apologize, but I couldn't generate a response.";
+    
   } catch (error) {
-    console.error("Agent test failed:", error);
+    console.error("Agent execution error:", error);
+    throw new Error(`Agent failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
