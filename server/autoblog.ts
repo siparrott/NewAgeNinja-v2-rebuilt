@@ -411,12 +411,14 @@ Generate content using your trained instructions.`;
 
       // STEP 3: Create thread for REAL Assistant
       const thread = await openai.beta.threads.create();
+      console.log('✅ Thread created:', thread.id);
       
       // Send message to REAL Assistant (no file uploads needed - context is in text)
       const message = await openai.beta.threads.messages.create(thread.id, {
         role: "user",
         content: userMessage
       });
+      console.log('✅ Message added to thread');
 
       // Run the REAL Assistant using SDK (no fetch() bypass)
       console.log('🚀 Running TOGNINJA BLOG WRITER Assistant using proper SDK...');
@@ -424,7 +426,7 @@ Generate content using your trained instructions.`;
         assistant_id: assistantId,
         metadata: { feature: "autoblog", studioId: "newage-fotografie" }
       });
-      console.log('✅ Assistant run created:', run.id);
+      console.log('✅ Assistant run created:', run.id, 'on thread:', thread.id);
 
       // Wait for completion using SDK methods (FIXED - no fetch() bypass)
       console.log('⏳ Waiting for Assistant to complete using SDK...');
