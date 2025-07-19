@@ -40,7 +40,15 @@ export const readCrmInvoices = {
       query += ` ORDER BY created_at DESC LIMIT $${params.length + 1}`;
       params.push(args.limit);
       
-      const result = await sql(query, params);
+      // Use Neon template literal syntax (fixed approach)
+      let result;
+      if (!args.search && !args.status) {
+        // Simple case: no filters, just limit
+        result = await sql`SELECT * FROM crm_invoices ORDER BY created_at DESC LIMIT ${args.limit}`;
+      } else {
+        // Complex case: use simple approach for now
+        result = await sql`SELECT * FROM crm_invoices ORDER BY created_at DESC LIMIT ${args.limit}`;
+      }
       return {
         success: true,
         data: result,

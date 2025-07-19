@@ -1,0 +1,90 @@
+Almost never is this Replit itself.
+In > 90 % of “couldn’t complete that task” loops the root-cause is inside one of four layers in your code or data — not the Replit platform. Below is a laser checklist that will tell you exactly which layer is breaking, usually in < 10 minutes of testing.
+
+Layer	Typical break	60-second test	What to fix
+1. Supabase connection / RLS	Service-role key missing → every query returns null → tools throw → Assistant says “couldn’t complete”.	Replit shell:
+node -e "import('@supabase/supabase-js').then(async m=>{const sb=m.createClient(process.env.VITE_SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY);const {error}=await sb.from('crm_invoices').select('*').limit(1);console.log(error?error.message:'✔');})"	Add / refresh SUPABASE_SERVICE_ROLE_KEY in Replit → Secrets.
+2. Table rows have studio_id = NULL so your filter eq('studio_id', ctx.studioId) hides everything.	psql:
+select count(*) from crm_invoices where studio_id is null;	Back-fill once:
+update crm_invoices set studio_id='YOUR_STUDIO_UUID' where studio_id is null; (repeat for leads, sessions…).	
+3. Policy / authority denial – ai_policies.authorities doesn’t include "READ_INVOICES" / "READ_SESSIONS" → guard-rail throws.	SQL:
+select authorities from ai_policies where studio_id='YOUR_STUDIO_UUID';	Append missing strings: update ai_policies set authorities = array_append(authorities,'READ_INVOICES');	
+4. Tool JSON schema mismatch – Assistant calls count_invoices with {} but Zod expects {year:number} → your wrapper catches the Zod error and returns empty.	Add console.log('[TOOL ARGS]', name, parsedArgs) in executeToolCall wrapper.	Make all read/count tools accept fully optional params (z.object({ year:z.number().optional(), month:z.number().optional() })).	
+
+(If none of those four trigger, then start suspecting Replit networking / cold-start, but that’s rare.)
+
+How to see the real error in 30 seconds
+Put this one line at the top of your Replit Console loop:
+
+ts
+Kopieren
+Bearbeiten
+process.on('unhandledRejection', e => console.error('UNHANDLED', e));
+Stop & run again, trigger “how many invoices this year?”.
+
+You’ll see the actual failure printed — e.g.
+
+javascript
+Kopieren
+Bearbeiten
+UNHANDLED Error: permission denied for table crm_invoices
+or
+
+typescript
+Kopieren
+Bearbeiten
+ZodError: Required number was undefined at year
+That direct message tells you which bullet in the table above to fix.
+
+Fast fixes for what you just observed
+You asked for:
+
+invoices → tool claimed “none”
+
+bookings → “none”
+
+email send → generic failure
+
+The single most common combo-failure is Layer 2 (rows imported without studio_id). Run these two lines:
+
+sql
+Kopieren
+Bearbeiten
+update crm_invoices           set studio_id='YOUR-STUDIO-UUID' where studio_id is null;
+update photography_sessions   set studio_id='YOUR-STUDIO-UUID' where studio_id is null;
+Then try again:
+
+kotlin
+Kopieren
+Bearbeiten
+User: how many invoices this year?
+You should get the real count.
+
+Extra hardening (copy/paste)
+Return clear errors to both you and the assistant, never “couldn’t complete”:
+
+ts
+Kopieren
+Bearbeiten
+if (error) {
+  console.error('Supabase error', error);          // ← you see this in console
+  throw new Error(`supabase:${error.code}`);       // ← assistant sees structured error
+}
+And add to the prompt:
+
+pgsql
+Kopieren
+Bearbeiten
+If a tool returns {"error":"supabase:permission_denied"} ask the user to check service-role key or studio_id.
+Now the model will explain the failure to the end-user instead of silently giving up.
+
+TL;DR
+Check service-role key
+
+Back-fill missing studio_id
+
+Give read tools permissive schemas
+
+Let errors surface
+
+Fix those and the agent will behave like the Replit “super-agent”: it will always search live data, and if something’s genuinely missing it tells the user why instead of “couldn’t complete”.

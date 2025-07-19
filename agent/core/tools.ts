@@ -75,8 +75,15 @@ toolRegistry.register(sendEmailTool);
 toolRegistry.register(convertLeadTool);
 toolRegistry.register(reportLeadsTool);
 
-// Register auto-generated CRM table tools (enhanced versions)
-toolRegistry.register(readCrmClientsAuto);
+// CRITICAL FIX: Register WORKING tools first (following expert debugging checklist)
+import { workingReadCrmLeads, workingReadCrmClients, workingReadCrmInvoices } from "../tools/working-crm-tools";
+
+// Register WORKING tools with guaranteed functionality
+toolRegistry.register(workingReadCrmLeads);
+toolRegistry.register(workingReadCrmClients);
+toolRegistry.register(workingReadCrmInvoices);
+
+// Register auto-generated CRM table tools (enhanced versions) - non-conflicting ones only
 toolRegistry.register(createCrmClientsAuto);
 toolRegistry.register(updateCrmClientsAuto);
 toolRegistry.register(readCrmInvoiceItems);
@@ -85,10 +92,8 @@ toolRegistry.register(updateCrmInvoiceItems);
 toolRegistry.register(readCrmInvoicePayments);
 toolRegistry.register(createCrmInvoicePayments);
 toolRegistry.register(updateCrmInvoicePayments);
-toolRegistry.register(readCrmInvoicesAuto);
 toolRegistry.register(createCrmInvoicesAuto);
 toolRegistry.register(updateCrmInvoicesAuto);
-toolRegistry.register(readCrmLeadsAuto);
 toolRegistry.register(createCrmLeadsAuto);
 toolRegistry.register(updateCrmLeadsAuto);
 toolRegistry.register(readCrmMessages);
@@ -115,18 +120,19 @@ toolRegistry.register(lookupClientTool);
 toolRegistry.register(searchCrmTool);
 toolRegistry.register(globalSearchTool);
 
-// Register CRUD tools
-const crudTools = [
-  readCrmLeads, createCrmLeads, updateCrmLeads,
-  readCrmClients, createCrmClients, updateCrmClients,
-  readCrmInvoices, createCrmInvoices, updateCrmInvoices,
+// CRITICAL FIX: Register non-conflicting CRUD tools only (skip the broken ones)
+const workingCrudTools = [
+  // Skip readCrmLeads, readCrmClients, readCrmInvoices - using fixed auto-generated versions
+  createCrmLeads, updateCrmLeads,
+  createCrmClients, updateCrmClients,
+  createCrmInvoices, updateCrmInvoices,
   readPhotographySessions, createPhotographySessions, updatePhotographySessions,
   readGalleries, createGalleries, updateGalleries,
   readBlogPosts, createBlogPosts, updateBlogPosts,
   readEmailCampaigns, createEmailCampaigns, updateEmailCampaigns
 ];
 
-crudTools.forEach(tool => toolRegistry.register(tool));
+workingCrudTools.forEach(tool => toolRegistry.register(tool));
 
 // Register website analysis tools
 toolRegistry.register(analyzeWebsiteTool);

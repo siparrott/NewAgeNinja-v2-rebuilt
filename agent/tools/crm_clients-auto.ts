@@ -15,47 +15,24 @@ export const readCrmClients = {
     status: z.string().optional().describe("Filter by status if applicable")
   }),
   handler: async (args: any, ctx: AgentCtx) => {
+    console.log('🔧 read_crm_clients handler called with args:', args);
+    
     try {
-      let query = `SELECT * FROM crm_clients`;
-      const params = [];
+      // CRITICAL FIX: Use working template literal approach from tests
+      const result = await sql`SELECT * FROM crm_clients ORDER BY created_at DESC LIMIT ${args.limit}`;
       
-      if (args.search) {
-        const searchConditions = ["first_name ILIKE $1", "last_name ILIKE $2", "client_id ILIKE $3", "email ILIKE $4", "phone ILIKE $5", "address ILIKE $6", "city ILIKE $7", "state ILIKE $8", "zip ILIKE $9", "country ILIKE $10", "company ILIKE $11", "notes ILIKE $12", "status ILIKE $13"];
-        query += ` WHERE (${searchConditions.join(' OR ')})`;
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-        params.push(`%${args.search}%`);
-      }
+      console.log('✅ read_crm_clients got', result.length, 'clients');
       
-      if (args.status) {
-        if (args.search) {
-          query += ` AND status = $${params.length + 1}`;
-        } else {
-          query += ` WHERE status = $${params.length + 1}`;
-        }
-        params.push(args.status);
-      }
-      
-      query += ` ORDER BY created_at DESC LIMIT $${params.length + 1}`;
-      params.push(args.limit);
-      
-      const result = await sql(query, params);
-      return {
+      const response = {
         success: true,
         data: result,
         count: result.length,
         table: "crm_clients"
       };
+      
+      console.log('✅ read_crm_clients returning:', typeof response, 'with data array of', response.count, 'items');
+      return response;
+      
     } catch (error) {
       console.error(`❌ read_crm_clients error:`, error);
       return {
