@@ -1323,11 +1323,35 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       // DIAGNOSTIC CHECK #1: Verify assistant ID
       console.log('🔍 DIAGNOSTIC CHECK #1 - Assistant ID:', BLOG_ASSISTANT);
       
-      const aiContent = await this.generateWithAssistantAPI(BLOG_ASSISTANT, processedImages, input, siteContext);
+      // Use the fixed implementation that avoids SDK parameter issues
+      const { fixedAutoBlogGenerator } = await import('./autoblog-fixed');
       
-      if (!aiContent) {
-        throw new Error('❌ REAL TOGNINJA BLOG WRITER ASSISTANT FAILED - No fallback allowed. Check OpenAI API configuration.');
+      const fixedResult = await fixedAutoBlogGenerator.generateContent({
+        userPrompt: input.contentGuidance || 'Professional photography session blog post',
+        images: processedImages.map(img => img.buffer),
+        language: input.language || 'de'
+      });
+      
+      if (!fixedResult.success) {
+        throw new Error('❌ FIXED TOGNINJA GENERATOR FAILED - Check OpenAI API configuration.');
       }
+
+      console.log('✅ FIXED TOGNINJA GENERATOR SUCCESS');
+      
+      // Parse the content into structured format
+      const parsedContent = this.parseStructuredResponse(fixedResult.content);
+      let aiContent;
+      
+      if (parsedContent) {
+        aiContent = parsedContent;
+      } else {
+        // Force structured format if parsing failed
+        console.log('🔧 Forcing structured format for TOGNINJA content');
+        aiContent = this.forceStructuredFormat(fixedResult.content, BLOG_ASSISTANT);
+      }
+      
+      // Add method information
+      aiContent.method = fixedResult.method;
 
       // Step 4: Create blog post
       console.log('Creating blog post...');
