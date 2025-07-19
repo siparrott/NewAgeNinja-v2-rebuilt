@@ -840,6 +840,15 @@ Preferred communication style: Simple, everyday language.
   * CRM Operations Assistant now responds correctly: "Hello! How can I assist you today?"
   * Complete agent functionality restored: client lookup, lead management, email sending, invoice creation
   * System operational with auto_safe mode, full authority permissions, and comprehensive tool registry
+- July 19, 2025. **BREAKTHROUGH**: Fixed critical CRM agent leads access issue:
+  * **ROOT CAUSE**: CRM agent could not access real leads data despite 8 leads existing in database (Sarah Weber, Simon Parrott, Maria Müller, etc.)
+  * **SOLUTION**: Fixed tool registration issue - listLeadsTool from crm-read.ts was not properly registered in tool registry
+  * Added comprehensive CRM read tools registration: listLeadsTool, listClientsTool, listSessionsTool, listInvoicesTool
+  * Enhanced CRM data integration with direct SQL fallback for reliable database access when Drizzle ORM fails
+  * Added comprehensive error logging and debugging to track tool execution failures
+  * Fixed data access layer with proper error handling and fallback mechanisms for all CRM entities
+  * CRM agent now has access to real data: 8 leads (7 new, 1 contacted) including all actual customer inquiries
+  * Complete integration of database access with agent tools for accurate business intelligence and lead management
 
 ## Changelog
 

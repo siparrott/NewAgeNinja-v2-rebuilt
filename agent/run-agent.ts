@@ -76,6 +76,7 @@ export async function runAgent(studioId: string, userId: string, message: string
             });
           }
         } catch (error) {
+          console.error(`❌ Tool execution error for ${toolCall.function.name}:`, error);
           toolResults.push({
             tool_call_id: toolCall.id,
             role: "tool",

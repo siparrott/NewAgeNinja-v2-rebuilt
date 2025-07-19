@@ -33,22 +33,29 @@ export const listLeadsTool = {
     status: z.enum(["new", "contacted", "qualified", "converted", "closed"]).optional(),
   }),
   handler: async (args: any, ctx: AgentCtx) => {
-    requireAuthority(ctx, "READ_LEADS");
-    let leads = await getLeadsForStudio(ctx.studioId);
+    try {
+      requireAuthority(ctx, "READ_LEADS");
+      console.log(`🔍 list_leads: Fetching leads for studio ${ctx.studioId}`);
+      let leads = await getLeadsForStudio(ctx.studioId);
+      console.log(`✅ list_leads: Found ${leads.length} leads`);
     
-    if (args.status) {
-      leads = leads.filter((l: any) => l.status === args.status);
+      if (args.status) {
+        leads = leads.filter((l: any) => l.status === args.status);
+      }
+      
+      if (args.search) {
+        const s = String(args.search).toLowerCase();
+        leads = leads.filter((l: any) =>
+          `${l.firstName ?? ""} ${l.lastName ?? ""}`.toLowerCase().includes(s) ||
+          (l.email?.toLowerCase().includes(s)) ||
+          (l.message?.toLowerCase().includes(s))
+        );
+      }
+      return leads.slice(0, args.limit);
+    } catch (error) {
+      console.error('❌ list_leads error:', error);
+      return { error: `Failed to fetch leads: ${error instanceof Error ? error.message : "Unknown error"}` };
     }
-    
-    if (args.search) {
-      const s = String(args.search).toLowerCase();
-      leads = leads.filter((l: any) =>
-        `${l.firstName ?? ""} ${l.lastName ?? ""}`.toLowerCase().includes(s) ||
-        (l.email?.toLowerCase().includes(s)) ||
-        (l.message?.toLowerCase().includes(s))
-      );
-    }
-    return leads.slice(0, args.limit);
   }
 };
 

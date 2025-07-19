@@ -50,6 +50,17 @@ toolRegistry.register(sendEmailTool);
 toolRegistry.register(convertLeadTool);
 toolRegistry.register(reportLeadsTool);
 
+// Register CRM read tools (CRITICAL FIX)
+import { listClientsTool, listLeadsTool, listSessionsTool, listInvoicesTool } from "../tools/crm-read";
+import { lookupClientTool, searchCrmTool } from "../tools/crm-lookup";
+
+toolRegistry.register(listClientsTool);
+toolRegistry.register(listLeadsTool);
+toolRegistry.register(listSessionsTool);
+toolRegistry.register(listInvoicesTool);
+toolRegistry.register(lookupClientTool);
+toolRegistry.register(searchCrmTool);
+
 // Register CRUD tools
 const crudTools = [
   readCrmLeads, createCrmLeads, updateCrmLeads,
