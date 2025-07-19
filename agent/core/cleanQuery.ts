@@ -4,7 +4,7 @@ export function cleanQuery(q: string): string {
   
   return q
     .toLowerCase()
-    .replace(/(can you|please|find|show me|look up|search|in the|section|clients?|leads?)/gi, "")
+    .replace(/\b(can you|please|find|look up|search|in|the|database|clients?|leads?|show me)\b/gi, "")
     .replace(/[^\w@\.\s+-]/g, "")   // strip punctuation
     .replace(/\s+/g, " ")          // collapse multiple spaces
     .trim();

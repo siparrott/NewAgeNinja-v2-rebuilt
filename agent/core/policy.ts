@@ -12,7 +12,8 @@ export type Authority =
   | "CREATE_LEAD"
   | "UPDATE_CLIENT"
   | "SEND_INVOICE"
-  | "SEND_EMAIL";
+  | "SEND_EMAIL"
+  | "CREATE_SESSION";
 
 export interface AgentPolicy {
   mode: "read_only" | "propose" | "auto_safe" | "auto_all";
@@ -36,10 +37,10 @@ export async function loadPolicy(studioId: string): Promise<AgentPolicy> {
     
     if (!data || data.length === 0) {
       return {
-        mode: "read_only",
-        authorities: ["READ_CLIENTS","READ_LEADS","READ_SESSIONS","READ_INVOICES","DRAFT_EMAIL"],
-        invoice_auto_limit: 0,
-        email_send_mode: "draft",
+        mode: "auto_safe",
+        authorities: ["READ_CLIENTS","READ_LEADS","READ_SESSIONS","READ_INVOICES","DRAFT_EMAIL","CREATE_LEAD","UPDATE_CLIENT","SEND_EMAIL","CREATE_SESSION"],
+        invoice_auto_limit: 500,
+        email_send_mode: "auto",
         // Phase B: Default safe policy
         restricted_fields: {
           "crm_clients": ["email", "phone"],

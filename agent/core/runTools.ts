@@ -51,13 +51,24 @@ export async function executeToolCall(call: any, ctx: any) {
     console.log('[TOOL SUCCESS]', name, 'returned data:', Array.isArray(out) ? `${out.length} items` : typeof out);
     return { tool_call_id: call.id, output: JSON.stringify({ ok: true, data: out }) };
   } catch (e: any) {
-    // Enhanced error logging per expert checklist
-    console.error('[TOOL ERROR]', name, e.message, 'args:', parsedArgs);
+    // Enhanced error logging with detailed database error surfacing
+    console.error(`[TOOL ERROR ${name}]`, e.message, 'args:', parsedArgs);
+    
+    // Surface real database errors instead of generic messages
+    let errorMsg = e.message || String(e);
+    if (errorMsg.includes('permission denied')) {
+      errorMsg = `supabase:permission_denied - Need service-role key or proper studio_id on rows`;
+    } else if (errorMsg.includes('not found') || errorMsg.includes('no data')) {
+      errorMsg = `supabase:data_not_found - No match found, double-check spelling or email`;
+    } else if (errorMsg.includes('invalid input syntax')) {
+      errorMsg = `supabase:invalid_syntax - ${errorMsg}`;
+    }
+    
     return {
       tool_call_id: call.id,
       output: JSON.stringify({
         ok: false,
-        error: e.message || String(e),
+        error: errorMsg,
         stack: e.stack?.split("\n").slice(0,3),
         tool: name,
         args: parsedArgs

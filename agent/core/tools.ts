@@ -73,6 +73,7 @@ import { emailSendTool } from "../tools/email-send";
 import { globalSearchTool } from "../tools/global-search";
 import { findEntityTool } from "../tools/find-entity";
 import { countInvoicesTool, countSessionsTool, countLeadsTool } from "../tools/count-tools";
+import { createSessionTool } from "../tools/create-session";
 
 // Register essential core tools only
 toolRegistry.register(emailSendTool);
@@ -81,19 +82,12 @@ toolRegistry.register(findEntityTool);
 toolRegistry.register(countInvoicesTool);
 toolRegistry.register(countSessionsTool);
 toolRegistry.register(countLeadsTool);
+toolRegistry.register(createSessionTool);
 
-// CRITICAL FIX: Register WORKING tools first (following expert debugging checklist)
-import { workingReadCrmLeads, workingReadCrmClients, workingReadCrmInvoices } from "../tools/working-crm-tools";
+// Minimal tool set to stay under token limit
+console.log(`📋 Registered ${toolRegistry.list().length} tools for CRM agent`);
 
-// Register WORKING tools with guaranteed functionality
-toolRegistry.register(workingReadCrmLeads);
-toolRegistry.register(workingReadCrmClients); 
-toolRegistry.register(workingReadCrmInvoices);
-
-// Register essential write tools only
-toolRegistry.register(createCrmLeadsAuto);
-
-// Remove this section - too many tools causing token limit
-
-// SEO and website tools removed to reduce token usage
-// Can be re-enabled when needed for specific features
+// Verify tool registration
+toolRegistry.list().forEach(tool => {
+  console.log(`✅ Tool registered: ${tool.name}`);
+});

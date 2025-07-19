@@ -38,7 +38,7 @@ PLANNING RULES:
 5. Break complex requests into single tool calls (the system will chain them)
 
 SEARCH-FIRST POLICY:
-When using find_entity, global_search, or read tools, first clean the query: strip "can you", "please", "in the clients section", etc. so only the real name/email remains.
+When using find_entity, global_search, or read tools, first clean the query using cleanQuery() function: strip "can you", "please", "in the database", "clients", etc. so only the real name/email remains.
 
 CONTEXT:
 - Studio: ${ctx.studioName}
@@ -72,6 +72,16 @@ Be decisive and choose the most specific tool available.`;
       
       try {
         args = JSON.parse(toolCall.function.arguments);
+        
+        // Apply query cleaning for search tools
+        if ((toolName === 'find_entity' || toolName === 'global_search') && args.query) {
+          args.query = cleanQuery(args.query);
+          console.log(`🧹 Cleaned query for ${toolName}:`, args.query);
+        }
+        if (toolName === 'global_search' && args.term) {
+          args.term = cleanQuery(args.term);
+          console.log(`🧹 Cleaned term for ${toolName}:`, args.term);
+        }
       } catch (parseError) {
         console.error('❌ Tool arguments parsing failed:', parseError);
         return {

@@ -1,0 +1,102 @@
+Here’s a quick “read‐out” of what’s still broken, why it’s happening, and the exact patches that will finally make the agent behave like a real PA.
+
+Symptom you saw	Root cause	5-minute fix
+“✅ Found 0 leads for ‘matt pantling database’”	The router is passing the whole sentence to the lead-search tool. “database” obviously isn’t in any lead row, so the ilike filter fails.	Clean the query before calling any search tool (see Code Snippet A).
+Generic “I couldn’t complete that task”	Tool errors are swallowed; planner falls back to apology.	Surface real error & retry (Snippet B).
+Agent says it can’t create appointments	You never registered a create_photography_sessions tool (or it’s behind an authority the policy forbids).	Generate / register a create-session tool (Snippet C) and add "CREATE_SESSION" to ai_policies.authorities.
+Invoices count = 1 (but you know there are more)	The count tool is filtering by studio_id but your invoice rows still have studio_id = NULL.	Back-fill once: update crm_invoices set studio_id='YOUR_STUDIO_UUID' where studio_id is null;
+“How many leads need replying?” returns 0	Tool looks at status='needs_reply'; your imports set status = NULL.	Either back-fill, or relax the WHERE clause (status is null OR status='new').
+“I can send emails, but cannot reply”	Inbox / reply tool not yet implemented.	Add reply_email(tool) or unify with send_email by passing the in_reply_to id.
+
+Snippet A – query cleaner (drop filler words)
+ts
+Kopieren
+Bearbeiten
+export function clean(q: string) {
+  return q
+    .toLowerCase()
+    .replace(/\b(can you|please|find|look up|search|in|the|database|clients?)\b/gi, "")
+    .replace(/[^\w@\.\s+-]/g, "")
+    .trim();
+}
+Apply it in the planner before calling find_entity, read_crm_leads, or global_search.
+
+Snippet B – show real tool errors & retry once
+ts
+Kopieren
+Bearbeiten
+try {
+  const result = await tool.handler(args, ctx);
+  return result;
+} catch (err: any) {
+  console.error(`[${tool.name}]`, err);
+  if (!retry) {
+    // swap to global search as fallback
+    return await toolRegistry.global_search.handler({ term: clean(userMsg) }, ctx);
+  }
+  throw err; // let assistant explain the error
+}
+Prompt addition:
+
+pgsql
+Kopieren
+Bearbeiten
+If you receive supabase:permission_denied → tell the user: “I need service-role key or studio_id on those rows.”
+If supabase:data not found → say “No match yet—double-check spelling or email.”
+Snippet C – create session (appointment) tool
+ts
+Kopieren
+Bearbeiten
+export const createSession = {
+  name: "create_photography_session",
+  description: "Create a new photography session (appointment).",
+  parameters: z.object({
+    client_id: z.string(),
+    start_date: z.string(), // ISO 8601
+    end_date: z.string().optional(),
+    notes: z.string().optional()
+  }),
+  handler: async (a, ctx) => {
+    const { data, error } = await sb.from("photography_sessions")
+      .insert({
+        studio_id: ctx.studioId,
+        client_id: a.client_id,
+        start_date: a.start_date,
+        end_date: a.end_date,
+        notes: a.notes
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return { status: "created", session: data };
+  }
+};
+Add "CREATE_SESSION" to ai_policies.authorities.
+
+Data hygiene one-liners (run once)
+sql
+Kopieren
+Bearbeiten
+-- invoices
+update crm_invoices set studio_id='YOUR-STUDIO-UUID' where studio_id is null;
+
+-- leads: mark new
+update crm_leads set status='new' where status is null;
+Final checklist
+Clean query → tools now see matt pantling.
+
+Back-fill studio_id → counts are correct.
+
+Register create_session + authority → agent books appointments.
+
+Error surfacing → you’ll never see the vague apology again; you’ll see the real Supabase or Zod message.
+
+Apply these four patches, restart Replit, then test:
+
+sql
+Kopieren
+Bearbeiten
+find matt pantling
+send matt an email
+how many invoices this year
+create an appointment for simon parrott on 23 Dec at 09:00

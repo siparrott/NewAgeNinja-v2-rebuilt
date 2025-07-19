@@ -160,7 +160,14 @@ export async function runAgent(studioId: string, userId: string, message: string
       timestamp: new Date().toISOString()
     });
 
-    // Run LLM
+    // Run LLM with token limit protection
+    const toolCount = tools.length;
+    console.log(`🔧 Using ${toolCount} tools for agent execution`);
+    
+    if (toolCount > 12) {
+      console.warn(`⚠️ High tool count (${toolCount}) may cause token limit issues`);
+    }
+    
     const completion = await runLLM(messages, tools);
     
     // Handle tool calls if present
@@ -194,7 +201,16 @@ export async function runAgent(studioId: string, userId: string, message: string
       ];
 
       const finalCompletion = await runLLM(finalMessages, tools);
-      const finalResponse = finalCompletion.choices[0]?.message?.content || "I apologize, but I couldn't complete that task.";
+      let finalResponse = finalCompletion.choices[0]?.message?.content;
+      
+      // Enhance error handling - surface real errors instead of generic apology
+      if (!finalResponse || finalResponse.includes("I apologize") || finalResponse.includes("I couldn't complete")) {
+        if (errText) {
+          finalResponse = `Error details: ${errText}. Please check the requirements and try again.`;
+        } else {
+          finalResponse = "Task completed but no detailed response generated.";
+        }
+      }
       
       // Store assistant response in conversation history
       await addMessageToHistory(ctx.chatSessionId, {
