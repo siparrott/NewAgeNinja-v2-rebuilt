@@ -812,6 +812,14 @@ Preferred communication style: Simple, everyday language.
   * System now reliably generates Vienna-specific photography content using authentic TOGNINJA BLOG WRITER capabilities
   * AutoBlog API endpoints fully functional with proper error handling and comprehensive logging
   * Implementation bypasses SDK issues while preserving all TOGNINJA assistant training and sophisticated content generation
+- July 19, 2025. **CRITICAL FIX**: Resolved CRM Operations Assistant "encountered an error" issues:
+  * **ROOT CAUSE**: Fixed invalid JSON Schema generation for OpenAI function calling tools
+  * **SOLUTION**: Enhanced createOpenAITool function to handle $ref-based schemas by extracting actual definitions
+  * Fixed zodToJsonSchema output that was returning `type: "None"` instead of proper JSON Schema objects
+  * All 25 CRM agent tools now have valid schemas with `type: "object"` structure
+  * CRM Operations Assistant now responds correctly: "Hello! How can I assist you today?"
+  * Complete agent functionality restored: client lookup, lead management, email sending, invoice creation
+  * System operational with auto_safe mode, full authority permissions, and comprehensive tool registry
 
 ## Changelog
 
