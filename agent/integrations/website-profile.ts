@@ -18,8 +18,8 @@ export async function analyzeAndStoreWebsite(studioId: string, url: string) {
   const sql = neon(process.env.DATABASE_URL!);
   
   const query = `
-    INSERT INTO website_profiles (studio_id, url, html_hash, profile_json, lighthouse_json, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+    INSERT INTO website_profiles (studio_id, url, html_hash, profile_json, lighthouse_json)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING *
   `;
   
