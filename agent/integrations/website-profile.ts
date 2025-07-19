@@ -1,4 +1,4 @@
-import { db } from "../../server/db";
+import { neon } from "@neondatabase/serverless";
 import { scrapeSite } from "./webscrape";
 import { runLighthouse } from "./lighthouse";
 
@@ -14,14 +14,16 @@ export async function analyzeAndStoreWebsite(studioId: string, url: string) {
     lighthouse_json: lighthouse
   };
 
-  // Insert into database using our PostgreSQL connection
+  // Insert into database using Neon serverless connection
+  const sql = neon(process.env.DATABASE_URL!);
+  
   const query = `
-    INSERT INTO website_profiles (studio_id, url, html_hash, profile_json, lighthouse_json)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO website_profiles (studio_id, url, html_hash, profile_json, lighthouse_json, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
     RETURNING *
   `;
   
-  const result = await db.query(query, [
+  const result = await sql(query, [
     studioId,
     url,
     scrape.html_hash,
@@ -29,10 +31,12 @@ export async function analyzeAndStoreWebsite(studioId: string, url: string) {
     JSON.stringify(lighthouse)
   ]);
 
-  return result.rows[0];
+  return result[0];
 }
 
 export async function getWebsiteProfile(studioId: string) {
+  const sql = neon(process.env.DATABASE_URL!);
+  
   const query = `
     SELECT * FROM website_profiles
     WHERE studio_id = $1
@@ -40,6 +44,6 @@ export async function getWebsiteProfile(studioId: string) {
     LIMIT 1
   `;
   
-  const result = await db.query(query, [studioId]);
-  return result.rows[0] || null;
+  const result = await sql(query, [studioId]);
+  return result[0] || null;
 }
