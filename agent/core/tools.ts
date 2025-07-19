@@ -71,10 +71,16 @@ export const toolRegistry = new ToolRegistry();
 // Import required tools
 import { emailSendTool } from "../tools/email-send";
 import { globalSearchTool } from "../tools/global-search";
+import { findEntityTool } from "../tools/find-entity";
+import { countInvoicesTool, countSessionsTool, countLeadsTool } from "../tools/count-tools";
 
 // Register essential core tools only
 toolRegistry.register(emailSendTool);
 toolRegistry.register(globalSearchTool);
+toolRegistry.register(findEntityTool);
+toolRegistry.register(countInvoicesTool);
+toolRegistry.register(countSessionsTool);
+toolRegistry.register(countLeadsTool);
 
 // CRITICAL FIX: Register WORKING tools first (following expert debugging checklist)
 import { workingReadCrmLeads, workingReadCrmClients, workingReadCrmInvoices } from "../tools/working-crm-tools";

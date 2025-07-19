@@ -29,7 +29,8 @@ export const findLeadTool = {
       const data = await sql(query, params);
       return data[0] || null;
     } catch (error: any) {
-      throw new Error("find_lead_failed: " + error.message);
+      console.error('[find_lead]', error);
+      throw new Error(`supabase:${error.code || error.message}`);
     }
   }
 };

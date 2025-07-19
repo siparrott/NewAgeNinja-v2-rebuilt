@@ -33,9 +33,9 @@ export const workingReadCrmLeads = {
       console.log('✅ WORKING tool returning valid data object');
       return result;
       
-    } catch (error) {
-      console.error('❌ WORKING tool error:', error);
-      throw new Error(`Working leads tool failed: ${error.message}`);
+    } catch (error: any) {
+      console.error('[working_read_crm_leads]', error);
+      throw new Error(`supabase:${error.code || error.message}`);
     }
   }
 };
@@ -68,9 +68,9 @@ export const workingReadCrmClients = {
       console.log('✅ WORKING tool returning valid data object');
       return result;
       
-    } catch (error) {
-      console.error('❌ WORKING tool error:', error);
-      throw new Error(`Working clients tool failed: ${error.message}`);
+    } catch (error: any) {
+      console.error('[working_read_crm_clients]', error);
+      throw new Error(`supabase:${error.code || error.message}`);
     }
   }
 };

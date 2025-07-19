@@ -76,15 +76,9 @@ export const globalSearchTool = {
       }
       
       return results;
-    } catch (error) {
-      console.error('❌ global_search error:', error);
-      return {
-        clients: [],
-        leads: [],
-        invoices: [],
-        sessions: [],
-        error: `Search failed: ${error instanceof Error ? error.message : "Unknown error"}`
-      };
+    } catch (error: any) {
+      console.error('[global_search]', error);
+      throw new Error(`supabase:${error.code || error.message}`);
     }
   }
 };

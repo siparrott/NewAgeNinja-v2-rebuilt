@@ -111,6 +111,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- July 19, 2025. Implemented comprehensive CRM agent search and error handling fixes:
+  * Created cleanQuery.ts function to strip helper words from search queries before processing
+  * Enhanced planner with query cleaning for find_entity and global_search tools
+  * Updated all database tools to never swallow errors - now return explicit "supabase:" prefixed error messages
+  * Created improved find_entity tool that searches both leads and clients with fallback logic
+  * Added count tools with default year handling for invoices, sessions, and leads
+  * Fixed export/import mismatch between emailSendTool and sendEmailTool causing deployment failures
+  * Registered new tools in tool registry: findEntityTool, countInvoicesTool, countSessionsTool, countLeadsTool
+  * Enhanced error logging with tool-specific prefixes for easier debugging
+  * Application now provides clear, actionable error messages instead of generic "encountered an error" responses
 - June 28, 2025. Initial migration from Bolt to Replit completed
 - June 28, 2025. Removed basic calendar system and replaced with comprehensive photography session management system
 - June 28, 2025. Added advanced scheduling features: golden hour optimization, weather integration, equipment conflict detection, client portal integration

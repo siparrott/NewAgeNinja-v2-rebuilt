@@ -84,13 +84,9 @@ export async function runAgent(studioId: string, userId: string, message: string
     if (searchTerms.some(term => messageWords.includes(term))) {
       console.log('🔍 Detected search request - executing autonomous search');
       
-      // Extract search term from message - improved parsing
-      let searchTerm = message.replace(/find|search for|look for|get|show me/gi, '').trim();
-      
-      // Clean up common artifacts
-      searchTerm = searchTerm.replace(/^(for|me|the|a|an)\s+/gi, '').trim();
-      searchTerm = searchTerm.replace(/'s email$/gi, '').trim();
-      searchTerm = searchTerm.replace(/\s+(in the|in|from|at)\s+.+$/gi, '').trim(); // Remove "in the new leads" etc.
+      // Use the cleanQuery function for consistent query cleaning
+      const { cleanQuery } = await import('./core/cleanQuery');
+      let searchTerm = cleanQuery(message);
       
       if (searchTerm) {
         try {

@@ -1,0 +1,112 @@
+ChatGPT:
+Your CRM agent is still choking in the “find / count / send-email” flow because—based on the log pattern you pasted—the router is feeding garbled search strings to the tools and the tools aren’t catching DB errors.
+Below is a quick patch set that fixes both issues so you never see “Found 0 leads for 'can you matt pantling'” or the generic “encountered an error” again.
+
+1 Router bug: strip helper words before searching
+The planner is passing whole user sentences ("can you matt pantling", "can you him") to the tools.
+Add a very small pre-cleaner so the search term is just the proper noun or email.
+
+ts
+Kopieren
+Bearbeiten
+// agent/core/cleanQuery.ts
+export function cleanQuery(q: string) {
+  return q
+    .toLowerCase()
+    .replace(/^(can you|please|find|show me|look up|search|in the|section|clients?)/gi, "")
+    .replace(/[^\w@\.\s+-]/g, "")   // strip punctuation
+    .trim();
+}
+Then in your planner right before calling find_entity / global_search:
+
+ts
+Kopieren
+Bearbeiten
+import { cleanQuery } from "./cleanQuery";
+
+if (planned.toolName === "find_entity" || planned.toolName === "global_search") {
+  planned.args.query  = cleanQuery(planned.args.query || userMessage);
+  planned.args.term   = cleanQuery(planned.args.term  || userMessage);
+}
+2 Tools must never swallow Supabase errors
+Wrap each handler:
+
+ts
+Kopieren
+Bearbeiten
+try {
+  const { data, error } = await q;
+  if (error) throw error;
+  return data;
+} catch (e:any) {
+  console.error(`[${t.name}]`, e);
+  throw new Error(`supabase:${e.code || e.message}`);
+}
+Now the Assistant returns supabase:permission_denied or supabase:null_value instead of that catch-all apology.
+
+3 Add fallback to search clients when lead search empty
+Update find_entity:
+
+ts
+Kopieren
+Bearbeiten
+const leads = await search("crm_leads");
+if (leads.length) return { status:"lead", match: best(leads) };
+
+const clients = await search("crm_clients");
+if (clients.length) return { status:"client", match: best(clients) };
+
+return { status:"not_found" };
+4 Count tools: default to current year if none provided
+ts
+Kopieren
+Bearbeiten
+parameters: z.object({ year: z.number().optional() }),
+handler: async (a,ctx)=>{
+  const year = a.year ?? new Date().getFullYear();
+  const { count } = await sb.from("crm_invoices")
+    .select("*",{count:"exact",head:true})
+    .eq("studio_id",ctx.studioId)
+    .gte("issue_date",`${year}-01-01`)
+    .lte("issue_date",`${year}-12-31`);
+  return { year, count };
+}
+Repeat for sessions table.
+
+5 Tool registration conflict
+Make sure only one version (the fixed one) is in toolRegistry:
+
+ts
+Kopieren
+Bearbeiten
+export const toolRegistry = {
+  ...autoTools,              // keep these
+  ...manualTools,            // add manual overrides *after* auto
+  // BUT remove the old broken read_crm_clients from manualTools
+};
+6 Prompt tweak (tiny)
+Add under SEARCH-FIRST POLICY:
+
+sql
+Kopieren
+Bearbeiten
+When using find_entity or global_search, first run cleanQuery() logic: strip “can you”, “please”, “in the clients section” etc. so only the real name/email remains.
+7 Redeploy
+bash
+Kopieren
+Bearbeiten
+node agent/update-assistant.js YOUR_STUDIO_ID
+npm run start
+Quick sanity test
+vbnet
+Kopieren
+Bearbeiten
+User: can you find Matt Pantling in the database?
+Assistant: Found Matt Pantling (client id …, email mattpantling@yahoo.co.uk). What next?
+User: how many invoices this year?
+Assistant: We issued 27 invoices so far in 2025.
+User: send Matt an email asking if he’d like an appointment.
+Assistant → send_email → confirms
+If any tool still throws, the console will now print [read_crm_clients] supabase:… so you can see the exact DB or schema error instead of a silent fail.
+
+Let me know the first real error message you see after these patches and we can squash that too.

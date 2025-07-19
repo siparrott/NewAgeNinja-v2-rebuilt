@@ -2,6 +2,7 @@
 import { createOpenAITool } from "../util/json-schema";
 import OpenAI from "openai";
 import { toolRegistry } from "./tools";
+import { cleanQuery } from "./cleanQuery";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -35,6 +36,9 @@ PLANNING RULES:
 3. For casual conversation or help requests, respond directly without tools
 4. NEVER make assumptions about data - always search first
 5. Break complex requests into single tool calls (the system will chain them)
+
+SEARCH-FIRST POLICY:
+When using find_entity, global_search, or read tools, first clean the query: strip "can you", "please", "in the clients section", etc. so only the real name/email remains.
 
 CONTEXT:
 - Studio: ${ctx.studioName}
@@ -73,6 +77,16 @@ Be decisive and choose the most specific tool available.`;
         return {
           modelResponse: "I encountered an error parsing the tool arguments. Please try rephrasing your request."
         };
+      }
+      
+      // Clean search queries for find_entity and global_search tools
+      if (toolName === "find_entity" || toolName === "global_search") {
+        if (args.query) {
+          args.query = cleanQuery(args.query) || cleanQuery(userMsg);
+        }
+        if (args.term) {
+          args.term = cleanQuery(args.term) || cleanQuery(userMsg);
+        }
       }
       
       console.log(`🛠️ Planned tool: ${toolName} with args:`, args);
