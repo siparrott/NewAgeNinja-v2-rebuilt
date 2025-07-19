@@ -90,6 +90,7 @@ export async function runAgent(studioId: string, userId: string, message: string
       // Clean up common artifacts
       searchTerm = searchTerm.replace(/^(for|me|the|a|an)\s+/gi, '').trim();
       searchTerm = searchTerm.replace(/'s email$/gi, '').trim();
+      searchTerm = searchTerm.replace(/\s+(in the|in|from|at)\s+.+$/gi, '').trim(); // Remove "in the new leads" etc.
       
       if (searchTerm) {
         try {

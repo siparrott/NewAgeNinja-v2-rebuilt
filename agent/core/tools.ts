@@ -69,97 +69,26 @@ export class ToolRegistry {
 
 export const toolRegistry = new ToolRegistry();
 
-// Register core tools
-toolRegistry.register(updateMemoryTool);
+// Import required tools
+import { sendEmailTool } from "../tools/email-send";
+import { globalSearchTool } from "../tools/global-search";
+
+// Register essential core tools only
 toolRegistry.register(sendEmailTool);
-toolRegistry.register(convertLeadTool);
-toolRegistry.register(reportLeadsTool);
+toolRegistry.register(globalSearchTool);
 
 // CRITICAL FIX: Register WORKING tools first (following expert debugging checklist)
 import { workingReadCrmLeads, workingReadCrmClients, workingReadCrmInvoices } from "../tools/working-crm-tools";
 
 // Register WORKING tools with guaranteed functionality
 toolRegistry.register(workingReadCrmLeads);
-toolRegistry.register(workingReadCrmClients);
+toolRegistry.register(workingReadCrmClients); 
 toolRegistry.register(workingReadCrmInvoices);
 
-// Register auto-generated CRM table tools (enhanced versions) - non-conflicting ones only
-toolRegistry.register(createCrmClientsAuto);
-toolRegistry.register(updateCrmClientsAuto);
-toolRegistry.register(readCrmInvoiceItems);
-toolRegistry.register(createCrmInvoiceItems);
-toolRegistry.register(updateCrmInvoiceItems);
-toolRegistry.register(readCrmInvoicePayments);
-toolRegistry.register(createCrmInvoicePayments);
-toolRegistry.register(updateCrmInvoicePayments);
-toolRegistry.register(createCrmInvoicesAuto);
-toolRegistry.register(updateCrmInvoicesAuto);
+// Register essential write tools only
 toolRegistry.register(createCrmLeadsAuto);
-toolRegistry.register(updateCrmLeadsAuto);
-toolRegistry.register(readCrmMessages);
-toolRegistry.register(createCrmMessages);
-toolRegistry.register(updateCrmMessages);
 
-// Register enhanced lead tools with proper error handling
-toolRegistry.register(readCrmLeadsEnhanced);
-toolRegistry.register(findLeadTool);
-toolRegistry.register(enumerateLeadsTool);
+// Remove this section - too many tools causing token limit
 
-// Register CRM read tools (CRITICAL FIX)
-import { listClientsTool, listLeadsTool, listSessionsTool, listInvoicesTool, countInvoicesTool, countSessionsTool } from "../tools/crm-read";
-import { lookupClientTool, searchCrmTool } from "../tools/crm-lookup";
-import { globalSearchTool } from "../tools/global-search";
-
-toolRegistry.register(listClientsTool);
-toolRegistry.register(listLeadsTool);
-toolRegistry.register(listSessionsTool);
-toolRegistry.register(listInvoicesTool);
-toolRegistry.register(countInvoicesTool);
-toolRegistry.register(countSessionsTool);
-toolRegistry.register(lookupClientTool);
-toolRegistry.register(searchCrmTool);
-toolRegistry.register(globalSearchTool);
-
-// CRITICAL FIX: Register non-conflicting CRUD tools only (skip the broken ones)
-const workingCrudTools = [
-  // Skip readCrmLeads, readCrmClients, readCrmInvoices - using fixed auto-generated versions
-  createCrmLeads, updateCrmLeads,
-  createCrmClients, updateCrmClients,
-  createCrmInvoices, updateCrmInvoices,
-  readPhotographySessions, createPhotographySessions, updatePhotographySessions,
-  readGalleries, createGalleries, updateGalleries,
-  readBlogPosts, createBlogPosts, updateBlogPosts,
-  readEmailCampaigns, createEmailCampaigns, updateEmailCampaigns
-];
-
-workingCrudTools.forEach(tool => toolRegistry.register(tool));
-
-// Register website analysis tools
-toolRegistry.register(analyzeWebsiteTool);
-toolRegistry.register(getWebsiteProfileTool);
-toolRegistry.register(suggestSiteImprovementsTool);
-
-// Register SEO and competitive intelligence tools
-import {
-  searchCompetitorsTool,
-  fetchReviewsTool,
-  keywordGapTool,
-  checkDuplicateHeadlineTool,
-  getSEOInsightsTool,
-  trendingTopicsTool
-} from "../tools/seo-tools";
-import {
-  refreshStudioContextTool,
-  getStudioContextTool,
-  getIntelligenceSummaryTool
-} from "../tools/studio-context-tool";
-
-toolRegistry.register(searchCompetitorsTool);
-toolRegistry.register(fetchReviewsTool);
-toolRegistry.register(keywordGapTool);
-toolRegistry.register(checkDuplicateHeadlineTool);
-toolRegistry.register(getSEOInsightsTool);
-toolRegistry.register(trendingTopicsTool);
-toolRegistry.register(refreshStudioContextTool);
-toolRegistry.register(getStudioContextTool);
-toolRegistry.register(getIntelligenceSummaryTool);
+// SEO and website tools removed to reduce token usage
+// Can be re-enabled when needed for specific features
