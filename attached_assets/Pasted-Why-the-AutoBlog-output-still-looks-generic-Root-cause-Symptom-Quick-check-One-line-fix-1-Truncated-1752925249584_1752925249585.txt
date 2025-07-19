@@ -1,0 +1,79 @@
+Why the AutoBlog output still looks generic
+Root cause	Symptom	Quick-check	One-line fix
+1. Truncated prompt – the huge “Humanized, Mentor-Tone…” block is >4 k tokens after the assistant also embeds AI-generated image ALT text, SEO hints, etc. The back half (H2 list, Yoast rules) gets dropped → model never sees it.	Missing Key Takeaways, Review table, social posts.	In DevTools (Network) look at the JSON payload under messages. Does …YOAST SEO COMPLIANCE… appear? You’ll see it cut off.	Switch the AutoBlog call to GPT-4o (128 k ctx) or move the instructions to the Assistant container so they’re not resent each run.
+2. Prompt lives in two places – the Chat tab uses the rich prompt; the AutoBlog route hard-codes an older 15-line “write me a short blog” prompt.	Chat output looks good, generator bad.	Search the repo: grep -R "Create a full content package". You’ll likely find one file only; search "Tell me about the session"—the other prompt.	Point AutoBlog to the SAME Assistant ID, or import the master prompt string.
+3. Assistant tools overwrite instructions – When you updated tools the instructions field got emptied (Assistants API bug if you pass "instructions": null).	Dashboard shows “Instructions — empty” in OpenAI UI.	Retrieve assistant: openai.beta.assistants.retrieve(assistant_id) and check .instructions.	Run your update-assistant.js again without the blank instructions field, or PATCH only tools.
+4. You’re calling chat.completions instead of the Assistant from the AutoBlog front-end.	Request URL ends with /chat/completions.	Look at Network tab: /v1/chat/completions vs /v1/threads/runs.	Replace with Threads/Runs flow or embed the full prompt in the system message.
+5. Model can’t fit 800-word article + review table in default max_tokens (256) so it stops early.	Article cuts after two H2s.	Inspect request JSON for "max_tokens": 256.	Set max_tokens: 1500 for AutoBlog run.
+
+Copy-paste solution (covers #1, #3, #5)
+1 — move your monster prompt into the Assistant container
+bash
+Kopieren
+Bearbeiten
+node - <<'NODE'
+import OpenAI from "openai";
+const openai = new OpenAI();
+const id = "asst_nY0y3yRav2oW...";                 // your Assistant ID
+const prompt = await Bun.file("./prompts/autoblog.txt").text(); // put full text here
+await openai.beta.assistants.update(id, { instructions: prompt });
+console.log("Updated instructions, len=", prompt.length);
+NODE
+Now future Runs don’t have to resend the giant prompt, freeing context.
+
+2 — patch AutoBlog API route to hit the Assistant
+ts
+Kopieren
+Bearbeiten
+// routes/autoblog.ts
+const thread = await openai.beta.threads.create({});
+await openai.beta.threads.messages.create(thread.id, {
+  role: "user",
+  content: userInput    // e.g. "Create a German blog about mini sessions"
+});
+
+const run = await openai.beta.threads.runs.create(thread.id, {
+  assistant_id: process.env.TOGNINJA_ASSISTANT_ID,
+  max_tokens: 2000,
+  metadata: { feature: "autoblog", studioId }
+});
+(Remove any inline system / user prompt duplication.)
+
+3 — prevent accidental wipe-out when you update tools
+In agent/update-assistant.js:
+
+ts
+Kopieren
+Bearbeiten
+await openai.beta.assistants.update(assistantId, {
+  tools: toolDefs,
+  // DO NOT send `instructions` unless you mean to change them
+});
+4 — bump max_tokens
+Where you call threads.runs.create, set:
+
+ts
+Kopieren
+Bearbeiten
+max_tokens: 1800,          // ≈ 1 400 words + meta sections
+temperature: 0.7
+5 — regenerate and restart
+bash
+Kopieren
+Bearbeiten
+npm run start
+🔍 Quick sanity test
+Go to OpenAI dashboard → Assistants → your ID → verify the full prompt is intact.
+
+Trigger AutoBlog generation.
+Expect: H1 + 6–8 H2, Key Takeaways table, Review table, Social posts, Meta description.
+
+Check the response size (should be >1 200 tokens).
+
+If any section still missing:
+
+Missing Review snippets → ensure fetch_reviews tool returns data.
+
+Duplicates H1 → verify check_duplicate_headline tool runs before final draft (see earlier answer).
+
+Send back the raw JSON from the OpenAI response if you need deeper troubleshooting.
