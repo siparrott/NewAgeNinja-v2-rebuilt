@@ -1,7 +1,6 @@
 // Tool registration and management
 import { createOpenAITool } from "../util/json-schema";
 import { updateMemoryTool } from "../tools/update-memory";
-import { sendEmailTool } from "../tools/send-email";
 import { convertLeadTool } from "../tools/convert-lead";
 import { reportLeadsTool } from "../tools/report-leads";
 
@@ -70,11 +69,11 @@ export class ToolRegistry {
 export const toolRegistry = new ToolRegistry();
 
 // Import required tools
-import { sendEmailTool } from "../tools/email-send";
+import { emailSendTool } from "../tools/email-send";
 import { globalSearchTool } from "../tools/global-search";
 
 // Register essential core tools only
-toolRegistry.register(sendEmailTool);
+toolRegistry.register(emailSendTool);
 toolRegistry.register(globalSearchTool);
 
 // CRITICAL FIX: Register WORKING tools first (following expert debugging checklist)
