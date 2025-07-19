@@ -122,10 +122,10 @@ export default function AutoBlogGenerator() {
         formData.append('images', img.file);
       });
       
-      // Add other form data
+      // Add other form data - FIXED: Use server configuration instead of hardcoded assistant ID
       const userPrompt = contentGuidance || 'Professional photography session in Vienna studio';
       formData.append('userPrompt', userPrompt);
-      formData.append('assistantId', 'asst_nlyO3yRav2oWtyTvkq0cHZaU');
+      // REMOVED: hardcoded assistant ID - server will use centralized config
       formData.append('publishOption', publishingOption);
       formData.append('language', contentLanguage === 'deutsch' ? 'de' : 'en');
       formData.append('websiteUrl', websiteUrl);
@@ -136,7 +136,7 @@ export default function AutoBlogGenerator() {
       console.log('🚀 Sending request to AutoBlog API with FormData:');
       console.log('  - Images:', uploadedImages.length);
       console.log('  - Prompt:', userPrompt);
-      console.log('  - Assistant ID: asst_nlyO3yRav2oWtyTvkq0cHZaU');
+      console.log('  - Assistant ID: Server will use centralized TOGNINJA config');
       console.log('  - Language:', contentLanguage === 'deutsch' ? 'de' : 'en');
 
       const startTime = Date.now();

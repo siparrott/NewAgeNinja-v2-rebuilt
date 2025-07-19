@@ -1,0 +1,77 @@
+Below are the five most common reasons an “extra module” (your AutoBlog generator panel) claims it’s using the same OpenAI Assistant but still spits out generic text that ignores your carefully-crafted prompt / style.
+I’ve added the quick diagnostics you can run in Replit to confirm each cause, and the one-line fix (or code snippet) for every scenario.
+
+#	Likely cause	How to spot it in ≤2 min	How to fix it
+1	Wrong assistant ID – the AutoBlog POST is still pointing to a different assistant_id (maybe a stub you created during early tests).	console.log(assistantId) right before openai.beta.threads.runs.create(...) in the AutoBlog route. Does it match the ID printed under “Direct Chat Interface”?	Copy the correct ID (or read it from a single env var) and restart.
+2	Assistant instructions not re-sent – instead of using the Assistants API you call chat.completions.create with no system prompt.	Search the AutoBlog backend for openai.chat.completions.create. If you see that instead of assistant_id, you’re bypassing the assistant container.	Replace the call with the Threads / Runs flow or pass your full prompt as the system message.
+3	Truncated prompt – your AutoBlog request builds a huge image-analysis preamble + user text, pushing your 4 000-token instructions out of context.	Log messages.map(m=>m.role+":"+m.content.length) right before the OpenAI call. See if your system prompt is missing.	Move long blobs (EXIF, alt-text) into a tool call or shorten; or switch to GPT-4o with higher context.
+4	Different model – Chat panel uses gpt-4o-mini, AutoBlog falls back to gpt-3.5-turbo (because you didn’t pass model or you hard-coded 3.5 for cost).	Inspect the payload in Replit “Console → Requests”. Look for "model":"gpt-3.5-turbo" on the failing call.	Pass the same model param (gpt-4o-mini) or rely on the assistant’s default by using the Assistant API.
+5	Image-only prompt path – AutoBlog first sends the images to Vision API with a bare prompt (“write a blog post”) and then appends that generic draft to the assistant call.	Check if there’s an openai.images.generate or Vision call. If yes, you’ll see a generic seed in the blog draft response.	Skip the Vision pre-draft, or at least feed its result back to the assistant as user content so instructions still apply.
+
+🔬 Rapid debug checklist
+Turn logging on
+
+ts
+Kopieren
+Bearbeiten
+openai.baseURL = "https://api.openai.com/v1";
+openai.defaultHeaders = { ...openai.defaultHeaders, "x-openai-debug": "true" };
+Add this one-liner before the OpenAI call in the AutoBlog code:
+
+ts
+Kopieren
+Bearbeiten
+console.dir({assistantId, model, messages}, {depth:2});
+Compare with the same logs from the chat interface route.
+
+If you see assistant_id: undefined or a mismatched value → cause #1.
+
+If you see messages[0].role === "system" missing → cause #2 or #3.
+
+🛠️ Two quick code patches
+Patch A – force the correct assistant everywhere
+
+ts
+Kopieren
+Bearbeiten
+// config.ts  (central config file)
+export const BLOG_ASSISTANT = process.env.TOGNINJA_ASSISTANT_ID;  // one source of truth
+ts
+Kopieren
+Bearbeiten
+// autoblogRoute.ts
+const run = await openai.beta.threads.runs.create(threadId, {
+  assistant_id: BLOG_ASSISTANT,
+  metadata: { feature: "autoblog", studioId }
+});
+Patch B – if you must keep ChatCompletion (not Assistants) ensure the system prompt is injected
+
+ts
+Kopieren
+Bearbeiten
+const systemPrompt = await getAssistantInstructions(BLOG_ASSISTANT); // tiny util: openai.beta.assistants.retrieve
+const messages = [
+  { role: "system", content: systemPrompt },
+  { role: "user",   content: buildImageContext(images) },
+  { role: "user",   content: userGuidance }
+];
+const resp = await openai.chat.completions.create({ model:"gpt-4o-mini", temperature:0.7, messages });
+✅ After the fix
+The AutoBlog panel and the Chat panel hit the same Assistant container → identical tone, Sabri-style, internal links, keyphrase density, everything.
+
+You keep a single prompt file (prompts/system.ts) and only ever update it once.
+
+Ping me if you want a ready-to-paste helper that fetches assistant instructions lazily, or a token-budget checker so you don’t silently drop the prompt again.
+
+
+
+
+
+
+
+
+
+Quellen
+
+ChatGPT fragen
+

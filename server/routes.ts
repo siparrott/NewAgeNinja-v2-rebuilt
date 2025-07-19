@@ -4705,8 +4705,26 @@ Was interessiert Sie am meisten?`;
         return res.status(400).json({ error: 'Assistant ID is required' });
       }
 
-      // Initialize OpenAI Assistant API
+      // Import centralized config and debugging setup
+      const { BLOG_ASSISTANT, DEBUG_OPENAI } = await import('./config');
+      
+      // Initialize OpenAI Assistant API with debug logging
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      if (DEBUG_OPENAI) {
+        openai.baseURL = "https://api.openai.com/v1";
+        openai.defaultHeaders = { ...openai.defaultHeaders, "x-openai-debug": "true" };
+      }
+
+      // DIAGNOSTIC CHECK #1: Verify assistant ID
+      console.dir({
+        requestedAssistantId: assistantId, 
+        configuredAssistantId: BLOG_ASSISTANT,
+        match: assistantId === BLOG_ASSISTANT
+      }, {depth: 2});
+
+      // Force use of correct assistant ID
+      const correctAssistantId = BLOG_ASSISTANT;
 
       // Create or retrieve thread
       let currentThreadId = threadId;
@@ -4789,8 +4807,11 @@ Was interessiert Sie am meisten?`;
       let run;
       try {
         run = await openai.beta.threads.runs.create(currentThreadId, {
-          assistant_id: assistantId
+          assistant_id: correctAssistantId,
+          metadata: { feature: "autoblog-chat", studioId: req.user?.id }
         });
+        
+        console.log('✅ Using correct TOGNINJA assistant ID:', correctAssistantId);
         console.log('Started assistant run:', run.id, 'on thread:', currentThreadId);
       } catch (runError) {
         console.error('Error starting assistant run:', runError);

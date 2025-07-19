@@ -8,11 +8,19 @@ import { autoBlogSchema, type AutoBlogParsed, type AutoBlogInput } from './autob
 import { buildAutoBlogPrompt } from './autoblog-prompt';
 import { stripDangerousHtml, generateUniqueSlug, cleanSlug } from './util-strip-html';
 import { storage } from './storage';
+import { BLOG_ASSISTANT, DEBUG_OPENAI } from './config';
+import { logAutoBlogCall, runAutoBlogDiagnostics } from './autoblog-diagnostics';
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY 
 });
+
+// Enable debug logging as per expert advice
+if (DEBUG_OPENAI) {
+  openai.baseURL = "https://api.openai.com/v1";
+  openai.defaultHeaders = { ...openai.defaultHeaders, "x-openai-debug": "true" };
+}
 
 // Claude 4.0 Sonnet as alternative LLM for higher quality content
 const anthropic = new Anthropic({
@@ -327,7 +335,20 @@ ADDITIONAL CONTEXT SOURCES:
   }
 
   /**
-   * Generate content using REAL TOGNINJA ASSISTANT with comprehensive context
+   * Utility to get assistant instructions for fallback system prompts
+   */
+  async getAssistantInstructions(assistantId: string): Promise<string> {
+    try {
+      const assistant = await openai.beta.assistants.retrieve(assistantId);
+      return assistant.instructions || '';
+    } catch (error) {
+      console.error('Failed to retrieve assistant instructions:', error);
+      return '';
+    }
+  }
+
+  /**
+   * Generate content using REAL TOGNINJA ASSISTANT - FIXED VERSION
    */
   async generateWithAssistantAPI(
     assistantId: string, 
@@ -336,22 +357,57 @@ ADDITIONAL CONTEXT SOURCES:
     siteContext: string
   ): Promise<AutoBlogParsed | null> {
     try {
-      console.log('🎯 === REAL TOGNINJA BLOG WRITER ASSISTANT WITH FULL CONTEXT ===');
-      console.log('🔑 Assistant ID:', assistantId);
-      console.log('📸 Processing', images.length, 'images');
+      console.log('🎯 === FIXED TOGNINJA BLOG WRITER ASSISTANT ===');
       
-      // STEP 1: Gather comprehensive context
-      const comprehensiveContext = await this.gatherComprehensiveContext(images, input);
+      // DIAGNOSTIC CHECK - Log all parameters as per expert advice
+      logAutoBlogCall({
+        assistantId, 
+        model: 'assistant-based', 
+        imagesCount: images.length
+      });
       
-      // STEP 2: Use REAL Assistant API with context as DATA (not prompt override)
-      console.log('🎯 SENDING CONTEXT TO REAL ASSISTANT - NO PROMPT OVERRIDE');
+      // STEP 1: Minimal context - let TOGNINJA assistant use its trained capabilities
+      console.log('🎯 MINIMAL CONTEXT APPROACH - PRESERVING TOGNINJA TRAINING');
       
-      // MINIMAL message - let TOGNINJA assistant use its sophisticated trained prompt
-      const userMessage = `${comprehensiveContext}
+      // Analyze images only for essential context
+      let imageContext = '';
+      if (images.length > 0) {
+        try {
+          const imageMessages = [{
+            role: "user" as const,
+            content: [
+              {
+                type: "text" as const,
+                text: "Briefly identify: newborn, family, maternity, or other session type. One sentence only."
+              },
+              ...images.map(img => ({
+                type: "image_url" as const,
+                image_url: {
+                  url: `data:image/jpeg;base64,${img.buffer.toString('base64')}`
+                }
+              }))
+            ]
+          }];
 
-User guidance: ${input.contentGuidance || 'Create a German blog post about this photography session.'}
+          const imageResponse = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: imageMessages,
+            max_tokens: 50
+          });
 
-Create a blog post using your training.`;
+          imageContext = imageResponse.choices[0]?.message?.content || 'General photography session';
+        } catch (error) {
+          console.error('Image analysis failed:', error);
+          imageContext = 'Professional photography session';
+        }
+      }
+      
+      // MINIMAL message - essential context only
+      const userMessage = `Photography session: ${imageContext}
+Studio: New Age Fotografie, Vienna
+User request: ${input.contentGuidance || 'German blog post about photography session'}
+
+Generate content using your trained instructions.`;
 
       // STEP 3: Create thread for REAL Assistant
       const thread = await openai.beta.threads.create();
@@ -362,84 +418,58 @@ Create a blog post using your training.`;
         content: userMessage
       });
 
-      // Run the REAL Assistant
-      console.log('🚀 Running REAL TOGNINJA BLOG WRITER Assistant...');
+      // Run the REAL Assistant using SDK (no fetch() bypass)
+      console.log('🚀 Running TOGNINJA BLOG WRITER Assistant using proper SDK...');
       const run = await openai.beta.threads.runs.create(thread.id, {
-        assistant_id: assistantId
+        assistant_id: assistantId,
+        metadata: { feature: "autoblog", studioId: "newage-fotografie" }
       });
       console.log('✅ Assistant run created:', run.id);
 
-      // Wait for completion using direct HTTP API calls (avoiding SDK bugs)
-      console.log('⏳ Waiting for REAL Assistant to complete...');
-      let runCompleted = false;
+      // Wait for completion using SDK methods (FIXED - no fetch() bypass)
+      console.log('⏳ Waiting for Assistant to complete using SDK...');
+      let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
       let attempts = 0;
       const maxAttempts = 30; // 60 seconds max wait
 
-      while (!runCompleted && attempts < maxAttempts) {
+      while (runStatus.status !== 'completed' && attempts < maxAttempts) {
+        console.log(`🔄 Assistant status: ${runStatus.status} (attempt ${attempts + 1}/${maxAttempts})`);
+        
+        if (runStatus.status === 'failed' || runStatus.status === 'cancelled' || runStatus.status === 'expired') {
+          console.error('❌ Assistant run failed with status:', runStatus.status);
+          if (runStatus.last_error) {
+            console.error('❌ Error details:', runStatus.last_error);
+          }
+          throw new Error(`Assistant run failed with status: ${runStatus.status}`);
+        }
+        
+        // Wait 2 seconds before checking again
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        attempts++;
+        
         try {
-          const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-              'Content-Type': 'application/json',
-              'OpenAI-Beta': 'assistants=v2'
-            }
-          });
-          
-          if (!statusResponse.ok) {
-            throw new Error(`Status check failed: ${statusResponse.statusText}`);
-          }
-          
-          const runStatus = await statusResponse.json();
-          console.log(`🔄 Assistant status: ${runStatus.status} (attempt ${attempts + 1}/${maxAttempts})`);
-          
-          if (runStatus.status === 'completed') {
-            runCompleted = true;
-            console.log('🎉 REAL Assistant completed successfully!');
-            break;
-          } else if (runStatus.status === 'failed' || runStatus.status === 'cancelled' || runStatus.status === 'expired') {
-            console.error('❌ Assistant run failed with status:', runStatus.status);
-            if (runStatus.last_error) {
-              console.error('❌ Error details:', runStatus.last_error);
-            }
-            throw new Error(`Assistant run failed with status: ${runStatus.status}`);
-          }
-          
-          // Wait 2 seconds before checking again
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+        } catch (error) {
+          console.error('❌ Error retrieving run status:', error);
           attempts++;
-        } catch (statusError) {
-          console.error('❌ Error checking Assistant status:', statusError);
-          attempts++;
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
         }
       }
       
-      if (!runCompleted) {
+      if (runStatus.status !== 'completed') {
         console.log('⏰ Assistant timed out after maximum attempts');
         return null;
       }
+      
+      console.log('🎉 TOGNINJA Assistant completed successfully!');
 
-      // Retrieve messages from REAL Assistant
-      console.log('📥 Retrieving REAL Assistant response...');
-      const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2'
-        }
-      });
-      
-      if (!messagesResponse.ok) {
-        throw new Error(`Failed to retrieve messages: ${messagesResponse.statusText}`);
-      }
-      
-      const messagesData = await messagesResponse.json();
-      const assistantMessages = messagesData.data.filter(msg => msg.role === 'assistant');
+      // Retrieve messages using SDK (FIXED - no fetch() bypass)
+      console.log('📥 Retrieving Assistant response using SDK...');
+      const messages = await openai.beta.threads.messages.list(thread.id);
+      const assistantMessages = messages.data.filter(msg => msg.role === 'assistant');
       
       if (assistantMessages.length === 0) {
-        throw new Error('No response from REAL Assistant');
+        throw new Error('No response from TOGNINJA Assistant');
       }
       
       const lastMessage = assistantMessages[0];
@@ -1287,8 +1317,11 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
 
       // Step 3: Generate content with REAL TOGNINJA BLOG WRITER ASSISTANT ONLY
       console.log('🚀 GENERATING CONTENT WITH REAL TOGNINJA BLOG WRITER ASSISTANT ONLY...');
-      const assistantId = 'asst_nlyO3yRav2oWtyTvkq0cHZaU'; // YOUR REAL Assistant
-      const aiContent = await this.generateWithAssistantAPI(assistantId, processedImages, input, siteContext);
+      
+      // DIAGNOSTIC CHECK #1: Verify assistant ID
+      console.log('🔍 DIAGNOSTIC CHECK #1 - Assistant ID:', BLOG_ASSISTANT);
+      
+      const aiContent = await this.generateWithAssistantAPI(BLOG_ASSISTANT, processedImages, input, siteContext);
       
       if (!aiContent) {
         throw new Error('❌ REAL TOGNINJA BLOG WRITER ASSISTANT FAILED - No fallback allowed. Check OpenAI API configuration.');
