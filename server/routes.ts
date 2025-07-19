@@ -33,6 +33,7 @@ import Stripe from 'stripe';
 import nodemailer from 'nodemailer';
 import { jsPDF } from 'jspdf';
 import OpenAI from 'openai';
+import websiteWizardRoutes from './routes/website-wizard';
 
 // Modern PDF invoice generator with actual logo and all required sections
 async function generateModernInvoicePDF(invoice: any, client: any): Promise<Buffer> {
@@ -5057,6 +5058,9 @@ Current system status: The AI agent system is temporarily unavailable. Please tr
       });
     }
   });
+
+  // Website Wizard routes
+  app.use('/api/website-wizard', websiteWizardRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

@@ -1,0 +1,356 @@
+Below is a “copy-paste kit” that bolts a World-Class Website Wizard onto your existing TogNinja / Replit stack.
+It does four things end-to-end:
+
+Scrapes & analyses a user-supplied URL (HTML, images, on-page SEO).
+
+Stores a rich “WebsiteProfile” JSON in Supabase for later reuse (AutoBlog, SEO reports, e-mails, etc.).
+
+Feeds that JSON into the working-memory object so the Assistant instantly knows brand colours, keywords, services, tone, etc.
+
+Exposes helper tools (analyze_website, get_website_profile, suggest_site_improvements) the Assistant can call any time.
+
+Everything stays inside Replit; no external crawlers or SaaS.
+Time required: ±45 min copy-paste + 1 npm install + 1 SQL migration.
+
+0 · Prerequisites
+Your repo already has:
+
+Supabase client + service-role key
+
+Working-memory table, cron jobs, send_email tool
+
+OpenAI Assistant integration
+
+If any of that is missing, do the R5 steps first.
+
+1 · Install extra packages (Replit shell)
+bash
+Kopieren
+Bearbeiten
+npm i @extractus/article-extractor cheerio node-fetch lighthouse zod
+*@extractus/article-extractor → cleanly grabs readable text
+*cheerio → lightweight DOM parsing
+*lighthouse (CLI) → structured SEO audit (title, meta, perf)
+
+2 · Database migration
+drizzle/migrations/2025_08_06_website_profile.sql
+
+sql
+Kopieren
+Bearbeiten
+CREATE TABLE IF NOT EXISTS website_profiles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  studio_id uuid REFERENCES studios(id),
+  url text,
+  html_hash text,      -- quick cache key
+  profile_json jsonb,  -- {title,desc,keywords,colors,services,images[]}
+  lighthouse_json jsonb,
+  created_at timestamptz DEFAULT now()
+);
+
+-- optional index for fast lookup
+CREATE INDEX IF NOT EXISTS website_profiles_studio_idx
+  ON website_profiles (studio_id);
+Apply once:
+
+bash
+Kopieren
+Bearbeiten
+psql "$SUPABASE_DB_URL" -f drizzle/migrations/2025_08_06_website_profile.sql
+3 · Backend route & utils
+3-a agent/integrations/webscrape.ts
+ts
+Kopieren
+Bearbeiten
+import fetch from "node-fetch";
+import { extract } from "@extractus/article-extractor";
+import * as cheerio from "cheerio";
+import crypto from "crypto";
+
+export interface ScrapeResult {
+  title?: string;
+  description?: string;
+  keywords?: string[];
+  html_hash: string;
+  raw_html: string;
+  main_text?: string;
+  images: string[];
+  colors: string[];          // dominant hex colours from inline CSS
+}
+
+export async function scrapeSite(url: string): Promise<ScrapeResult> {
+  const res = await fetch(url, { headers: { "User-Agent": "TogNinjaBot/1.0" } });
+  const html = await res.text();
+  const hash = crypto.createHash("sha1").update(html).digest("hex").slice(0, 12);
+
+  const $ = cheerio.load(html);
+
+  const title = $("title").first().text();
+  const description = $('meta[name="description"]').attr("content") || "";
+
+  const keywordsMeta =
+    $('meta[name="keywords"]').attr("content")?.split(",").map(k => k.trim()) || [];
+
+  const imgs = $("img")
+    .map((_, el) => $(el).attr("src") || "")
+    .get()
+    .filter(Boolean)
+    .slice(0, 25);
+
+  // Pull dominant hex colours from inline style/body CSS tokens (quick heuristic)
+  const colors = (html.match(/#(?:[0-9a-fA-F]{3}){1,2}\b/g) || [])
+    .map(c => c.toLowerCase())
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .slice(0, 10);
+
+  // Article Extractor grabs main readable text
+  const article = await extract(html, { html });
+
+  return {
+    title,
+    description,
+    keywords: keywordsMeta,
+    html_hash: hash,
+    raw_html: html,
+    main_text: article?.content || "",
+    images: imgs,
+    colors
+  };
+}
+3-b agent/integrations/lighthouse.ts
+(optional but nice for SEO score)
+
+ts
+Kopieren
+Bearbeiten
+import lighthouse from "lighthouse";
+import chromeLauncher from "chrome-launcher";
+
+export async function runLighthouse(url: string) {
+  const chrome = await chromeLauncher.launch({ chromeFlags: ["--headless"] });
+  const result = await lighthouse(url, {
+    port: chrome.port,
+    output: "json",
+    onlyCategories: ["seo", "performance", "accessibility"]
+  });
+  await chrome.kill();
+  return result.lhr;
+}
+4 · Supabase storage helper
+agent/integrations/website-profile.ts
+
+ts
+Kopieren
+Bearbeiten
+import { createClient } from "@supabase/supabase-js";
+import { scrapeSite } from "./webscrape";
+import { runLighthouse } from "./lighthouse";
+
+const sb = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function analyzeAndStoreWebsite(studioId: string, url: string) {
+  const scrape = await scrapeSite(url);
+  const lighthouse = await runLighthouse(url);
+
+  const { data } = await sb.from("website_profiles")
+    .insert({
+      studio_id: studioId,
+      url,
+      html_hash: scrape.html_hash,
+      profile_json: scrape,
+      lighthouse_json: lighthouse
+    })
+    .select()
+    .single();
+
+  return data;
+}
+
+export async function getWebsiteProfile(studioId: string) {
+  const { data } = await sb.from("website_profiles")
+    .select("*")
+    .eq("studio_id", studioId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+5 · Assistant tools
+agent/tools/website-tools.ts
+
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { analyzeAndStoreWebsite, getWebsiteProfile } from "../integrations/website-profile";
+import type { AgentCtx } from "../core/ctx";
+import { patchMemory } from "../core/memory";
+
+/* analyze_website */
+export const analyzeWebsiteTool = {
+  name: "analyze_website",
+  description: "Crawl the given URL and store a structured WebsiteProfile for later SEO and Autoblog use.",
+  parameters: z.object({ url: z.string().url() }),
+  handler: async (a: any, ctx: AgentCtx & { chatSessionId?: string }) => {
+    const profile = await analyzeAndStoreWebsite(ctx.studioId, a.url);
+    // stash in working memory for immediate follow-ups
+    if (ctx.chatSessionId) {
+      await patchMemory(ctx.chatSessionId, { website_profile: profile });
+    }
+    return { status: "stored", profile };
+  }
+};
+
+/* get_website_profile */
+export const getWebsiteProfileTool = {
+  name: "get_website_profile",
+  description: "Return the newest WebsiteProfile JSON for this studio",
+  parameters: z.object({}),
+  handler: async (_: any, ctx: AgentCtx) => {
+    const profile = await getWebsiteProfile(ctx.studioId);
+    return profile || { error: "none-found" };
+  }
+};
+
+/* suggest_site_improvements */
+export const suggestSiteImprovementsTool = {
+  name: "suggest_site_improvements",
+  description:
+    "Given existing WebsiteProfile, return a list of concrete copy / SEO / design improvements",
+  parameters: z.object({}),
+  handler: async (_: any, ctx: AgentCtx, llm?: any) => {
+    const profile = await getWebsiteProfile(ctx.studioId);
+    if (!profile) return { error: "no-profile" };
+    // simple chain-of-thought: feed to LLM itself
+    const resp = await llm([
+      { role: "system", content: "You are an expert SEO copywriter." },
+      { role: "user", content: `Here is site profile JSON:\n${JSON.stringify(profile, null, 2)}\nReturn bullet-point improvements.` }
+    ]);
+    return resp.choices[0].message.content;
+  }
+};
+Add to agent/core/tools.ts:
+
+ts
+Kopieren
+Bearbeiten
+import { analyzeWebsiteTool, getWebsiteProfileTool, suggestSiteImprovementsTool } from "../tools/website-tools";
+
+export const toolRegistry = {
+  ...crudTools,
+  [analyzeWebsiteTool.name]: analyzeWebsiteTool,
+  [getWebsiteProfileTool.name]: getWebsiteProfileTool,
+  [suggestSiteImprovementsTool.name]: suggestSiteImprovementsTool,
+  // existing tools …
+};
+(Pass runLLM function into the handler via third arg when you invoke them from the loop.)
+
+6 · Wire the Wizard front-end
+(React / Next component sketch; adjust to your framework)
+
+tsx
+Kopieren
+Bearbeiten
+const WebsiteWizard = () => {
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const handleAnalyze = async () => {
+    setLoading(true);
+    await fetch("/api/agent/tool-call", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tool: "analyze_website",
+        args: { url }
+      })
+    });
+    setLoading(false);
+    router.push("/admin/autoblog");       // next step
+  };
+  return (
+    <Card>
+      <Input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://your-site.com" />
+      <Button disabled={!url||loading} onClick={handleAnalyze}>Analyze Website</Button>
+    </Card>
+  );
+};
+export default WebsiteWizard;
+Your /api/agent/tool-call just forwards to the assistant run-loop with:
+
+ts
+Kopieren
+Bearbeiten
+await toolRegistry[tool].handler(args, ctx, runLLM);
+7 · AutoBlog integration
+Inside your AutoBlog generator, before drafting content:
+
+ts
+Kopieren
+Bearbeiten
+const websiteProfile = await toolRegistry["get_website_profile"].handler({}, ctx);
+const promptAddOn = websiteProfile
+  ? `\nBrand context:\nTitle: ${websiteProfile.profile_json.title}\nMain colors: ${websiteProfile.profile_json.colors.join(",")}\nKey services: ${websiteProfile.profile_json.keywords.join(",")}\n`
+  : "";
+// then build the rest of your user/system messages…
+Now every blog draft automatically inherits brand tone, colours, keywords.
+
+8 · System prompt line to enable tool
+Add to TOOLS section in your assistant prompt:
+
+diff
+Kopieren
+Bearbeiten
+- analyze_website – crawl a URL & store profile
+- get_website_profile – fetch latest profile
+- suggest_site_improvements – ask LLM to propose fixes
+9 · Restart Replit
+arduino
+Kopieren
+Bearbeiten
+npm run gen:tools          # refresh registry
+npm run start
+Console:
+
+nginx
+Kopieren
+Bearbeiten
+Website tools registered ✓
+Assistant updated ✓
+✅ Quick sanity test
+yaml
+Kopieren
+Bearbeiten
+User: Here is my site https://example-photography.com – please analyse.
+Assistant → calls analyze_website
+Assistant: “Finished. Want top 5 improvements?”
+User: yes
+Assistant → calls suggest_site_improvements
+Assistant: bullet list with Sabri tone, brand colours, keywords
+The same brand info is now available in AutoBlog drafts and future SEO-related chats.
+
+Need PDF lighthouse report download?
+Add chromium --output-path /mnt/data/report.html in runLighthouse, link as [Download full audit](sandbox:/mnt/data/report.html).
+
+Ping me if you hit any crawler CORS issues or want image-palette extraction via colorthief.
+
+
+
+
+
+
+
+
+
+Quellen
+
+ChatGPT fragen
+
+
+
+
+Tools
+
+

@@ -13,6 +13,7 @@ import { readPhotographySessions, createPhotographySessions, updatePhotographySe
 import { readGalleries, createGalleries, updateGalleries } from "../tools/galleries";
 import { readBlogPosts, createBlogPosts, updateBlogPosts } from "../tools/blog_posts";
 import { readEmailCampaigns, createEmailCampaigns, updateEmailCampaigns } from "../tools/email_campaigns";
+import { analyzeWebsiteTool, getWebsiteProfileTool, suggestSiteImprovementsTool } from "../tools/website-tools";
 
 export interface AgentTool {
   name: string;
@@ -61,3 +62,8 @@ const crudTools = [
 ];
 
 crudTools.forEach(tool => toolRegistry.register(tool));
+
+// Register website analysis tools
+toolRegistry.register(analyzeWebsiteTool);
+toolRegistry.register(getWebsiteProfileTool);
+toolRegistry.register(suggestSiteImprovementsTool);

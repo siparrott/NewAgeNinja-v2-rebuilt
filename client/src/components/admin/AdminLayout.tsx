@@ -29,7 +29,8 @@ import {
   BookOpen,
   Bot,
   TestTube,
-  Sparkles
+  Sparkles,
+  Search
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -103,6 +104,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: Palette, label: 'Customization', path: '/admin/customization' },
     { icon: Palette, label: 'Studio Templates', path: '/admin/studio-templates' },
     { icon: Wand2, label: 'Website Wizard', path: '/admin/website-wizard' },
+    { icon: Search, label: 'Website Analyzer', path: '/admin/website-analyzer' },
   ];
 
   const handleSignOut = async () => {

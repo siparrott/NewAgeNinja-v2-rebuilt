@@ -58,6 +58,7 @@ import AdminAutoBlogPage from './pages/admin/AdminAutoBlogPage';
 import AutoBlogGenerator from './pages/admin/AutoBlogGenerator';
 import AutoBlogGeneratorFixed from './pages/admin/AutoBlogGeneratorFixed';
 import TestPage from './pages/admin/TestPage';
+import WebsiteWizard from './pages/admin/WebsiteWizard';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CartPage from './pages/CartPage';
 import FamilyGutscheinPage from './pages/gutschein/FamilyGutscheinPage';
@@ -328,6 +329,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <WebsiteCustomizationWizard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/website-analyzer" 
+                  element={
+                    <ProtectedRoute>
+                      <WebsiteWizard />
                     </ProtectedRoute>
                   } 
                 />
