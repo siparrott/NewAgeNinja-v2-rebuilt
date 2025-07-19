@@ -98,29 +98,68 @@ export class AutoBlogOrchestrator {
   }
 
   /**
-   * Scrape site context for brand voice and services
+   * Scrape site context using Website Wizard data + live scraping
    */
   async scrapeSiteContext(siteUrl?: string): Promise<string> {
     try {
       const url = siteUrl || this.publicSiteUrl;
+      console.log('🌐 Getting website context for:', url);
       
-      // Import scraping agent dynamically to avoid circular dependencies
-      const { scrapeSiteContent } = await import('./scraping-agent');
-      const scrapedData = await scrapeSiteContent(url);
+      // STEP 1: Get stored Website Wizard profile data
+      const { getWebsiteProfile } = await import('../agent/integrations/website-profile');
+      const websiteProfile = await getWebsiteProfile("550e8400-e29b-41d4-a716-446655440000");
       
-      // Extract key information for context
-      const context = `
-Studio: ${this.studioName}
-Location: Vienna, Austria
-Services: ${scrapedData.services || 'Family, newborn, maternity, and portrait photography'}
-Brand Voice: ${scrapedData.brandVoice || 'Professional, warm, and personal'}
-Key Features: ${scrapedData.keyFeatures || 'High-quality photography, professional editing, personal service'}
-      `.trim();
+      let context = `Studio: ${this.studioName}\nLocation: Vienna, Austria\n`;
       
-      return context;
+      // STEP 2: Use Website Wizard analysis data if available
+      if (websiteProfile && websiteProfile.profile_json) {
+        const profileData = typeof websiteProfile.profile_json === 'string' 
+          ? JSON.parse(websiteProfile.profile_json) 
+          : websiteProfile.profile_json;
+          
+        console.log('✅ Using Website Wizard data for context');
+        
+        context += `Website Title: ${profileData.title || 'New Age Fotografie'}\n`;
+        context += `Meta Description: ${profileData.description || ''}\n`;
+        context += `Main Content: ${(profileData.main_text || '').substring(0, 500)}...\n`;
+        
+        if (profileData.colors && profileData.colors.length > 0) {
+          context += `Brand Colors: ${profileData.colors.slice(0, 5).join(', ')}\n`;
+        }
+        
+        // Get Lighthouse performance data
+        if (websiteProfile.lighthouse_json) {
+          const lighthouseData = typeof websiteProfile.lighthouse_json === 'string'
+            ? JSON.parse(websiteProfile.lighthouse_json)
+            : websiteProfile.lighthouse_json;
+            
+          if (lighthouseData.performance) {
+            context += `Performance Score: ${Math.round((lighthouseData.performance.score || 0) * 100)}/100\n`;
+          }
+        }
+      } else {
+        console.log('⚠️ No Website Wizard data found, using fallback context');
+        
+        // STEP 3: Fallback - try live scraping
+        try {
+          const { scrapeSiteContent } = await import('./scraping-agent');
+          const scrapedData = await scrapeSiteContent(url);
+          
+          context += `Services: ${scrapedData.services || 'Family, newborn, maternity, and portrait photography'}\n`;
+          context += `Brand Voice: ${scrapedData.brandVoice || 'Professional, warm, and personal'}\n`;
+          context += `Key Features: ${scrapedData.keyFeatures || 'High-quality photography, professional editing, personal service'}\n`;
+        } catch (scrapingError) {
+          console.log('⚠️ Live scraping failed, using minimal context');
+          context += `Services: Family, newborn, maternity, and portrait photography\n`;
+          context += `Brand Voice: Professional, warm, and personal\n`;
+          context += `Key Features: High-quality photography, professional editing, personal service\n`;
+        }
+      }
+      
+      return context.trim();
     } catch (error) {
-      console.error('Error scraping site context:', error);
-      // Fallback context if scraping fails
+      console.error('Error getting site context:', error);
+      // Minimal fallback context
       return `
 Studio: ${this.studioName}
 Location: Vienna, Austria
