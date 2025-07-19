@@ -48,15 +48,23 @@ export const findEntityTool = {
       // Search clients if no leads found
       const clients = await sql`
         SELECT *, 'client' as source_type FROM crm_clients 
-        WHERE (LOWER(first_name) LIKE ${`%${query}%`} OR LOWER(last_name) LIKE ${`%${query}%`} OR LOWER(email) LIKE ${`%${query}%`} OR LOWER(phone) LIKE ${`%${query}%`})
+        WHERE (
+          LOWER(first_name) LIKE ${`%${query}%`} OR 
+          LOWER(last_name) LIKE ${`%${query}%`} OR 
+          LOWER(CONCAT(first_name, ' ', last_name)) LIKE ${`%${query}%`} OR
+          LOWER(email) LIKE ${`%${query}%`} OR 
+          LOWER(phone) LIKE ${`%${query}%`}
+        )
         AND id IS NOT NULL
         ORDER BY 
           CASE 
             WHEN LOWER(email) = ${query} THEN 1
-            WHEN LOWER(first_name || ' ' || last_name) = ${query} THEN 2
+            WHEN LOWER(CONCAT(first_name, ' ', last_name)) = ${query} THEN 2
             WHEN LOWER(email) LIKE ${`${query}%`} THEN 3
-            WHEN LOWER(first_name || ' ' || last_name) LIKE ${`${query}%`} THEN 4
-            ELSE 5
+            WHEN LOWER(CONCAT(first_name, ' ', last_name)) LIKE ${`${query}%`} THEN 4
+            WHEN LOWER(first_name) LIKE ${`${query}%`} THEN 5
+            WHEN LOWER(last_name) LIKE ${`${query}%`} THEN 6
+            ELSE 7
           END
         LIMIT 5
       `;
