@@ -170,9 +170,9 @@ export const listInvoicesTool = {
 // Add missing count tools
 export const countInvoicesTool = {
   name: "count_invoices",
-  description: "Count invoices by month/year",
+  description: "Count invoices by month/year. If no year specified, defaults to current year (2025).",
   parameters: z.object({ 
-    year: z.number().optional(), 
+    year: z.number().optional().default(2025), 
     month: z.number().optional() 
   }),
   handler: async (args: any, ctx: AgentCtx) => {
@@ -180,16 +180,23 @@ export const countInvoicesTool = {
       requireAuthority(ctx, "READ_INVOICES");
       let invoices = await getInvoicesForStudio(ctx.studioId);
       
-      if (args.year || args.month) {
+      // Default to current year (2025) if no year specified
+      const targetYear = args.year || 2025;
+      
+      if (targetYear || args.month) {
         invoices = invoices.filter((inv: any) => {
-          const date = new Date(inv.createdAt || inv.created_at);
-          const matchYear = !args.year || date.getFullYear() === args.year;
+          // Handle different date field names from database
+          const dateField = inv.issue_date || inv.issueDate || inv.created_at || inv.createdAt;
+          if (!dateField) return false;
+          
+          const date = new Date(dateField);
+          const matchYear = date.getFullYear() === targetYear;
           const matchMonth = !args.month || (date.getMonth() + 1) === args.month;
           return matchYear && matchMonth;
         });
       }
       
-      return { count: invoices.length };
+      return { count: invoices.length, year: targetYear };
     } catch (error) {
       console.error('❌ count_invoices error:', error);
       return { error: `Failed to count invoices: ${error instanceof Error ? error.message : "Unknown error"}` };

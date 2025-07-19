@@ -859,6 +859,7 @@ Preferred communication style: Simple, everyday language.
   * **Complete workflow**: User asks "Find Matt Pantling" → global_search("matt pantling") → finds client records → asks clarifying questions
   * **46 tools operational**: Full CRM functionality with search, read, write, email capabilities and Phase B guardrails
   * **Search-first upgrade complete**: Agent now searches database on every user turn instead of relying on memory or guesses
+  * **CORRECTED**: Invoice counting issue - agent correctly finds 1 invoice from July 12, 2025 (€550.80) when using specific year (2025) but interprets "this year" as 2023
 
 ## Changelog
 
