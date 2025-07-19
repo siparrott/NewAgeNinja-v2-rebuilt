@@ -5,7 +5,7 @@ import { sendEmailTool } from "../tools/send-email";
 import { convertLeadTool } from "../tools/convert-lead";
 import { reportLeadsTool } from "../tools/report-leads";
 
-// Import all CRUD tools
+// Import manual tools
 import { readCrmLeads, createCrmLeads, updateCrmLeads } from "../tools/crm_leads";
 import { readCrmClients, createCrmClients, updateCrmClients } from "../tools/crm_clients";
 import { readCrmInvoices, createCrmInvoices, updateCrmInvoices } from "../tools/crm_invoices";
@@ -14,7 +14,26 @@ import { readGalleries, createGalleries, updateGalleries } from "../tools/galler
 import { readBlogPosts, createBlogPosts, updateBlogPosts } from "../tools/blog_posts";
 import { readEmailCampaigns, createEmailCampaigns, updateEmailCampaigns } from "../tools/email_campaigns";
 import { analyzeWebsiteTool, getWebsiteProfileTool, suggestSiteImprovementsTool } from "../tools/website-tools";
-// import { fixEmailAddressTool } from "../tools/fix-email-address";
+
+// Auto-generated CRUD tools for all CRM tables
+import { 
+  readCrmClients as readCrmClientsAuto, 
+  createCrmClients as createCrmClientsAuto, 
+  updateCrmClients as updateCrmClientsAuto 
+} from "../tools/crm_clients-auto";
+import { readCrmInvoiceItems, createCrmInvoiceItems, updateCrmInvoiceItems } from "../tools/crm_invoice_items-auto";
+import { readCrmInvoicePayments, createCrmInvoicePayments, updateCrmInvoicePayments } from "../tools/crm_invoice_payments-auto";
+import { 
+  readCrmInvoices as readCrmInvoicesAuto, 
+  createCrmInvoices as createCrmInvoicesAuto, 
+  updateCrmInvoices as updateCrmInvoicesAuto 
+} from "../tools/crm_invoices-auto";
+import { 
+  readCrmLeads as readCrmLeadsAuto, 
+  createCrmLeads as createCrmLeadsAuto, 
+  updateCrmLeads as updateCrmLeadsAuto 
+} from "../tools/crm_leads-auto";
+import { readCrmMessages, createCrmMessages, updateCrmMessages } from "../tools/crm_messages-auto";
 
 export interface AgentTool {
   name: string;
@@ -50,7 +69,26 @@ toolRegistry.register(updateMemoryTool);
 toolRegistry.register(sendEmailTool);
 toolRegistry.register(convertLeadTool);
 toolRegistry.register(reportLeadsTool);
-// toolRegistry.register(fixEmailAddressTool);  // Temporarily disabled due to schema error
+
+// Register auto-generated CRM table tools (enhanced versions)
+toolRegistry.register(readCrmClientsAuto);
+toolRegistry.register(createCrmClientsAuto);
+toolRegistry.register(updateCrmClientsAuto);
+toolRegistry.register(readCrmInvoiceItems);
+toolRegistry.register(createCrmInvoiceItems);
+toolRegistry.register(updateCrmInvoiceItems);
+toolRegistry.register(readCrmInvoicePayments);
+toolRegistry.register(createCrmInvoicePayments);
+toolRegistry.register(updateCrmInvoicePayments);
+toolRegistry.register(readCrmInvoicesAuto);
+toolRegistry.register(createCrmInvoicesAuto);
+toolRegistry.register(updateCrmInvoicesAuto);
+toolRegistry.register(readCrmLeadsAuto);
+toolRegistry.register(createCrmLeadsAuto);
+toolRegistry.register(updateCrmLeadsAuto);
+toolRegistry.register(readCrmMessages);
+toolRegistry.register(createCrmMessages);
+toolRegistry.register(updateCrmMessages);
 
 // Register CRM read tools (CRITICAL FIX)
 import { listClientsTool, listLeadsTool, listSessionsTool, listInvoicesTool, countInvoicesTool, countSessionsTool } from "../tools/crm-read";

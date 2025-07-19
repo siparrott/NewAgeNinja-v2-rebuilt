@@ -1,48 +1,56 @@
-// Main agent runner
+// Main agent runner - Replit-style super-agent
 import { createAgentContext } from "./bootstrap";
 import { toolRegistry } from "./core/tools";
 import { runLLM } from "./llm/run";
 import { addMessageToHistory, getConversationHistory, updateSession } from "./core/memory";
+import { planStep } from "./core/plan";
 
-const SYSTEM_PROMPT = `You are {{STUDIO_NAME}}'s CRM Operations Assistant in TogNinja.
+const SYSTEM_PROMPT = `You are {{STUDIO_NAME}}'s Autonomous CRM Operations Agent - a Replit-style super-agent.
 
-POLICY
-- mode: {{POLICY_MODE}}
-- authorities: {{POLICY_AUTHORITIES_CSV}}
-- approval_limit: {{POLICY_AMOUNT_LIMIT}} {{STUDIO_CURRENCY}}
+OPERATIONAL BEHAVIOR
+🎯 For EVERY user request:
+1. SEARCH FIRST: Use read/search tools to ground yourself in current data
+2. PLAN: Determine the exact action needed (create, update, email, schedule)
+3. EXECUTE: Run the appropriate action tool with accurate data
+4. CONFIRM: Report success with specific details
 
-MEMORY & CONVERSATION CONTEXT
-You receive [[WORKING_MEMORY]] JSON. Use silently.  
-You have access to previous conversation history - acknowledge returning users and reference past interactions.
-Call the update_memory tool when goals / selections change.
+POLICY & AUTHORITIES
+- Mode: {{POLICY_MODE}}
+- Authorities: {{POLICY_AUTHORITIES_CSV}}
+- Approval limit: {{POLICY_AMOUNT_LIMIT}} {{STUDIO_CURRENCY}}
 
-SEARCH-FIRST BEHAVIOR
-• Before answering any user question about data ("how many…", "does X exist…", "send invoice…") you MUST call the most relevant read/count tool.
-    – If you know the exact table → call that read/count tool.
-    – If you are unsure which table contains the info → call global_search(term).
-• Never rely solely on working memory or previous messages for factual data.
-• After receiving tool output, decide next action (draft email, propose invoice, etc.) and respond.
+MEMORY & CONTEXT
+Working memory: [[WORKING_MEMORY]]
+- Track: current_goal, selected_client_id, last_action
+- Update memory when context changes
+- Reference conversation history for returning users
 
-TOOLS
-(list supplied automatically)
+AUTONOMOUS EXECUTION RULES
+✅ ALWAYS search before stating facts ("Simon has 3 invoices" → search first, then confirm)
+✅ CHAIN operations automatically ("Send Simon an email" → find Simon → compose → send)
+✅ Handle complex requests ("Update Maria's phone and send confirmation" → update → email)
+✅ Propose for approvals over {{POLICY_AMOUNT_LIMIT}} {{STUDIO_CURRENCY}}
+✅ Confirm every completed action with specific results
 
-RULES
-- Use the most specific tool.  
-- For writes needing approval, respond with \`proposed_actions\` JSON.  
-- Confirm success when tool returns status=created/updated.
+RESPONSE STYLE
+- Decisive, action-oriented
+- Founder-led tone, no-BS approach
+- Report exactly what was accomplished
+- Surface clear errors if tools fail
 
-Tone: founder-led, no-BS, Sabri Suby style.`;
+Tools available: Auto-generated for all CRM tables + manual tools`;
 
 export async function runAgent(studioId: string, userId: string, message: string): Promise<string> {
   try {
+    console.log('🤖 Replit-style super-agent starting for:', message);
+    
     // Create agent context
     const ctx = await createAgentContext(studioId, userId);
     
-    // Load conversation history
+    // Load conversation history and memory
     const conversationHistory = await getConversationHistory(ctx.chatSessionId);
-    
-    // Add greeting for new users and maintain context
     let enhancedMemory = { ...ctx.memory };
+    
     if (conversationHistory.length === 0) {
       enhancedMemory.userName = "business owner";
       enhancedMemory.context = { 
@@ -57,6 +65,51 @@ export async function runAgent(studioId: string, userId: string, message: string
         userName: enhancedMemory.userName || "business owner"
       };
     }
+
+    // REPLIT-STYLE PLANNING STEP - Simple autonomous execution
+    console.log('🧠 Auto-generated tools loaded, analyzing request for autonomous execution...');
+    
+    // Simple planning logic for autonomous execution
+    const searchTerms = ['find', 'search', 'look for', 'get', 'show me'];
+    const messageWords = message.toLowerCase();
+    
+    if (searchTerms.some(term => messageWords.includes(term))) {
+      console.log('🔍 Detected search request - executing autonomous search');
+      
+      // Extract search term from message
+      const searchTerm = message.replace(/find|search|look for|get|show me/gi, '').trim();
+      
+      if (searchTerm) {
+        try {
+          const globalSearchTool = toolRegistry.get('global_search');
+          if (globalSearchTool) {
+            const searchResult = await globalSearchTool.handler({ searchTerm }, ctx);
+            console.log('✅ Autonomous search executed successfully');
+            
+            // Store interaction in history
+            await addMessageToHistory(ctx.chatSessionId, {
+              role: "user", content: message, timestamp: new Date().toISOString()
+            });
+            
+            const summaryResponse = await generateExecutionSummary('global_search', { searchTerm }, searchResult, ctx);
+            
+            await addMessageToHistory(ctx.chatSessionId, {
+              role: "assistant", content: summaryResponse, timestamp: new Date().toISOString()
+            });
+            
+            enhancedMemory.last_action = 'global_search';
+            enhancedMemory.lastInteraction = new Date().toISOString();
+            await updateSession(ctx.chatSessionId, enhancedMemory);
+            
+            return summaryResponse;
+          }
+        } catch (error) {
+          console.error('❌ Autonomous search failed:', error);
+        }
+      }
+    }
+    
+    console.log('🔄 Proceeding with traditional agent approach...');
     
     // Prepare system prompt with enhanced context
     let systemPrompt = SYSTEM_PROMPT
@@ -166,5 +219,45 @@ export async function runAgent(studioId: string, userId: string, message: string
   } catch (error) {
     console.error("Agent execution error:", error);
     throw new Error(`Agent failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
+}
+
+/**
+ * Generate execution summary for autonomous tool operations
+ */
+async function generateExecutionSummary(toolName: string, args: any, result: any, ctx: any): Promise<string> {
+  if (!result.success) {
+    return `❌ ${toolName} failed: ${result.error || 'Unknown error'}`;
+  }
+
+  // Generate context-aware success messages
+  switch (toolName) {
+    case 'global_search':
+      const { clients = [], leads = [], invoices = [], sessions = [] } = result;
+      const total = clients.length + leads.length + invoices.length + sessions.length;
+      if (total === 0) {
+        return `🔍 No results found for "${args.searchTerm}". The database doesn't contain any matching records.`;
+      }
+      return `🔍 Found ${total} results for "${args.searchTerm}": ${clients.length} clients, ${leads.length} leads, ${invoices.length} invoices, ${sessions.length} sessions.`;
+      
+    case 'send_email':
+      return `📧 Email sent successfully to ${args.to} with subject "${args.subject}". Message delivered via SMTP.`;
+      
+    case 'create_crm_leads':
+    case 'createCrmLeads':
+      return `✅ New lead created: ${result.data?.name || 'Unknown'} (${result.data?.email || 'No email'}). Lead ID: ${result.data?.id}`;
+      
+    case 'update_crm_clients':
+    case 'updateCrmClients':
+      return `✅ Client updated successfully. Changes applied to ${result.data?.name || 'client'}.`;
+      
+    case 'read_crm_invoices':
+      return `📊 Found ${result.count || 0} invoices. ${result.data?.length ? `Latest: ${result.data[0].total || 'N/A'}` : ''}`;
+      
+    default:
+      if (result.data && result.count !== undefined) {
+        return `✅ ${toolName} completed successfully. Found ${result.count} records.`;
+      }
+      return `✅ ${toolName} completed successfully.`;
   }
 }
