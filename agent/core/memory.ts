@@ -4,6 +4,15 @@ export interface WorkingMemory {
   currentGoal?: string;
   preferences?: Record<string, any>;
   context?: Record<string, any>;
+  userName?: string;
+  lastInteraction?: string;
+  conversationCount?: number;
+}
+
+export interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+  timestamp: string;
 }
 
 export interface ChatSession {
@@ -11,6 +20,7 @@ export interface ChatSession {
   studio_id: string;
   user_id: string;
   memory_json: WorkingMemory;
+  conversation_history: ChatMessage[];
   created_at: string;
   updated_at: string;
 }
@@ -25,17 +35,24 @@ export async function loadSession(studioId: string, userId: string): Promise<Cha
   let session = sessions.get(sessionKey);
   
   if (!session) {
-    // Create new session
+    // Create new session with conversation tracking
     session = {
       id: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       studio_id: studioId,
       user_id: userId,
-      memory_json: {},
+      memory_json: {
+        conversationCount: 0,
+        lastInteraction: new Date().toISOString()
+      },
+      conversation_history: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     
     sessions.set(sessionKey, session);
+    console.log(`🧠 Created new session for user ${userId}: ${session.id}`);
+  } else {
+    console.log(`🧠 Loaded existing session for user ${userId}: ${session.id} (${session.conversation_history.length} messages)`);
   }
   
   return session;
@@ -45,10 +62,39 @@ export async function updateSession(sessionId: string, memory: WorkingMemory): P
   // Update session in storage
   for (const [key, session] of sessions.entries()) {
     if (session.id === sessionId) {
-      session.memory_json = { ...session.memory_json, ...memory };
+      session.memory_json = { 
+        ...session.memory_json, 
+        ...memory,
+        lastInteraction: new Date().toISOString(),
+        conversationCount: (session.memory_json.conversationCount || 0) + 1
+      };
       session.updated_at = new Date().toISOString();
       sessions.set(key, session);
       break;
     }
   }
+}
+
+export async function addMessageToHistory(sessionId: string, message: ChatMessage): Promise<void> {
+  for (const [key, session] of sessions.entries()) {
+    if (session.id === sessionId) {
+      session.conversation_history.push(message);
+      // Keep only last 20 messages to prevent token overflow
+      if (session.conversation_history.length > 20) {
+        session.conversation_history = session.conversation_history.slice(-20);
+      }
+      session.updated_at = new Date().toISOString();
+      sessions.set(key, session);
+      break;
+    }
+  }
+}
+
+export async function getConversationHistory(sessionId: string): Promise<ChatMessage[]> {
+  for (const [key, session] of sessions.entries()) {
+    if (session.id === sessionId) {
+      return session.conversation_history || [];
+    }
+  }
+  return [];
 }
