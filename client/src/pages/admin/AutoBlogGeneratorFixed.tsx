@@ -80,10 +80,12 @@ export default function AutoBlogGeneratorFixed() {
         formData.append(`images`, file);
       });
 
-      // Add other form data
+      // FIX #2: Add ALL form data properly
       formData.append('contentGuidance', contentGuidance);
+      formData.append('language', 'de'); // German language
+      formData.append('siteUrl', 'https://www.newagefotografie.com');
       formData.append('customSlug', customSlug);
-      formData.append('publishingOption', publishingOption);
+      formData.append('publishOption', publishingOption); // Note: using publishOption not publishingOption
 
       console.log('📤 Sending request to /api/autoblog/generate...');
       const startTime = Date.now();

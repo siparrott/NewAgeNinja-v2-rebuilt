@@ -5248,9 +5248,9 @@ Was interessiert Sie am meisten?`;
       const { AutoBlogOrchestrator } = await import('./autoblog');
       const { autoBlogInputSchema } = await import('./autoblog-schema');
       
-      // Validate input
+      // FIX #2: Parse ALL form data properly
       const input = autoBlogInputSchema.parse({
-        userPrompt: req.body.userPrompt,
+        contentGuidance: req.body.contentGuidance || req.body.userPrompt, // Support both field names
         language: req.body.language || 'de',
         siteUrl: req.body.siteUrl,
         publishOption: req.body.publishOption || 'draft',
@@ -5278,11 +5278,23 @@ Was interessiert Sie am meisten?`;
       // Initialize AutoBlog orchestrator
       const orchestrator = new AutoBlogOrchestrator();
       
-      // Generate blog post
+      // FIX #2: Pass ALL form data to orchestrator including images and guidance
+      console.log('🔧 FIX #2: Passing complete form data to AutoBlog orchestrator...');
+      console.log('Form data received:', {
+        contentGuidance: input.contentGuidance,
+        language: input.language,
+        siteUrl: input.siteUrl,
+        publishOption: input.publishOption,
+        customSlug: input.customSlug,
+        imageCount: req.files?.length || 0
+      });
+
+      // Generate blog post with complete form data
       const result = await orchestrator.generateAutoBlog(
         req.files as Express.Multer.File[],
         input,
-        authorId
+        authorId,
+        "e5dc81e8-7073-4041-8814-affb60f4ef6c" // pass studio ID for assistant lookup
       );
 
       res.json(result);

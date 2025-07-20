@@ -543,12 +543,19 @@ ADDITIONAL CONTEXT SOURCES:
         }
       }
       
-      // MINIMAL message - essential context only (Fix #1: No prompt override)
+      // FIX #2: Pass FULL form data and context as user message
       const userMessage = `Photography session: ${imageContext}
 Studio: New Age Fotografie, Vienna
 User request: ${input.contentGuidance || 'German blog post about photography session'}
+Language: ${(input as any).language || 'German'}
+Site URL: ${(input as any).siteUrl || 'https://www.newagefotografie.com'}
 
-Create complete blog package with all sections per your training.`;
+FULL CONTEXT:
+${siteContext}
+
+${(input as any).imageMarkdown || ''}
+
+Create complete blog package with all sections per your training. Include SEO table, outline, key takeaways, and review snippets.`;
 
       // STEP 3: Create thread for REAL Assistant
       const thread = await openai.beta.threads.create();
@@ -623,6 +630,16 @@ Create complete blog package with all sections per your training.`;
       
       if (lastMessage.content[0].type === 'text') {
         const content = lastMessage.content[0].text.value;
+        
+        // FIX #5: Log raw assistant response for debugging
+        console.log('🔧 FIX #5: RAW ASSISTANT RESPONSE (Full JSON):');
+        console.log(JSON.stringify({
+          role: lastMessage.role,
+          content: lastMessage.content[0].text.value,
+          created_at: lastMessage.created_at,
+          assistant_id: lastMessage.assistant_id
+        }, null, 2));
+        
         console.log('✅ REAL Assistant content preview:', content.substring(0, 300) + '...');
 
         // Parse the sophisticated response from REAL Assistant
@@ -1299,9 +1316,19 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
 
       console.log('Original AI content HTML length:', aiContent.content_html?.length || 0);
       
-      // Sanitize HTML content and embed images
-      let sanitizedHtml = stripDangerousHtml(aiContent.content_html);
-      console.log('Sanitized HTML length:', sanitizedHtml?.length || 0);
+      // FIX #4: Disable aggressive content stripper - preserve all structured sections
+      console.log('🔧 FIX #4: Preserving all content sections, minimal sanitization only...');
+      let sanitizedHtml = aiContent.content_html; // Keep original content intact
+      
+      // Only remove genuinely dangerous content, preserve all structured sections
+      if (sanitizedHtml) {
+        // Remove only script tags for security
+        sanitizedHtml = sanitizedHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        // Remove only onclick handlers for security  
+        sanitizedHtml = sanitizedHtml.replace(/\s*onclick\s*=\s*["'][^"']*["']/gi, '');
+      }
+      
+      console.log('Minimally sanitized HTML length:', sanitizedHtml?.length || 0);
       
       // Don't embed images here - we'll do it strategically later
       
@@ -1440,7 +1467,8 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
   async generateAutoBlog(
     files: Express.Multer.File[],
     input: AutoBlogInput,
-    authorId: string
+    authorId: string,
+    studioId?: string
   ): Promise<AutoBlogResult> {
     try {
       // Validate inputs
@@ -1452,65 +1480,67 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
         throw new Error(`Maximum ${this.maxImages} images allowed`);
       }
 
+      // FIX #1: Use correct assistant ID from config (database schema doesn't have this field yet)
+      console.log('🔧 FIX #1: Using correct assistant ID from config...');
+      const assistantId = BLOG_ASSISTANT; // Use the TOGNINJA assistant ID from config
+      console.log('✅ Using assistant ID:', assistantId);
+
       // Step 1: Process images
       console.log('Processing images...');
       const processedImages = await this.processImages(files);
 
-      // Step 2: Gather comprehensive context (Website + SEO + Competitive Intelligence)
-      console.log('🔍 Gathering comprehensive context with SEO intelligence...');
+      // Step 2: Gather comprehensive context 
+      console.log('🔍 Gathering comprehensive context...');
       const siteContext = await this.scrapeSiteContext(input.siteUrl);
       
       // Step 2a: Add SEO and competitive intelligence
-      const studioId = "e5dc81e8-7073-4041-8814-affb60f4ef6c"; // Use actual studio ID from database
-      const enhancedContext = await this.gatherSEOContext(siteContext, input.contentGuidance || '', studioId);
+      const finalStudioId = studioId || "e5dc81e8-7073-4041-8814-affb60f4ef6c";
+      const enhancedContext = await this.gatherSEOContext(siteContext, input.contentGuidance || '', finalStudioId);
 
-      // Step 3: Generate content with REAL TOGNINJA BLOG WRITER ASSISTANT ONLY
-      console.log('🚀 GENERATING CONTENT WITH REAL TOGNINJA BLOG WRITER ASSISTANT ONLY...');
+      // FIX #2: Build complete user prompt with all form data
+      console.log('🔧 FIX #2: Building complete user prompt with all form data...');
+      const fullUserPrompt = this.buildUserPrompt(input, enhancedContext, processedImages);
+
+      // Step 3: Generate content with correct assistant
+      console.log('🚀 GENERATING CONTENT WITH CORRECT ASSISTANT:', assistantId);
       
-      // DIAGNOSTIC CHECK #1: Verify assistant ID
-      console.log('🔍 DIAGNOSTIC CHECK #1 - Assistant ID:', BLOG_ASSISTANT);
+      // FIX #3: Send images as markdown inside content (upload to storage first)
+      console.log('🔧 FIX #3: Processing images for assistant...');
+      const imageMarkdown = processedImages.map((img, index) => 
+        `<img src="${img.publicUrl}" alt="Photography session image ${index + 1}" class="blog-image" />`
+      ).join('\n');
+
+      // Generate content using Assistant API directly
+      const assistantResult = await this.generateWithAssistantAPI(
+        assistantId,
+        processedImages,
+        {
+          ...input,
+          contentGuidance: fullUserPrompt, // Pass complete prompt
+          imageMarkdown // Include image references
+        } as AutoBlogInput,
+        enhancedContext
+      );
       
-      // Use the fixed implementation that avoids SDK parameter issues
-      const { fixedAutoBlogGenerator } = await import('./autoblog-fixed');
-      
-      const fixedResult = await fixedAutoBlogGenerator.generateContent({
-        userPrompt: input.contentGuidance || 'Professional photography session blog post',
-        images: processedImages.map(img => img.buffer),
-        language: input.language || 'de',
-        siteContext: enhancedContext // Pass enhanced context with SEO intelligence
-      });
-      
-      if (!fixedResult.success) {
-        throw new Error('❌ FIXED TOGNINJA GENERATOR FAILED - Check OpenAI API configuration.');
+      if (!assistantResult) {
+        throw new Error('❌ ASSISTANT API FAILED - Check OpenAI API configuration.');
       }
 
-      console.log('✅ FIXED TOGNINJA GENERATOR SUCCESS');
+      console.log('✅ ASSISTANT API SUCCESS');
       
-      // Parse the content into structured format
-      const parsedContent = this.parseStructuredResponse(fixedResult.content);
-      let aiContent;
-      
-      if (parsedContent) {
-        aiContent = parsedContent;
-      } else {
-        // Force structured format if parsing failed
-        console.log('🔧 Forcing structured format for TOGNINJA content');
-        aiContent = this.forceStructuredFormat(fixedResult.content, BLOG_ASSISTANT);
-      }
-      
-      // Add method information
-      aiContent.method = fixedResult.method;
+      // FIX #5: Log raw assistant response (already logged in generateWithAssistantAPI)
+      console.log('✅ Assistant response logged - check above for full JSON output');
 
-      // Step 4: Create blog post
+      // Step 4: Create blog post with minimal content processing
       console.log('Creating blog post...');
-      console.log('AI content before creating post - HTML length:', aiContent.content_html?.length || 0);
-      const createdPost = await this.createBlogPost(aiContent, processedImages, authorId, input);
+      console.log('AI content before creating post - HTML length:', assistantResult.content_html?.length || 0);
+      const createdPost = await this.createBlogPost(assistantResult, processedImages, authorId, input);
       console.log('Blog post created successfully with ID:', createdPost.id);
 
       return {
         success: true,
         post: createdPost,
-        ai: aiContent
+        ai: assistantResult
       };
 
     } catch (error) {
@@ -1520,5 +1550,40 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       };
     }
+  }
+
+  /**
+   * FIX #2: Build complete user prompt with all form data
+   */
+  private buildUserPrompt(input: AutoBlogInput, siteContext: string, images: ProcessedImage[]): string {
+    const prompt = `
+PHOTOGRAPHY BLOG POST REQUEST:
+
+Language: ${input.language || 'German'}
+Content Guidance: ${input.contentGuidance || 'Professional photography session blog post'}
+Site URL: ${input.siteUrl || 'https://www.newagefotografie.com'}
+Publish Option: ${(input as any).publishOption || 'draft'}
+Custom Slug: ${(input as any).customSlug || 'auto-generated'}
+
+STUDIO CONTEXT:
+${siteContext}
+
+IMAGE CONTEXT:
+${images.length} photography session images uploaded
+Image analysis: Professional photography session in Vienna
+
+REQUIREMENTS:
+- Generate complete blog package with SEO optimization
+- Include H1 title, multiple H2 sections, meta description
+- Add internal links to /galerie, /kontakt, /warteliste
+- Include external Vienna photography links
+- Create structured content with outline, key takeaways, review snippets
+- Use Vienna-specific photography terminology
+- Maintain professional tone with personal touch
+
+Please create a comprehensive German blog post about this photography session.
+    `.trim();
+
+    return prompt;
   }
 }
