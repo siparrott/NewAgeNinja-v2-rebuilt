@@ -73,6 +73,7 @@ import { emailSendTool } from "../tools/email-send";
 import { globalSearchTool } from "../tools/global-search";
 import { findEntityTool } from "../tools/find-entity";
 import { countInvoicesTool, countSessionsTool, countLeadsTool } from "../tools/count-tools";
+// import { galleryTools } from "../tools/gallery-management"; // Temporarily disabled due to import issues
 import { createSessionTool } from "../tools/create-session";
 
 // Register essential core tools only
@@ -103,6 +104,16 @@ toolRegistry.register(redeemVoucherTool);
 import { listTopClientsTool, getClientSegmentsTool } from "../tools/top-clients";
 toolRegistry.register(listTopClientsTool);
 toolRegistry.register(getClientSegmentsTool);
+
+// Add gallery management tools - temporarily disabled due to import issues
+// galleryTools.forEach(tool => {
+//   toolRegistry.register({
+//     name: tool.name,
+//     description: tool.description,
+//     parameters: tool.parameters,
+//     handler: async (params) => tool.execute(params)
+//   });
+// });
 
 // Minimal tool set to stay under token limit
 console.log(`📋 Registered ${toolRegistry.list().length} tools for CRM agent`);

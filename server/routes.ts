@@ -1905,6 +1905,198 @@ Bitte versuchen Sie es später noch einmal.`;
     }
   });
 
+  // ==================== GALLERY ROUTES ====================
+  app.get("/api/galleries", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { clientId, isPublic, limit = 20 } = req.query;
+      
+      let query = `
+        SELECT 
+          g.id,
+          g.title,
+          g.slug,
+          g.description,
+          g.cover_image,
+          g.is_public,
+          g.is_password_protected,
+          g.client_id,
+          g.created_at,
+          g.updated_at,
+          COALESCE(c.first_name || ' ' || c.last_name, 'Unknown Client') as client_name,
+          c.email as client_email,
+          COUNT(gi.id) as image_count
+        FROM galleries g
+        LEFT JOIN crm_clients c ON g.client_id = c.id
+        LEFT JOIN gallery_images gi ON g.id = gi.gallery_id
+      `;
+      
+      const conditions = [];
+      const values = [];
+      let paramIndex = 1;
+      
+      if (clientId) {
+        conditions.push(`g.client_id = $${paramIndex}`);
+        values.push(clientId);
+        paramIndex++;
+      }
+      
+      if (isPublic !== undefined) {
+        conditions.push(`g.is_public = $${paramIndex}`);
+        values.push(isPublic === 'true');
+        paramIndex++;
+      }
+      
+      if (conditions.length > 0) {
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+      
+      query += ` GROUP BY g.id, c.first_name, c.last_name, c.email`;
+      query += ` ORDER BY g.created_at DESC LIMIT $${paramIndex}`;
+      values.push(parseInt(limit as string));
+      
+      const galleries = await sql(query, values);
+      res.json(galleries);
+    } catch (error) {
+      console.error('Error fetching galleries:', error);
+      res.status(500).json({ error: "Failed to fetch galleries" });
+    }
+  });
+
+  app.post("/api/galleries", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { title, description, clientId, isPublic = true, isPasswordProtected = false, password, slug } = req.body;
+      
+      // Generate slug if not provided
+      const gallerySlug = slug || title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').trim('-');
+      
+      const query = `
+        INSERT INTO galleries (title, description, client_id, is_public, is_password_protected, password, slug, created_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING id, title, slug, description, is_public, created_at
+      `;
+      
+      const result = await sql(query, [
+        title,
+        description || null,
+        clientId,
+        isPublic,
+        isPasswordProtected,
+        password || null,
+        gallerySlug,
+        req.user?.id || null
+      ]);
+      
+      res.status(201).json(result[0]);
+    } catch (error) {
+      console.error('Error creating gallery:', error);
+      res.status(500).json({ error: "Failed to create gallery" });
+    }
+  });
+
+  app.put("/api/galleries/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const galleryId = req.params.id;
+      const updates = [];
+      const values = [];
+      let paramIndex = 1;
+      
+      const allowedFields = ['title', 'description', 'isPublic', 'isPasswordProtected', 'password', 'coverImage'];
+      
+      for (const [key, value] of Object.entries(req.body)) {
+        if (allowedFields.includes(key) && value !== undefined) {
+          const dbField = key === 'isPublic' ? 'is_public' : 
+                         key === 'isPasswordProtected' ? 'is_password_protected' :
+                         key === 'coverImage' ? 'cover_image' : key;
+          updates.push(`${dbField} = $${paramIndex}`);
+          values.push(value);
+          paramIndex++;
+        }
+      }
+      
+      if (updates.length === 0) {
+        return res.status(400).json({ error: "No valid updates provided" });
+      }
+      
+      updates.push(`updated_at = NOW()`);
+      
+      const query = `
+        UPDATE galleries 
+        SET ${updates.join(', ')}
+        WHERE id = $${paramIndex}
+        RETURNING id, title, slug, description, is_public, updated_at
+      `;
+      values.push(galleryId);
+      
+      const result = await sql(query, values);
+      
+      if (result.length === 0) {
+        return res.status(404).json({ error: "Gallery not found" });
+      }
+      
+      res.json(result[0]);
+    } catch (error) {
+      console.error('Error updating gallery:', error);
+      res.status(500).json({ error: "Failed to update gallery" });
+    }
+  });
+
+  app.delete("/api/galleries/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const galleryId = req.params.id;
+      
+      // Check if gallery exists
+      const galleryCheck = await sql(`SELECT title FROM galleries WHERE id = $1`, [galleryId]);
+      
+      if (galleryCheck.length === 0) {
+        return res.status(404).json({ error: "Gallery not found" });
+      }
+      
+      // Delete images first (cascade should handle this, but being explicit)
+      await sql(`DELETE FROM gallery_images WHERE gallery_id = $1`, [galleryId]);
+      
+      // Delete gallery
+      await sql(`DELETE FROM galleries WHERE id = $1`, [galleryId]);
+      
+      res.json({ 
+        success: true, 
+        message: `Gallery "${galleryCheck[0].title}" deleted successfully` 
+      });
+    } catch (error) {
+      console.error('Error deleting gallery:', error);
+      res.status(500).json({ error: "Failed to delete gallery" });
+    }
+  });
+
+  app.get("/api/galleries/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const galleryId = req.params.id;
+      
+      const query = `
+        SELECT 
+          g.*,
+          COALESCE(c.first_name || ' ' || c.last_name, 'Unknown Client') as client_name,
+          c.email as client_email,
+          COUNT(gi.id) as image_count
+        FROM galleries g
+        LEFT JOIN crm_clients c ON g.client_id = c.id
+        LEFT JOIN gallery_images gi ON g.id = gi.gallery_id
+        WHERE g.id = $1
+        GROUP BY g.id, c.first_name, c.last_name, c.email
+      `;
+      
+      const result = await sql(query, [galleryId]);
+      
+      if (result.length === 0) {
+        return res.status(404).json({ error: "Gallery not found" });
+      }
+      
+      res.json(result[0]);
+    } catch (error) {
+      console.error('Error fetching gallery:', error);
+      res.status(500).json({ error: "Failed to fetch gallery" });
+    }
+  });
+
   // ==================== INVOICE ROUTES ====================
   app.get("/api/crm/invoices", authenticateUser, async (req: Request, res: Response) => {
     try {

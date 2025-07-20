@@ -1,211 +1,358 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/admin/AdminLayout';
-import ComprehensiveGalleryGrid from '../../components/galleries/ComprehensiveGalleryGrid';
-import { Gallery } from '../../types/gallery';
-import { getGalleries, deleteGallery } from '../../lib/gallery-api';
-import { Plus, Search, Loader2, AlertCircle } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext';
+import { Button } from '../../components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
+import { Badge } from '../../components/ui/badge';
+import { Switch } from '../../components/ui/switch';
+import { Plus, Image, Users, Lock, Globe, Edit, Trash2, Eye, ExternalLink } from 'lucide-react';
+
+interface Gallery {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  cover_image: string;
+  is_public: boolean;
+  is_password_protected: boolean;
+  client_id: string;
+  client_name: string;
+  client_email: string;
+  image_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Client {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
 
 const GalleriesPage: React.FC = () => {
-  const { t } = useLanguage();
   const [galleries, setGalleries] = useState<Gallery[]>([]);
-  const [filteredGalleries, setFilteredGalleries] = useState<Gallery[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedClientFilter, setSelectedClientFilter] = useState<string>('');
+  
+  // Create gallery form state
+  const [newGallery, setNewGallery] = useState({
+    title: '',
+    description: '',
+    clientId: '',
+    isPublic: true,
+    isPasswordProtected: false,
+    password: ''
+  });
 
   useEffect(() => {
     fetchGalleries();
-  }, []);
-
-  useEffect(() => {
-    filterGalleries();
-  }, [galleries, searchTerm]);
+    fetchClients();
+  }, [selectedClientFilter]);
 
   const fetchGalleries = async () => {
     try {
       setLoading(true);
-      const data = await getGalleries();
-      setGalleries(data);
-    } catch (err) {
-      // console.error removed
-      setError('Failed to load galleries. Please try again.');
+      const params = new URLSearchParams();
+      if (selectedClientFilter) {
+        params.append('clientId', selectedClientFilter);
+      }
+      
+      const response = await fetch(`/api/galleries?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setGalleries(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch galleries:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filterGalleries = () => {
-    if (!searchTerm.trim()) {
-      setFilteredGalleries(galleries);
-      return;
+  const fetchClients = async () => {
+    try {
+      const response = await fetch('/api/crm/clients');
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch clients:', error);
     }
-    
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    const filtered = galleries.filter(gallery => 
-      gallery.title.toLowerCase().includes(lowerSearchTerm)
-    );
-    
-    setFilteredGalleries(filtered);
-  };  const handleDeleteGallery = async (id: string) => {
-    // console.log removed
-    
-    const gallery = galleries.find(g => g.id === id);
-    const galleryTitle = gallery?.title || 'this gallery';
-    
-    // console.log removed
-    
-    if (!confirm(`Are you sure you want to delete "${galleryTitle}"? This action cannot be undone.`)) {
-      // console.log removed
-      return;
-    }
+  };
 
-    // console.log removed
+  const handleCreateGallery = async () => {
+    try {
+      const response = await fetch('/api/galleries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newGallery),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGalleries([data, ...galleries]);
+        setIsCreateModalOpen(false);
+        setNewGallery({
+          title: '',
+          description: '',
+          clientId: '',
+          isPublic: true,
+          isPasswordProtected: false,
+          password: ''
+        });
+      }
+    } catch (error) {
+      console.error('Failed to create gallery:', error);
+    }
+  };
+
+  const handleDeleteGallery = async (galleryId: string, galleryTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${galleryTitle}"? This will also delete all images in this gallery.`)) {
+      return;
+    }
 
     try {
-      setLoading(true);
-      // console.log removed
-      await deleteGallery(id);
-      // console.log removed
-      
-      // Update local state
-      setGalleries(prevGalleries => {
-        const updated = prevGalleries.filter(gallery => gallery.id !== id);
-        // console.log removed
-        return updated;
+      const response = await fetch(`/api/galleries/${galleryId}`, {
+        method: 'DELETE',
       });
-      
-      // Clear any existing errors
-      setError(null);
-      setLoading(false);
-      // console.log removed
-    } catch (err) {
-      // console.error removed
-      setError(`Failed to delete gallery: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      setLoading(false);
+
+      if (response.ok) {
+        setGalleries(galleries.filter(g => g.id !== galleryId));
+      }
+    } catch (error) {
+      console.error('Failed to delete gallery:', error);
     }
   };
 
-  const handleShareGallery = (gallery: Gallery) => {
-    const url = `${window.location.origin}/gallery/${gallery.slug}`;
-    
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url)
-        .then(() => {
-          alert('Gallery link copied to clipboard!');
-        })
-        .catch(err => {
-          // console.error removed
-          prompt('Copy this link:', url);
-        });
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('de-AT', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getStatusBadge = (gallery: Gallery) => {
+    if (gallery.is_password_protected) {
+      return <Badge variant="secondary"><Lock className="w-3 h-3 mr-1" />Protected</Badge>;
+    } else if (gallery.is_public) {
+      return <Badge variant="default"><Globe className="w-3 h-3 mr-1" />Public</Badge>;
     } else {
-      prompt('Copy this link:', url);
+      return <Badge variant="outline"><Eye className="w-3 h-3 mr-1" />Private</Badge>;
     }
   };
 
-  const handleEditGallery = (gallery: Gallery) => {
-    // Use React Router navigation instead of window.location.href
-    window.location.assign(`/admin/galleries/${gallery.id}/edit`);
-  };
-
-  const handleDuplicateGallery = (gallery: Gallery) => {
-    // For now, alert the user that duplication is coming soon
-    alert('Gallery duplication feature coming soon!');
-  };
-
-  const handlePreviewGallery = (gallery: Gallery) => {
-    // Open gallery in a new tab
-    window.open(`/gallery/${gallery.slug}`, '_blank');
-  };
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="container mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-600">Loading galleries...</div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}        <div className="flex items-center justify-between">
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">{t('page.galleries')}</h1>
-            <p className="text-gray-600">{t('gallery.create')}</p>
+            <h1 className="text-3xl font-bold">Client Galleries</h1>
+            <p className="text-gray-600 mt-1">Manage photo galleries for client delivery</p>
           </div>
-          <Link
-            to="/admin/galleries/new"
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
-          >
-            <Plus size={20} className="mr-2" />
-            {t('gallery.create')}
-          </Link>
+          
+          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Gallery
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create New Gallery</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Gallery Title</label>
+                  <Input
+                    value={newGallery.title}
+                    onChange={(e) => setNewGallery({ ...newGallery, title: e.target.value })}
+                    placeholder="e.g., Smith Family Session - December 2024"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Client</label>
+                  <select
+                    value={newGallery.clientId}
+                    onChange={(e) => setNewGallery({ ...newGallery, clientId: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select a client</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.first_name} {client.last_name} ({client.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <Textarea
+                    value={newGallery.description}
+                    onChange={(e) => setNewGallery({ ...newGallery, description: e.target.value })}
+                    placeholder="Optional description or notes about this gallery"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Public Gallery</label>
+                    <Switch
+                      checked={newGallery.isPublic}
+                      onCheckedChange={(checked) => setNewGallery({ ...newGallery, isPublic: checked })}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Password Protected</label>
+                    <Switch
+                      checked={newGallery.isPasswordProtected}
+                      onCheckedChange={(checked) => setNewGallery({ ...newGallery, isPasswordProtected: checked })}
+                    />
+                  </div>
+                  
+                  {newGallery.isPasswordProtected && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Password</label>
+                      <Input
+                        type="password"
+                        value={newGallery.password}
+                        onChange={(e) => setNewGallery({ ...newGallery, password: e.target.value })}
+                        placeholder="Enter gallery password"
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={handleCreateGallery} className="flex-1">
+                    Create Gallery
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        {/* Search */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>            <input
-              type="text"
-              placeholder={t('action.search') + ' galleries...'}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-            />
+        {/* Filters */}
+        <div className="mb-6">
+          <div className="flex gap-4 items-center">
+            <div>
+              <label className="block text-sm font-medium mb-1">Filter by Client</label>
+              <select
+                value={selectedClientFilter}
+                onChange={(e) => setSelectedClientFilter(e.target.value)}
+                className="p-2 border border-gray-300 rounded-md"
+              >
+                <option value="">All Clients</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.first_name} {client.last_name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
-            <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 mr-2" />
-            <span>{error}</span>
-          </div>
-        )}
 
         {/* Galleries Grid */}
-        {loading ? (          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
-            <span className="ml-2 text-gray-600">{t('message.loading')}</span>
-          </div>        ) : filteredGalleries.length > 0 ? (
-          <ComprehensiveGalleryGrid 
-            galleries={filteredGalleries}
-            isAdmin={true}
-            onDelete={handleDeleteGallery}
-            onShare={handleShareGallery}
-            onEdit={handleEditGallery}
-            onDuplicate={handleDuplicateGallery}
-            onPreview={handlePreviewGallery}
-          />
+        {galleries.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {galleries.map((gallery) => (
+              <Card key={gallery.id} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg line-clamp-2">{gallery.title}</CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {gallery.client_name} • {formatDate(gallery.created_at)}
+                      </p>
+                    </div>
+                    {getStatusBadge(gallery)}
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  {gallery.description && (
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      {gallery.description}
+                    </p>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <div className="flex items-center">
+                      <Image className="w-4 h-4 mr-1" />
+                      {gallery.image_count} images
+                    </div>
+                    <div className="flex items-center">
+                      <Users className="w-4 h-4 mr-1" />
+                      {gallery.client_name}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1">
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      View
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => handleDeleteGallery(gallery.id, gallery.title)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <div className="mx-auto h-12 w-12 text-gray-400">
-              <svg
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>            <h3 className="mt-2 text-sm font-medium text-gray-900">{t('message.noResults')}</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm
-                ? t('message.noResults')
-                : t('gallery.noImages')}
+          <div className="text-center py-12">
+            <Image className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No galleries found</h3>
+            <p className="text-gray-600 mb-4">
+              {selectedClientFilter 
+                ? "No galleries found for the selected client." 
+                : "Create your first client gallery to organize and deliver photos."
+              }
             </p>
-            {!searchTerm && (
-              <div className="mt-6">
-                <Link
-                  to="/admin/galleries/new"
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                >
-                  <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                  {t('gallery.create')}
-                </Link>
-              </div>
-            )}
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create First Gallery
+            </Button>
           </div>
         )}
       </div>

@@ -32,7 +32,7 @@ import ClientFormPage from './pages/admin/ClientFormPage';
 import AdminClientsImportPage from './pages/admin/ClientsImportPage';
 import ImportLogsPage from './pages/admin/ImportLogsPage';
 import HighValueClientsPage from './pages/admin/HighValueClientsPage';
-import AdminGalleriesPage from './pages/admin/GalleriesPage';
+import GalleriesPage from './pages/admin/GalleriesPage';
 import AdminGalleryCreatePage from './pages/admin/GalleryCreatePage';
 import AdminGalleryEditPage from './pages/admin/GalleryEditPage';
 import AdminGalleryDetailPage from './pages/admin/GalleryDetailPage';
@@ -203,9 +203,9 @@ function App() {
                   path="/admin/galleries"
                   element={
                     <ProtectedRoute>
-                      <AdminGalleriesPage />
+                      <GalleriesPage />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
                 <Route 
                   path="/admin/galleries/new" 
