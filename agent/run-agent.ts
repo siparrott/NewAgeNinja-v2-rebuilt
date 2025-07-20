@@ -107,11 +107,16 @@ export async function runAgent(studioId: string, userId: string, message: string
     // REPLIT-STYLE PLANNING STEP - Simple autonomous execution
     console.log('🧠 Auto-generated tools loaded, analyzing request for autonomous execution...');
     
-    // Simple planning logic for autonomous execution
+    // Enhanced autonomous execution for multi-step CRM tasks
     const searchTerms = ['find', 'search', 'look for', 'get', 'show me'];
+    const emailTerms = ['email', 'send', 'message', 'write to', 'contact'];
     const messageWords = message.toLowerCase();
     
-    if (searchTerms.some(term => messageWords.includes(term))) {
+    // Detect combined search + action requests like "find Simon and send him an email"
+    const hasSearch = searchTerms.some(term => messageWords.includes(term));
+    const hasEmail = emailTerms.some(term => messageWords.includes(term));
+    
+    if (hasSearch) {
       console.log('🔍 Detected search request - executing autonomous search');
       
       // Use the cleanQuery function for consistent query cleaning
@@ -130,26 +135,68 @@ export async function runAgent(studioId: string, userId: string, message: string
               role: "user", content: message, timestamp: new Date().toISOString()
             });
             
-            // Generate execution summary
-            let summaryResponse = `✅ Found ${searchResult.leads?.length || 0} leads`;
-            if (searchResult.leads && searchResult.leads.length > 0) {
-              summaryResponse += `:\n`;
-              searchResult.leads.forEach(lead => {
-                summaryResponse += `• ${lead.name} (${lead.email})\n`;
+            // If this is a search + email request, continue with email action
+            if (hasEmail && searchResult.leads && searchResult.leads.length > 0) {
+              console.log('🔄 Continuing with autonomous email action...');
+              
+              const lead = searchResult.leads[0]; // Use first found lead
+              let responseText = `✅ Found ${lead.name} (${lead.email}). `;
+              
+              // Check if user specified email content
+              const emailContentMatch = message.match(/email.*?(?:saying|about|regarding|with|message|content)[\s:]*"?([^"]*)"?/i);
+              const emailContent = emailContentMatch ? emailContentMatch[1] : null;
+              
+              if (emailContent) {
+                // Send email with specified content
+                try {
+                  const emailTool = toolRegistry.get('send_email');
+                  if (emailTool) {
+                    await emailTool.handler({
+                      to: lead.email,
+                      subject: `Message from New Age Fotografie`,
+                      text: emailContent
+                    }, ctx);
+                    responseText += `📧 Email sent successfully with your message: "${emailContent}"`;
+                  }
+                } catch (emailError) {
+                  responseText += `❌ Email sending failed: ${emailError.message}`;
+                }
+              } else {
+                // Ask for email content to complete the task
+                responseText += `What would you like me to say in the email to ${lead.name}?`;
+              }
+              
+              await addMessageToHistory(ctx.chatSessionId, {
+                role: "assistant", content: responseText, timestamp: new Date().toISOString()
               });
+              
+              enhancedMemory.last_action = hasEmail ? 'search_and_email' : 'global_search';
+              enhancedMemory.lastInteraction = new Date().toISOString();
+              await updateSession(ctx.chatSessionId, enhancedMemory);
+              
+              return responseText;
             } else {
-              summaryResponse += ` for "${searchTerm}"`;
+              // Just search result
+              let summaryResponse = `✅ Found ${searchResult.leads?.length || 0} leads`;
+              if (searchResult.leads && searchResult.leads.length > 0) {
+                summaryResponse += `:\n`;
+                searchResult.leads.forEach(lead => {
+                  summaryResponse += `• ${lead.name} (${lead.email})\n`;
+                });
+              } else {
+                summaryResponse += ` for "${searchTerm}"`;
+              }
+              
+              await addMessageToHistory(ctx.chatSessionId, {
+                role: "assistant", content: summaryResponse, timestamp: new Date().toISOString()
+              });
+              
+              enhancedMemory.last_action = 'global_search';
+              enhancedMemory.lastInteraction = new Date().toISOString();
+              await updateSession(ctx.chatSessionId, enhancedMemory);
+              
+              return summaryResponse;
             }
-            
-            await addMessageToHistory(ctx.chatSessionId, {
-              role: "assistant", content: summaryResponse, timestamp: new Date().toISOString()
-            });
-            
-            enhancedMemory.last_action = 'global_search';
-            enhancedMemory.lastInteraction = new Date().toISOString();
-            await updateSession(ctx.chatSessionId, enhancedMemory);
-            
-            return summaryResponse;
           }
         } catch (error) {
           console.error('❌ Autonomous search failed:', error);
@@ -254,8 +301,20 @@ export async function runAgent(studioId: string, userId: string, message: string
           });
           
           if (successfulResults.length > 0) {
-            // Let the LLM provide proper response instead of generic "task completed"
-            finalResponse = "Please provide a detailed response based on the tool results.";
+            // Generate intelligent response based on the task context
+            const hasEmailRequest = message.toLowerCase().includes('email') || message.toLowerCase().includes('send');
+            const hasInvoiceRequest = message.toLowerCase().includes('invoice');
+            const hasSearchRequest = message.toLowerCase().includes('find') || message.toLowerCase().includes('search');
+            
+            if (hasEmailRequest) {
+              finalResponse = "I found the contact information. Please confirm if you'd like me to send the email, or specify the email content you want to send.";
+            } else if (hasInvoiceRequest) {
+              finalResponse = "I found the client information. Please specify the invoice details (items, amounts) you'd like me to create.";
+            } else if (hasSearchRequest) {
+              finalResponse = "I successfully found the requested information. What would you like me to do next with this data?";
+            } else {
+              finalResponse = "Task completed successfully. The requested information has been retrieved.";
+            }
           } else {
             finalResponse = "No successful results to report.";
           }

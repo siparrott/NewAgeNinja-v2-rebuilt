@@ -122,7 +122,19 @@ async function planWithChatCompletion(userMessage: string, catalog: any, ctx: Ag
       throw new Error("No plan generated");
     }
     
-    const plan: Plan = JSON.parse(planContent);
+    // Try to parse the plan with better error handling
+    let plan: Plan;
+    try {
+      plan = JSON.parse(planContent);
+    } catch (parseError) {
+      console.error('❌ JSON parsing failed. Raw content:', planContent);
+      throw new Error(`Invalid JSON response from planner: ${parseError.message}`);
+    }
+    
+    // Validate required fields
+    if (!plan.steps || !Array.isArray(plan.steps)) {
+      throw new Error('Invalid plan format: missing or invalid steps array');
+    }
     
     // Check if plan needs confirmation
     const needsConfirmation = plan.risk_level === 'high' || 

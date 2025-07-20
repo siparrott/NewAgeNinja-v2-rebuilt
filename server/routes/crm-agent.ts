@@ -17,12 +17,18 @@ router.post("/api/crm/agent/chat", async (req, res) => {
     }
 
     // Check if this is a complex request that should use the planner
-    const complexRequestKeywords = ['then', 'and', 'after', 'multiple', 'all', 'batch'];
+    const complexRequestKeywords = ['then', 'and', 'after', 'multiple', 'all', 'batch', 'also', 'first', 'next'];
     const shouldUsePlanner = usePlanner || complexRequestKeywords.some(keyword => 
       message.toLowerCase().includes(keyword)
     );
+    
+    // For email and invoice requests, always use planner for better tool coordination
+    const emailInvoiceKeywords = ['send', 'email', 'invoice', 'create', 'schedule'];
+    const hasEmailInvoiceRequest = emailInvoiceKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword)
+    );
 
-    if (shouldUsePlanner) {
+    if (shouldUsePlanner || hasEmailInvoiceRequest) {
       const ctx = await createAgentContext(studioId, userId);
       const planResult = await planAndExecute(message, ctx);
       
@@ -45,9 +51,14 @@ router.post("/api/crm/agent/chat", async (req, res) => {
       }
       
       if (planResult.error) {
-        return res.status(400).json({
-          type: "plan_error",
-          error: planResult.error,
+        console.log(`⚠️ Planner failed, falling back to standard agent: ${planResult.error}`);
+        // Fall back to standard agent if planner fails
+        const response = await runAgent(studioId, userId, message);
+        return res.json({ 
+          type: "agent_response",
+          response,
+          status: "success",
+          fallback: true,
           timestamp: new Date().toISOString()
         });
       }
