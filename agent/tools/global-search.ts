@@ -16,11 +16,23 @@ export const globalSearchTool = {
   handler: async (args: any, ctx: AgentCtx) => {
     requireAuthority(ctx, "READ_CLIENTS");
     
-    const term = (args.term || args.searchTerm || '').toLowerCase();
+    // FIX: Extract actual search terms from full sentences
+    let rawTerm = args.term || args.searchTerm || '';
+    
+    // Split on punctuation and take first meaningful part
+    const terms = rawTerm.split(/[,.;?!]/)[0].trim();
+    
+    // Remove common helper words that interfere with search
+    const cleanedTerm = terms
+      .replace(/^(find|search|get|show|tell me about|look for|locate)\s+/i, '')
+      .replace(/\s+(for me|please)$/i, '')
+      .trim();
+    
+    const term = (cleanedTerm || rawTerm).toLowerCase();
     if (!term) {
       throw new Error('Search term is required');
     }
-    console.log(`🔍 global_search: Searching for "${term}"`);
+    console.log(`🔍 global_search: Searching for "${term}" (cleaned from: "${rawTerm}")`);
     
     try {
       // Use the same connection approach as other CRM tools

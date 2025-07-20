@@ -1,0 +1,74 @@
+The conversation shows two separate issues rather than a single “missing-feature” problem:
+
+Symptom	What it really means	Quick fix
+“✅ Found 0 leads for …” even though the agent just told you there are 8 leads	The assistant is calling global_search() (or your wrapper) with the full user sentence instead of the actual search term. That returns no rows, so it reports “0 leads”.	1. In agent/tools/global_search.ts (or equivalent), split the query:
+const terms = args.query.split(/[,.;?!]/)[0].trim();
+Pass terms to Supabase ilike '%...'.
+“Task completed … Tools executed: 1” but nothing happened	The tool the assistant executed is probably find_entity (returns a JSON array). Because you haven’t built an email-draft step afterwards, the agent thinks it “completed”.	Create a chaining tool or add logic in your create_email_draft tool to follow “find” automatically.
+Better: in the system‐prompt “Rules” add: “After find_entity, if user requested email, call draft_email with the found entity’s id.”
+
+Tiny patch to get useful drafts
+ts
+Kopieren
+Bearbeiten
+// agent/tools/draft_email.ts   (new, very simple)
+export const draftEmail = {
+  name: "draft_email",
+  description: "Compose but do NOT send an email to a lead or client.",
+  parameters: z.object({
+    lead_id: z.string(),
+    subject: z.string(),
+    body_markdown: z.string()
+  }),
+  handler: async (a, ctx) => {
+    await sb.from("email_outbox").insert({
+      studio_id: ctx.studioId,
+      to_email: (await sb.from("crm_leads").select("email").eq("id", a.lead_id).single()).data.email,
+      subject: a.subject,
+      body_html: marked(a.body_markdown),
+      status: "draft"
+    });
+    return { status: "draft_saved" };
+  }
+};
+Prompt tweak
+Add this to TOOLS list:
+
+vbnet
+Kopieren
+Bearbeiten
+- draft_email – compose (but do not send) an email to a lead/client and store as draft
+And extend the rule:
+
+sql
+Kopieren
+Bearbeiten
+If user asks to “send” or “show draft”, run:
+1. find_entity(name/email)
+2. draft_email(lead_id=…, subject, body_markdown)
+Return the body_markdown back to the user if they ask to see it.
+Now the dialogue will look like:
+
+yaml
+Kopieren
+Bearbeiten
+U: send Simon Parrott an email …
+A: Sure — here’s the draft for your approval:
+---
+Subject: Appointment confirmation …
+Body: Hi Simon, …
+Why the agent keeps saying “✅ Task completed”
+Your toolHandler wrapper logs that line whenever the promise resolves. It doesn’t check the semantic success. Either:
+
+Remove that green-tick log, or
+
+Change it to only log success if output.status !== 'error'.
+
+TL;DR
+Fix search queries so they don’t include the whole sentence.
+
+Add a draft_email tool and update the system prompt so the assistant chains “find → draft”.
+
+Optionally gate “send_email” behind user confirmation (“Send it now? yes/no”).
+
+You don’t need to rebuild the entire agent—only tighten those two behaviors and you’ll get the expected “Here’s the draft” response.

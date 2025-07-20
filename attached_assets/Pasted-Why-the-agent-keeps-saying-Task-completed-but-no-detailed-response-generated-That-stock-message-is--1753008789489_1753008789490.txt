@@ -1,0 +1,77 @@
+Why the agent keeps saying
+Task completed but no detailed response generated
+
+That stock message is printed by your tool-runner wrapper whenever a tool finishes without returning JSON (or returns null).
+In this case the assistant tried to run create_invoice_from_skus (or whatever you named it) but:
+
+It passed two SKUs, e.g. DIGI-10 and CANVAS-A4.
+
+Your print_products / invoice_catalog table does not contain those SKUs → the handler threw
+
+pgsql
+Kopieren
+Bearbeiten
+Error: no valid products found
+The wrapper suppressed the error, resolved the promise, and logged the generic line.
+
+So the invoice was never created, and consequently no PDF attached to the e-mail.
+
+How to fix in under 10 minutes
+Step	What to do	Replit file(s)
+1 — Seed the price list	sql INSERT INTO print_products (studio_id, sku, name, base_price) VALUES ('<studioId>','DIGI-10','10 digital images',199), ('<studioId>','CANVAS-A4','Canvas 21×30 cm', 79);	supabase SQL editor
+2 — Improve tool error	In agent/tools/create_invoice.ts add
+if (items.length === 0) throw new Error("invoice:no_products");	/agent/tools/create_invoice.ts
+3 — Return the invoice row	At the end of the handler: return {status:"created", invoice_id: row.id, total: row.total};	same file
+4 — Show draft e-mail	Add / enable the draft_email tool (as in previous message).	agent/tools/draft_email.ts
+5 — Chain automatically	In system-prompt Rules:
+\ If user asks to send an invoice: 1) find_entity → 2) create_invoice → 3) draft_email with invoice link.	system.ts
+6 — Surface errors	In agent/core/runTools.ts replace the catch-suppress with:
+console.error(err); return {status:"error", message: err.message};	agent/core/runTools.ts
+
+Quick smoke test (Replit shell)
+bash
+Kopieren
+Bearbeiten
+# simulate the agent call
+node -e "
+  import('./agent/tools/create_invoice.js').then(async t=>{
+    const out = await t.createInvoice.handler({
+      client_id:'SIMON-UUID',
+      items:[{sku:'DIGI-10',qty:1},{sku:'CANVAS-A4',qty:1}]
+    },{studioId:'<studioId>'});
+    console.log(out);
+  });
+"
+You should see:
+
+css
+Kopieren
+Bearbeiten
+{ status: 'created', invoice_id: 'INV-…', total: 278 }
+Then trigger:
+
+swift
+Kopieren
+Bearbeiten
+curl -X POST /api/crm/agent/chat -d '{"message":"send Simon Parrott an invoice for 10 digital images and an A4 canvas"}'
+Assistant reply should now include:
+
+vbnet
+Kopieren
+Bearbeiten
+Here’s the draft—let me know if I should send it:
+Subject: Your Invoice – 10 Digital Images + A4 Canvas
+Body: Hi Simon, …
+Total: €278
+If you don’t want to use SKUs
+Add a create_custom_invoice tool that accepts {client_id,total,description}.
+That keeps “price list” optional but you lose automatic margin control / reporting.
+
+Bottom line
+Seed the missing SKUs once.
+
+Make the tool throw explicit errors and return structured output.
+
+Chain find → create_invoice → draft_email, so the user always sees the draft and can hit “Send”.
+
+Do those six edits, redeploy, and the “Task completed” ghosts will disappear.

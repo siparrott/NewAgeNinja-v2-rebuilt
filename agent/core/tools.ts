@@ -70,6 +70,7 @@ export const toolRegistry = new ToolRegistry();
 
 // Import required tools
 import { emailSendTool } from "../tools/email-send";
+import { draftEmailTool } from "../tools/draft-email";
 import { globalSearchTool } from "../tools/global-search";
 import { findEntityTool } from "../tools/find-entity";
 import { countInvoicesTool, countSessionsTool, countLeadsTool } from "../tools/count-tools";
@@ -89,6 +90,7 @@ import { customerPortalManagementTools } from "../tools/customer-portal-manageme
 
 // Register essential core tools only
 toolRegistry.register(emailSendTool);
+toolRegistry.register(draftEmailTool);
 toolRegistry.register(globalSearchTool);
 toolRegistry.register(findEntityTool);
 toolRegistry.register(countInvoicesTool);

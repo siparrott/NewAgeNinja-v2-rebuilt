@@ -35,10 +35,14 @@ DATA GROUNDING PROTOCOL
 
 AUTONOMOUS EXECUTION RULES
 ✅ ALWAYS search before stating facts ("Simon has 3 invoices" → search first, then confirm)
-✅ CHAIN operations automatically ("Send Simon an email" → find Simon → compose → send)
+✅ CHAIN operations automatically ("Send Simon an email" → find Simon → draft email → show draft)
 ✅ Handle complex requests ("Update Maria's phone and send confirmation" → update → email)
+✅ EMAIL WORKFLOW: When user asks to "send" or "draft" email: 
+   1. find_entity(name/email) to get contact ID
+   2. draft_email(lead_id=..., subject, body_markdown) to compose 
+   3. Show the draft content to user for approval
 ✅ Propose for approvals over {{POLICY_AMOUNT_LIMIT}} {{STUDIO_CURRENCY}}
-✅ Confirm every completed action with specific results
+✅ Confirm every completed action with specific details
 
 RESPONSE STYLE
 - Decisive, action-oriented
@@ -58,6 +62,12 @@ PRICING & INVOICING RULES:
 - Standard SKUs: DIGI-10, CANVAS-A4, PRINTS-20, FAMILY-BASIC, NEWBORN-DELUXE
 - If SKU not found, use custom_amount and custom_label parameters
 - Always include client_id from search results
+
+KEY TOOLS AVAILABLE:
+- draft_email: Compose (but do NOT send) an email to a lead/client and store as draft
+- send_email: Actually send an email (use only after draft approval)  
+- find_entity: Find specific client/lead by name or email
+- global_search: Search across all CRM data
 
 Tools available: Auto-generated for all CRM tables + manual tools`;
 
@@ -229,12 +239,21 @@ export async function runAgent(studioId: string, userId: string, message: string
         if (errText) {
           finalResponse = `Error details: ${errText}. Please check the requirements and try again.`;
         } else {
-          // Generate response based on successful tool execution
-          const successfulResults = toolResults.filter(r => r.content && !r.content.includes("error"));
+          // Only log success if we have actual semantic success, not just tool execution
+          const successfulResults = toolResults.filter(r => {
+            try {
+              const parsed = JSON.parse(r.content);
+              return parsed.ok === true && parsed.data;
+            } catch {
+              return false;
+            }
+          });
+          
           if (successfulResults.length > 0) {
-            finalResponse = `✅ Task completed successfully. Tools executed: ${successfulResults.length}`;
+            // Let the LLM provide proper response instead of generic "task completed"
+            finalResponse = "Please provide a detailed response based on the tool results.";
           } else {
-            finalResponse = "Task completed but no detailed response generated.";
+            finalResponse = "No successful results to report.";
           }
         }
       }
