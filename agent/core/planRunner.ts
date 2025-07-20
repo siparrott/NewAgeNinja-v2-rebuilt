@@ -148,7 +148,7 @@ export async function executePlan(plan: Plan, ctx: AgentCtx): Promise<PlanResult
     const outputs = [];
     
     for (const step of plan.steps) {
-      const tool = toolRegistry[step.tool];
+      const tool = toolRegistry.get(step.tool);
       
       if (!tool) {
         throw new Error(`Tool '${step.tool}' not found in registry`);

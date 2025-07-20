@@ -16,7 +16,7 @@ export const draftEmailTool: ToolHandler = {
     try {
       // Get the lead/client email address
       const leadResult = await sql`
-        SELECT email, first_name, last_name 
+        SELECT email, name 
         FROM crm_leads 
         WHERE id = ${args.lead_id}
         LIMIT 1
