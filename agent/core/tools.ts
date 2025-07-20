@@ -99,6 +99,11 @@ toolRegistry.register(sellVoucherTool);
 toolRegistry.register(readVoucherSalesTool);
 toolRegistry.register(redeemVoucherTool);
 
+// Add top clients tools
+import { listTopClientsTool, getClientSegmentsTool } from "../tools/top-clients";
+toolRegistry.register(listTopClientsTool);
+toolRegistry.register(getClientSegmentsTool);
+
 // Minimal tool set to stay under token limit
 console.log(`📋 Registered ${toolRegistry.list().length} tools for CRM agent`);
 

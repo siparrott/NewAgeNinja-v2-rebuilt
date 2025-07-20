@@ -19,7 +19,8 @@ export async function createAgentContext(studioId: string, userId: string): Prom
       "UPDATE_CLIENT", 
       "SEND_EMAIL",
       "DRAFT_EMAIL",
-      "MANAGE_VOUCHERS"
+      "MANAGE_VOUCHERS",
+      "READ_TOP_CLIENTS"
     ],
     approval_required_over_amount: 500,
     email_send_mode: "auto",
