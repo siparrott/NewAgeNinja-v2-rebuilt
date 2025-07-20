@@ -84,6 +84,10 @@ toolRegistry.register(countSessionsTool);
 toolRegistry.register(countLeadsTool);
 toolRegistry.register(createSessionTool);
 
+// Add reply email tool for lead follow-up
+import { replyEmailTool } from "../tools/reply-email";
+toolRegistry.register(replyEmailTool);
+
 // Minimal tool set to stay under token limit
 console.log(`📋 Registered ${toolRegistry.list().length} tools for CRM agent`);
 

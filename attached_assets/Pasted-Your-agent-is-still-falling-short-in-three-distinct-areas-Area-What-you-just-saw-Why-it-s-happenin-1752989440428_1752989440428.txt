@@ -1,0 +1,81 @@
+Your agent is still falling short in three distinct areas:
+
+Area	What you just saw	Why it’s happening	Concrete fix
+Short-term memory	“Do you remember our last chat?” → No.	You never persist agent_chat_sessions.thread_id and you aren’t injecting yesterday’s summary when the user reconnects.	1. Store the thread ID in the session row.
+2. On a new browser session load the last thread + last_summary and call injectMemoryMessage.
+Booking creation	Agent lists Matt, promises to book, then says “I currently don't have the capability to add bookings.”	Either
+• create_photography_session tool isn’t in toolRegistry, or
+• policy lacks "CREATE_SESSION", or
+• planner never calls the tool because the name is wrong.	a) Add/verify the tool (see Snippet C from my previous reply).
+b) update ai_policies set authorities = array_append(authorities,'CREATE_SESSION').
+Task execution loop	“reply to Simon Parrott …” → generic failure	Your router still passes entire sentences (“reply to simon parrott new lead…”) so find_entity fails; plus you don’t have a draft_reply_email tool.	i) Run the cleanQuery pre-processor (Snippet A).
+ii) Create reply_email tool that accepts {lead_id, template} and internally calls send_email.
+
+Quick patches you can apply now
+1 Persist and reload the thread
+ts
+Kopieren
+Bearbeiten
+// on first user message
+const session = await loadOrCreateSession(studioId, userId);
+if (!session.thread_id || session.thread_id === "__PENDING__") {
+  const thread = await openai.beta.threads.create({});
+  await sb.from("agent_chat_sessions").update({ thread_id: thread.id }).eq("id", session.id);
+  session.thread_id = thread.id;
+}
+
+// always append: memory + new user message
+injectMemoryMessage(messages, session.memory_json);
+messages.push({ role:"user", content:userInput });
+2 Booking tool registration
+ts
+Kopieren
+Bearbeiten
+toolRegistry["create_photography_session"] = createSession;   // after auto tools
+await openai.beta.assistants.update(assistantId, { tools: toolDefs(toolRegistry) });
+3 Policy authority
+sql
+Kopieren
+Bearbeiten
+update ai_policies
+set authorities = array_append(authorities,'CREATE_SESSION')
+where studio_id = 'YOUR-STUDIO-UUID';
+4 Reply-email tool
+ts
+Kopieren
+Bearbeiten
+export const replyEmail = {
+  name: "reply_email",
+  description: "Reply to a lead or client using a canned template.",
+  parameters: z.object({ entity_id: z.string(), template: z.string() }),
+  handler: async (a, ctx) => {
+    const lead = await sb.from("crm_leads").select("email").eq("id", a.entity_id).single();
+    const html = renderTemplate(a.template, lead); // your template engine
+    return await sendEmail({ to: lead.email, subject: "Re: Your enquiry", html });
+  }
+};
+Add to prompt:
+
+pgsql
+Kopieren
+Bearbeiten
+To answer or follow-up with a lead, call reply_email(entity_id, template).
+After the patches
+Test script
+
+Ask memory
+
+sql
+Kopieren
+Bearbeiten
+User: remind me I like Saturday mornings.
+User (new chat next day): what preference did I tell you?
+→ should answer Saturday mornings
+Book an appointment
+
+pgsql
+Kopieren
+Bearbeiten
+User: create a booking for Matt Pantling next Sat 09:00.
+→ creates session row, returns session id, then offers to send confirmation email
+If any step still fails, note the exact console error (it will now name the tool & DB error) and we can fix that one in isolation.

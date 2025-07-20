@@ -43,8 +43,15 @@ AUTONOMOUS EXECUTION RULES
 RESPONSE STYLE
 - Decisive, action-oriented
 - Founder-led tone, no-BS approach
-- Report exactly what was accomplished
+- Report exactly what was accomplished with specific details
+- Always describe successful tool executions with results
+- For booking creation: "Created session [ID] for [Client] on [Date]"
+- For email replies: "Sent reply to [Name] at [Email] with subject [Subject]"
 - Surface clear errors if tools fail
+
+AVAILABLE TOOLS FOR BOOKING/SCHEDULING:
+- create_photography_session: Creates new appointments for clients
+- Use this tool when user wants to schedule, book, or create appointments
 
 Tools available: Auto-generated for all CRM tables + manual tools`;
 
@@ -52,7 +59,10 @@ export async function runAgent(studioId: string, userId: string, message: string
   try {
     console.log('🤖 Replit-style super-agent starting for:', message);
     
-    // Create agent context
+    // Create agent context with session persistence
+    const { loadOrCreateSession, injectMemoryMessage } = await import('./core/memory');
+    const session = await loadOrCreateSession(studioId, userId);
+    
     const ctx = await createAgentContext(studioId, userId);
     
     // Load conversation history and memory
@@ -142,16 +152,21 @@ export async function runAgent(studioId: string, userId: string, message: string
     // Get available tools
     const tools = toolRegistry.getOpenAITools();
 
-    // Prepare messages with conversation history
+    // Prepare messages with conversation history and memory injection
     const messages = [
       { role: "system", content: systemPrompt },
       // Add recent conversation history (last 10 messages)
       ...conversationHistory.slice(-10).map(msg => ({
         role: msg.role,
         content: msg.content
-      })),
-      { role: "user", content: message }
+      }))
     ];
+    
+    // Inject memory context
+    injectMemoryMessage(messages, enhancedMemory);
+    
+    // Add current user message
+    messages.push({ role: "user", content: message });
 
     // Store user message in conversation history
     await addMessageToHistory(ctx.chatSessionId, {
@@ -208,7 +223,13 @@ export async function runAgent(studioId: string, userId: string, message: string
         if (errText) {
           finalResponse = `Error details: ${errText}. Please check the requirements and try again.`;
         } else {
-          finalResponse = "Task completed but no detailed response generated.";
+          // Generate response based on successful tool execution
+          const successfulResults = toolResults.filter(r => r.content && !r.content.includes("error"));
+          if (successfulResults.length > 0) {
+            finalResponse = `✅ Task completed successfully. Tools executed: ${successfulResults.length}`;
+          } else {
+            finalResponse = "Task completed but no detailed response generated.";
+          }
         }
       }
       
