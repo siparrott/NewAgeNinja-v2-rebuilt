@@ -1,0 +1,120 @@
+Yes — update the Instructions block once so the Assistant “knows” about the 49 new tools you just added and the new guard-rail authorities. If you leave the old v2 prompt in place it will:
+
+never call the freshly-created tools (create_voucher_product, send_campaign, list_top_clients, …)
+
+still claim it can’t do things you just scaffolded
+
+possibly throw “tool not found” errors if the model tries the old names.
+
+What actually needs changing
+Section in the prompt	Why update	What to do
+TOOLS list	You went from 14 ⇒ 63 tools. The list must match assistant.tools exactly or the model won’t call them.	Replace the hard-coded lines with a generated block (see code snippet).
+Guard-Rails placeholders	You added ~14 new authority strings (MANAGE_VOUCHERS, READ_DASHBOARD, etc.).	Make sure they appear in {{POLICY_AUTHORITIES_CSV}} when you render the prompt.
+Search-first policy	Now includes new read/count tools (read_voucher_sales, generate_report, …).	Add one sentence: “If the question concerns vouchers, reports, galleries, etc., call the matching read_/count_ tool first.”
+Error handling	Many new tools will return pricing:not_found, wizard:busy, etc.	List those error prefixes so the model knows to ask a follow-up.
+
+One-time automated rewrite
+Put this tiny script in agent/scripts/update-system-prompt.ts and run it.
+It autogenerates the TOOLS block straight from your registry:
+
+ts
+Kopieren
+Bearbeiten
+import { toolRegistry } from "../core/tools";
+import { writeFileSync } from "fs";
+import path from "path";
+
+const toolLines = Object.values(toolRegistry)
+  .map(t => `- ${t.name} – ${t.description.split("\n")[0]}`)
+  .sort()
+  .join("\n");
+
+const promptTemplate = `
+🔧 CRM SUPER-AGENT — v3 ({{DATE}})
+
+YOU ARE …
+… (all previous sections stay the same) …
+
+TOOLS (v3, auto-generated)
+${toolLines}
+(Use the JSON schema supplied by the runtime; do not invent parameters.)
+
+GUARD-RAILS
+mode={{POLICY_MODE}}
+authorities={{POLICY_AUTHORITIES_CSV}}
+approval_limit={{POLICY_AMOUNT_LIMIT}} {{STUDIO_CURRENCY}}
+
+… rest unchanged …
+`;
+
+writeFileSync(
+  path.join(process.cwd(), "prompts", "system-updated.txt"),
+  promptTemplate.trimStart()
+);
+console.log("📝  prompts/system-updated.txt generated");
+Then:
+
+bash
+Kopieren
+Bearbeiten
+npx ts-node agent/scripts/update-system-prompt.ts
+node agent/update-assistant.js <studioId>  # pushes new prompt + tools
+npm run start
+Smoke test after update
+sql
+Kopieren
+Bearbeiten
+User: create a voucher product "Platinum Gift" €300
+→ should call create_voucher_product
+User: send a campaign about summer minis
+→ create_email_campaign then send_campaign
+User: list top clients this quarter
+→ list_top_clients
+If the Assistant now calls those new tools (check logs) and no “tool not found” appears, the prompt update is good.
+
+TL;DR
+Regenerate the TOOLS section + shove the new authority CSV into the prompt, rerun update-assistant.js, restart. Then your brand-new 63-tool agent will actually use everything you built.
+
+
+
+
+
+
+
+
+
+Quellen
+Du:
+so does this mean i should update the prompt in open ai or add these updates directly into replit
+
+
+ChatGPT:
+Update it in Replit and let your update-assistant script push the change to OpenAI—don’t edit the prompt manually in the OpenAI dashboard.
+
+Why
+Your prompt lives in the repository (prompts/system*.txt).
+
+agent/update-assistant.js (or whatever script you already use) sends that file’s contents plus the current tool list to the Assistants API.
+
+Running the script keeps code, tools array, and Instructions perfectly in sync. If you hand-edit the prompt inside the OpenAI UI, the repo and the live assistant will drift out of alignment the next time you deploy.
+
+Quick steps
+Generate the new prompt file (e.g. prompts/system-updated.txt) with the auto-built TOOLS list, as shown in the previous answer.
+
+Commit the file and point your update script to it or overwrite the old prompt file.
+
+In Replit shell:
+
+bash
+Kopieren
+Bearbeiten
+npx ts-node agent/scripts/update-system-prompt.ts   # (if you added that helper)
+node agent/update-assistant.js <yourStudioId>       # pushes prompt + tools
+npm run start                                       # restart server
+Verify in logs:
+
+scss
+Kopieren
+Bearbeiten
+Assistant updated ✔ (63 tools, prompt v3)
+Now every deployment will re-upload the same prompt automatically, so the OpenAI side always matches the code in Replit.
