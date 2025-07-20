@@ -1,5 +1,5 @@
 // agent/core/self-planner.ts - Self-Planning CRM Agent with JSON step planning
-import { toolRegistry } from '../tools/registry';
+import { toolRegistry } from '../core/tools';
 import { AgentCtx } from '../types';
 import OpenAI from 'openai';
 
@@ -92,7 +92,7 @@ export class SelfPlanningAgent {
 
   // Introspect all available tools and their capabilities
   async introspectToolCatalog(): Promise<string> {
-    const tools = Array.from(this.availableTools.entries());
+    const tools = Array.from(this.availableTools);
     
     const toolDescriptions = tools.map(([name, tool]) => {
       return `${name}: ${tool.description || 'No description'}`;
@@ -189,7 +189,7 @@ Now create the execution plan for: "${userRequest}"
 
     // Validate that all specified tools exist
     plan.steps.forEach((step, index) => {
-      if (!this.availableTools.has(step.tool)) {
+      if (!this.availableTools.get(step.tool)) {
         console.warn(`⚠️ Step ${index + 1} uses unknown tool: ${step.tool}`);
         // Replace with closest available tool or mark as blocked
       }
@@ -273,5 +273,3 @@ Now create the execution plan for: "${userRequest}"
     return result;
   }
 }
-
-export { SelfPlanningAgent };
