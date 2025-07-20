@@ -72,6 +72,7 @@ export const toolRegistry = new ToolRegistry();
 import { emailSendTool } from "../tools/email-send";
 import { draftEmailTool } from "../tools/draft-email";
 import { emailAnalysisTool, monitorEmailsTool, autoReplyTool } from "../tools/email-monitoring";
+import { websiteScraperTool } from "../tools/website-scraper";
 import { globalSearchTool } from "../tools/global-search";
 import { findEntityTool } from "../tools/find-entity";
 import { countInvoicesTool, countSessionsTool, countLeadsTool } from "../tools/count-tools";
@@ -111,6 +112,14 @@ toolRegistry.register({
   description: autoReplyTool.description,
   parameters: autoReplyTool.parameters,
   handler: async (params) => autoReplyTool.execute(params)
+});
+
+// Register website analysis tool
+toolRegistry.register({
+  name: websiteScraperTool.name,
+  description: websiteScraperTool.description,
+  parameters: websiteScraperTool.parameters,
+  handler: async (params) => websiteScraperTool.execute(params)
 });
 toolRegistry.register(globalSearchTool);
 toolRegistry.register(findEntityTool);

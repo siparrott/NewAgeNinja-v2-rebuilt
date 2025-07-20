@@ -13,29 +13,22 @@ export const kbSearchTool = {
   }),
   handler: async (args: any, ctx: AgentCtx) => {
     try {
-      // Generate embedding for search query
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const embeddingResponse = await openai.embeddings.create({
-        model: "text-embedding-ada-002",
-        input: args.query
-      });
+      // Skip embedding for now and go straight to text search
       
-      const queryEmbedding = embeddingResponse.data[0].embedding;
-      
-      // Search knowledge base using vector similarity
+      // Search knowledge base using simple text search (fallback for now)
       const results = await sql`
         SELECT 
           id, 
           title, 
-          SUBSTRING(body_markdown, 1, 240) || CASE 
-            WHEN LENGTH(body_markdown) > 240 THEN ' ...' 
+          SUBSTRING(content, 1, 240) || CASE 
+            WHEN LENGTH(content) > 240 THEN ' ...' 
             ELSE '' 
           END as snippet,
-          category,
-          (embedding <=> ${JSON.stringify(queryEmbedding)}::vector) as distance
-        FROM crm_kb 
-        WHERE studio_id = ${ctx.studioId}
-        ORDER BY embedding <=> ${JSON.stringify(queryEmbedding)}::vector
+          category
+        FROM knowledge_base 
+        WHERE is_active = true
+          AND (title ILIKE ${'%' + args.query + '%'} OR content ILIKE ${'%' + args.query + '%'})
+        ORDER BY title
         LIMIT 3
       `;
       
@@ -65,10 +58,10 @@ export const kbSearchTool = {
       // Fallback to basic text search if vector search fails
       try {
         const fallbackResults = await sql`
-          SELECT id, title, SUBSTRING(body_markdown, 1, 240) as snippet, category
-          FROM crm_kb 
-          WHERE studio_id = ${ctx.studioId}
-            AND (title ILIKE ${'%' + args.query + '%'} OR body_markdown ILIKE ${'%' + args.query + '%'})
+          SELECT id, title, SUBSTRING(content, 1, 240) as snippet, category
+          FROM knowledge_base 
+          WHERE is_active = true
+            AND (title ILIKE ${'%' + args.query + '%'} OR content ILIKE ${'%' + args.query + '%'})
           LIMIT 3
         `;
         
