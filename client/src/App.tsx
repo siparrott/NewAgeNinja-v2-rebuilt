@@ -33,6 +33,7 @@ import AdminClientsImportPage from './pages/admin/ClientsImportPage';
 import ImportLogsPage from './pages/admin/ImportLogsPage';
 import HighValueClientsPage from './pages/admin/HighValueClientsPage';
 import GalleriesPage from './pages/admin/GalleriesPage';
+import AdminGalleriesPage from './pages/admin/AdminGalleriesPage';
 import AdminGalleryCreatePage from './pages/admin/GalleryCreatePage';
 import AdminGalleryEditPage from './pages/admin/GalleryEditPage';
 import AdminGalleryDetailPage from './pages/admin/GalleryDetailPage';
