@@ -21,7 +21,16 @@ export async function createAgentContext(studioId: string, userId: string): Prom
       "DRAFT_EMAIL",
       "MANAGE_VOUCHERS",
       "READ_TOP_CLIENTS",
-      "MANAGE_GALLERIES"
+      "MANAGE_GALLERIES",
+      "MANAGE_CALENDAR",
+      "MANAGE_FILES",
+      "MANAGE_BLOG",
+      "MANAGE_EMAIL_CAMPAIGNS",
+      "MANAGE_QUESTIONNAIRES",
+      "MANAGE_REPORTS",
+      "MANAGE_SYSTEM",
+      "MANAGE_INTEGRATIONS",
+      "MANAGE_AUTOMATION"
     ],
     approval_required_over_amount: 500,
     email_send_mode: "auto",

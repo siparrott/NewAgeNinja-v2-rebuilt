@@ -74,7 +74,15 @@ import { globalSearchTool } from "../tools/global-search";
 import { findEntityTool } from "../tools/find-entity";
 import { countInvoicesTool, countSessionsTool, countLeadsTool } from "../tools/count-tools";
 // import { galleryTools } from "../tools/gallery-management"; // Temporarily disabled due to import issues
-import { createSessionTool } from "../tools/create-session";
+import { calendarTools } from "../tools/calendar-management";
+import { fileManagementTools } from "../tools/file-management";
+import { blogManagementTools } from "../tools/blog-management";
+import { emailCampaignTools } from "../tools/email-campaign-management";
+import { questionnaireTools } from "../tools/questionnaire-management";
+import { reportsAnalyticsTools } from "../tools/reports-analytics";
+import { systemAdministrationTools } from "../tools/system-administration";
+import { integrationManagementTools } from "../tools/integration-management";
+import { automationManagementTools } from "../tools/automation-management";
 
 // Register essential core tools only
 toolRegistry.register(emailSendTool);
@@ -83,7 +91,95 @@ toolRegistry.register(findEntityTool);
 toolRegistry.register(countInvoicesTool);
 toolRegistry.register(countSessionsTool);
 toolRegistry.register(countLeadsTool);
-toolRegistry.register(createSessionTool);
+// Register calendar management tools
+calendarTools.forEach(tool => {
+  toolRegistry.register({
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    handler: async (params) => tool.execute(params)
+  });
+});
+
+// Register file management tools
+fileManagementTools.forEach(tool => {
+  toolRegistry.register({
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    handler: async (params) => tool.execute(params)
+  });
+});
+
+// Register blog management tools
+blogManagementTools.forEach(tool => {
+  toolRegistry.register({
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    handler: async (params) => tool.execute(params)
+  });
+});
+
+// Register email campaign management tools
+emailCampaignTools.forEach(tool => {
+  toolRegistry.register({
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    handler: async (params) => tool.execute(params)
+  });
+});
+
+// Register questionnaire management tools
+questionnaireTools.forEach(tool => {
+  toolRegistry.register({
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    handler: async (params) => tool.execute(params)
+  });
+});
+
+// Register reports & analytics tools
+reportsAnalyticsTools.forEach(tool => {
+  toolRegistry.register({
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    handler: async (params) => tool.execute(params)
+  });
+});
+
+// Register system administration tools
+systemAdministrationTools.forEach(tool => {
+  toolRegistry.register({
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    handler: async (params) => tool.execute(params)
+  });
+});
+
+// Register integration management tools
+integrationManagementTools.forEach(tool => {
+  toolRegistry.register({
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    handler: async (params) => tool.execute(params)
+  });
+});
+
+// Register automation management tools
+automationManagementTools.forEach(tool => {
+  toolRegistry.register({
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    handler: async (params) => tool.execute(params)
+  });
+});
 
 // Add reply email tool for lead follow-up
 import { replyEmailTool } from "../tools/reply-email";

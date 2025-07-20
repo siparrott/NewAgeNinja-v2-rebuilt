@@ -34,6 +34,7 @@ import ImportLogsPage from './pages/admin/ImportLogsPage';
 import HighValueClientsPage from './pages/admin/HighValueClientsPage';
 import GalleriesPage from './pages/admin/GalleriesPage';
 import AdminGalleriesPage from './pages/admin/AdminGalleriesPage';
+import CalendarPage from './pages/admin/CalendarPage';
 import AdminGalleryCreatePage from './pages/admin/GalleryCreatePage';
 import AdminGalleryEditPage from './pages/admin/GalleryEditPage';
 import AdminGalleryDetailPage from './pages/admin/GalleryDetailPage';
@@ -224,11 +225,12 @@ function App() {
                     </ProtectedRoute>
                   } 
                 />
+
                 <Route 
-                  path="/admin/galleries/:id" 
+                  path="/admin/calendar" 
                   element={
                     <ProtectedRoute>
-                      <AdminGalleryDetailPage />
+                      <CalendarPage />
                     </ProtectedRoute>
                   } 
                 />

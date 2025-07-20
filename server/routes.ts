@@ -1346,6 +1346,278 @@ Bitte versuchen Sie es später noch einmal.`;
     }
   });
 
+  // ==================== CALENDAR ROUTES ====================
+  
+  // GET /api/calendar/sessions - Retrieve calendar sessions with filters
+  app.get("/api/calendar/sessions", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { 
+        start_date, 
+        end_date, 
+        client_id, 
+        session_type, 
+        status,
+        limit = '20'
+      } = req.query;
+
+      let query = `
+        SELECT 
+          ps.id,
+          ps.client_id,
+          ps.session_type,
+          ps.session_date,
+          ps.duration_minutes,
+          ps.location,
+          ps.notes,
+          ps.price,
+          ps.deposit_required,
+          ps.equipment_needed,
+          ps.status,
+          ps.created_at,
+          ps.updated_at,
+          c.first_name || ' ' || c.last_name as client_name,
+          c.email as client_email,
+          c.phone as client_phone
+        FROM photography_sessions ps
+        LEFT JOIN crm_clients c ON ps.client_id = c.id::text
+      `;
+
+      const conditions = [];
+      const values = [];
+      let paramIndex = 1;
+
+      if (start_date) {
+        conditions.push(`ps.session_date >= $${paramIndex}`);
+        values.push(start_date);
+        paramIndex++;
+      }
+      
+      if (end_date) {
+        conditions.push(`ps.session_date <= $${paramIndex}`);
+        values.push(end_date);
+        paramIndex++;
+      }
+      
+      if (client_id) {
+        conditions.push(`ps.client_id = $${paramIndex}`);
+        values.push(client_id);
+        paramIndex++;
+      }
+      
+      if (session_type) {
+        conditions.push(`ps.session_type = $${paramIndex}`);
+        values.push(session_type);
+        paramIndex++;
+      }
+      
+      if (status) {
+        conditions.push(`ps.status = $${paramIndex}`);
+        values.push(status);
+        paramIndex++;
+      }
+
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+
+      query += ` ORDER BY ps.session_date ASC LIMIT $${paramIndex}`;
+      values.push(parseInt(limit as string));
+
+      const sessions = await sql(query, values);
+      res.json(sessions);
+    } catch (error) {
+      console.error('Failed to fetch calendar sessions:', error);
+      res.status(500).json({ error: 'Failed to fetch calendar sessions' });
+    }
+  });
+
+  // POST /api/calendar/sessions - Create new photography session
+  app.post("/api/calendar/sessions", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const {
+        client_id,
+        session_type,
+        session_date,
+        duration_minutes = 120,
+        location,
+        notes = '',
+        price = 0,
+        deposit_required = 0,
+        equipment_needed = []
+      } = req.body;
+
+      // Validate required fields
+      if (!client_id || !session_type || !session_date || !location) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: client_id, session_type, session_date, location' 
+        });
+      }
+
+      const sessionId = crypto.randomUUID();
+      
+      await sql`
+        INSERT INTO photography_sessions (
+          id, client_id, session_type, session_date, duration_minutes,
+          location, notes, price, deposit_required, equipment_needed,
+          status, created_at, updated_at
+        ) VALUES (
+          ${sessionId}, ${client_id}, ${session_type}, ${session_date},
+          ${duration_minutes}, ${location}, ${notes}, ${price}, 
+          ${deposit_required}, ${JSON.stringify(equipment_needed)}, 
+          'CONFIRMED', NOW(), NOW()
+        )
+      `;
+
+      const [newSession] = await sql`
+        SELECT * FROM photography_sessions WHERE id = ${sessionId}
+      `;
+
+      res.status(201).json(newSession);
+    } catch (error) {
+      console.error('Failed to create photography session:', error);
+      res.status(500).json({ error: 'Failed to create photography session' });
+    }
+  });
+
+  // PUT /api/calendar/sessions/:id - Update photography session
+  app.put("/api/calendar/sessions/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const updateData = { ...req.body };
+      
+      // Remove ID from update data
+      delete updateData.id;
+      
+      const updates = [];
+      const values = [];
+      let paramIndex = 1;
+
+      Object.keys(updateData).forEach(key => {
+        if (key !== 'id') {
+          updates.push(`${key} = $${paramIndex}`);
+          values.push(updateData[key]);
+          paramIndex++;
+        }
+      });
+
+      if (updates.length === 0) {
+        return res.status(400).json({ error: 'No update data provided' });
+      }
+
+      updates.push('updated_at = NOW()');
+      values.push(id);
+
+      const query = `
+        UPDATE photography_sessions 
+        SET ${updates.join(', ')}
+        WHERE id = $${paramIndex}
+        RETURNING *
+      `;
+
+      const result = await sql(query, values);
+
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+
+      res.json(result[0]);
+    } catch (error) {
+      console.error('Failed to update photography session:', error);
+      res.status(500).json({ error: 'Failed to update photography session' });
+    }
+  });
+
+  // DELETE /api/calendar/sessions/:id - Cancel photography session
+  app.delete("/api/calendar/sessions/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { cancellation_reason, refund_amount = 0 } = req.body;
+
+      const result = await sql`
+        UPDATE photography_sessions
+        SET status = 'CANCELLED', 
+            cancellation_reason = ${cancellation_reason}, 
+            refund_amount = ${refund_amount},
+            updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `;
+
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+
+      res.json({ 
+        message: 'Session cancelled successfully', 
+        session: result[0] 
+      });
+    } catch (error) {
+      console.error('Failed to cancel photography session:', error);
+      res.status(500).json({ error: 'Failed to cancel photography session' });
+    }
+  });
+
+  // GET /api/calendar/availability - Check calendar availability
+  app.get("/api/calendar/availability", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { date, duration_minutes = '120' } = req.query;
+
+      if (!date) {
+        return res.status(400).json({ error: 'Date parameter is required' });
+      }
+
+      // Get existing sessions for the date
+      const existingSessions = await sql`
+        SELECT session_date, duration_minutes
+        FROM photography_sessions
+        WHERE DATE(session_date) = ${date}
+        AND status IN ('CONFIRMED', 'PENDING')
+        ORDER BY session_date
+      `;
+
+      // Define working hours (9 AM to 6 PM)
+      const workingHours = { start: 9, end: 18 };
+      const requestedDuration = parseInt(duration_minutes as string);
+
+      const availableSlots = [];
+      const bookedSlots = existingSessions.map(session => {
+        const sessionDate = new Date(session.session_date);
+        return {
+          start: sessionDate.getHours() + (sessionDate.getMinutes() / 60),
+          end: sessionDate.getHours() + (sessionDate.getMinutes() / 60) + (session.duration_minutes / 60)
+        };
+      });
+
+      // Check each hour slot
+      for (let hour = workingHours.start; hour < workingHours.end; hour++) {
+        const slotEnd = hour + (requestedDuration / 60);
+        
+        if (slotEnd <= workingHours.end) {
+          const isAvailable = !bookedSlots.some(booked => 
+            (hour < booked.end && slotEnd > booked.start)
+          );
+
+          if (isAvailable) {
+            availableSlots.push({
+              time: `${hour.toString().padStart(2, '0')}:00`,
+              duration: `${requestedDuration} minutes`
+            });
+          }
+        }
+      }
+
+      res.json({
+        date,
+        total_available_slots: availableSlots.length,
+        available_slots: availableSlots,
+        booked_sessions: existingSessions.length
+      });
+    } catch (error) {
+      console.error('Failed to check calendar availability:', error);
+      res.status(500).json({ error: 'Failed to check calendar availability' });
+    }
+  });
+
   // ==================== GALLERY ROUTES ====================
   app.get("/api/galleries", async (req: Request, res: Response) => {
     try {

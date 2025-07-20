@@ -1,0 +1,48 @@
+🧪 **FULL-STACK QA PASS – TogNinja CRM Agent**
+
+You have finished scaffolding all 14 sidebar features.  
+Now run an automated verification pass and give me a single report that answers:
+
+| Feature | Tool(s) implemented | DB table present | Jest handler test | Assistant chat test | Status |
+
+where *Status* is ✅ pass / ⚠️ partial / ❌ fail.
+
+────────────────────────────
+🔬  TEST PLAN
+────────────────────────────
+1. **Unit-level tool tests**  
+   • For each tool in `agent/tools` create `tests/<toolName>.test.ts`.  
+   • Insert a dummy `studio_id`, seed any required rows, call the handler, expect a sane object (id, status:"created", etc.).  
+   • Use Supabase service-role key from `.env`.
+
+2. **Assistant integration tests**  
+   • Spin up the local dev server (`npm run dev` in a child process).  
+   • POST synthetic chat prompts to `POST /api/crm/agent/chat` with `{studioId:"test-studio", userId:"tester", message:"<command>"}`.  
+   • For each feature execute at least one realistic prompt, e.g.  
+     “create a voucher product ‘Gold Gift’ €200”  
+     “sell voucher ‘Gold Gift’ to Matt Pantling”  
+     “list top clients”  
+   • Capture the assistant JSON, assert `"assistant_response.includes('invoice')"` or similar.
+
+3. **Database schema check**  
+   • For every feature confirm table exists via `pg_catalog.pg_tables`.  
+   • Mark column mismatches as ⚠️ partial.
+
+4. **Coverage summary**  
+   • Output % of sidebar items that passed.
+
+────────────────────────────
+🛠️  IMPLEMENTATION NOTES
+────────────────────────────
+• Use Jest + ts-node for tests (`npx jest`).  
+• Place helper utilities in `tests/_utils.ts`.  
+• Use `@supabase/supabase-js` for live DB queries.  
+• Run migrations (`npm run migrate`) before tests.  
+• Use `supertest` to hit the Express/Vite API while dev server running.  
+• Clean up inserted rows in `afterAll`.
+
+────────────────────────────
+📑  OUTPUT FORMAT
+────────────────────────────
+After tests finish, print exactly:
+
