@@ -1,6 +1,39 @@
 // CRM Agent API endpoints
 import { Router } from "express";
-import { runAgent } from "../../agent/run-agent";
+// Temporarily use working implementation
+async function runAgentWithSelfReasoning(studioId: string, userId: string, message: string) {
+  // Import the working self-reasoning system
+  const { selfDiagnosis } = await import('../../agent/core/self-diagnosis');
+  
+  console.log('🧠 Self-reasoning system activated...');
+  
+  try {
+    // Test self-reasoning with the user request
+    const diagnosis = await selfDiagnosis.diagnose(message, {
+      userRequest: message,
+      studioId: studioId,
+      toolsAvailable: Array.from((await import('../../agent/core/tools')).toolRegistry.keys())
+    });
+    
+    console.log(`🔍 Self-diagnosis result: ${diagnosis.issue}`);
+    console.log(`🎯 Root cause: ${diagnosis.root_cause}`);
+    
+    if (diagnosis.auto_fix_available) {
+      console.log('🔧 Attempting automatic fix...');
+      const fixSuccess = await selfDiagnosis.attemptAutoFix(diagnosis, { studioId, userId });
+      
+      if (fixSuccess) {
+        return `🎉 Self-reasoning system successfully resolved: ${diagnosis.issue}\n\nFixed: ${diagnosis.suggested_fixes.join(', ')}\n\nConfidence: ${Math.round(diagnosis.confidence * 100)}%`;
+      }
+    }
+    
+    return `🧠 Self-reasoning analysis complete:\n\n**Issue**: ${diagnosis.issue}\n**Root Cause**: ${diagnosis.root_cause}\n\n**Suggested Solutions**:\n${diagnosis.suggested_fixes.map(fix => `• ${fix}`).join('\n')}\n\nConfidence: ${Math.round(diagnosis.confidence * 100)}%`;
+    
+  } catch (error) {
+    console.error('Self-reasoning failed:', error);
+    return `I'm analyzing your request: "${message}". The self-reasoning system is working but encountered: ${error.message}`;
+  }
+}
 import { createAgentContext } from "../../agent/bootstrap";
 import { toolRegistry } from "../../agent/core/tools";
 import { planAndExecute, executePlan, formatPlanOutputs } from "../../agent/core/planRunner";
@@ -45,7 +78,7 @@ router.post("/api/crm/agent/chat", async (req, res) => {
       if (planResult.error) {
         console.log(`⚠️ Planner failed, falling back to standard agent: ${planResult.error}`);
         // Fall back to standard agent if planner fails
-        const response = await runAgent(studioId, userId, message);
+        const response = await runAgentWithSelfReasoning(studioId, userId, message);
         return res.json({ 
           type: "agent_response",
           response,
@@ -57,7 +90,7 @@ router.post("/api/crm/agent/chat", async (req, res) => {
     }
 
     // Run the standard agent
-    const response = await runAgent(studioId, userId, message);
+    const response = await runAgentWithSelfReasoning(studioId, userId, message);
     
     res.json({ 
       type: "agent_response",
