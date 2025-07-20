@@ -71,6 +71,7 @@ export const toolRegistry = new ToolRegistry();
 // Import required tools
 import { emailSendTool } from "../tools/email-send";
 import { draftEmailTool } from "../tools/draft-email";
+import { emailAnalysisTool, monitorEmailsTool, autoReplyTool } from "../tools/email-monitoring";
 import { globalSearchTool } from "../tools/global-search";
 import { findEntityTool } from "../tools/find-entity";
 import { countInvoicesTool, countSessionsTool, countLeadsTool } from "../tools/count-tools";
@@ -91,6 +92,26 @@ import { customerPortalManagementTools } from "../tools/customer-portal-manageme
 // Register essential core tools only
 toolRegistry.register(emailSendTool);
 toolRegistry.register(draftEmailTool);
+
+// Register email monitoring and intelligence tools
+toolRegistry.register({
+  name: emailAnalysisTool.name,
+  description: emailAnalysisTool.description,
+  parameters: emailAnalysisTool.parameters,
+  handler: async (params) => emailAnalysisTool.execute(params)
+});
+toolRegistry.register({
+  name: monitorEmailsTool.name,
+  description: monitorEmailsTool.description,
+  parameters: monitorEmailsTool.parameters,
+  handler: async (params) => monitorEmailsTool.execute(params)
+});
+toolRegistry.register({
+  name: autoReplyTool.name,
+  description: autoReplyTool.description,
+  parameters: autoReplyTool.parameters,
+  handler: async (params) => autoReplyTool.execute(params)
+});
 toolRegistry.register(globalSearchTool);
 toolRegistry.register(findEntityTool);
 toolRegistry.register(countInvoicesTool);
