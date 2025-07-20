@@ -39,10 +39,20 @@ export const globalSearchTool = {
       const { neon } = await import('@neondatabase/serverless');
       const sql = neon(process.env.DATABASE_URL!);
       
+      // Split term for better name matching (e.g. "simon parrott" -> ["simon", "parrott"])
+      const termParts = term.split(/\s+/).filter(part => part.length > 0);
+      const firstTerm = termParts[0] || term;
+      const lastTerm = termParts[1] || firstTerm;
+      
       const [clientsResult, leadsResult, invoicesResult, sessionsResult] = await Promise.all([
         sql`
-          SELECT * FROM crm_clients 
-          WHERE (LOWER(first_name) LIKE ${`%${term}%`} OR LOWER(last_name) LIKE ${`%${term}%`} OR LOWER(email) LIKE ${`%${term}%`})
+          SELECT *, (first_name || ' ' || last_name) as name FROM crm_clients 
+          WHERE (
+            LOWER(first_name) LIKE ${`%${firstTerm}%`} OR 
+            LOWER(last_name) LIKE ${`%${lastTerm}%`} OR 
+            LOWER(email) LIKE ${`%${term}%`} OR
+            LOWER(first_name || ' ' || last_name) LIKE ${`%${term}%`}
+          )
           AND id IS NOT NULL
           LIMIT 10
         `,

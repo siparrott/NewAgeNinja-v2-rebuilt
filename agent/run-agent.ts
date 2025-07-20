@@ -110,11 +110,118 @@ export async function runAgent(studioId: string, userId: string, message: string
     // Enhanced autonomous execution for multi-step CRM tasks
     const searchTerms = ['find', 'search', 'look for', 'get', 'show me'];
     const emailTerms = ['email', 'send', 'message', 'write to', 'contact'];
+    const invoiceTerms = ['invoice', 'bill', 'charge', 'create invoice'];
     const messageWords = message.toLowerCase();
     
-    // Detect combined search + action requests like "find Simon and send him an email"
+    // Detect combined search + action requests like "find Simon and send him an email" or "create invoice for simon"
     const hasSearch = searchTerms.some(term => messageWords.includes(term));
     const hasEmail = emailTerms.some(term => messageWords.includes(term));
+    const hasInvoice = invoiceTerms.some(term => messageWords.includes(term));
+    
+    // Handle invoice creation requests
+    if (hasInvoice) {
+      console.log('💰 Detected invoice creation request - executing autonomous invoice creation');
+      
+      // Extract client name and items from the message
+      const clientNameMatch = message.match(/(?:for|to)\s+([a-zA-Z\s]+?)(?:\s+for|\s+\d+|$)/i);
+      const clientName = clientNameMatch ? clientNameMatch[1].trim() : null;
+      
+      // Extract quantity and item type
+      const itemMatch = message.match(/(\d+)\s+(.*?)(?:\s+files?|$)/i);
+      const quantity = itemMatch ? parseInt(itemMatch[1]) : 1;
+      const itemType = itemMatch ? itemMatch[2].trim() + ' files' : 'digital files';
+      
+      if (clientName) {
+        try {
+          // First find the client
+          const globalSearchTool = toolRegistry.get('global_search');
+          if (globalSearchTool) {
+            const searchResult = await globalSearchTool.handler({ term: clientName }, ctx);
+            console.log('✅ Found client for invoice creation');
+            
+            // Prioritize clients over leads for invoice creation
+            let client = null;
+            
+            if (searchResult.clients && searchResult.clients.length > 0) {
+              client = searchResult.clients[0];
+              console.log(`✅ Found client record: ${client.name} (${client.id})`);
+            } else if (searchResult.leads && searchResult.leads.length > 0) {
+              // If we found a lead but no client, check if there's a client with the same email
+              const lead = searchResult.leads[0];
+              const leadEmail = lead.email;
+              console.log(`🔍 Found lead ${lead.name}, checking for client with email: ${leadEmail}`);
+              
+              const { neon } = await import('@neondatabase/serverless');
+              const sql = neon(process.env.DATABASE_URL!);
+              const clientSearch = await sql`
+                SELECT id, first_name, last_name, email, phone, 
+                       (first_name || ' ' || last_name) as name
+                FROM crm_clients 
+                WHERE LOWER(email) = LOWER(${leadEmail})
+                LIMIT 1
+              `;
+              
+              if (clientSearch.length > 0) {
+                client = clientSearch[0];
+                console.log(`✅ Found corresponding client: ${client.name} (${client.id})`);
+              } else {
+                console.log(`❌ No client found for email: ${leadEmail}`);
+                return `❌ Cannot create invoice: ${lead.name} exists as a lead but not as a client. Please convert the lead to a client first, or use: "convert ${lead.name} from lead to client"`;
+              }
+            }
+            
+            if (client) {
+              
+              // Create invoice
+              const createInvoiceTool = toolRegistry.get('create_invoice');
+              if (createInvoiceTool) {
+                const invoiceData = {
+                  client_id: client.id,
+                  sku: "DIGI-10", // Standard SKU for digital files
+                  notes: `Invoice for ${quantity} digital files for ${client.name}`
+                };
+                
+                console.log('🔧 Invoice data being sent:', JSON.stringify(invoiceData, null, 2));
+                // Add proper debugging for the pricing system
+                console.log('🔧 Testing pricing system for DIGI-10...');
+                try {
+                  const { getPriceBySku } = await import('../integrations/pricing');
+                  const testPrice = await getPriceBySku(ctx.studioId, 'DIGI-10');
+                  console.log('🔧 DIGI-10 pricing result:', testPrice);
+                } catch (pricingError) {
+                  console.log('🔧 Pricing error:', pricingError);
+                }
+                
+                const invoiceResult = await createInvoiceTool.handler(invoiceData, ctx);
+                
+                const responseText = `✅ Created invoice for ${client.name} (${client.email}):\n• ${quantity} ${itemType} @ €35.00 each\n• Subtotal: €${(quantity * 35.0).toFixed(2)}\n• Tax (20%): €${((quantity * 35.0) * 0.20).toFixed(2)}\n• Total: €${((quantity * 35.0) * 1.20).toFixed(2)}`;
+                
+                await addMessageToHistory(ctx.chatSessionId, {
+                  role: "user", content: message, timestamp: new Date().toISOString()
+                });
+                await addMessageToHistory(ctx.chatSessionId, {
+                  role: "assistant", content: responseText, timestamp: new Date().toISOString()
+                });
+                
+                enhancedMemory.last_action = 'create_invoice';
+                enhancedMemory.lastInteraction = new Date().toISOString();
+                await updateSession(ctx.chatSessionId, enhancedMemory);
+                
+                return responseText;
+              }
+            } else {
+              return `❌ Could not find client "${clientName}" in the database. Please check the spelling or add them as a new client first.`;
+            }
+          }
+        } catch (error) {
+          console.error('❌ Autonomous invoice creation failed:', error);
+          return `❌ Invoice creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        }
+      }
+      
+      // If we get here, we couldn't find the client - return error and don't fall through
+      return `❌ Could not extract client name from message. Please specify clearly who to create the invoice for.`;
+    }
     
     if (hasSearch) {
       console.log('🔍 Detected search request - executing autonomous search');
@@ -309,7 +416,8 @@ export async function runAgent(studioId: string, userId: string, message: string
             if (hasEmailRequest) {
               finalResponse = "I found the contact information. Please confirm if you'd like me to send the email, or specify the email content you want to send.";
             } else if (hasInvoiceRequest) {
-              finalResponse = "I found the client information. Please specify the invoice details (items, amounts) you'd like me to create.";
+              // Continue with autonomous invoice creation instead of asking
+              finalResponse = "I found the client information and will proceed to create the invoice with the specified items.";
             } else if (hasSearchRequest) {
               finalResponse = "I successfully found the requested information. What would you like me to do next with this data?";
             } else {

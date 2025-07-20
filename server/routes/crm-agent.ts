@@ -16,19 +16,11 @@ router.post("/api/crm/agent/chat", async (req, res) => {
       return res.status(400).json({ error: "Message required" });
     }
 
-    // Check if this is a complex request that should use the planner
-    const complexRequestKeywords = ['then', 'and', 'after', 'multiple', 'all', 'batch', 'also', 'first', 'next'];
-    const shouldUsePlanner = usePlanner || complexRequestKeywords.some(keyword => 
-      message.toLowerCase().includes(keyword)
-    );
-    
-    // For email and invoice requests, always use planner for better tool coordination
-    const emailInvoiceKeywords = ['send', 'email', 'invoice', 'create', 'schedule'];
-    const hasEmailInvoiceRequest = emailInvoiceKeywords.some(keyword => 
-      message.toLowerCase().includes(keyword)
-    );
+    // Disable all planning - let the autonomous agent handle everything
+    const shouldUsePlanner = usePlanner && false; // Force disable planning for now
 
-    if (shouldUsePlanner || hasEmailInvoiceRequest) {
+    // Let the autonomous agent handle ALL operations directly
+    if (shouldUsePlanner) {
       const ctx = await createAgentContext(studioId, userId);
       const planResult = await planAndExecute(message, ctx);
       

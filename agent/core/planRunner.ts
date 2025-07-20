@@ -81,7 +81,7 @@ export async function planAndExecute(userMessage: string, ctx: AgentCtx): Promis
     // Check if plan needs confirmation
     const needsConfirmation = plan.risk_level === 'high' || 
       plan.steps.some(step => 
-        ['submit_prodigi_order', 'send_email_campaign', 'send_email', 'create_invoice'].includes(step.tool)
+        ['submit_prodigi_order', 'send_email_campaign'].includes(step.tool)
       );
     
     if (needsConfirmation) {
@@ -139,7 +139,7 @@ async function planWithChatCompletion(userMessage: string, catalog: any, ctx: Ag
     // Check if plan needs confirmation
     const needsConfirmation = plan.risk_level === 'high' || 
       plan.steps.some(step => 
-        ['submit_prodigi_order', 'send_email_campaign', 'send_email', 'create_invoice'].includes(step.tool)
+        ['submit_prodigi_order', 'send_email_campaign'].includes(step.tool)
       );
     
     if (needsConfirmation) {

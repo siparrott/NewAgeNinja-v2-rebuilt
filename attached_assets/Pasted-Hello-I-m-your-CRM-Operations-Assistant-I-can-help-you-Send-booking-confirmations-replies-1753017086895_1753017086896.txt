@@ -1,0 +1,918 @@
+Hello! I'm your CRM Operations Assistant. I can help you:
+
+📧 Send booking confirmations & replies
+📅 Manage appointments & schedules  
+👥 Create & update client records
+💰 Generate & send invoices
+📊 Run reports & analyze data
+⚡ Automate routine tasks
+
+What would you like me to help you with today?
+
+08:09 PM
+
+can you book an appointment for next week sat for 9am and put it in the diary
+
+08:10 PM
+
+Executed 2/2 steps successfully.
+
+✅ check_calendar_availability: {
+  "success": true,
+  "date": "2023-10-14",
+  "total_available_slots": 9,
+  "available_slots": [
+    {
+      "time": "09:00",
+      "duration": "60 minutes",
+      "preferred": true
+    },
+    {
+      "time": "10:00",
+      "duration": "60 minutes",
+      "preferred": false
+    },
+    {
+      "time": "11:00",
+      "duration": "60 minutes",
+      "preferred": false
+    },
+    {
+      "time": "12:00",
+      "duration": "60 minutes",
+      "preferred": false
+    },
+    {
+      "time": "13:00",
+      "duration": "60 minutes",
+      "preferred": false
+    },
+    {
+      "time": "14:00",
+      "duration": "60 minutes",
+      "preferred": false
+    },
+    {
+      "time": "15:00",
+      "duration": "60 minutes",
+      "preferred": false
+    },
+    {
+      "time": "16:00",
+      "duration": "60 minutes",
+      "preferred": false
+    },
+    {
+      "time": "17:00",
+      "duration": "60 minutes",
+      "preferred": false
+    }
+  ],
+  "booked_sessions": 0,
+  "recommendations": [
+    {
+      "time": "09:00",
+      "duration": "60 minutes",
+      "preferred": true
+    }
+  ]
+}
+✅ create_photography_session: {
+  "success": true,
+  "session_id": "70868972-7209-4940-93b8-0916e48a27d8",
+  "session": {
+    "id": "70868972-7209-4940-93b8-0916e48a27d8",
+    "title": "PORTRAIT Session - Client",
+    "start_time": "2023-10-14 07:00:00+00",
+    "end_time": "2023-10-14 08:00:00+00"
+  },
+  "message": "Photography session created successfully for 2023-10-14 at 09:00",
+  "details": {
+    "type": "PORTRAIT",
+    "duration": "60 minutes",
+    "location": "Studio",
+    "start_time": "2023-10-14T09:00:00+02:00",
+    "end_time": "2023-10-14T08:00:00.000Z"
+  }
+}
+
+08:10 PM
+
+and now?
+
+08:11 PM
+
+Executed 1/1 steps successfully.
+
+✅ describe_capabilities: {
+  "total_tools": 68,
+  "available_categories": [
+    "admin",
+    "analytics",
+    "automation",
+    "billing",
+    "communication",
+    "content",
+    "crm",
+    "files",
+    "general",
+    "portal",
+    "products",
+    "scheduling",
+    "search"
+  ],
+  "filtered_category": "all",
+  "tools": [
+    {
+      "name": "send_email",
+      "description": "Send email immediately using configured SMTP server. Use this tool when user asks to send or confirm an email. Requires SEND_EMAIL authority.",
+      "category": "communication",
+      "key_parameters": [
+        "to",
+        "subject",
+        "body",
+        "fromName",
+        "priority",
+        "isHtml"
+      ]
+    },
+    {
+      "name": "draft_email",
+      "description": "Compose but do NOT send an email to a lead or client. Creates a draft for review.",
+      "category": "communication",
+      "key_parameters": [
+        "lead_id",
+        "subject",
+        "body_markdown"
+      ]
+    },
+    {
+      "name": "global_search",
+      "description": "Free-text search across clients, leads, invoices, sessions. Use when you need any record and don't know the specific ID.",
+      "category": "search",
+      "key_parameters": [
+        "term"
+      ]
+    },
+    {
+      "name": "find_entity",
+      "description": "Find a person by name or email across leads and clients tables. Returns the best match with status.",
+      "category": "search",
+      "key_parameters": [
+        "query"
+      ]
+    },
+    {
+      "name": "count_invoices",
+      "description": "Count invoices for a specific year (defaults to current year)",
+      "category": "billing",
+      "key_parameters": [
+        "year"
+      ]
+    },
+    {
+      "name": "count_sessions",
+      "description": "Count photography sessions for a specific year (defaults to current year)",
+      "category": "scheduling",
+      "key_parameters": [
+        "year"
+      ]
+    },
+    {
+      "name": "count_leads",
+      "description": "Count leads for a specific year (defaults to current year)",
+      "category": "search",
+      "key_parameters": [
+        "year",
+        "status"
+      ]
+    },
+    {
+      "name": "create_gallery_checkout",
+      "description": "Create Stripe checkout for gallery print order",
+      "category": "products",
+      "key_parameters": [
+        "gallery_id",
+        "client_id",
+        "items"
+      ]
+    },
+    {
+      "name": "submit_prodigi_order",
+      "description": "Submit gallery order to Prodigi for print fulfillment and dropshipping",
+      "category": "products",
+      "key_parameters": [
+        "gallery_id",
+        "client_id",
+        "order_id",
+        "shipping_address"
+      ]
+    },
+    {
+      "name": "create_photography_session",
+      "description": "Create a new photography session/booking in the calendar",
+      "category": "scheduling",
+      "key_parameters": [
+        "client_id",
+        "session_type",
+        "session_date",
+        "session_time",
+        "duration_minutes",
+        "location",
+        "notes",
+        "price",
+        "deposit_required",
+        "equipment_needed"
+      ]
+    },
+    {
+      "name": "read_calendar_sessions",
+      "description": "Retrieve photography sessions from calendar with filtering options",
+      "category": "scheduling",
+      "key_parameters": [
+        "start_date",
+        "end_date",
+        "client_id",
+        "session_type",
+        "status",
+        "limit"
+      ]
+    },
+    {
+      "name": "update_photography_session",
+      "description": "Update an existing photography session (reschedule, change details, update status)",
+      "category": "scheduling",
+      "key_parameters": [
+        "session_id",
+        "session_date",
+        "session_time",
+        "duration_minutes",
+        "location",
+        "notes",
+        "price",
+        "status",
+        "cancellation_reason"
+      ]
+    },
+    {
+      "name": "cancel_photography_session",
+      "description": "Cancel or delete a photography session",
+      "category": "scheduling",
+      "key_parameters": [
+        "session_id",
+        "cancellation_reason",
+        "refund_amount",
+        "notify_client"
+      ]
+    },
+    {
+      "name": "check_calendar_availability",
+      "description": "Check available time slots for booking new sessions",
+      "category": "scheduling",
+      "key_parameters": [
+        "date",
+        "duration_minutes",
+        "preferred_times"
+      ]
+    },
+    {
+      "name": "upload_file",
+      "description": "Upload and organize files in the digital files system",
+      "category": "files",
+      "key_parameters": [
+        "folder_name",
+        "file_name",
+        "file_type",
+        "file_size",
+        "client_id",
+        "session_id",
+        "description",
+        "tags",
+        "is_public"
+      ]
+    },
+    {
+      "name": "read_digital_files",
+      "description": "Retrieve digital files with filtering and search options",
+      "category": "files",
+      "key_parameters": [
+        "folder_name",
+        "file_type",
+        "client_id",
+        "session_id",
+        "search_term",
+        "is_public",
+        "limit"
+      ]
+    },
+    {
+      "name": "update_digital_file",
+      "description": "Update file metadata, move between folders, or change organization",
+      "category": "files",
+      "key_parameters": [
+        "file_id",
+        "folder_name",
+        "file_name",
+        "description",
+        "tags",
+        "is_public",
+        "client_id",
+        "session_id"
+      ]
+    },
+    {
+      "name": "delete_digital_file",
+      "description": "Delete a file from the digital files system",
+      "category": "files",
+      "key_parameters": [
+        "file_id",
+        "reason",
+        "permanent"
+      ]
+    },
+    {
+      "name": "organize_files_by_folder",
+      "description": "Get folder organization and file statistics",
+      "category": "files",
+      "key_parameters": [
+        "folder_name",
+        "include_stats",
+        "include_recent"
+      ]
+    },
+    {
+      "name": "create_blog_post",
+      "description": "Create a new blog post for the photography website",
+      "category": "content",
+      "key_parameters": [
+        "title",
+        "slug",
+        "content",
+        "excerpt",
+        "image_url",
+        "tags",
+        "meta_title",
+        "meta_description",
+        "status",
+        "scheduled_for",
+        "featured",
+        "category"
+      ]
+    },
+    {
+      "name": "read_blog_posts",
+      "description": "Retrieve blog posts with filtering and search options",
+      "category": "content",
+      "key_parameters": [
+        "status",
+        "featured",
+        "category",
+        "search_term",
+        "tags",
+        "limit",
+        "include_stats"
+      ]
+    },
+    {
+      "name": "update_blog_post",
+      "description": "Update an existing blog post (content, status, metadata)",
+      "category": "content",
+      "key_parameters": [
+        "post_id",
+        "title",
+        "slug",
+        "content",
+        "excerpt",
+        "image_url",
+        "tags",
+        "meta_title",
+        "meta_description",
+        "status",
+        "scheduled_for",
+        "featured",
+        "category"
+      ]
+    },
+    {
+      "name": "delete_blog_post",
+      "description": "Delete a blog post from the website",
+      "category": "content",
+      "key_parameters": [
+        "post_id",
+        "reason",
+        "permanent"
+      ]
+    },
+    {
+      "name": "publish_blog_post",
+      "description": "Publish a draft blog post or schedule it for future publication",
+      "category": "content",
+      "key_parameters": [
+        "post_id",
+        "action",
+        "scheduled_for",
+        "featured"
+      ]
+    },
+    {
+      "name": "create_email_campaign",
+      "description": "Create a new email marketing campaign",
+      "category": "communication",
+      "key_parameters": [
+        "name",
+        "subject",
+        "content",
+        "sender_name",
+        "sender_email",
+        "campaign_type",
+        "target_audience",
+        "custom_segment",
+        "scheduled_for",
+        "status"
+      ]
+    },
+    {
+      "name": "read_email_campaigns",
+      "description": "Retrieve email campaigns with filtering and performance metrics",
+      "category": "communication",
+      "key_parameters": [
+        "status",
+        "campaign_type",
+        "target_audience",
+        "limit",
+        "include_metrics"
+      ]
+    },
+    {
+      "name": "send_email_campaign",
+      "description": "Send an email campaign immediately or schedule it for later",
+      "category": "communication",
+      "key_parameters": [
+        "campaign_id",
+        "action",
+        "scheduled_for",
+        "test_email"
+      ]
+    },
+    {
+      "name": "update_email_campaign",
+      "description": "Update an existing email campaign (only drafts can be modified)",
+      "category": "communication",
+      "key_parameters": [
+        "campaign_id",
+        "name",
+        "subject",
+        "content",
+        "campaign_type",
+        "target_audience",
+        "custom_segment",
+        "scheduled_for"
+      ]
+    },
+    {
+      "name": "delete_email_campaign",
+      "description": "Delete an email campaign (only drafts can be deleted)",
+      "category": "communication",
+      "key_parameters": [
+        "campaign_id",
+        "reason"
+      ]
+    },
+    {
+      "name": "create_questionnaire",
+      "description": "Create a new questionnaire for client intake, feedback, or surveys",
+      "category": "general",
+      "key_parameters": [
+        "title",
+        "description",
+        "questionnaire_type",
+        "questions",
+        "active",
+        "target_audience",
+        "auto_send",
+        "send_trigger"
+      ]
+    },
+    {
+      "name": "read_questionnaires",
+      "description": "Retrieve questionnaires with filtering and response statistics",
+      "category": "general",
+      "key_parameters": [
+        "questionnaire_type",
+        "active",
+        "target_audience",
+        "include_questions",
+        "include_stats",
+        "limit"
+      ]
+    },
+    {
+      "name": "send_questionnaire",
+      "description": "Send a questionnaire to specific clients or target groups",
+      "category": "general",
+      "key_parameters": [
+        "questionnaire_id",
+        "recipients",
+        "target_group",
+        "send_method",
+        "custom_message",
+        "due_date"
+      ]
+    },
+    {
+      "name": "read_questionnaire_responses",
+      "description": "Retrieve questionnaire responses with filtering and analysis",
+      "category": "general",
+      "key_parameters": [
+        "questionnaire_id",
+        "client_id",
+        "status",
+        "completed_only",
+        "include_answers",
+        "date_from",
+        "date_to",
+        "limit"
+      ]
+    },
+    {
+      "name": "update_questionnaire",
+      "description": "Update an existing questionnaire (structure, settings, activation)",
+      "category": "general",
+      "key_parameters": [
+        "questionnaire_id",
+        "title",
+        "description",
+        "active",
+        "target_audience",
+        "auto_send",
+        "send_trigger"
+      ]
+    },
+    {
+      "name": "generate_business_report",
+      "description": "Generate comprehensive business reports with revenue, client, and performance analytics",
+      "category": "analytics",
+      "key_parameters": [
+        "report_type",
+        "date_from",
+        "date_to",
+        "period",
+        "include_charts",
+        "export_format"
+      ]
+    },
+    {
+      "name": "get_kpi_dashboard",
+      "description": "Retrieve key performance indicators and dashboard metrics",
+      "category": "analytics",
+      "key_parameters": [
+        "timeframe",
+        "include_trends",
+        "include_comparisons"
+      ]
+    },
+    {
+      "name": "export_data_analytics",
+      "description": "Export analytics data for external analysis or reporting",
+      "category": "analytics",
+      "key_parameters": [
+        "data_type",
+        "format",
+        "date_from",
+        "date_to",
+        "include_financial",
+        "include_personal"
+      ]
+    },
+    {
+      "name": "get_performance_metrics",
+      "description": "Get detailed performance metrics for business analysis",
+      "category": "general",
+      "key_parameters": [
+        "metric_type",
+        "time_period",
+        "benchmark_comparison"
+      ]
+    },
+    {
+      "name": "manage_user_accounts",
+      "description": "Create, update, or deactivate user accounts and manage permissions",
+      "category": "search",
+      "key_parameters": [
+        "action",
+        "user_data",
+        "user_id",
+        "filter"
+      ]
+    },
+    {
+      "name": "system_configuration",
+      "description": "Manage system settings, preferences, and configuration options",
+      "category": "admin",
+      "key_parameters": [
+        "action",
+        "config_section",
+        "settings"
+      ]
+    },
+    {
+      "name": "database_management",
+      "description": "Perform database maintenance, backups, and optimization tasks",
+      "category": "admin",
+      "key_parameters": [
+        "action",
+        "table_name",
+        "cleanup_options"
+      ]
+    },
+    {
+      "name": "system_monitoring",
+      "description": "Monitor system performance, health, and generate alerts",
+      "category": "admin",
+      "key_parameters": [
+        "metric_type",
+        "time_range",
+        "include_alerts"
+      ]
+    },
+    {
+      "name": "audit_trail",
+      "description": "Track and review system audit logs and user activities",
+      "category": "general",
+      "key_parameters": [
+        "action",
+        "user_id",
+        "action_type",
+        "date_from",
+        "date_to",
+        "limit"
+      ]
+    },
+    {
+      "name": "manage_integrations",
+      "description": "Configure and manage third-party service integrations (email, calendar, payment, storage)",
+      "category": "general",
+      "key_parameters": [
+        "action",
+        "integration_type",
+        "integration_name",
+        "config_data"
+      ]
+    },
+    {
+      "name": "api_management",
+      "description": "Manage API keys, endpoints, and external service connections",
+      "category": "general",
+      "key_parameters": [
+        "action",
+        "api_name",
+        "endpoint_url",
+        "webhook_config"
+      ]
+    },
+    {
+      "name": "webhook_management",
+      "description": "Configure, test, and monitor incoming/outgoing webhooks",
+      "category": "general",
+      "key_parameters": [
+        "action",
+        "webhook_id",
+        "webhook_config",
+        "test_payload"
+      ]
+    },
+    {
+      "name": "data_sync",
+      "description": "Synchronize data between CRM and external systems (calendar, email, accounting)",
+      "category": "general",
+      "key_parameters": [
+        "sync_type",
+        "direction",
+        "external_system",
+        "sync_options"
+      ]
+    },
+    {
+      "name": "external_service_status",
+      "description": "Monitor the status and health of external service connections",
+      "category": "general",
+      "key_parameters": [
+        "service_type",
+        "check_connectivity",
+        "include_metrics"
+      ]
+    },
+    {
+      "name": "create_automation_workflow",
+      "description": "Create automated workflows for client onboarding, follow-ups, reminders, and business processes",
+      "category": "automation",
+      "key_parameters": [
+        "workflow_name",
+        "description",
+        "trigger_type",
+        "trigger_conditions",
+        "actions",
+        "active"
+      ]
+    },
+    {
+      "name": "manage_automated_triggers",
+      "description": "Configure and monitor automated triggers for workflows and business events",
+      "category": "automation",
+      "key_parameters": [
+        "action",
+        "trigger_id",
+        "trigger_config"
+      ]
+    },
+    {
+      "name": "schedule_automated_tasks",
+      "description": "Schedule recurring tasks like follow-ups, reminders, reports, and maintenance",
+      "category": "general",
+      "key_parameters": [
+        "task_name",
+        "task_type",
+        "schedule_type",
+        "schedule_config",
+        "task_parameters",
+        "active"
+      ]
+    },
+    {
+      "name": "read_automation_status",
+      "description": "Monitor automation execution status, performance, and logs",
+      "category": "automation",
+      "key_parameters": [
+        "status_type",
+        "time_range",
+        "workflow_id",
+        "include_details"
+      ]
+    },
+    {
+      "name": "update_automation_settings",
+      "description": "Modify automation workflow settings, schedules, and configurations",
+      "category": "automation",
+      "key_parameters": [
+        "target_type",
+        "target_id",
+        "updates"
+      ]
+    },
+    {
+      "name": "create_portal_access",
+      "description": "Grant clients access to their customer portal with personalized dashboard",
+      "category": "portal",
+      "key_parameters": [
+        "client_id",
+        "access_level",
+        "features",
+        "portal_settings"
+      ]
+    },
+    {
+      "name": "manage_portal_content",
+      "description": "Manage client-specific portal content including galleries, documents, and messages",
+      "category": "content",
+      "key_parameters": [
+        "action",
+        "client_id",
+        "content_type",
+        "content_data",
+        "content_id"
+      ]
+    },
+    {
+      "name": "read_portal_analytics",
+      "description": "Get analytics on client portal usage, engagement, and activity",
+      "category": "analytics",
+      "key_parameters": [
+        "analytics_type",
+        "time_range",
+        "client_id"
+      ]
+    },
+    {
+      "name": "update_portal_settings",
+      "description": "Update client portal configurations, permissions, and display settings",
+      "category": "portal",
+      "key_parameters": [
+        "client_id",
+        "settings_update"
+      ]
+    },
+    {
+      "name": "send_portal_notifications",
+      "description": "Send notifications to clients about new content, updates, or system messages",
+      "category": "portal",
+      "key_parameters": [
+        "notification_type",
+        "client_ids",
+        "notification_data"
+      ]
+    },
+    {
+      "name": "reply_email",
+      "description": "Reply to a lead or client using a template. Finds the email automatically.",
+      "category": "communication",
+      "key_parameters": [
+        "entity_id",
+        "template",
+        "subject"
+      ]
+    },
+    {
+      "name": "create_invoice",
+      "description": "Create an invoice with multiple items. Supports SKU items from price list OR custom items. Use SKUs for standard packages like 'DIGI-10' for 10 digital images.",
+      "category": "billing",
+      "key_parameters": [
+        "client_id",
+        "items",
+        "sku",
+        "custom_label",
+        "custom_amount",
+        "notes"
+      ]
+    },
+    {
+      "name": "describe_capabilities",
+      "description": "Get comprehensive list of all available CRM tools and their capabilities. Use this when unsure which tools to use for a complex request.",
+      "category": "general",
+      "key_parameters": [
+        "category"
+      ]
+    },
+    {
+      "name": "kb_search",
+      "description": "Search studio knowledge base for domain-specific information, best practices, or documentation. Returns top 3 most relevant documents.",
+      "category": "search",
+      "key_parameters": [
+        "query"
+      ]
+    },
+    {
+      "name": "create_voucher_product",
+      "description": "Create a new voucher product for sale",
+      "category": "billing",
+      "key_parameters": [
+        "name",
+        "description",
+        "price",
+        "validityMonths"
+      ]
+    },
+    {
+      "name": "sell_voucher",
+      "description": "Sell a voucher to a client or external buyer",
+      "category": "billing",
+      "key_parameters": [
+        "voucherProductId",
+        "clientId",
+        "buyerName",
+        "buyerEmail",
+        "paymentStatus"
+      ]
+    },
+    {
+      "name": "read_voucher_sales",
+      "description": "Read voucher sales with optional filters",
+      "category": "billing",
+      "key_parameters": [
+        "limit",
+        "status",
+        "clientId"
+      ]
+    },
+    {
+      "name": "redeem_voucher",
+      "description": "Mark a voucher as redeemed",
+      "category": "billing",
+      "key_parameters": [
+        "voucherCode",
+        "notes"
+      ]
+    },
+    {
+      "name": "list_top_clients",
+      "description": "Get top clients ranked by lifetime value, revenue, or other criteria",
+      "category": "crm",
+      "key_parameters": [
+        "limit",
+        "orderBy",
+        "minRevenue",
+        "yearFilter"
+      ]
+    },
+    {
+      "name": "get_client_segments",
+      "description": "Analyze client segments and provide segmentation insights",
+      "category": "crm",
+      "key_parameters": [
+        "segmentBy",
+        "includeStats"
+      ]
+    }
+  ]
+}
+
+08:11 PM
