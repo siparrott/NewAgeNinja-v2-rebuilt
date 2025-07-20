@@ -54,7 +54,7 @@ export async function executeToolCall(call: any, ctx: any) {
     // Enhanced error logging with detailed database error surfacing
     console.error(`[TOOL ERROR ${name}]`, e.message, 'args:', parsedArgs);
     
-    // Surface real database errors instead of generic messages
+    // Surface real database errors instead of generic messages - DO NOT suppress errors
     let errorMsg = e.message || String(e);
     if (errorMsg.includes('permission denied')) {
       errorMsg = `supabase:permission_denied - Need service-role key or proper studio_id on rows`;
@@ -62,13 +62,18 @@ export async function executeToolCall(call: any, ctx: any) {
       errorMsg = `supabase:data_not_found - No match found, double-check spelling or email`;
     } else if (errorMsg.includes('invalid input syntax')) {
       errorMsg = `supabase:invalid_syntax - ${errorMsg}`;
+    } else if (errorMsg.includes('invoice:no_products')) {
+      errorMsg = errorMsg; // Keep invoice-specific errors as-is
     }
     
+    // Return error status instead of throwing - this prevents the wrapper from suppressing errors
     return {
       tool_call_id: call.id,
       output: JSON.stringify({
         ok: false,
+        status: "error", 
         error: errorMsg,
+        message: errorMsg,
         stack: e.stack?.split("\n").slice(0,3),
         tool: name,
         args: parsedArgs
