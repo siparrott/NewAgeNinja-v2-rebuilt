@@ -102,9 +102,9 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
       description: galleryData.description || null,
       slug: slug,
       coverImage: coverImageUrl,
-      clientId: galleryData.clientId,
-      isPublic: galleryData.isPublic,
-      isPasswordProtected: galleryData.isPasswordProtected,
+      client_id: galleryData.clientId,
+      is_public: galleryData.isPublic,
+      is_password_protected: galleryData.isPasswordProtected,
       password: galleryData.password
     };
 

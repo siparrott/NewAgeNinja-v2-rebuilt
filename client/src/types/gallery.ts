@@ -113,6 +113,9 @@ export interface GalleryFormData {
   isFeatured?: boolean;
   sortOrder?: number;
   coverImage?: File | null;
+  clientId?: string;
+  isPublic?: boolean;
+  isPasswordProtected?: boolean;
 }
 
 export interface GalleryAuthData {
