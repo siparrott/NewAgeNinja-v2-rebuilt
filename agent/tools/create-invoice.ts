@@ -83,18 +83,16 @@ export const createInvoiceTool = {
       // Create invoice in database
       const invoiceResult = await sql`
         INSERT INTO crm_invoices (
-          studio_id, client_id, invoice_number, description, 
-          total, currency, status, notes, created_at
+          client_id, invoice_number, subtotal, total, status, notes, issue_date, due_date
         ) VALUES (
-          ${ctx.studioId}, 
           ${args.client_id}, 
           'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(FLOOR(RANDOM() * 9999)::text, 4, '0'),
-          ${description},
           ${invoiceTotal},
-          'EUR',
+          ${invoiceTotal},
           'pending',
           ${args.notes || ''},
-          NOW()
+          CURRENT_DATE,
+          CURRENT_DATE + INTERVAL '30 days'
         )
         RETURNING *
       `;
