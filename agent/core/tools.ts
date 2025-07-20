@@ -74,6 +74,7 @@ import { globalSearchTool } from "../tools/global-search";
 import { findEntityTool } from "../tools/find-entity";
 import { countInvoicesTool, countSessionsTool, countLeadsTool } from "../tools/count-tools";
 import { createGalleryCheckoutTool } from "../tools/create-stripe-checkout";
+import { submitProdigiOrderTool } from "../tools/submit-prodigi-order";
 // import { galleryTools } from "../tools/gallery-management"; // Temporarily disabled due to import issues
 import { calendarTools } from "../tools/calendar-management";
 import { fileManagementTools } from "../tools/file-management";
@@ -94,6 +95,7 @@ toolRegistry.register(countInvoicesTool);
 toolRegistry.register(countSessionsTool);
 toolRegistry.register(countLeadsTool);
 toolRegistry.register(createGalleryCheckoutTool);
+toolRegistry.register(submitProdigiOrderTool);
 // Register calendar management tools
 calendarTools.forEach(tool => {
   toolRegistry.register({

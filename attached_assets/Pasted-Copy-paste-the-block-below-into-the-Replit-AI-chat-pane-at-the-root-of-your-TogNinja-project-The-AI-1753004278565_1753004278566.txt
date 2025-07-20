@@ -1,0 +1,133 @@
+Copy-paste the block below into the Replit AI chat pane at the root of your TogNinja project.
+The AI will:
+
+create a typed Prodigi client (agent/integrations/labs/prodigi.ts)
+
+add a new submit_prodigi_order tool that the Assistant can call
+
+wire a Supabase edge function to receive Prodigi status web-hooks
+
+add environment-variable stubs (PRODIGI_API_KEY, PRODIGI_ENDPOINT) and
+
+generate a Jest test + sample order JSON so you can verify end-to-end.
+
+bash
+Kopieren
+Bearbeiten
+🔌  **INTEGRATE PRODIGI PRINT-ON-DEMAND (v4 API)**
+
+GOAL  
+Enable TogNinja to route paid gallery orders to Prodigi for automatic print fulfilment and dropshipping.
+
+REFERENCE  
+Docs root: https://prodigi.com/print-api/docs/  
+Key flows:  
+• POST  /print-order            (create order)  
+• GET   /print-orders/{id}      (retrieve order)  
+• Webhook events (v4)           (status updates)  
+Auth = HTTP header `X-API-Key: <my-key>`.
+
+────────────────────────────
+🔑  ENV
+────────────────────────────
+Add to .env (Replit Secrets):
+PRODIGI_API_KEY=pk_live_xxxxxxxxxxxxxxxxxx
+PRODIGI_ENDPOINT=https://production.sandbox.prodigi.com/v4.0 # leave sandbox until live
+
+pgsql
+Kopieren
+Bearbeiten
+
+────────────────────────────
+📂  FILES TO GENERATE
+────────────────────────────
+1. **agent/integrations/labs/prodigi.ts**  
+   ```ts
+   import fetch from "node-fetch";
+   import type { ProdigiOrder, ProdigiResponse } from "./types";
+
+   const base = process.env.PRODIGI_ENDPOINT!;
+   const key  = process.env.PRODIGI_API_KEY!;
+
+   export async function submitProdigiOrder(order:ProdigiOrder){
+     const res = await fetch(`${base}/print-order`,{
+       method:"POST",
+       headers:{ "Content-Type":"application/json", "X-API-Key":key },
+       body: JSON.stringify(order)
+     });
+     if(!res.ok) throw new Error("prodigi:"+res.statusText);
+     return res.json() as Promise<ProdigiResponse>;       // { id, status, lineItems[] }
+   }
+agent/tools/submit_prodigi_order.ts
+Parameters: { gallery_id, client_id } (the tool will internally transform gallery items to Prodigi “lineItems”).
+Authority: FULFILL_LAB_ORDER.
+Returns: { prodigi_id, status }.
+
+supabase/functions/prodigi-webhook.ts
+
+ts
+Kopieren
+Bearbeiten
+serve(async (req)=>{
+  const evt = await req.json();                   // { id, status }
+  await sb.from("gallery_orders")
+     .update({ status: evt.status })
+     .eq("ext_id", evt.id);
+  return new Response("ok");
+});
+tests/submit_prodigi_order.test.ts
+• creates dummy studio + print_products
+• mocks fetch with msw to return {id:"ord_123",status:"received"}
+• expects handler to resolve and DB row status = in_production.
+
+Update agent/core/tools.ts and re-run agent/update-assistant.js so the Assistant sees submit_prodigi_order.
+
+────────────────────────────
+🔄 WIRING LOGIC
+────────────────────────────
+
+When gallery_orders.status transitions to paid and ship_country NOT in {US,CA} (handled by WHCC), call submit_prodigi_order.
+
+Map each item:
+
+ts
+Kopieren
+Bearbeiten
+{
+  sku: product.sku,                 // Prodigi’s universal SKU or your own
+  copies: qty,
+  sizing: "fillPrintArea",
+  attributes: variant              // e.g. {finish:"lustre",wrap:"white"}
+}
+Shipping address = client shipping details (Prodigi requires phone).
+
+────────────────────────────
+✅ ACCEPTANCE TEST
+────────────────────────────
+
+npm run migrate — no errors.
+
+Jest test passes.
+
+Run dev, POST to /api/crm/agent/chat:
+
+cpp
+Kopieren
+Bearbeiten
+"sell voucher 'Gold Gift' to Matt Pantling"
+"mark order ORD-1 paid"
+Assistant should auto-call **submit_prodigi_order** and return `{ prodigi_id:"ord_123" }`.
+Respond “Ready” after tests pass and webhook endpoint prints status updates like:
+
+vbnet
+Kopieren
+Bearbeiten
+prodigi-webhook: order ord_123 status updated to fulfilled
+yaml
+Kopieren
+Bearbeiten
+
+---
+
+Paste → Let Replit AI scaffold → add your real API key → run tests → you’re live.
+::contentReference[oaicite:0]{index=0}
