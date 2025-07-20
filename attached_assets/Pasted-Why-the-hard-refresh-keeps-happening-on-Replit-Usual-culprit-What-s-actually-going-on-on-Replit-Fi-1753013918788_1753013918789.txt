@@ -1,0 +1,75 @@
+Why the “hard refresh” keeps happening on Replit
+Usual culprit	What’s actually going on on Replit
+File-watch restart	The dev server (npm run dev / Vite / Next) watches the filesystem. Any file that your AI-agent edits triggers Replit → kills server → restarts → the browser gets a full reload.
+Replit keep-alive	After ~1-3 min of no HTTP traffic Replit pauses the container; first request afterwards restarts it ⇒ page reload.
+HMR overlay crash	Vite’s Hot-Module-Reload overlay throws if the compiled JS has a type error, so the client falls back to a hard reload.
+
+Three complementary fixes
+1 Run the “production” build in Replit, not the dev watcher
+Add a production script
+
+json
+Kopieren
+Bearbeiten
+"scripts": {
+  "start:prod": "vite build && node dist/server/index.js"
+}
+In .replit set
+
+ini
+Kopieren
+Bearbeiten
+run = "npm run start:prod"
+Vite no longer watches the FS, so AI-generated files won’t restart the server.
+
+2 Auto-save unsent work in localStorage/Supabase
+In your React editor / email composer component:
+
+ts
+Kopieren
+Bearbeiten
+const DRAFT_KEY = `draft-${studioId}-${userId}`;
+
+useEffect(()=>{
+  // restore on mount
+  const saved = localStorage.getItem(DRAFT_KEY);
+  if(saved) setForm(JSON.parse(saved));
+},[]);
+
+useEffect(()=>{
+  // autosave every keystroke (or debounce 500 ms)
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+},[form]);
+Optional: every 30 s push the same JSON to
+studio_drafts table so the draft follows the user to any device.
+
+3 Keep the Replit container “warm”
+Create a tiny ping job that Replit’s built-in cron calls every minute.
+
+keepalive.js
+
+js
+Kopieren
+Bearbeiten
+import http from 'http';
+const PORT = process.env.PORT || 3000;
+http.createServer((_,res)=>res.end('ok')).listen(PORT);
+
+setInterval(()=>{
+  fetch(`http://127.0.0.1:${PORT}`).catch(()=>{});
+}, 50_000);          // ping itself every 50 s
+Add to .replit & start:prod:
+
+bash
+Kopieren
+Bearbeiten
+node keepalive.js & npm run start:server    # whatever your server entry is
+Replit now sees continuous traffic → won’t suspend.
+
+Quick checklist
+Fix	One-liner to verify
+Switched to start:prod	`ps aux
+Draft auto-save	Hard-refresh manually → your draft reappears
+Keep-alive	Check Logs: container uptime keeps increasing
+
+Once these three are in place, you can leave a half-written email open for hours without losing it—even if the AI agent rewrites files in the background.

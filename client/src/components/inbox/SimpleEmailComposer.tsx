@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { X, Send, Paperclip, Image, FileText } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Send, Paperclip, Image, FileText, Save } from 'lucide-react';
+import { useEmailDraftAutoSave } from '../../hooks/useDraftAutoSave';
 
 interface SimpleEmailComposerProps {
   isOpen: boolean;
@@ -17,6 +18,25 @@ const SimpleEmailComposer: React.FC<SimpleEmailComposerProps> = ({
   const [body, setBody] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Draft auto-save functionality
+  const studioId = "studio-1"; // TODO: Get from context
+  const userId = "admin"; // TODO: Get from auth
+  const emailData = { to, subject, body };
+  const { restoreDraft, clearDraft } = useEmailDraftAutoSave(studioId, userId, emailData);
+  
+  // Restore draft on component mount
+  useEffect(() => {
+    if (isOpen) {
+      const savedDraft = restoreDraft();
+      if (savedDraft) {
+        setTo(savedDraft.to || '');
+        setSubject(savedDraft.subject || '');
+        setBody(savedDraft.body || '');
+        console.log('Draft restored successfully');
+      }
+    }
+  }, [isOpen, restoreDraft]);
 
   if (!isOpen) return null;
 
@@ -61,6 +81,7 @@ const SimpleEmailComposer: React.FC<SimpleEmailComposerProps> = ({
       if (result.success) {
         // console.log removed
         onSent?.({ to, subject, body, attachments, messageId: result.messageId });
+        clearDraft(); // Clear saved draft after successful send
         onClose();
         // Reset form
         setTo('');

@@ -98,6 +98,7 @@
     "jspdf": "^3.0.1",
     "keyword-extractor": "^0.0.28",
     "lighthouse": "^12.8.0",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.323.0",
     "mailparser": "^3.7.4",
     "multer": "^2.0.1",
