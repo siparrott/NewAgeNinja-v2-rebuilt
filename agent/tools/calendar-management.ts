@@ -31,15 +31,16 @@ export const createSessionTool = {
       
       await sql`
         INSERT INTO photography_sessions (
-          id, client_id, session_type, session_date, duration_minutes,
-          location, notes, price, deposit_required, equipment_needed,
+          id, client_id, session_type, start_time, end_time,
+          location_name, notes, base_price, deposit_amount, equipment_list,
           status, created_at, updated_at
         ) VALUES (
           ${sessionId}, ${params.client_id}, ${params.session_type},
-          ${sessionDateTime}, ${params.duration_minutes}, ${params.location},
-          ${params.notes || ''}, ${params.price || 0}, ${params.deposit_required || 0},
-          ${JSON.stringify(params.equipment_needed || [])}, 'CONFIRMED',
-          NOW(), NOW()
+          ${sessionDateTime}::timestamp, 
+          (${sessionDateTime}::timestamp + INTERVAL '${params.duration_minutes} minutes'),
+          ${params.location}, ${params.notes || ''}, ${params.price || 0}, 
+          ${params.deposit_required || 0}, ${JSON.stringify(params.equipment_needed || [])}, 
+          'CONFIRMED', NOW(), NOW()
         )
       `;
 
@@ -79,29 +80,33 @@ export const readCalendarTool = {
   }),
   execute: async (params: any) => {
     try {
+      console.log('📅 read_calendar_sessions: Fetching photography sessions');
+      
+      // Use correct column names from actual database schema
       let query = `
         SELECT 
           ps.id,
           ps.session_type,
-          ps.session_date,
-          ps.duration_minutes,
-          ps.location,
+          ps.start_time,
+          ps.end_time,
+          ps.location_name,
           ps.notes,
-          ps.price,
-          ps.deposit_required,
-          ps.equipment_needed,
+          ps.base_price,
+          ps.deposit_amount,
+          ps.equipment_list,
           ps.status,
           ps.created_at,
           c.first_name || ' ' || c.last_name as client_name,
           c.email as client_email,
-          c.phone as client_phone
+          c.phone as client_phone,
+          EXTRACT(EPOCH FROM (ps.end_time - ps.start_time))/60 as duration_minutes
         FROM photography_sessions ps
         LEFT JOIN crm_clients c ON ps.client_id = c.id
       `;
 
       const conditions = [];
-      if (params.start_date) conditions.push(`ps.session_date >= '${params.start_date}'`);
-      if (params.end_date) conditions.push(`ps.session_date <= '${params.end_date}'`);
+      if (params.start_date) conditions.push(`DATE(ps.start_time) >= '${params.start_date}'`);
+      if (params.end_date) conditions.push(`DATE(ps.start_time) <= '${params.end_date}'`);
       if (params.client_id) conditions.push(`ps.client_id = '${params.client_id}'`);
       if (params.session_type) conditions.push(`ps.session_type = '${params.session_type}'`);
       if (params.status) conditions.push(`ps.status = '${params.status}'`);
@@ -110,25 +115,31 @@ export const readCalendarTool = {
         query += ' WHERE ' + conditions.join(' AND ');
       }
 
-      query += ` ORDER BY ps.session_date ASC LIMIT ${params.limit}`;
+      query += ` ORDER BY ps.start_time ASC LIMIT ${params.limit}`;
 
-      const sessions = await sql(query);
+      const sessions = await sql.unsafe(query);
+      console.log(`✅ read_calendar_sessions: Found ${sessions.length} sessions`);
 
       return {
         success: true,
         count: sessions.length,
-        sessions: sessions.map(session => ({
+        summary: `Found ${sessions.length} photography sessions${params.session_type ? ` (${params.session_type})` : ''}${params.start_date ? ` from ${params.start_date}` : ''}`,
+        sessions: sessions.map((session, index) => ({
           id: session.id,
-          client_name: session.client_name,
+          client_name: session.client_name || 'Unknown Client',
           client_email: session.client_email,
           session_type: session.session_type,
-          date: session.session_date,
-          duration: `${session.duration_minutes} minutes`,
-          location: session.location,
-          price: session.price ? `€${session.price}` : 'Not set',
+          start_time: session.start_time,
+          end_time: session.end_time,
+          duration: `${Math.round(session.duration_minutes || 0)} minutes`,
+          location: session.location_name,
+          price: session.base_price ? `€${session.base_price}` : 'Not set',
+          deposit: session.deposit_amount ? `€${session.deposit_amount}` : 'None',
           status: session.status,
-          notes: session.notes || 'No notes'
-        }))
+          notes: session.notes || 'No notes',
+          booking_number: `#${String(index + 1).padStart(3, '0')}`
+        })),
+        next_available: sessions.length === params.limit ? 'More sessions available' : 'All sessions loaded'
       };
     } catch (error) {
       return {

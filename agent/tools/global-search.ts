@@ -75,7 +75,25 @@ export const globalSearchTool = {
         });
       }
       
-      return results;
+      // Enhanced response formatting
+      const totalResults = results.clients.length + results.leads.length + results.invoices.length + results.sessions.length;
+      
+      return {
+        ...results,
+        summary: {
+          total_results: totalResults,
+          breakdown: {
+            clients: results.clients.length,
+            leads: results.leads.length,
+            invoices: results.invoices.length,
+            sessions: results.sessions.length
+          },
+          search_term: term,
+          message: totalResults > 0 
+            ? `Found ${totalResults} results across CRM database for "${term}"`
+            : `No results found for "${term}" - try broader search terms or check spelling`
+        }
+      };
     } catch (error: any) {
       console.error('[global_search]', error);
       throw new Error(`supabase:${error.code || error.message}`);
