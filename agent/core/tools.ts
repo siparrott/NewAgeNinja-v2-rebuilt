@@ -92,6 +92,13 @@ toolRegistry.register(replyEmailTool);
 import { createInvoiceTool } from "../tools/create-invoice";
 toolRegistry.register(createInvoiceTool);
 
+// Add voucher management tools
+import { createVoucherProductTool, sellVoucherTool, readVoucherSalesTool, redeemVoucherTool } from "../tools/voucher-management";
+toolRegistry.register(createVoucherProductTool);
+toolRegistry.register(sellVoucherTool);
+toolRegistry.register(readVoucherSalesTool);
+toolRegistry.register(redeemVoucherTool);
+
 // Minimal tool set to stay under token limit
 console.log(`📋 Registered ${toolRegistry.list().length} tools for CRM agent`);
 

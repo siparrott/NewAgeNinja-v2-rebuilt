@@ -1,0 +1,118 @@
+🏗️  **SUPER-SCOPE: Add full sidebar parity to TogNinja CRM Agent**
+
+GOAL  
+Our OpenAI-powered agent must handle EVERY feature listed in the left sidebar, not just leads/clients/invoices.  
+You will scaffold code, DB tables, tools, and minimal UI hooks so each area is at least CRUD-complete.
+
+────────────────────────────
+🔑 CORE CONSTRAINTS
+────────────────────────────
+• Backend stack = Node + Supabase (service-role key) + Drizzle migrations.  
+• Agent uses Assistants API function calling; every new action == a new tool in `agent/tools`.  
+• Guard-rails: one authority string per major feature, added to `ai_policies.authorities`.  
+• UI is React (Vite) – add placeholder pages/components, but no heavy styling required.  
+• Keep each PR sized: one feature = one migration + one tool file + one React page.  
+• Update `agent/core/tools.ts` and run `agent/update-assistant.js` at the end.
+
+────────────────────────────
+📋 FEATURE CHECKLIST  (implement in this order)
+────────────────────────────
+1. **Dashboard metrics**  
+   • tables: `dashboard_widgets` (id, studio_id, type, config jsonb)  
+   • tool: `read_dashboard_metrics`  
+   • authority: `READ_DASHBOARD`
+
+2. **Voucher sales**  
+   • table: `voucher_products`, `voucher_sales`  
+   • tools: `create_voucher_product`, `sell_voucher`, `read_voucher_sales`  
+   • authority: `MANAGE_VOUCHERS`
+
+3. **Top-clients segmentation**  
+   • tool: `list_top_clients` (order by lifetime_value desc)  
+   • authority: `READ_TOP_CLIENTS`
+
+4. **Gallery management**  
+   • table: `client_galleries` (id, studio_id, client_id, title, status)  
+   • tools: `create_gallery`, `add_image_to_gallery`, `read_galleries`  
+   • authority: `MANAGE_GALLERIES`
+
+5. **Calendar enhancements**  
+   • extend `photography_sessions` with status + notes  
+   • tools: `reschedule_session`, `list_availability`  
+   • authority: `MANAGE_CALENDAR`
+
+6. **Digital file delivery**  
+   • table: `digital_files` (id, gallery_id, path, type, delivered:boolean)  
+   • tools: `upload_digital_file`, `mark_delivered`  
+   • authority: `MANAGE_FILES`
+
+7. **Manual Blog CMS**  
+   • table: `blog_posts` (id, studio_id, title, slug, body, status)  
+   • tool: `create_blog_post`, `publish_blog_post`  
+   • authority: `MANAGE_BLOG`
+
+8. **Email campaigns**  
+   • table: `email_campaigns`, `campaign_recipients`  
+   • tools: `create_email_campaign`, `send_campaign` (chunked)  
+   • authority: `MANAGE_CAMPAIGNS`
+
+9. **Questionnaires**  
+   • tables: `questionnaires`, `questionnaire_responses`  
+   • tools: `send_questionnaire`, `read_responses`  
+   • authority: `MANAGE_QUESTIONNAIRES`
+
+10. **Reports & analytics**  
+    • endpoint `/api/reports/:name` returns JSON via Supabase RPC  
+    • tool: `generate_report(name, date_range)`  
+    • authority: `READ_REPORTS`
+
+11. **Studio settings**  
+    • page `/admin/settings` that writes to `studio_configs`  
+    • tool: `update_studio_setting(key,value)`  
+    • authority: `MANAGE_SETTINGS`
+
+12. **Template / branding**  
+    • folder `/studio-themes/<studioId>/` for tailwind config + logo path  
+    • tool: `update_brand_asset(type,url)`  
+    • authority: `MANAGE_BRANDING`
+
+13. **Website wizard hooks**  
+    • tool: `crawl_website(url)` → stores metadata in `studio_site_cache`  
+    • authority: `RUN_WIZARD`
+
+14. **Knowledge-base**  
+    • table: `kb_articles` (id, studio_id, title, body, tags)  
+    • tools: `create_article`, `search_kb`  
+    • authority: `MANAGE_KB`
+
+────────────────────────────
+🛠️  IMPLEMENTATION GUIDELINES
+────────────────────────────
+• **Migrations** → `drizzle/migrations/<timestamp>_<feature>.sql`  
+• **Tools** → one file per feature in `agent/tools/` exporting Zod-typed tool(s).  
+• **React Pages** → stub under `/src/pages/<Feature>Index.tsx` with simple table & “Add” button.  
+• **Policy seeds** → update `supabase/seed/ai_policies.sql` to include new authorities in default conservative mode.  
+• **Unit tests** → Jest file per tool to insert dummy studio row then call handler.
+
+────────────────────────────
+✅ ACCEPTANCE TEST (run after each feature)
+────────────────────────────
+1. `npm run migrate` → no errors  
+2. `npm run agent:test` → assistant lists the new tool in `assistant.tools`  
+3. Via Repl AI chat:  
+   * “create a voucher product ‘Gold Gift’ €200” → returns voucher id  
+   * “sell voucher ‘Gold Gift’ to Matt Pantling” → returns sale record  
+   * “list top clients” → returns table  
+   * etc.
+
+────────────────────────────
+🔄  CYCLIC WORKFLOW  (per feature)
+────────────────────────────
+1. Generate SQL + tool skeleton.  
+2. Run migration locally, adjust types.  
+3. Add to `toolRegistry`, run `agent/update-assistant.js`.  
+4. Add minimal React page with fetch from `/api/<feature>`.  
+5. Run Jest test.  
+6. Commit & push.
+
+Please start with **Voucher sales (Feature 2)**, finish the full cycle, then continue in the order listed.  Answer “Ready” when scaffolding for Feature 2 is complete and tests pass.
