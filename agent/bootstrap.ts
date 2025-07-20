@@ -30,7 +30,8 @@ export async function createAgentContext(studioId: string, userId: string): Prom
       "MANAGE_REPORTS",
       "MANAGE_SYSTEM",
       "MANAGE_INTEGRATIONS",
-      "MANAGE_AUTOMATION"
+      "MANAGE_AUTOMATION",
+      "MANAGE_CUSTOMER_PORTAL"
     ],
     approval_required_over_amount: 500,
     email_send_mode: "auto",

@@ -83,6 +83,7 @@ import { reportsAnalyticsTools } from "../tools/reports-analytics";
 import { systemAdministrationTools } from "../tools/system-administration";
 import { integrationManagementTools } from "../tools/integration-management";
 import { automationManagementTools } from "../tools/automation-management";
+import { customerPortalManagementTools } from "../tools/customer-portal-management";
 
 // Register essential core tools only
 toolRegistry.register(emailSendTool);
@@ -173,6 +174,16 @@ integrationManagementTools.forEach(tool => {
 
 // Register automation management tools
 automationManagementTools.forEach(tool => {
+  toolRegistry.register({
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    handler: async (params) => tool.execute(params)
+  });
+});
+
+// Register customer portal management tools
+customerPortalManagementTools.forEach(tool => {
   toolRegistry.register({
     name: tool.name,
     description: tool.description,
