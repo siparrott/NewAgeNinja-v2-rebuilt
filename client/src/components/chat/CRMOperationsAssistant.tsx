@@ -17,6 +17,8 @@ import {
   FileText,
   Settings
 } from 'lucide-react';
+import { PlanModal } from '../PlanModal';
+import { usePlanRunner } from '../../hooks/usePlanRunner';
 
 interface Message {
   id: string;
@@ -48,7 +50,7 @@ const CRMOperationsAssistant: React.FC<CRMOperationsAssistantProps> = ({
     {
       id: '1',
       role: 'assistant',
-      content: "Hello! I'm your CRM Operations Assistant. I can help you:\n\n📧 Send booking confirmations & replies\n📅 Manage appointments & schedules  \n👥 Create & update client records\n💰 Generate & send invoices\n📊 Run reports & analyze data\n⚡ Automate routine tasks\n\nWhat would you like me to help you with today?",
+      content: "Hello! I'm your Self-Planning CRM Operations Assistant. I can help you:\n\n📧 Send booking confirmations & replies\n📅 Manage appointments & schedules  \n👥 Create & update client records\n💰 Generate & send invoices\n📊 Run reports & analyze data\n⚡ Automate complex multi-step tasks\n🧠 Plan and execute complex workflows\n\nFor complex requests, I'll create a plan and ask for your confirmation before proceeding. What would you like me to help you with today?",
       timestamp: new Date()
     }
   ]);
@@ -56,6 +58,16 @@ const CRMOperationsAssistant: React.FC<CRMOperationsAssistantProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
+  
+  // Planning system integration
+  const { 
+    pendingPlan, 
+    showPlanModal, 
+    executingPlan, 
+    sendChatMessage, 
+    executePlan, 
+    cancelPlan 
+  } = usePlanRunner();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -98,28 +110,82 @@ const CRMOperationsAssistant: React.FC<CRMOperationsAssistantProps> = ({
 
   const sendMessage = async (message: string, currentThreadId: string) => {
     try {
-      const response = await fetch('/functions/v1/openai-send-crm-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          threadId: currentThreadId,
-          message,
-          assistantId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send message');
+      // Try new planning-enabled CRM agent first
+      const complexKeywords = ['then', 'and', 'after', 'multiple', 'all clients', 'batch', 'everyone'];
+      const usePlanner = complexKeywords.some(keyword => message.toLowerCase().includes(keyword));
+      
+      const response = await sendChatMessage(message, usePlanner);
+      
+      if (response.type === 'plan_confirmation_required') {
+        return {
+          response: `I've created a plan for your request: "${response.plan?.explanation}". Please review the execution plan and confirm to proceed.`,
+          actionPerformed: false
+        };
       }
-
-      const data = await response.json();
-      return data;
+      
+      return {
+        response: response.response || 'Task completed successfully.',
+        actionPerformed: response.type === 'plan_executed'
+      };
+      
     } catch (error) {
-      // console.error removed
-      throw error;
+      // Fallback to original OpenAI assistant
+      try {
+        const response = await fetch('/functions/v1/openai-send-crm-message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            threadId: currentThreadId,
+            message,
+            assistantId,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to send message');
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (fallbackError) {
+        throw error; // Re-throw the original error
+      }
+    }
+  };
+
+  const handlePlanConfirm = async () => {
+    if (!pendingPlan) return;
+
+    setIsLoading(true);
+    try {
+      const result = await executePlan(pendingPlan);
+      
+      const assistantMsg: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: result.response || 'Plan executed successfully.',
+        timestamp: new Date(),
+        actionPerformed: true
+      };
+
+      setMessages(prev => [...prev, assistantMsg]);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Plan execution failed';
+      setError(errorMessage);
+      
+      const errorMsg: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `Plan execution failed: ${errorMessage}`,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -379,6 +445,15 @@ const CRMOperationsAssistant: React.FC<CRMOperationsAssistantProps> = ({
           </div>
         </>
       )}
+      
+      {/* Planning Modal */}
+      <PlanModal
+        isOpen={showPlanModal}
+        plan={pendingPlan}
+        onConfirm={handlePlanConfirm}
+        onCancel={cancelPlan}
+        loading={executingPlan}
+      />
     </div>
   );
 };

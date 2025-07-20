@@ -3,22 +3,61 @@ import { Router } from "express";
 import { runAgent } from "../../agent/run-agent";
 import { createAgentContext } from "../../agent/bootstrap";
 import { toolRegistry } from "../../agent/core/tools";
+import { planAndExecute, executePlan, formatPlanOutputs } from "../../agent/core/planRunner";
 
 const router = Router();
 
-// Chat with CRM agent
+// Chat with CRM agent (enhanced with planning capabilities)
 router.post("/api/crm/agent/chat", async (req, res) => {
   try {
-    const { message, studioId = "e5dc81e8-7073-4041-8814-affb60f4ef6c", userId = "admin" } = req.body;
+    const { message, usePlanner = false, studioId = "e5dc81e8-7073-4041-8814-affb60f4ef6c", userId = "admin" } = req.body;
     
     if (!message) {
       return res.status(400).json({ error: "Message required" });
     }
 
-    // Run the agent
+    // Check if this is a complex request that should use the planner
+    const complexRequestKeywords = ['then', 'and', 'after', 'multiple', 'all', 'batch'];
+    const shouldUsePlanner = usePlanner || complexRequestKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword)
+    );
+
+    if (shouldUsePlanner) {
+      const ctx = await createAgentContext(studioId, userId);
+      const planResult = await planAndExecute(message, ctx);
+      
+      if (planResult.needConfirmation) {
+        return res.json({
+          type: "plan_confirmation_required",
+          plan: planResult.plan,
+          message: "This operation requires confirmation before proceeding.",
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      if (planResult.outputs) {
+        return res.json({
+          type: "plan_executed",
+          response: formatPlanOutputs(planResult.outputs),
+          outputs: planResult.outputs,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      if (planResult.error) {
+        return res.status(400).json({
+          type: "plan_error",
+          error: planResult.error,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    // Run the standard agent
     const response = await runAgent(studioId, userId, message);
     
     res.json({ 
+      type: "agent_response",
       response,
       status: "success",
       timestamp: new Date().toISOString()
@@ -28,6 +67,41 @@ router.post("/api/crm/agent/chat", async (req, res) => {
     console.error("CRM agent error:", error);
     res.status(500).json({ 
       error: "Agent execution failed",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Execute a confirmed plan
+router.post("/api/crm/agent/execute-plan", async (req, res) => {
+  try {
+    const { plan, studioId = "e5dc81e8-7073-4041-8814-affb60f4ef6c", userId = "admin" } = req.body;
+    
+    if (!plan) {
+      return res.status(400).json({ error: "Plan required" });
+    }
+
+    const ctx = await createAgentContext(studioId, userId);
+    const result = await executePlan(plan, ctx);
+    
+    if (result.error) {
+      return res.status(400).json({
+        error: result.error,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    res.json({
+      type: "plan_executed",
+      response: formatPlanOutputs(result.outputs || []),
+      outputs: result.outputs,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error("Plan execution error:", error);
+    res.status(500).json({ 
+      error: "Plan execution failed",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }

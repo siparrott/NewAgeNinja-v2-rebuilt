@@ -1,0 +1,192 @@
+🚀  UPGRADE:  Self-Planning & Knowledge-Aware CRM Agent (8-hour scope)
+
+OBJECTIVE  
+Give the TogNinja CRM agent the same “figure-it-out” behaviour as the Replit demo by adding:
+
+1. tool_catalog auto-introspection  
+2. pgvector knowledge base + kb_search tool  
+3. Planner Assistant → JSON step plans → execution wrapper  
+4. User confirmation modal for risky flows  
+5. Jest / Cypress regression tests
+
+────────────────────────────────────────
+STEP-BY-STEP IMPLEMENTATION
+────────────────────────────────────────
+
+### 1. Auto-generate capability catalog
+• **scripts/generateCatalog.ts**  
+```ts
+import { toolRegistry } from "../agent/core/tools";
+import { writeFileSync } from "fs";
+writeFileSync(
+  "agent/data/tool_catalog.json",
+  JSON.stringify(
+    Object.values(toolRegistry).map(t=>({
+      name:t.name,
+      description:t.description?.split("\n")[0],
+      parameters: t.parameters?.shape || {}
+    })), null,2));
+• Add to "postinstall" in package.json:
+"postinstall":"npm run gen:catalog && node agent/update-assistant.js"
+• NPM script: "gen:catalog":"ts-node scripts/generateCatalog.ts"
+
+• agent/tools/describe_capabilities.ts
+Returns tool_catalog.json to the LLM.
+
+2. Knowledge base with pgvector
+Migration drizzle/migrations/2025_07_21_kb.sql
+
+sql
+Kopieren
+Bearbeiten
+create extension if not exists vector;
+create table if not exists crm_kb (
+  id uuid primary key default gen_random_uuid(),
+  studio_id uuid not null,
+  title text,
+  body_markdown text,
+  embedding vector(1536)
+);
+RPC sql
+
+sql
+Kopieren
+Bearbeiten
+create or replace function kb_search(studio uuid, q text)
+returns table(id uuid, title text, snippet text) language plpgsql as $$
+declare
+  emb vector := (select embedding from openai_embed(q));  -- helper ext
+begin
+  return query
+  select id,title,substring(body_markdown,1,240)||' …' snippet
+  from crm_kb
+  where studio_id = studio
+  order by embedding <=> emb   -- cosine distance
+  limit 3;
+end $$;
+agent/tools/kb_search.ts
+
+ts
+Kopieren
+Bearbeiten
+export const kbSearch = {
+  name:"kb_search",
+  description:"Search studio knowledge base, returns top 3 docs.",
+  parameters:z.object({ query:z.string() }),
+  handler: async (a,ctx)=>{
+    const {data,error}=await sb.rpc("kb_search",{studio:ctx.studioId,q:a.query});
+    if(error) throw error;
+    return data;
+  }
+};
+3. Planner Assistant & runner
+Assistant ID create once; store in studio_integrations.planner_assistant_id.
+
+prompts/planner_system.txt
+
+javascript
+Kopieren
+Bearbeiten
+You are the Planner. You receive:
+USER_REQUEST: raw text
+CAPABILITIES: JSON list of tools
+
+Respond with pure JSON:
+{
+  "steps":[
+    {"tool":"...", "args":{...}},
+    ...
+  ],
+  "explanation":"one-sentence human summary"
+}
+Do NOT execute tools.
+agent/core/planRunner.ts
+
+ts
+Kopieren
+Bearbeiten
+export async function planAndExecute(userMsg, ctx){
+  const catalog = require("../data/tool_catalog.json");
+  const openai = openaiForStudio(ctx.creds);
+  const thread = await openai.beta.threads.create({});
+  await openai.beta.threads.messages.create(thread.id,{role:"user",
+    content:JSON.stringify({USER_REQUEST:userMsg, CAPABILITIES:catalog})});
+
+  const planRun = await openai.beta.threads.runs.create(
+      thread.id,{assistant_id:ctx.creds.plannerAssistantId});
+  const planMsg = (await openai.beta.threads.messages.list(thread.id)).data.at(-1);
+  const plan = JSON.parse(planMsg.content[0].text.value);
+
+  // confirm with user if risky
+  if(plan.steps.some(s=>["submit_lab_order","send_campaign"].includes(s.tool))){
+     return {needConfirmation:true, plan};
+  }
+
+  // execute steps
+  const outputs=[];
+  for(const step of plan.steps){
+     const tool = toolRegistry[step.tool];
+     outputs.push(await tool.handler(step.args,ctx));
+  }
+  return {outputs};
+}
+4. React confirmation modal
+src/components/PlanModal.tsx
+(simple Tailwind dialog listing plan.steps, Proceed / Cancel; on Proceed calls /api/executePlan).
+
+5. Endpoint changes
+/api/crm/agent/chat
+
+ts
+Kopieren
+Bearbeiten
+const planRes = await planAndExecute(message, ctx);
+if(planRes.needConfirmation) return res.json({plan:planRes.plan});
+if(planRes.outputs)          return res.json({reply:formatOutputs(planRes.outputs)});
+/api/executePlan executes stored plan after user clicks Proceed.
+
+6. Prompt RULE additions
+Add to prompts/system.txt AFTER TOOL LIST:
+
+sql
+Kopieren
+Bearbeiten
+If you are unsure which tool sequence completes the user request:
+1. Call describe_capabilities()
+2. Call kb_search(query) if domain-specific knowledge needed
+3. Ask the Planner assistant for a JSON plan
+4. Present the plan for confirmation, then execute via planRunner
+7. Tests
+tests/planRunner.test.ts
+• Mock Planner JSON {steps:[…]}
+• Ensure each step’s tool runs and outputs aggregate.
+
+tests/kb_search.test.ts
+• Insert 3 kb docs, assert search returns correct id order.
+
+8. DONE CRITERIA
+npm run migrate → success
+
+npm test → all green
+
+Manual:
+“How many leads and then invoice them for 199€”
+Agent → Planner → plan → confirmation modal → executes tools → returns success summary.
+
+Print “Upgrade Ready” when complete.
+
+markdown
+Kopieren
+Bearbeiten
+
+---
+
+**Usage**
+
+1. Open your Replit project.  
+2. Paste the entire box above into the Replit AI chat.  
+3. Wait while it scaffolds migrations, tools, runner, modal, and tests.  
+4. Add your `OPENAI_API_KEY`, `PRODIGI_API_KEY`, etc. if prompted.  
+5. Run `npm run migrate && npm test` → all green.  
+6. Click **Run** → You now have a self-planning, knowledge-aware CRM agent.
+::contentReference[oaicite:0]{index=0}

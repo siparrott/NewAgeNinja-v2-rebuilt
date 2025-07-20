@@ -206,6 +206,12 @@ toolRegistry.register(replyEmailTool);
 import { createInvoiceTool } from "../tools/create-invoice";
 toolRegistry.register(createInvoiceTool);
 
+// Add planning and knowledge tools
+import { describeCapabilitiesTool } from "../tools/describe-capabilities";
+import { kbSearchTool } from "../tools/kb-search";
+toolRegistry.register(describeCapabilitiesTool);
+toolRegistry.register(kbSearchTool);
+
 // Add voucher management tools
 import { createVoucherProductTool, sellVoucherTool, readVoucherSalesTool, redeemVoucherTool } from "../tools/voucher-management";
 toolRegistry.register(createVoucherProductTool);
