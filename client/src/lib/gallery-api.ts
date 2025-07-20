@@ -1,4 +1,3 @@
-import { supabase } from './supabase';
 import { 
   Gallery, 
   GalleryImage, 
@@ -8,9 +7,6 @@ import {
   GalleryAuthData,
   GalleryAccessLog
 } from '../types/gallery';
-
-// Base URL for the galleries API
-const API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/galleries`;
 
 // Get all galleries (admin only)
 export async function getGalleries(): Promise<Gallery[]> {
@@ -31,18 +27,18 @@ export async function getGalleries(): Promise<Gallery[]> {
 // Get a single gallery by ID (admin only)
 export async function getGalleryById(id: string): Promise<Gallery> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
-    }    const { data, error } = await supabase
-      .from('galleries')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const response = await fetch(`/api/galleries/${id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error) throw error;
-    return mapDatabaseToGallery(data);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch gallery');
+    }
+
+    return await response.json();
   } catch (error) {
     // console.error removed
     throw error;
@@ -106,6 +102,10 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
       description: galleryData.description || null,
       slug: slug,
       coverImage: coverImageUrl,
+      clientId: galleryData.clientId,
+      isPublic: galleryData.isPublic,
+      isPasswordProtected: galleryData.isPasswordProtected,
+      password: galleryData.password
     };
 
     // console.log removed
@@ -135,37 +135,20 @@ export async function createGallery(galleryData: GalleryFormData): Promise<Galle
 // Update an existing gallery (admin only)
 export async function updateGallery(id: string, galleryData: GalleryFormData): Promise<Gallery> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
+    const response = await fetch(`/api/galleries/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(galleryData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update gallery');
     }
 
-    // Prepare update data
-    const updateData: any = {
-      title: galleryData.title,
-      download_enabled: galleryData.downloadEnabled,
-      updated_at: new Date().toISOString()
-    };
-
-    // If password is provided and not empty, hash it
-    if (galleryData.password) {
-      updateData.password_hash = await hashPassword(galleryData.password);
-    }
-
-    // If there's a new cover image, upload it
-    if (galleryData.coverImage) {
-      updateData.cover_image = await uploadGalleryCoverImage(id, galleryData.coverImage);
-    }
-
-    // Update the gallery
-    const { data, error } = await supabase
-      .from('galleries')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();    if (error) throw error;
-    return mapDatabaseToGallery(data);
+    return await response.json();
   } catch (error) {
     // console.error removed
     throw error;
@@ -203,12 +186,6 @@ export async function deleteGallery(id: string): Promise<void> {
 // Upload images to a gallery (admin only)
 export async function uploadGalleryImages(galleryId: string, files: File[]): Promise<GalleryImage[]> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
-    }
-
     const formData = new FormData();
     formData.append('galleryId', galleryId);
     
@@ -217,87 +194,17 @@ export async function uploadGalleryImages(galleryId: string, files: File[]): Pro
       formData.append('images', file);
     });
 
-    // First try to use the Edge Function
-    try {
-      const response = await fetch(`${API_URL}/admin/galleries/${galleryId}/upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: formData,
-      });
+    const response = await fetch(`/api/galleries/${galleryId}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to upload images');
-      }
-
-      return await response.json();
-    } catch (edgeFunctionError) {
-      // console.warn removed
-      
-      // Fall back to direct upload if Edge Function fails
-      const uploadedImages = [];
-      
-      for (const file of files) {
-        // Generate unique filename
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        
-        // Upload original
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('galleries')
-          .upload(`${galleryId}/original/${fileName}`, file);
-        
-        if (uploadError) throw uploadError;
-        
-        // Get public URL
-        const { data: { publicUrl: originalUrl } } = supabase.storage
-          .from('galleries')
-          .getPublicUrl(`${galleryId}/original/${fileName}`);
-        
-        // For simplicity in the fallback, use the same URL for display and thumb
-        // In a real implementation, you'd resize the images
-        
-        // Create database record
-        const { data: image, error: imageError } = await supabase
-          .from('gallery_images')
-          .insert({
-            gallery_id: galleryId,
-            original_url: originalUrl,
-            display_url: originalUrl, // In a real implementation, this would be a resized version
-            thumb_url: originalUrl,   // In a real implementation, this would be a thumbnail
-            filename: file.name,
-            size_bytes: file.size,
-            content_type: file.type,
-            order_index: uploadedImages.length
-          })
-          .select()
-          .single();
-        
-        if (imageError) throw imageError;
-        
-        uploadedImages.push(image);
-        
-        // If this is the first image, set it as the cover image if the gallery doesn't have one
-        if (uploadedImages.length === 1) {
-          const { data: gallery } = await supabase
-            .from('galleries')
-            .select('cover_image')
-            .eq('id', galleryId)
-            .single();
-          
-          if (!gallery.cover_image) {
-            await supabase
-              .from('galleries')
-              .update({ cover_image: originalUrl })
-              .eq('id', galleryId);
-          }
-        }
-      }
-      
-      return uploadedImages;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to upload images');
     }
+
+    return await response.json();
   } catch (error) {
     // console.error removed
     throw error;
@@ -307,20 +214,14 @@ export async function uploadGalleryImages(galleryId: string, files: File[]): Pro
 // Get images for a gallery (admin only)
 export async function getGalleryImages(galleryId: string): Promise<GalleryImage[]> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch(`/api/galleries/${galleryId}/images`);
     
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch gallery images');
     }
 
-    const { data, error } = await supabase
-      .from('gallery_images')
-      .select('*')
-      .eq('gallery_id', galleryId)
-      .order('order_index', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
+    return await response.json();
   } catch (error) {
     // console.error removed
     throw error;
@@ -330,20 +231,14 @@ export async function getGalleryImages(galleryId: string): Promise<GalleryImage[
 // Get gallery visitors (admin only)
 export async function getGalleryVisitors(galleryId: string): Promise<GalleryVisitor[]> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch(`/api/galleries/${galleryId}/visitors`);
     
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch gallery visitors');
     }
 
-    const { data, error } = await supabase
-      .from('gallery_visitors')
-      .select('*')
-      .eq('gallery_id', galleryId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
+    return await response.json();
   } catch (error) {
     // console.error removed
     throw error;
@@ -353,20 +248,14 @@ export async function getGalleryVisitors(galleryId: string): Promise<GalleryVisi
 // Get gallery access logs (admin only)
 export async function getGalleryAccessLogs(galleryId: string): Promise<GalleryAccessLog[]> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch(`/api/galleries/${galleryId}/access-logs`);
     
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch gallery access logs');
     }
 
-    const { data, error } = await supabase
-      .from('gallery_access_logs')
-      .select('*')
-      .eq('gallery_id', galleryId)
-      .order('accessed_at', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
+    return await response.json();
   } catch (error) {
     // console.error removed
     throw error;
@@ -376,23 +265,18 @@ export async function getGalleryAccessLogs(galleryId: string): Promise<GalleryAc
 // Update image order (admin only)
 export async function updateImageOrder(galleryId: string, imageIds: string[]): Promise<void> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
+    const response = await fetch(`/api/galleries/${galleryId}/images/reorder`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ imageIds }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update image order');
     }
-
-    // Update each image's order_index
-    const updates = imageIds.map((id, index) => ({
-      id,
-      order_index: index
-    }));
-
-    const { error } = await supabase
-      .from('gallery_images')
-      .upsert(updates);
-
-    if (error) throw error;
   } catch (error) {
     // console.error removed
     throw error;
@@ -402,42 +286,14 @@ export async function updateImageOrder(galleryId: string, imageIds: string[]): P
 // Delete an image (admin only)
 export async function deleteGalleryImage(imageId: string): Promise<void> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
+    const response = await fetch(`/api/galleries/images/${imageId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete image');
     }
-
-    // Get the image to find its URLs
-    const { data: image, error: getError } = await supabase
-      .from('gallery_images')
-      .select('*')
-      .eq('id', imageId)
-      .single();
-
-    if (getError) throw getError;
-
-    // Delete the image record
-    const { error: deleteError } = await supabase
-      .from('gallery_images')
-      .delete()
-      .eq('id', imageId);
-
-    if (deleteError) throw deleteError;
-
-    // Delete the image files from storage
-    // This would need to extract the paths from the URLs
-    const originalPath = new URL(image.original_url).pathname.split('/').pop();
-    const displayPath = new URL(image.display_url).pathname.split('/').pop();
-    const thumbPath = new URL(image.thumb_url).pathname.split('/').pop();
-
-    await supabase.storage
-      .from('galleries')
-      .remove([
-        `${image.gallery_id}/original/${originalPath}`,
-        `${image.gallery_id}/display/${displayPath}`,
-        `${image.gallery_id}/thumb/${thumbPath}`
-      ]);
   } catch (error) {
     // console.error removed
     throw error;
@@ -447,28 +303,18 @@ export async function deleteGalleryImage(imageId: string): Promise<void> {
 // Set gallery cover image (admin only)
 export async function setGalleryCoverImage(galleryId: string, imageId: string): Promise<void> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
+    const response = await fetch(`/api/galleries/${galleryId}/cover-image`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ imageId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to set cover image');
     }
-
-    // Get the image to find its thumb URL
-    const { data: image, error: getError } = await supabase
-      .from('gallery_images')
-      .select('thumb_url')
-      .eq('id', imageId)
-      .single();
-
-    if (getError) throw getError;
-
-    // Update the gallery with the cover image URL
-    const { error: updateError } = await supabase
-      .from('galleries')
-      .update({ cover_image: image.thumb_url })
-      .eq('id', galleryId);
-
-    if (updateError) throw updateError;
   } catch (error) {
     // console.error removed
     throw error;
@@ -478,17 +324,7 @@ export async function setGalleryCoverImage(galleryId: string, imageId: string): 
 // Get gallery stats (admin only)
 export async function getGalleryStats(galleryId: string): Promise<GalleryStats> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('Authentication required');
-    }
-
-    const response = await fetch(`${API_URL}/admin/analytics/galleries/${galleryId}`, {
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-    });
+    const response = await fetch(`/api/galleries/${galleryId}/stats`);
 
     if (!response.ok) {
       const error = await response.json();
@@ -551,7 +387,7 @@ export async function getPublicGalleryImages(slug: string, token: string): Promi
 // Toggle favorite status for an image (requires JWT)
 export async function toggleImageFavorite(imageId: string, token: string): Promise<void> {
   try {
-    const response = await fetch(`${API_URL}/public/images/${imageId}/favorite`, {
+    const response = await fetch(`/api/galleries/images/${imageId}/favorite`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -571,7 +407,7 @@ export async function toggleImageFavorite(imageId: string, token: string): Promi
 // Download a gallery as ZIP (requires JWT)
 export async function downloadGallery(slug: string, token: string): Promise<Blob> {
   try {
-    const response = await fetch(`${API_URL}/public/galleries/${slug}/download`, {
+    const response = await fetch(`/api/galleries/${slug}/download`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -625,24 +461,21 @@ async function hashPassword(password: string): Promise<string> {
 // Upload a cover image for a gallery
 async function uploadGalleryCoverImage(galleryId: string, file: File): Promise<string> {
   try {
-    // Generate a unique filename
-    const fileExt = file.name.split('.').pop();
-    const fileName = `cover-${Date.now()}.${fileExt}`;
-    const filePath = `${galleryId}/cover/${fileName}`;
+    const formData = new FormData();
+    formData.append('coverImage', file);
     
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from('galleries')
-      .upload(filePath, file);
-    
-    if (uploadError) throw uploadError;
-    
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('galleries')
-      .getPublicUrl(filePath);
-    
-    return publicUrl;
+    const response = await fetch(`/api/galleries/${galleryId}/cover-upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to upload cover image');
+    }
+
+    const { url } = await response.json();
+    return url;
   } catch (error) {
     // console.error removed
     throw error;
