@@ -1,0 +1,229 @@
+Below is a turn-key “Gallery Shop” module you can drop straight into your TogNinja / Replit repo.
+It lets every gallery render a “Buy Prints & Canvas” button, shows product options (size, medium, finish), collects the order, and sends the client to a Stripe Checkout session.
+All code is TypeScript, works with your existing Supabase + React stack, and respects studio_id RLS.
+
+1 Database migration drizzle/migrations/2025_07_20_gallery_shop.sql
+sql
+Kopieren
+Bearbeiten
+-- shop catalog per studio
+create table if not exists print_products (
+  id           uuid primary key default gen_random_uuid(),
+  studio_id    uuid references studios(id),
+  sku          text unique,
+  name         text,
+  base_price   numeric,
+  unit         text default 'EUR',
+  variant_json jsonb,           -- sizes, finishes, etc.
+  is_active    boolean default true,
+  created_at   timestamptz default now()
+);
+
+-- orders per gallery
+create table if not exists gallery_orders (
+  id            uuid primary key default gen_random_uuid(),
+  studio_id     uuid references studios(id),
+  gallery_id    uuid references client_galleries(id),
+  client_id     uuid references crm_clients(id),
+  stripe_session_id text,
+  status        text default 'pending',  -- pending | paid | fulfilled
+  total         numeric,
+  currency      text,
+  created_at    timestamptz default now()
+);
+
+create table if not exists gallery_order_items (
+  id          uuid primary key default gen_random_uuid(),
+  order_id    uuid references gallery_orders(id),
+  product_id  uuid references print_products(id),
+  variant     jsonb,
+  qty         int,
+  unit_price  numeric,
+  line_total  numeric
+);
+
+-- RLS (service-role bypass)
+alter table print_products enable row level security;
+create policy "studio prints" on print_products
+  for select using (studio_id = current_setting('request.jwt.claims',TRUE)::json->>'studio_id');
+alter table gallery_orders enable row level security;
+create policy "studio orders" on gallery_orders
+  for select using (studio_id = current_setting('request.jwt.claims',TRUE)::json->>'studio_id');
+Run:
+
+bash
+Kopieren
+Bearbeiten
+npm run migrate
+2 Backend tool agent/tools/create_stripe_checkout.ts
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
+import type { AgentCtx } from "../core/ctx";
+
+const sb = createClient(process.env.VITE_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+const stripe = new Stripe(process.env.STRIPE_SECRET!, { apiVersion: "2023-10-16" });
+
+export const createCheckoutTool = {
+  name: "create_gallery_checkout",
+  description: "Create Stripe checkout for gallery print order.",
+  parameters: z.object({
+    gallery_id: z.string(),
+    client_id: z.string(),
+    items: z.array(
+      z.object({
+        product_sku: z.string(),
+        variant: z.record(z.any()),
+        qty: z.number().int().min(1)
+      })
+    )
+  }),
+  handler: async (a: any, ctx: AgentCtx) => {
+    // 1. fetch product prices
+    const skus = a.items.map((i: any) => i.product_sku);
+    const { data: products } = await sb
+      .from("print_products")
+      .select("*")
+      .eq("studio_id", ctx.studioId)
+      .in("sku", skus);
+
+    const line_items = a.items.map((i: any) => {
+      const p = products?.find((p: any) => p.sku === i.product_sku);
+      if (!p) throw new Error("product:not_found");
+      return {
+        price_data: {
+          currency: p.unit,
+          product_data: { name: p.name },
+          unit_amount: Math.round(Number(p.base_price) * 100)
+        },
+        quantity: i.qty
+      };
+    });
+
+    // 2. create Stripe checkout
+    const session = await stripe.checkout.sessions.create({
+      line_items,
+      mode: "payment",
+      success_url: `${process.env.PUBLIC_URL}/gallery/${a.gallery_id}?paid=1`,
+      cancel_url: `${process.env.PUBLIC_URL}/gallery/${a.gallery_id}`,
+      metadata: { studio_id: ctx.studioId, gallery_id: a.gallery_id, client_id: a.client_id }
+    });
+
+    // 3. insert order row
+    await sb.from("gallery_orders").insert({
+      studio_id: ctx.studioId,
+      gallery_id: a.gallery_id,
+      client_id: a.client_id,
+      stripe_session_id: session.id,
+      total: session.amount_total! / 100,
+      currency: session.currency
+    });
+
+    return { checkout_url: session.url };
+  }
+};
+Add to toolRegistry, re-run agent/update-assistant.js.
+
+3 Webhook to mark payment supabase/functions/stripe-webhook.ts
+ts
+Kopieren
+Bearbeiten
+import Stripe from "stripe";
+import { serve } from "std/server";
+import { createClient } from "@supabase/supabase-js";
+
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET")!, { apiVersion: "2023-10-16" });
+const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SERVICE_ROLE")!);
+
+serve(async (req) => {
+  const sig = req.headers.get("stripe-signature")!;
+  const buf = await req.arrayBuffer();
+  const event = stripe.webhooks.constructEvent(buf, sig, Deno.env.get("STRIPE_WEBHOOK_SECRET")!);
+
+  if (event.type === "checkout.session.completed") {
+    const s = event.data.object as Stripe.Checkout.Session;
+    await sb
+      .from("gallery_orders")
+      .update({ status: "paid" })
+      .eq("stripe_session_id", s.id);
+  }
+  return new Response("ok");
+});
+4 React front-end widget src/pages/Gallery/ShopDrawer.tsx
+tsx
+Kopieren
+Bearbeiten
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchPrintCatalog, createCheckout } from "@/api";
+
+export function ShopDrawer({ galleryId, clientId }: { galleryId: string; clientId: string }) {
+  const { data: products } = useQuery(["prints"], fetchPrintCatalog);
+  const [cart, setCart] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const add = (sku: string) => setCart(c => [...c, { product_sku: sku, qty:1, variant:{} }]);
+
+  const checkout = async () => {
+    setLoading(true);
+    const { checkout_url } = await createCheckout({ gallery_id:galleryId, client_id:clientId, items:cart });
+    window.location.href = checkout_url;
+  };
+
+  return (
+    <div className="fixed right-0 top-0 w-72 bg-white shadow-xl p-4 h-full overflow-y-auto">
+      <h3 className="text-lg font-semibold mb-4">Buy Prints</h3>
+      {products?.map(p=>(
+        <div key={p.sku} className="mb-3 border p-2 rounded">
+          <div>{p.name}</div>
+          <div className="text-sm text-gray-500">€{p.base_price}</div>
+          <button className="btn btn-sm mt-2" onClick={()=>add(p.sku)}>Add</button>
+        </div>
+      ))}
+      {cart.length>0 && (
+        <button className="btn-primary w-full mt-6" disabled={loading} onClick={checkout}>
+          {loading ? "Redirecting…" : "Checkout"}
+        </button>
+      )}
+    </div>
+  );
+}
+Hook it into your gallery page:
+
+tsx
+Kopieren
+Bearbeiten
+{showShop && <ShopDrawer galleryId={gallery.id} clientId={client.id} />}
+5 Assistant prompt addition
+Add line under TOOLS:
+
+diff
+Kopieren
+Bearbeiten
+- create_gallery_checkout – generate Stripe checkout for selected gallery items
+And rule:
+
+pgsql
+Kopieren
+Bearbeiten
+If the user asks to “sell prints / canvas” call create_gallery_checkout with gallery_id, client_id, and items.
+6 Seed catalog (once)
+sql
+Kopieren
+Bearbeiten
+insert into print_products (studio_id, sku, name, base_price, variant_json)
+values
+ ('YOUR-STUDIO-UUID','PRINT-A4','Fine-art print A4',29,'{}'),
+ ('YOUR-STUDIO-UUID','PRINT-A3','Fine-art print A3',45,'{}'),
+ ('YOUR-STUDIO-UUID','CANVAS-40x60','Canvas 40×60 cm',79,'{}');
+Result
+Client opens gallery → clicks Buy Prints → chooses items → hits Checkout
+
+Your Stripe Checkout opens, they pay, return to gallery (success page)
+
+Webhook marks gallery_orders.status = 'paid' → Assistant can later prompt “Your order is ready for fulfilment.”
+
+Done — a fully-functional mini e-commerce flow inside each client gallery with only ~250 lines of code.

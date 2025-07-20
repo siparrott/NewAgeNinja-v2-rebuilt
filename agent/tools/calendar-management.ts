@@ -171,8 +171,13 @@ export const updateSessionTool = {
       const values = [];
 
       if (params.session_date && params.session_time) {
-        updates.push('session_date = $' + (values.length + 1));
-        values.push(`${params.session_date} ${params.session_time}:00`);
+        const sessionDateTime = `${params.session_date} ${params.session_time}:00`;
+        updates.push('start_time = $' + (values.length + 1));
+        values.push(sessionDateTime);
+        if (params.duration_minutes) {
+          updates.push('end_time = $' + (values.length + 2));
+          values.push(`${sessionDateTime}::timestamp + INTERVAL '${params.duration_minutes} minutes'`);
+        }
       }
       if (params.duration_minutes) {
         updates.push('duration_minutes = $' + (values.length + 1));
@@ -210,7 +215,7 @@ export const updateSessionTool = {
         UPDATE photography_sessions 
         SET ${updates.join(', ')}
         WHERE id = $${values.length}
-        RETURNING id, session_type, session_date, status
+        RETURNING id, session_type, start_time, status
       `;
 
       const result = await sql(query, values);
@@ -225,7 +230,7 @@ export const updateSessionTool = {
         session: {
           id: result[0].id,
           type: result[0].session_type,
-          date: result[0].session_date,
+          date: result[0].start_time,
           status: result[0].status
         }
       };
@@ -258,7 +263,7 @@ export const cancelSessionTool = {
           refund_amount = ${params.refund_amount || 0},
           updated_at = NOW()
         WHERE id = ${params.session_id}
-        RETURNING id, session_type, session_date, client_id
+        RETURNING id, session_type, start_time, client_id
       `;
 
       if (result.length === 0) {
@@ -271,7 +276,7 @@ export const cancelSessionTool = {
         session: {
           id: result[0].id,
           type: result[0].session_type,
-          date: result[0].session_date,
+          date: result[0].start_time,
           status: 'CANCELLED'
         },
         next_steps: params.notify_client ? 
@@ -300,11 +305,12 @@ export const checkAvailabilityTool = {
     try {
       // Get existing sessions for the date
       const existingSessions = await sql`
-        SELECT session_date, duration_minutes
+        SELECT start_time, end_time, 
+               EXTRACT(EPOCH FROM (end_time - start_time))/60 as duration_minutes
         FROM photography_sessions
-        WHERE DATE(session_date) = ${params.date}
+        WHERE DATE(start_time) = ${params.date}
         AND status IN ('CONFIRMED', 'PENDING')
-        ORDER BY session_date
+        ORDER BY start_time
       `;
 
       // Define working hours (9 AM to 6 PM)
@@ -315,10 +321,11 @@ export const checkAvailabilityTool = {
 
       const availableSlots = [];
       const bookedSlots = existingSessions.map(session => {
-        const sessionDate = new Date(session.session_date);
+        const startDate = new Date(session.start_time);
+        const endDate = new Date(session.end_time);
         return {
-          start: sessionDate.getHours() + (sessionDate.getMinutes() / 60),
-          end: sessionDate.getHours() + (sessionDate.getMinutes() / 60) + (session.duration_minutes / 60)
+          start: startDate.getHours() + (startDate.getMinutes() / 60),
+          end: endDate.getHours() + (endDate.getMinutes() / 60)
         };
       });
 

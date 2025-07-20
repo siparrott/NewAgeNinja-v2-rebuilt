@@ -72,6 +72,7 @@ import WeddingFotoshootingPage from './pages/fotoshootings/WeddingFotoshootingPa
 import GalleryPage from './pages/GalleryPage';
 import PublicGalleriesPage from './pages/PublicGalleriesPage';
 import ChatBot from './components/chat/ChatBot';
+import { GalleryShopTest } from './pages/GalleryShopTest';
 
 function App() {
   return (
@@ -439,6 +440,7 @@ function App() {
                     </ProtectedRoute>
                   } 
                 />
+                <Route path="/gallery-shop-test" element={<GalleryShopTest />} />
               </Routes>
               <ChatBot />
             </Router>
