@@ -104,8 +104,94 @@ export async function runAgent(studioId: string, userId: string, message: string
       };
     }
 
-    // REPLIT-STYLE PLANNING STEP - Simple autonomous execution
-    console.log('🧠 Auto-generated tools loaded, analyzing request for autonomous execution...');
+    // SELF-REASONING SYSTEM ACTIVATION
+    console.log('🧠 Self-reasoning agent activated with 72 tools...');
+    
+    // Check for error patterns and apply self-reasoning
+    const { SelfPlanningAgent } = await import('./core/self-planner');
+    const planner = new SelfPlanningAgent(ctx);
+    
+    try {
+      // Generate execution plan with self-reasoning
+      const planningResult = await planner.generateExecutionPlan(message);
+      
+      if (planningResult.status === 'ready') {
+        console.log(`🚀 Self-planned execution with ${planningResult.plan.steps.length} steps`);
+        const executionResults = await planner.executePlan(planningResult.plan);
+        
+        // Format results for user
+        const summary = formatExecutionSummary(planningResult.plan, executionResults);
+        return summary;
+      } else if (planningResult.status === 'requires_confirmation') {
+        console.log(`⏸️ Plan requires ${planningResult.confirmations_needed.length} user confirmations`);
+        return formatConfirmationRequest(planningResult.plan, planningResult.confirmations_needed);
+      }
+    } catch (planningError) {
+      console.log('⚠️ Self-planning failed, falling back to traditional approach:', planningError.message);
+      
+      // Apply self-diagnosis system for error resolution
+      const { selfDiagnosis } = await import('./core/self-diagnosis');
+      
+      try {
+        console.log('🧠 Self-diagnosis system analyzing error...');
+        const diagnosis = await selfDiagnosis.diagnose(planningError.message, {
+          userRequest: message,
+          studioId: ctx.studioId,
+          toolsAvailable: Array.from(toolRegistry.keys())
+        });
+        
+        console.log(`🔍 Self-diagnosis result: ${diagnosis.issue}`);
+        console.log(`🎯 Root cause: ${diagnosis.root_cause}`);
+        console.log(`💡 Suggested fixes: ${diagnosis.suggested_fixes.join(', ')}`);
+        
+        // Attempt auto-fix if available
+        if (diagnosis.auto_fix_available) {
+          console.log('🔧 Attempting automatic fix...');
+          const fixSuccess = await selfDiagnosis.attemptAutoFix(diagnosis, ctx);
+          
+          if (fixSuccess) {
+            console.log('🎉 Self-reasoning system fixed the issue! Retrying...');
+            // Retry the planning after auto-fix
+            try {
+              const retryPlanningResult = await planner.generateExecutionPlan(message);
+              if (retryPlanningResult.status === 'ready') {
+                const retryResults = await planner.executePlan(retryPlanningResult.plan);
+                return formatExecutionSummary(retryPlanningResult.plan, retryResults);
+              }
+            } catch (retryError) {
+              console.log('⚠️ Retry after auto-fix also failed:', retryError.message);
+            }
+          }
+        }
+        
+        // Provide diagnosis to user if auto-fix didn't work
+        return `🧠 Self-reasoning diagnosis:\n\n**Issue**: ${diagnosis.issue}\n**Root Cause**: ${diagnosis.root_cause}\n\n**Suggested Solutions**:\n${diagnosis.suggested_fixes.map(fix => `• ${fix}`).join('\n')}\n\nConfidence: ${Math.round(diagnosis.confidence * 100)}%`;
+        
+      } catch (diagnosisError) {
+        console.log('⚠️ Self-diagnosis also failed:', diagnosisError.message);
+      }
+
+      // Apply enhanced knowledge base search for self-reasoning as fallback
+      const kbSearchTool = toolRegistry.get('kb_search_enhanced') || toolRegistry.get('kb_search');
+      if (kbSearchTool) {
+        try {
+          const kbResult = await kbSearchTool.handler({
+            query: `Error: ${planningError.message}`,
+            context: `User request: ${message}`,
+            auto_reason: true
+          }, ctx);
+          
+          if (kbResult.suggested_actions) {
+            console.log('🧠 Self-reasoning suggested actions:', kbResult.suggested_actions);
+          }
+        } catch (kbError) {
+          console.log('⚠️ Knowledge base self-reasoning also failed:', kbError.message);
+        }
+      }
+    }
+
+    // REPLIT-STYLE PLANNING STEP - Traditional autonomous execution fallback
+    console.log('🧠 Falling back to traditional autonomous execution...');
     
     // Enhanced autonomous execution for multi-step CRM tasks
     const searchTerms = ['find', 'search', 'look for', 'get', 'show me'];
@@ -152,8 +238,8 @@ export async function runAgent(studioId: string, userId: string, message: string
               console.log(`🔍 Found lead ${lead.name}, checking for client with email: ${leadEmail}`);
               
               const { neon } = await import('@neondatabase/serverless');
-              const sql = neon(process.env.DATABASE_URL!);
-              const clientSearch = await sql`
+              const sqlConnection = neon(process.env.DATABASE_URL!);
+              const clientSearch = await sqlConnection`
                 SELECT id, first_name, last_name, email, phone, 
                        (first_name || ' ' || last_name) as name
                 FROM crm_clients 
@@ -185,7 +271,7 @@ export async function runAgent(studioId: string, userId: string, message: string
                 // Add proper debugging for the pricing system
                 console.log('🔧 Testing pricing system for DIGI-10...');
                 try {
-                  const { getPriceBySku } = await import('../integrations/pricing');
+                  const { getPriceBySku } = await import('../integrations/pricing.js');
                   const testPrice = await getPriceBySku(ctx.studioId, 'DIGI-10');
                   console.log('🔧 DIGI-10 pricing result:', testPrice);
                 } catch (pricingError) {
@@ -455,11 +541,36 @@ export async function runAgent(studioId: string, userId: string, message: string
     await updateSession(ctx.chatSessionId, enhancedMemory);
     
     return response;
-    
-  } catch (error) {
-    console.error("Agent execution error:", error);
-    throw new Error(`Agent failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-  }
+}
+
+// Helper functions for plan execution formatting
+function formatExecutionSummary(plan: any, results: any): string {
+  const completedSteps = Object.keys(results).length;
+  const totalSteps = plan.steps.length;
+  
+  let summary = `✅ Successfully completed ${completedSteps}/${totalSteps} planned steps for: ${plan.goal}\n\n`;
+  
+  plan.steps.forEach((step: any) => {
+    const result = results[step.id];
+    const status = result ? '✅' : '❌';
+    summary += `${status} ${step.action}\n`;
+  });
+  
+  return summary;
+}
+
+function formatConfirmationRequest(plan: any, confirmationsNeeded: any[]): string {
+  let request = `🔍 Self-planning generated execution plan: ${plan.goal}\n\n`;
+  request += `📋 Steps requiring your confirmation:\n\n`;
+  
+  confirmationsNeeded.forEach((step: any, index: number) => {
+    request += `${index + 1}. ${step.action}\n`;
+    request += `   Risk: ${step.risk_level}\n`;
+    request += `   Reasoning: ${step.reasoning}\n\n`;
+  });
+  
+  request += `Reply with "confirm" to proceed with these actions.`;
+  return request;
 }
 
 /**

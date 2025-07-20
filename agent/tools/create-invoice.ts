@@ -103,9 +103,9 @@ export const createInvoiceTool = {
       for (const item of invoiceItems) {
         await sql`
           INSERT INTO crm_invoice_items (
-            invoice_id, description, quantity, unit_price, total
+            invoice_id, description, quantity, unit_price, tax_rate, sort_order
           ) VALUES (
-            ${invoice.id}, ${item.description}, ${item.quantity}, ${item.unit_price}, ${item.total}
+            ${invoice.id}, ${item.description}, ${item.quantity}, ${item.unit_price}, 0, ${invoiceItems.indexOf(item) + 1}
           )
         `;
       }
