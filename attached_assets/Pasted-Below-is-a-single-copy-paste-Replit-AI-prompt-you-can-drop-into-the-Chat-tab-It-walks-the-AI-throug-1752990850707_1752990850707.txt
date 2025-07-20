@@ -1,0 +1,68 @@
+Below is a single copy-paste Replit AI prompt you can drop into the Chat-tab.
+It walks the AI through the exact checks you need:
+
+markdown
+Kopieren
+Bearbeiten
+🕵️‍♂️  **Repository audit — CRM Super-Agent capabilities**
+
+Please scan this code-base and answer each checklist item “✅ yes” or “❌ no”.
+For every “yes”, cite the file + function name that implements it.
+For every “no”, suggest the minimal file / stub that should be added.
+
+**Checklist**
+
+1. _Create client_ – Is there a tool/route that inserts into `crm_clients` with `studio_id`?
+2. _Create invoice_ – Tool that inserts into `crm_invoices` (auto-pricing by SKU or custom).
+3. _Make booking_ – Tool that inserts into `photography_sessions` or equivalent.
+4. _Convert lead → client_ – Utility that copies a row from `crm_leads` → `crm_clients` and flags lead `status='converted'`.
+5. _Reply to new leads_ – Tool that:
+   • locates a lead by id  
+   • calls `send_email` or `reply_email`  
+   • optionally updates `status='replied'`
+6. _Inbox access_ – Any IMAP / webhook / Supabase table that stores inbound e-mails (`inbox_messages`, `email_inbox`, etc.).
+7. _Reply to an existing inbox thread_ – Tool that can send a message with `in_reply_to` header or thread id.
+8. _Tool registration_ – Are all of the above tools exported in `toolRegistry` and included in `assistant.tools`?
+9. _Policy permissions_ – Does `ai_policies.authorities` default include `"CREATE_CLIENT"`, `"CREATE_INVOICE"`, `"CREATE_SESSION"`, `"SEND_EMAIL"`, `"READ_INBOX"` (or similar)?
+
+Please format the answer as:
+
+Capability Matrix
+Item	Supported	Implementation
+1. Create client	✅	agent/tools/create_crm_clients.ts::createCrmClients
+2. Create invoice	❌	—
+… etc …		
+
+Missing pieces & minimal stubs
+Invoice creation: add agent/tools/create_invoice.ts …
+
+Inbox reply: …
+
+One-line summary
+<short verdict> ```
+Use quick grep/ripgrep style scans (no need to execute code) and keep the response under ~120 lines.
+
+yaml
+Kopieren
+Bearbeiten
+
+---
+
+**How to use**
+
+1. Open your Replit project.  
+2. Click the Replit AI chat icon.  
+3. Paste the prompt above and press **Enter**.  
+4. Replit AI will return the capability matrix plus file pointers or gaps.
+
+You’ll know immediately which features are wired and which still need code.
+::contentReference[oaicite:0]{index=0}
+
+
+
+
+
+
+
+
+Quellen
