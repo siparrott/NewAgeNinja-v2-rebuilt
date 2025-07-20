@@ -53,6 +53,12 @@ AVAILABLE TOOLS FOR BOOKING/SCHEDULING:
 - create_photography_session: Creates new appointments for clients
 - Use this tool when user wants to schedule, book, or create appointments
 
+PRICING & INVOICING RULES:
+- When user requests an invoice for a known package (e.g. "10 digital images") call create_invoice with sku: "DIGI-10"
+- Standard SKUs: DIGI-10, CANVAS-A4, PRINTS-20, FAMILY-BASIC, NEWBORN-DELUXE
+- If SKU not found, use custom_amount and custom_label parameters
+- Always include client_id from search results
+
 Tools available: Auto-generated for all CRM tables + manual tools`;
 
 export async function runAgent(studioId: string, userId: string, message: string): Promise<string> {

@@ -88,6 +88,10 @@ toolRegistry.register(createSessionTool);
 import { replyEmailTool } from "../tools/reply-email";
 toolRegistry.register(replyEmailTool);
 
+// Add invoice creation tool
+import { createInvoiceTool } from "../tools/create-invoice";
+toolRegistry.register(createInvoiceTool);
+
 // Minimal tool set to stay under token limit
 console.log(`📋 Registered ${toolRegistry.list().length} tools for CRM agent`);
 

@@ -1,0 +1,270 @@
+Great — if a price list already lives in your database you just need to expose it to the agent and wire it into the create-invoice flow.
+Below is a compact “drop-in” set of patches that assumes:
+
+Column	Purpose
+id	uuid pk
+studio_id	uuid fk
+sku	short code, e.g. DIGI-10
+label	human text (“10 digital images”)
+unit_price	numeric (249.00)
+currency	text (“EUR”)
+is_active	boolean
+
+(Rename the table/columns in the snippets if yours differ.)
+
+1 Price-lookup helper (works with any existing rows)
+agent/integrations/pricing.ts
+
+ts
+Kopieren
+Bearbeiten
+import { createClient } from "@supabase/supabase-js";
+const sb = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function getPriceBySku(studioId: string, sku: string) {
+  const { data, error } = await sb
+    .from("price_list")               // ← rename if needed
+    .select("*")
+    .eq("studio_id", studioId)
+    .eq("is_active", true)
+    .ilike("sku", sku)                // case-insensitive exact match
+    .single();
+
+  if (error) return null;
+  return data;                        // {label, unit_price, currency}
+}
+2 Upgrade create_invoice tool to auto-price
+ts
+Kopieren
+Bearbeiten
+import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+import { getPriceBySku } from "../integrations/pricing";
+import { sendEmail } from "../integrations/email";   // if you auto-mail
+import type { AgentCtx } from "../core/ctx";
+
+const sb = createClient(process.env.VITE_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+export const createInvoiceTool = {
+  name: "create_invoice",
+  description: "Create an invoice by sku OR custom amount.",
+  parameters: z.object({
+    client_id: z.string(),
+    sku: z.string().optional(),
+    custom_label: z.string().optional(),
+    custom_amount: z.number().optional()
+  }),
+  handler: async (a: any, ctx: AgentCtx) => {
+    let label: string, total: number, currency: string;
+
+    if (a.sku) {
+      const price = await getPriceBySku(ctx.studioId, a.sku);
+      if (!price) throw new Error("pricing:not_found");
+      label = price.label;
+      total = Number(price.unit_price);
+      currency = price.currency;
+    } else if (a.custom_amount) {
+      label = a.custom_label || "Custom service";
+      total = a.custom_amount;
+      currency = ctx.creds.currency || "EUR";
+    } else {
+      throw new Error("pricing:missing_params");
+    }
+
+    const { data, error } = await sb
+      .from("crm_invoices")
+      .insert({
+        studio_id: ctx.studioId,
+        client_id: a.client_id,
+        description: label,
+        total,
+        currency
+      })
+      .select()
+      .single();
+    if (error) throw error;
+
+    // optional: e-mail immediately
+    // await sendEmail({to: client.email, subject: "Your invoice", html: renderInvoiceHTML(data)});
+
+    return { status: "created", invoice: data };
+  }
+};
+Add to toolRegistry (and re-run your assistant update script).
+
+3 Prompt rule (one line)
+Under SEARCH-FIRST POLICY add:
+
+sql
+Kopieren
+Bearbeiten
+• When user requests an invoice for a known package (e.g. “10 digital images”) call create_invoice with sku: "DIGI-10".
+4 Authorities (if needed)
+sql
+Kopieren
+Bearbeiten
+update ai_policies
+set authorities = array_append(authorities,'CREATE_INVOICE')
+where studio_id = 'YOUR-STUDIO-UUID';
+5 Smoke test
+text
+Kopieren
+Bearbeiten
+User: send Simon Parrott an invoice for 10 digital images
+→ agent flow
+   find_entity → client_id
+   create_invoice {client_id, sku:"DIGI-10"}  ✅ pulls 249 EUR from price_list
+   send_email (optional)
+Assistant: Invoice INV-##### created for €249 and e-mailed to Simon.
+If the assistant responds “pricing:not_found” check the sku spelling inside price_list or pass custom_amount instead.
+
+That’s it — the agent now taps your existing price list automatically with no additional prompts.
+
+
+
+
+
+
+
+
+
+Quellen
+Du:
+also replit does a hard refresh after a few minutes, so when i am busy writing an email, it resets and the email is lost, can we avoid this?
+
+
+ChatGPT:
+Why Replit “hard-refreshes”
+Replit’s web IDE puts a tab to sleep after ≈ 5 minutes of no network traffic or DOM interaction to free resources.
+When that happens the whole iframe reloads → any unsaved in-browser state (an e-mail you were typing, unsent form, etc.) is lost.
+
+Two ways to stop losing drafts
+Option	How it works	10-min implementation
+1. Local, offline autosave (simplest)	Store the draft every 1-2 s in localStorage (or indexedDB). When the page reloads, restore the last draft automatically.	Drop the snippet below into your compose-email React component.
+2. Server-side “drafts” table	POST the draft to Supabase every few keystrokes → resume on any device, survive browser crashes.	Create a small email_drafts table and use the same hook as #1 but call Supabase.
+
+Option 1: client-only autosave snippet
+tsx
+Kopieren
+Bearbeiten
+// EmailComposer.tsx
+import { useEffect, useState } from "react";
+
+const key = "draft_email_simParrott"; // build id from recipient or thread id
+
+export default function EmailComposer({ onSend }) {
+  const [body, setBody] = useState<string>(() => localStorage.getItem(key) || "");
+
+  // autosave every 1.5 s after user stops typing
+  useEffect(() => {
+    const id = setTimeout(() => localStorage.setItem(key, body), 1500);
+    return () => clearTimeout(id);
+  }, [body]);
+
+  function handleSend() {
+    onSend(body);
+    localStorage.removeItem(key);   // clear once sent
+    setBody("");
+  }
+
+  return (
+    <>
+      <textarea
+        value={body}
+        onChange={e => setBody(e.target.value)}
+        rows={12}
+        placeholder="Type email…"
+      />
+      <button onClick={handleSend}>Send</button>
+    </>
+  );
+}
+When Replit refreshes, localStorage.getItem(key) repopulates the textarea instantly.
+
+Option 2: Supabase-backed drafts (persists across devices)
+SQL table
+
+sql
+Kopieren
+Bearbeiten
+create table if not exists email_drafts (
+  id          uuid primary key default gen_random_uuid(),
+  studio_id   uuid,
+  user_id     uuid,
+  recipient   text,
+  subject     text,
+  body        text,
+  updated_at  timestamptz default now()
+);
+React hook
+
+ts
+Kopieren
+Bearbeiten
+import { createClient } from "@supabase/supabase-js";
+const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.SUPABASE_ANON_KEY);
+
+function useDraft(recipient: string) {
+  const [body, setBody] = useState("");
+  const draftIdRef = useRef<string|null>(null);
+
+  // load once
+  useEffect(() => {
+    sb.from("email_drafts")
+      .select("*")
+      .eq("recipient", recipient)
+      .eq("user_id", auth.user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          draftIdRef.current = data.id;
+          setBody(data.body);
+        }
+      });
+  }, [recipient]);
+
+  // autosave
+  useEffect(() => {
+    const id = setTimeout(async () => {
+      if (!body.trim()) return;
+      if (draftIdRef.current) {
+        await sb.from("email_drafts").update({ body, updated_at: new Date() }).eq("id", draftIdRef.current);
+      } else {
+        const { data } = await sb.from("email_drafts").insert({
+          studio_id: studioId,
+          user_id: auth.user.id,
+          recipient,
+          body
+        }).select().single();
+        draftIdRef.current = data?.id;
+      }
+    }, 1500);
+    return () => clearTimeout(id);
+  }, [body]);
+
+  function clear() {
+    if (draftIdRef.current) sb.from("email_drafts").delete().eq("id", draftIdRef.current);
+    setBody("");
+    draftIdRef.current = null;
+  }
+
+  return { body, setBody, clear };
+}
+Use it in your composer:
+
+tsx
+Kopieren
+Bearbeiten
+const { body, setBody, clear } = useDraft("mattpantling@yahoo.co.uk");
+
+function handleSend() {
+  sendEmail(body);
+  clear();
+}
+Bonus: keep the Replit tab awake (optional)
+Add a tiny “heartbeat” (setInterval(fetch('/ping'), 240000)) so the browser tab sends traffic every 4 min → Replit won’t suspend it.
+But autosave is safer because it also covers accidental browser crashes, Wi-Fi drops, etc.
+
