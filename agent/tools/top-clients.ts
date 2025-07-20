@@ -91,7 +91,10 @@ export const listTopClientsTool = {
         count: topClients.length,
         criteria: args.orderBy,
         totalRevenue: topClients.reduce((sum, client) => sum + client.total_revenue, 0),
-        message: `Found ${topClients.length} top clients ordered by ${args.orderBy}`
+        message: `Successfully retrieved ${topClients.length} top clients ranked by ${args.orderBy}. Total combined revenue: €${topClients.reduce((sum, client) => sum + client.total_revenue, 0).toFixed(2)}.`,
+        summary: topClients.length > 0 ? 
+          `Top client: ${topClients[0].first_name} ${topClients[0].last_name} (€${topClients[0].total_revenue.toFixed(2)})` : 
+          "No clients found matching criteria"
       };
     } catch (error) {
       console.error('❌ list_top_clients error:', error);
@@ -193,7 +196,10 @@ export const getClientSegmentsTool = {
         segments,
         segmentBy: args.segmentBy,
         totalSegments: segments.length,
-        message: `Client segmentation by ${args.segmentBy} completed`
+        message: `Client segmentation analysis completed successfully. Found ${segments.length} ${args.segmentBy} segments with detailed breakdown.`,
+        insights: segments.length > 0 ? 
+          `Largest segment: ${segments[0].segment} with ${segments[0].client_count} clients` : 
+          "No segments found for analysis"
       };
     } catch (error) {
       console.error('❌ get_client_segments error:', error);

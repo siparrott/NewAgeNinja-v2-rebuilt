@@ -210,6 +210,9 @@ export const generateBusinessReportTool = {
         };
       }
 
+      report.message = `Business report generated successfully with comprehensive ${params.report_type} analytics.`;
+      report.summary = `Report covers ${report.date_range.from} to ${report.date_range.to} with detailed ${params.report_type} insights.`;
+      
       return report;
     } catch (error) {
       return {
@@ -365,6 +368,9 @@ export const getKPIDashboardTool = {
         };
       }
 
+      dashboard.message = `KPI dashboard loaded successfully with ${params.timeframe} metrics and performance indicators.`;
+      dashboard.highlights = `Revenue: ${dashboard.kpis.revenue.value}, New Clients: ${dashboard.kpis.new_clients.value}, Sessions: ${dashboard.kpis.sessions_booked.value}`;
+      
       return dashboard;
     } catch (error) {
       return {

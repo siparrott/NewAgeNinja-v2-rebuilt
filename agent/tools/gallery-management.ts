@@ -42,7 +42,8 @@ export const createGalleryTool = {
       return {
         success: true,
         gallery: result[0],
-        message: `Gallery "${params.title}" created successfully`,
+        message: `Gallery "${params.title}" has been created successfully and is ready for image uploads.`,
+        next_steps: "You can now add images to this gallery or share the gallery URL with clients.",
         galleryUrl: `/galleries/${slug}`
       };
     } catch (error: any) {
@@ -171,7 +172,10 @@ export const readGalleriesTool = {
         success: true,
         galleries,
         count: galleries.length,
-        message: `Found ${galleries.length} galleries`
+        message: `Successfully retrieved ${galleries.length} galleries with complete details.`,
+        summary: galleries.length > 0 ? 
+          `Latest gallery: "${galleries[0].title}" created ${new Date(galleries[0].created_at).toLocaleDateString()}` : 
+          "No galleries found matching your criteria"
       };
     } catch (error: any) {
       return {

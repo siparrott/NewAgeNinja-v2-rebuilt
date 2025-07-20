@@ -59,7 +59,10 @@ export const createQuestionnaireTool = {
       return {
         success: true,
         questionnaire_id: questionnaireId,
-        message: `Questionnaire "${params.title}" created successfully`,
+        message: `Questionnaire "${params.title}" has been created successfully with ${params.questions.length} questions and is ready to send to ${params.target_audience}.`,
+        next_steps: params.auto_send ? 
+          "Auto-send is enabled - questionnaire will be sent automatically based on trigger settings." : 
+          "Use the send_questionnaire tool to distribute this questionnaire to clients.",
         details: {
           title: params.title,
           type: params.questionnaire_type,
@@ -219,6 +222,11 @@ export const readQuestionnairesTool = {
         };
       }
 
+      result.message = `Successfully retrieved ${result.count} questionnaires with comprehensive analytics.`;
+      result.insights = result.count > 0 ? 
+        `Active questionnaires: ${result.stats?.active || 0}, Total responses: ${result.stats?.total_responses || 0}` : 
+        "No questionnaires found matching your criteria";
+      
       return result;
     } catch (error) {
       return {
