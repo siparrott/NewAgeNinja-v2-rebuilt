@@ -1,6 +1,6 @@
 // agent/core/self-diagnosis.ts - Self-diagnosis and error resolution system
 import { knowledgeBase } from './knowledge-base';
-import { toolRegistry } from '../tools/registry';
+import { toolRegistry } from './tools';
 
 export interface DiagnosisResult {
   issue: string;

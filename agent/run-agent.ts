@@ -541,6 +541,10 @@ export async function runAgent(studioId: string, userId: string, message: string
     await updateSession(ctx.chatSessionId, enhancedMemory);
     
     return response;
+  } catch (error) {
+    console.error('🚨 Critical agent error:', error);
+    return `❌ Agent execution failed: ${error.message}`;
+  }
 }
 
 // Helper functions for plan execution formatting

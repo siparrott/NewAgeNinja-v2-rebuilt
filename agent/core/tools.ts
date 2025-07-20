@@ -61,6 +61,10 @@ export class ToolRegistry {
     return Array.from(this.tools.values());
   }
 
+  keys(): string[] {
+    return Array.from(this.tools.keys());
+  }
+
   getOpenAITools() {
     return this.list().map(tool => createOpenAITool(tool.name, tool.description, tool.parameters));
   }
