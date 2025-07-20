@@ -11,6 +11,9 @@ export const createSessionTool = {
   description: "Create a new photography session/booking in the calendar",
   parameters: z.object({
     client_id: z.string().uuid("Valid client UUID required"),
+    client_name: z.string().optional(),
+    client_email: z.string().optional(),
+    client_phone: z.string().optional(),
     session_type: z.enum([
       "FAMILY", "NEWBORN", "MATERNITY", "BUSINESS", "WEDDING", 
       "EVENT", "PORTRAIT", "HEADSHOT", "COUPLE", "ENGAGEMENT"
@@ -19,6 +22,7 @@ export const createSessionTool = {
     session_time: z.string().describe("Session time in HH:MM format"),
     duration_minutes: z.number().min(30).max(480).default(120),
     location: z.string().min(1, "Location is required"),
+    location_address: z.string().optional(),
     notes: z.string().optional(),
     price: z.number().min(0).optional(),
     deposit_required: z.number().min(0).optional(),
@@ -27,31 +31,50 @@ export const createSessionTool = {
   execute: async (params: any) => {
     try {
       const sessionId = crypto.randomUUID();
-      const sessionDateTime = `${params.session_date} ${params.session_time}:00`;
+      const startTime = `${params.session_date}T${params.session_time}:00+02:00`;
+      const endTime = new Date(new Date(startTime).getTime() + (params.duration_minutes * 60000)).toISOString();
       
-      await sql`
+      const result = await sql`
         INSERT INTO photography_sessions (
-          id, client_id, session_type, start_time, end_time,
-          location_name, notes, base_price, deposit_amount, equipment_list,
-          status, created_at, updated_at
+          id, title, description, session_type, status, start_time, end_time,
+          client_name, client_email, client_phone, location_name, location_address,
+          base_price, deposit_amount, deposit_paid, notes, client_id,
+          created_at, updated_at
         ) VALUES (
-          ${sessionId}, ${params.client_id}, ${params.session_type},
-          ${sessionDateTime}::timestamp, 
-          (${sessionDateTime}::timestamp + INTERVAL '${params.duration_minutes} minutes'),
-          ${params.location}, ${params.notes || ''}, ${params.price || 0}, 
-          ${params.deposit_required || 0}, ${JSON.stringify(params.equipment_needed || [])}, 
-          'CONFIRMED', NOW(), NOW()
+          ${sessionId}, 
+          ${`${params.session_type} Session - ${params.client_name || 'Client'}`},
+          ${`Photography session scheduled for ${params.session_date}`},
+          ${params.session_type},
+          'CONFIRMED',
+          ${startTime}::timestamptz,
+          ${endTime}::timestamptz,
+          ${params.client_name || ''},
+          ${params.client_email || ''},
+          ${params.client_phone || ''},
+          ${params.location},
+          ${params.location_address || ''},
+          ${params.price || 0},
+          ${params.deposit_required || 0},
+          false,
+          ${params.notes || ''},
+          ${params.client_id},
+          NOW(),
+          NOW()
         )
+        RETURNING id, title, start_time, end_time
       `;
 
       return {
         success: true,
         session_id: sessionId,
+        session: result[0],
         message: `Photography session created successfully for ${params.session_date} at ${params.session_time}`,
         details: {
           type: params.session_type,
           duration: `${params.duration_minutes} minutes`,
-          location: params.location
+          location: params.location,
+          start_time: startTime,
+          end_time: endTime
         }
       };
     } catch (error) {
