@@ -70,6 +70,8 @@ HTML CONTENT REQUIREMENTS:
 - Use semantic HTML: <h2>, <h3>, <p>, <strong>, <em>
 - NO scripts, iframes, or javascript
 - NO markdown - pure HTML only
+- NO "H1:" or "H2:" text prefixes in headings
+- NO ### symbols anywhere in content
 - Include proper heading hierarchy (start with <h2> since <h1> is the title)
 - Add rel="noopener" to external links
 - Structure should include:
@@ -117,6 +119,12 @@ ${isGerman ? `
 
 <p>For more information, visit <a href="https://www.wien.gv.at/" rel="noopener">the official Vienna website</a>.</p>
 `}
+
+CRITICAL FORMATTING RULES:
+- Headings should be clean: <h2>Section Title</h2> 
+- NO text prefixes like "H1:", "H2:", etc.
+- NO markdown symbols like ###
+- NO excessive formatting - keep content clean and professional
 
 Remember: Output ONLY valid JSON. No markdown, no explanations, no additional text.`;
 }

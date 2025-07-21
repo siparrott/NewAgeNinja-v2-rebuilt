@@ -11,6 +11,7 @@ import { stripDangerousHtml, generateUniqueSlug, cleanSlug } from './util-strip-
 import { storage } from './storage';
 import { BLOG_ASSISTANT, DEBUG_OPENAI } from './config';
 import { logAutoBlogCall, runAutoBlogDiagnostics } from './autoblog-diagnostics';
+import { contentProcessor, type ImageAnalysisResult } from './autoblog-content-fixes';
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
@@ -339,18 +340,32 @@ Key Features: High-quality photography, professional editing, personal service
     try {
       console.log('🚀 Using REAL TOGNINJA BLOG WRITER Assistant with preserved training...');
       
-      // Create minimal context that preserves Assistant's sophisticated training
-      const minimalContext = `
+      // ENHANCED: Get detailed image analysis first
+      const imageAnalysis = await contentProcessor.analyzeImagesForAccurateContent(images, openai);
+      
+      // ENHANCED: Use accurate image analysis for content matching
+      const imageAwareContext = await this.gatherComprehensiveContext(images, input);
+      
+      // Create enhanced context with real image analysis
+      const enhancedContext = `
 SESSION DETAILS:
-- Images uploaded: ${images.length} photography session images
+- Images uploaded: ${images.length} ${imageAnalysis.sessionType} photography session images
+- Subjects: ${imageAnalysis.subjects}
+- Setting: ${imageAnalysis.setting}
+- Mood: ${imageAnalysis.emotions}
+- Style: ${imageAnalysis.clothing}
+- Specifics: ${imageAnalysis.specifics}
 - Business: New Age Fotografie Wien
 - Content type: ${input.language || 'deutsch'} blog post
 - Publishing: ${input.publishOption || 'draft'}
 
-BRIEF GUIDANCE:
-${input.contentGuidance || 'Create professional photography blog content'}
+CONTENT MATCHING REQUIREMENTS:
+${contentProcessor.buildImageAwarePrompt(imageAnalysis, input.contentGuidance || '')}
 
-Use your sophisticated training to create complete blog content with outline, key takeaways, YOAST SEO optimization, and all structured sections.`;
+COMPREHENSIVE CONTEXT:
+${imageAwareContext}
+
+Use your sophisticated training to create complete blog content that EXACTLY matches the uploaded ${imageAnalysis.sessionType} images with outline, key takeaways, YOAST SEO optimization, and all structured sections.`;
 
       // Use the TOGNINJA BLOG WRITER Assistant ID directly
       const assistantId = 'asst_nlyO3yRav2oWtyTvkq0cHZaU';
@@ -422,7 +437,12 @@ Use your sophisticated training to create complete blog content with outline, ke
         },
         body: JSON.stringify({
           role: 'user',
-          content: messageContent
+          content: [
+            {
+              type: "text",
+              text: enhancedContext
+            }
+          ]
         })
       });
 
@@ -468,7 +488,18 @@ Use your sophisticated training to create complete blog content with outline, ke
         });
         const messagesData = await messagesResponse.json();
         const lastMessage = messagesData.data[0];
-        const sophisticatedContent = lastMessage?.content[0]?.text?.value || null;
+        let sophisticatedContent = lastMessage?.content[0]?.text?.value || null;
+        
+        // ENHANCED: Apply content quality fixes
+        if (sophisticatedContent) {
+          console.log('🔧 Applying content quality fixes...');
+          sophisticatedContent = contentProcessor.cleanContentFormatting(sophisticatedContent);
+          sophisticatedContent = contentProcessor.embedImagesWithoutDuplication(
+            sophisticatedContent, 
+            images, 
+            images[0]?.publicUrl // First image is typically featured
+          );
+        }
         
         // Cleanup uploaded files
         for (const fileId of uploadedFiles) {
@@ -484,7 +515,7 @@ Use your sophisticated training to create complete blog content with outline, ke
           }
         }
         
-        console.log('✅ TOGNINJA ASSISTANT COMPLETED:', sophisticatedContent ? sophisticatedContent.length + ' characters' : 'No content');
+        console.log('✅ TOGNINJA ASSISTANT COMPLETED WITH QUALITY FIXES:', sophisticatedContent ? sophisticatedContent.length + ' characters' : 'No content');
         return sophisticatedContent;
       }
 
@@ -680,41 +711,21 @@ Use your sophisticated training to create complete blog content with outline, ke
   async gatherComprehensiveContext(images: ProcessedImage[], input: AutoBlogInput): Promise<string> {
     console.log('🔍 === GATHERING COMPREHENSIVE CONTEXT FOR REAL ASSISTANT ===');
     
-    // 1. Analyze images with Chat Completions API (for vision capabilities)
-    let imageAnalysis = '';
+    // 1. ENHANCED: Analyze images with detailed content matching
+    let imageAnalysis: ImageAnalysisResult;
     if (images.length > 0) {
-      console.log('📸 STEP 1: Analyzing uploaded images...');
-      try {
-        const imageMessages = [
-          {
-            role: "user" as const,
-            content: [
-              {
-                type: "text" as const,
-                text: "Analyze these photography session images. What type of session is this? Describe the subjects, setting, emotions, clothing, and any specific details you can see. Be very specific about whether this is newborn, family, maternity, business headshots, etc."
-              },
-              ...images.map(img => ({
-                type: "image_url" as const,
-                image_url: {
-                  url: `data:image/jpeg;base64,${img.buffer.toString('base64')}`
-                }
-              }))
-            ]
-          }
-        ];
-
-        const imageResponse = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: imageMessages,
-          max_tokens: 500
-        });
-
-        imageAnalysis = imageResponse.choices[0]?.message?.content || '';
-        console.log('✅ Image Analysis Complete:', imageAnalysis.substring(0, 200) + '...');
-      } catch (error) {
-        console.error('❌ Image analysis failed:', error);
-        imageAnalysis = 'General photography session';
-      }
+      console.log('📸 STEP 1: Enhanced image analysis for accurate content matching...');
+      imageAnalysis = await contentProcessor.analyzeImagesForAccurateContent(images, openai);
+      console.log('✅ Detailed Image Analysis Complete:', imageAnalysis);
+    } else {
+      imageAnalysis = {
+        sessionType: 'general',
+        subjects: 'photography subjects',
+        setting: 'professional studio',
+        emotions: 'warm and professional', 
+        clothing: 'coordinated attire',
+        specifics: 'professional photography session'
+      };
     }
 
     // 2. Comprehensive homepage and website context gathering
