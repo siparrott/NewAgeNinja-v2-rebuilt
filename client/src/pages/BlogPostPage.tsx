@@ -4,7 +4,6 @@ import Layout from '../components/layout/Layout';
 import { supabase } from '../lib/supabase';
 import { Calendar, ArrowLeft, Clock } from 'lucide-react';
 import { Helmet } from 'react-helmet';
-import BlogMarkdown from '@/components/BlogMarkdown';
 
 interface BlogPost {
   id: string;
@@ -220,15 +219,90 @@ const BlogPostPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-lg p-6 md:p-8 mb-8">
             {(post.contentHtml || post.content) ? (
               <div className="max-w-none">
-                <BlogMarkdown 
-                  source={post.contentHtml || post.content} 
-                  sectionLabels={{
-                    outline: 'Inhaltsverzeichnis',
-                    keyTakeaways: 'Wichtigste Erkenntnisse',
-                    article: 'Artikel',
-                    socialPosts: 'Social Media Posts',
-                    reviews: 'Bewertungen'
-                  }}
+                {/* Enhanced CSS for blog content */}
+                <style dangerouslySetInnerHTML={{__html: `
+                  .blog-post-content {
+                    line-height: 1.8;
+                    color: #374151;
+                  }
+                  .blog-post-content h1 {
+                    font-size: 2.25rem;
+                    font-weight: bold;
+                    color: #1f2937;
+                    margin: 2rem 0 1rem 0;
+                    padding-bottom: 0.5rem;
+                    border-bottom: 3px solid #a855f7;
+                  }
+                  .blog-post-content h2 {
+                    font-size: 1.875rem;
+                    font-weight: bold;
+                    color: #1f2937;
+                    margin: 2rem 0 1rem 0;
+                    padding: 1rem 1.5rem;
+                    border-left: 4px solid #a855f7;
+                    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(168, 85, 247, 0.1);
+                  }
+                  .blog-post-content h3 {
+                    font-size: 1.5rem;
+                    font-weight: 600;
+                    color: #374151;
+                    margin: 1.5rem 0 0.75rem 0;
+                  }
+                  .blog-post-content p {
+                    margin: 1rem 0;
+                    text-align: justify;
+                    line-height: 1.7;
+                  }
+                  .blog-post-content ul, .blog-post-content ol {
+                    margin: 1rem 0;
+                    padding-left: 2rem;
+                  }
+                  .blog-post-content ul {
+                    list-style-type: disc;
+                  }
+                  .blog-post-content li {
+                    margin: 0.5rem 0;
+                    line-height: 1.6;
+                  }
+                  .blog-post-content img {
+                    margin: 2rem auto;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                    max-width: 100%;
+                    height: auto;
+                    display: block;
+                  }
+                  .blog-post-content blockquote {
+                    border-left: 4px solid #a855f7;
+                    background: #faf5ff;
+                    padding: 1rem 1.5rem;
+                    margin: 1.5rem 0;
+                    border-radius: 0 8px 8px 0;
+                    font-style: italic;
+                  }
+                  .blog-post-content strong {
+                    font-weight: 700;
+                    color: #1f2937;
+                  }
+                  .blog-post-content a {
+                    color: #a855f7;
+                    text-decoration: underline;
+                    transition: color 0.2s ease;
+                  }
+                  .blog-post-content a:hover {
+                    color: #9333ea;
+                  }
+                  .section-divider {
+                    height: 1px;
+                    background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+                    margin: 3rem 0;
+                  }
+                `}} />
+                <div 
+                  className="blog-post-content prose prose-purple max-w-none"
+                  dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content }}
                 />
               </div>
             ) : (

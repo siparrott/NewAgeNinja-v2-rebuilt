@@ -712,6 +712,13 @@ Preferred communication style: Simple, everyday language.
   * Interface now features: AutoBlog Features section, single form layout with image upload/settings, progress tracking panel
   * Preserved core functionality: outline generation, key takeaways, YOAST SEO optimization, real-time progress tracking (0-100%)
   * Two-column layout: generation form (left) + progress/completion status (right) for optimal user experience
+- January 21, 2025. **CRITICAL REGRESSION FIX: Restored proper blog content rendering after markdown component broke existing functionality:**
+  * IDENTIFIED REGRESSION: BlogMarkdown component was incorrectly processing existing HTML content as markdown, causing formatted blog posts to display as raw text
+  * ROOT CAUSE: Blog posts contain structured HTML content, not markdown - attempting markdown processing broke the rendering completely
+  * IMMEDIATE FIX: Reverted to original dangerouslySetInnerHTML approach with enhanced purple-themed styling
+  * LESSON LEARNED: Always verify content format before changing rendering approach - HTML content requires HTML rendering, not markdown processing
+  * Enhanced styling: Purple gradient H2 sections, improved shadows, refined color scheme (#a855f7 purple theme)
+  * Blog posts now properly display with original formatting preserved and enhanced visual styling
 - January 21, 2025. **COMPREHENSIVE BLOG FORMATTING FIX: Successfully resolved wall-of-text issue with complete solution:**
   * Created convertPlainTextToStructuredHTML function with intelligent content parsing and structure detection
   * Added API endpoint /api/blog/posts/fix-formatting for batch processing of existing blog posts
