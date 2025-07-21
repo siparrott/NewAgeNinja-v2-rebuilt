@@ -6,6 +6,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import FormData from 'form-data';
 import { autoBlogSchema, type AutoBlogParsed, type AutoBlogInput } from './autoblog-schema';
 import { buildAutoBlogPrompt } from './autoblog-prompt';
+import { buildSophisticatedTogninjaPrompt } from './togninja-sophisticated-prompt';
 import { stripDangerousHtml, generateUniqueSlug, cleanSlug } from './util-strip-html';
 import { storage } from './storage';
 import { BLOG_ASSISTANT, DEBUG_OPENAI } from './config';
@@ -489,29 +490,18 @@ ADDITIONAL CONTEXT SOURCES:
   }
 
   /**
-   * Generate content using REAL TOGNINJA ASSISTANT - FIXED VERSION
+   * Generate content using SOPHISTICATED TOGNINJA PROMPT TEMPLATE
    */
-  async generateWithAssistantAPI(
-    assistantId: string, 
+  async generateWithSophisticatedPrompt(
     images: ProcessedImage[], 
     input: AutoBlogInput, 
     siteContext: string
   ): Promise<AutoBlogParsed | null> {
     try {
-      console.log('🎯 === FIXED TOGNINJA BLOG WRITER ASSISTANT ===');
+      console.log('🎯 === SOPHISTICATED TOGNINJA PROMPT TEMPLATE ===');
       
-      // DIAGNOSTIC CHECK - Log all parameters as per expert advice
-      logAutoBlogCall({
-        assistantId, 
-        model: 'assistant-based', 
-        imagesCount: images.length
-      });
-      
-      // STEP 1: Minimal context - let TOGNINJA assistant use its trained capabilities
-      console.log('🎯 MINIMAL CONTEXT APPROACH - PRESERVING TOGNINJA TRAINING');
-      
-      // Analyze images only for essential context
-      let imageContext = '';
+      // STEP 1: Analyze images for context
+      let imageContext = 'Professional photography session';
       if (images.length > 0) {
         try {
           const imageMessages = [{
@@ -519,7 +509,7 @@ ADDITIONAL CONTEXT SOURCES:
             content: [
               {
                 type: "text" as const,
-                text: "Briefly identify: newborn, family, maternity, or other session type. One sentence only."
+                text: "Analyze these photos and identify: newborn, family, maternity, business headshots, or other session type. Describe the setting, clothing, and mood in 2-3 sentences."
               },
               ...images.map(img => ({
                 type: "image_url" as const,
