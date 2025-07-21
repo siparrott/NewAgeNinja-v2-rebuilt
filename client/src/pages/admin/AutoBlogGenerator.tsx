@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import AdminLayout from '../../components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -205,7 +206,7 @@ export default function AutoBlogGenerator() {
         throw new Error(data.error || 'Failed to generate structured content - invalid response format');
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 Generation error caught:', error);
       console.error('🔍 Error details:', {
         name: error.name,
@@ -257,7 +258,7 @@ export default function AutoBlogGenerator() {
       setThreadId(data.threadId);
       setChatMessages(prev => [...prev, { role: "assistant", content: data.response }]);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error);
       toast({
         title: "Chat failed",
@@ -267,59 +268,18 @@ export default function AutoBlogGenerator() {
     }
   };
 
-  const publishContent = async () => {
-    if (!generatedContent) return;
-
-    try {
-      console.log('📝 Publishing/updating blog post with status:', publishingOption);
-      
-      // The blog post was already created during generation, now we update its status
-      const response = await fetch('/api/blog/posts', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          slug: generatedContent.slug,
-          status: publishingOption === 'draft' ? 'DRAFT' : publishingOption === 'publish' ? 'PUBLISHED' : 'SCHEDULED',
-          publishingOption: publishingOption
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update blog post status');
-      }
-
-      const result = await response.json();
-      console.log('✅ Blog post status updated:', result);
-
-      toast({
-        title: "Success!",
-        description: `Blog post ${publishingOption === 'draft' ? 'saved as draft' : publishingOption === 'publish' ? 'published successfully' : 'scheduled for publication'}`,
-      });
-
-      // Navigate to blog management page or show success state
-      window.open('/admin/blog', '_blank');
-      
-    } catch (error) {
-      console.error('❌ Publishing error:', error);
-      toast({
-        title: "Publishing failed",
-        description: error.message || "Failed to publish content. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  // Removed publishContent function since we're using direct workflow
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <AdminLayout>
+      <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AutoBlog Generator v3.0</h1>
         <p className="text-gray-600 dark:text-gray-400">Generate professional blog content using TOGNINJA assistant - Fixed Endpoint Version</p>
         <div className="text-xs text-green-600 mt-1">✅ Using correct /api/autoblog/generate endpoint</div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue={activeTab} className="w-full">
         <TabsList className="grid w-fit grid-cols-2 mb-6">
           <TabsTrigger value="chat">Direct Chat Interface</TabsTrigger>
           <TabsTrigger value="advanced">Advanced Generation</TabsTrigger>
@@ -565,6 +525,7 @@ export default function AutoBlogGenerator() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
