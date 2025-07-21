@@ -415,20 +415,66 @@ Key Features: High-quality photography, professional editing, personal service
     const paragraphs = rawContent.split('\n\n').filter(p => p.trim() && !p.startsWith('#'));
     const excerpt = paragraphs[0]?.substring(0, 150) + '...' || 'Generated content excerpt';
 
-    // Embed images in content
-    let contentWithImages = rawContent;
-    images.forEach((img, index) => {
-      const imageHtml = `<img src="${img.publicUrl}" alt="Photography session image ${index + 1}" class="blog-image" />`;
-      // Insert image after first paragraph
-      if (index === 0) {
-        const firstParagraphIndex = contentWithImages.indexOf('\n\n');
-        if (firstParagraphIndex > -1) {
-          contentWithImages = contentWithImages.slice(0, firstParagraphIndex + 2) + 
-                             imageHtml + '\n\n' + 
-                             contentWithImages.slice(firstParagraphIndex + 2);
+    // Embed all images strategically throughout content
+    let contentWithImages = this.convertToHtml(rawContent);
+    
+    if (images && images.length > 0) {
+      console.log(`Embedding ${images.length} images strategically in fallback content`);
+      
+      // Find all H2/H3 headings to distribute images
+      const headingPattern = /<h[23][^>]*>.*?<\/h[23]>/g;
+      const headings: RegExpExecArray[] = [];
+      let match;
+      while ((match = headingPattern.exec(contentWithImages)) !== null) {
+        headings.push(match);
+      }
+      
+      if (headings.length > 0) {
+        // Distribute images after headings
+        const headingsPerImage = Math.ceil(headings.length / images.length);
+        
+        // Process in reverse order to maintain indices
+        for (let i = images.length - 1; i >= 0; i--) {
+          const headingIndex = Math.min(i * headingsPerImage, headings.length - 1);
+          const targetHeading = headings[headingIndex];
+          
+          if (targetHeading && targetHeading.index !== undefined) {
+            const imageHtml = `<img src="${images[i].publicUrl}" alt="Professionelle Familienfotografie Session bei New Age Fotografie in Wien - Bild ${i + 1}" style="width: 100%; height: auto; margin: 25px 0; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">`;
+            
+            const insertPoint = targetHeading.index + targetHeading[0].length;
+            contentWithImages = contentWithImages.substring(0, insertPoint) + '\n\n' + imageHtml + '\n\n' + contentWithImages.substring(insertPoint);
+            console.log(`Embedded image ${i + 1} after heading ${headingIndex + 1}`);
+          }
+        }
+      } else {
+        // Fallback: distribute throughout paragraphs
+        const paragraphPattern = /<p[^>]*>.*?<\/p>/g;
+        const paragraphs: RegExpExecArray[] = [];
+        let paragraphMatch;
+        while ((paragraphMatch = paragraphPattern.exec(contentWithImages)) !== null) {
+          paragraphs.push(paragraphMatch);
+        }
+        
+        if (paragraphs.length > 0) {
+          const paragraphsPerImage = Math.ceil(paragraphs.length / images.length);
+          
+          for (let i = images.length - 1; i >= 0; i--) {
+            const paragraphIndex = Math.min(i * paragraphsPerImage, paragraphs.length - 1);
+            const targetParagraph = paragraphs[paragraphIndex];
+            
+            if (targetParagraph && targetParagraph.index !== undefined) {
+              const imageHtml = `<img src="${images[i].publicUrl}" alt="Professionelle Familienfotografie Session bei New Age Fotografie in Wien - Bild ${i + 1}" style="width: 100%; height: auto; margin: 25px 0; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">`;
+              
+              const insertPoint = targetParagraph.index + targetParagraph[0].length;
+              contentWithImages = contentWithImages.substring(0, insertPoint) + '\n\n' + imageHtml + '\n\n' + contentWithImages.substring(insertPoint);
+              console.log(`Embedded image ${i + 1} after paragraph ${paragraphIndex + 1}`);
+            }
+          }
         }
       }
-    });
+      
+      console.log('Successfully embedded all images in fallback content');
+    }
 
     // Determine status based on publishing option
     const status = input.publishOption === 'publish' ? 'PUBLISHED' : 'DRAFT';
@@ -1693,51 +1739,19 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       if (!assistantResult) {
         console.log('⚠️ Structured parsing failed, using raw Assistant content directly...');
         
-        // Get the raw Assistant response directly from the logs (we already have it)
-        console.log('✅ Using raw Assistant content, bypassing structured parsing');
-        
-        // Extract content from the logs - we can see the Assistant generated content above
-        const rawContent = `# Familienfotograf Wien – Ein unvergessliches Fotoshooting bei New Age Fotografie
-
-## Meta-Beschreibung:
-Familienfotos in entspannter Studioatmosphäre in Wien. Buchen Sie jetzt und schaffen Sie zeitlose Erinnerungen mit Ihrem Familienfotograf in Wien.
-
-### Einleitung: Warum ein Fotoshooting im Studio?
-
-Familienfotos sind weit mehr als nur Bilder – sie sind kostbare Erinnerungen, die Generationen überdauern. Bei New Age Fotografie in Wien verstehen wir die Bedeutung dieser Momente und schaffen in unserem Studio eine entspannte Atmosphäre, in der sich jeder wohlfühlt.
-
-### Was macht unser Studio besonders?
-
-Unser Studio in der Schönbrunner Straße 25 ist darauf ausgelegt, dass sich Familien entspannen können. Mit natürlichem Licht und einer warmen Einrichtung entstehen hier authentische Portraits, die Ihre Persönlichkeit widerspiegeln.
-
-### Der Ablauf eines Familienshootings
-
-Jedes Shooting beginnt mit einem kurzen Gespräch, um Sie kennenzulernen. Wir nehmen uns Zeit für Ihre Wünsche und Vorstellungen. Kinder dürfen gerne ihre Lieblingsspielzeuge mitbringen – oft entstehen so die schönsten spontanen Momente.
-
-### Preise und Pakete
-
-Unsere Mini-Sessions beginnen bei €149 und bieten eine perfekte Möglichkeit, erste Erfahrungen mit professioneller Fotografie zu sammeln. Premium-Pakete bis €295 beinhalten längere Shootings und mehr bearbeitete Bilder.
-
-### Terminbuchung leicht gemacht
-
-Die Buchung ist ganz einfach über unsere [Kontaktseite](/kontakt) möglich. Unser Studio liegt nur 5 Minuten von der Kettenbrückengasse entfernt und bietet Straßenparkplätze.
-
-Besuchen Sie auch unsere [Galerie](/galerie) für Inspirationen oder melden Sie sich für unsere [Warteliste](/warteliste) an.
-
----
-
-**Kontaktinformationen:**
-- Email: hallo@newagefotografie.com  
-- Telefon: +43 677 933 99210
-- Adresse: Schönbrunner Str. 25, 1050 Wien
-- Öffnungszeiten: Fr-So: 09:00 - 17:00`;
-
-        const directPost = await this.createBlogPostFromRawContent(rawContent, processedImages, authorId, input);
-        return {
-          success: true,
-          post: directPost,
-          message: 'Blog post created successfully from Assistant content'
-        };
+        // Get the raw Assistant response and create blog post with proper image embedding
+        const rawContent = await this.getRawAssistantContent(processedImages, input, enhancedContext, assistantId);
+        if (rawContent) {
+          console.log('✅ Using raw Assistant content, creating blog post with proper image embedding');
+          const directPost = await this.createBlogPostFromRawContent(rawContent, processedImages, authorId, input);
+          return {
+            success: true,
+            post: directPost,
+            message: 'Blog post created successfully from Assistant content'
+          };
+        } else {
+          throw new Error('❌ SOPHISTICATED PROMPT FAILED - Check OpenAI API configuration.');
+        }
       }
 
       console.log('✅ SOPHISTICATED PROMPT SUCCESS');
