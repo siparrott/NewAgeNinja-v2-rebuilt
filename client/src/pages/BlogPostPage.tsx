@@ -5,27 +5,6 @@ import { supabase } from '../lib/supabase';
 import { Calendar, ArrowLeft, Clock } from 'lucide-react';
 import { Helmet } from 'react-helmet';
 
-// Clean blog content function to fix malformed HTML and ensure proper structure
-function cleanBlogContent(content: string): string {
-  if (!content) return '';
-  
-  // Remove malformed opening tags like "---</p>"
-  let cleaned = content.replace(/^[-\s]*<\/[^>]*>/g, '');
-  
-  // Ensure content starts properly
-  if (cleaned.startsWith('---')) {
-    cleaned = cleaned.replace(/^[-\s]+/, '');
-  }
-  
-  // Fix any remaining malformed HTML
-  cleaned = cleaned.replace(/<\/p>\s*<h2>/g, '</p>\n<h2>');
-  cleaned = cleaned.replace(/<\/h2>\s*<h3>/g, '</h2>\n<h3>');
-  cleaned = cleaned.replace(/<\/h3>\s*<p>/g, '</h3>\n<p>');
-  cleaned = cleaned.replace(/<\/p>\s*<p>/g, '</p>\n<p>');
-  
-  return cleaned.trim();
-}
-
 interface BlogPost {
   id: string;
   title: string;
@@ -323,7 +302,7 @@ const BlogPostPage: React.FC = () => {
                 `}} />
                 <div 
                   className="blog-post-content prose prose-purple max-w-none"
-                  dangerouslySetInnerHTML={{ __html: cleanBlogContent(post.contentHtml || post.content) }}
+                  dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content }}
                 />
               </div>
             ) : (
