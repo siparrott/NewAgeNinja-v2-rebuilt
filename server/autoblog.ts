@@ -333,6 +333,139 @@ Key Features: High-quality photography, professional editing, personal service
   }
 
   /**
+   * Get raw Assistant content without structured parsing
+   */
+  async getRawAssistantContent(images: ProcessedImage[], input: AutoBlogInput, siteContext: string, assistantId: string): Promise<string | null> {
+    try {
+      // Use the same sophisticated prompt but return raw content
+      const userMessage = this.buildSophisticatedPrompt(input, siteContext);
+      
+      const thread = await openai.beta.threads.create();
+      await openai.beta.threads.messages.create(thread.id, {
+        role: "user",
+        content: userMessage
+      });
+
+      const run = await openai.beta.threads.runs.create(thread.id, {
+        assistant_id: assistantId,
+        temperature: 0.7
+      });
+
+      // Use HTTP API to get results
+      let runStatus;
+      const response = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+      runStatus = await response.json();
+
+      // Wait for completion
+      let attempts = 0;
+      while (runStatus.status !== 'completed' && attempts < 30) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+        runStatus = await statusResponse.json();
+        attempts++;
+      }
+
+      if (runStatus.status === 'completed') {
+        const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+        const messagesData = await messagesResponse.json();
+        const lastMessage = messagesData.data[0];
+        return lastMessage?.content[0]?.text?.value || null;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error getting raw Assistant content:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Create blog post directly from raw Assistant content
+   */
+  async createBlogPostFromRawContent(rawContent: string, images: ProcessedImage[], authorId: string, input: AutoBlogInput): Promise<any> {
+    // Extract basic information from raw content
+    const lines = rawContent.split('\n');
+    const firstHeading = lines.find(line => line.startsWith('#'))?.replace(/^#+\s*/, '') || 'Generated Blog Post';
+    
+    // Create a simple slug
+    const slug = firstHeading.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 50);
+
+    // Extract first paragraph as excerpt
+    const paragraphs = rawContent.split('\n\n').filter(p => p.trim() && !p.startsWith('#'));
+    const excerpt = paragraphs[0]?.substring(0, 150) + '...' || 'Generated content excerpt';
+
+    // Embed images in content
+    let contentWithImages = rawContent;
+    images.forEach((img, index) => {
+      const imageHtml = `<img src="${img.publicUrl}" alt="Photography session image ${index + 1}" class="blog-image" />`;
+      // Insert image after first paragraph
+      if (index === 0) {
+        const firstParagraphIndex = contentWithImages.indexOf('\n\n');
+        if (firstParagraphIndex > -1) {
+          contentWithImages = contentWithImages.slice(0, firstParagraphIndex + 2) + 
+                             imageHtml + '\n\n' + 
+                             contentWithImages.slice(firstParagraphIndex + 2);
+        }
+      }
+    });
+
+    // Determine status based on publishing option
+    const status = input.publishOption === 'publish' ? 'PUBLISHED' : 'DRAFT';
+    const publishedAt = status === 'PUBLISHED' ? new Date().toISOString() : null;
+
+    const blogPostData = {
+      title: firstHeading,
+      slug: slug,
+      content: contentWithImages,
+      contentHtml: contentWithImages,
+      excerpt: excerpt,
+      published: status === 'PUBLISHED',
+      imageUrl: images[0]?.publicUrl || null,
+      tags: [],
+      publishedAt: publishedAt,
+      scheduledFor: input.publishOption === 'schedule' ? input.scheduledFor : null,
+      status: status,
+      seoTitle: firstHeading,
+      metaDescription: excerpt,
+      authorId: authorId
+    };
+
+    // Save to database
+    const response = await fetch('/api/blog/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(blogPostData)
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save blog post');
+    }
+
+    return await response.json();
+  }
+
+  /**
    * Gather comprehensive context for REAL Assistant
    */
   async gatherComprehensiveContext(images: ProcessedImage[], input: AutoBlogInput): Promise<string> {
@@ -1556,8 +1689,23 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
         assistantId
       );
       
+      // If structured parsing failed, create content directly from Assistant response
       if (!assistantResult) {
-        throw new Error('❌ SOPHISTICATED PROMPT FAILED - Check OpenAI API configuration.');
+        console.log('⚠️ Structured parsing failed, using raw Assistant content directly...');
+        
+        // Get the raw Assistant response and create blog post directly
+        const rawContent = await this.getRawAssistantContent(processedImages, input, enhancedContext, assistantId);
+        if (rawContent) {
+          console.log('✅ Using raw Assistant content, bypassing structured parsing');
+          const directPost = await this.createBlogPostFromRawContent(rawContent, processedImages, authorId, input);
+          return {
+            success: true,
+            post: directPost,
+            message: 'Blog post created successfully from Assistant content'
+          };
+        } else {
+          throw new Error('❌ SOPHISTICATED PROMPT FAILED - Check OpenAI API configuration.');
+        }
       }
 
       console.log('✅ SOPHISTICATED PROMPT SUCCESS');

@@ -17,14 +17,7 @@ interface UploadedImage {
   name: string;
 }
 
-interface GeneratedContent {
-  title: string;
-  content: string;
-  excerpt: string;
-  metaDescription: string;
-  slug: string;
-  tags: string[];
-}
+// Removed: GeneratedContent interface for streamlined workflow
 
 export default function AutoBlogGenerator() {
   console.log('🟢 AutoBlogGenerator component loaded - CACHE REFRESH VERSION 3.0');
@@ -36,7 +29,7 @@ export default function AutoBlogGenerator() {
   const [websiteUrl, setWebsiteUrl] = useState("https://www.newagefotografie.com");
   const [customSlug, setCustomSlug] = useState("");
   const [publishingOption, setPublishingOption] = useState("draft");
-  const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+  // Removed: preview functionality for streamlined workflow
   const [isGenerating, setIsGenerating] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{role: string, content: string}>>([]);
   const [chatInput, setChatInput] = useState("");
@@ -183,30 +176,28 @@ export default function AutoBlogGenerator() {
       });
 
       if (data.success && data.post) {
-        console.log('🎉 Success! Parsing blog post data...');
-        // Parse the structured content from the real AutoBlog response
-        const generatedPost = data.post;
-        const structuredContent: GeneratedContent = {
-          title: generatedPost.title || "Professionelle Familienfotografie in Wien",
-          content: generatedPost.content_html || generatedPost.content || "",
-          excerpt: generatedPost.excerpt || "",
-          metaDescription: generatedPost.meta_description || "",
-          slug: generatedPost.slug || customSlug || "familienfotografie-wien",
-          tags: generatedPost.tags || []
-        };
-
-        console.log('📝 Structured content created:', {
-          title: structuredContent.title.substring(0, 50) + '...',
-          contentLength: structuredContent.content.length,
-          tagsCount: structuredContent.tags.length
+        console.log('🎉 Success! Blog post created directly by AutoBlog system');
+        console.log('📝 Blog post created:', {
+          id: data.post.id,
+          title: data.post.title,
+          publishStatus: publishingOption
         });
 
-        setGeneratedContent(structuredContent);
+        // Success - navigate directly to blog management (no preview needed)
+        const publishStatus = publishingOption === 'publish' ? 'published' : 'saved as draft';
         
         toast({
-          title: "Content generated successfully",
-          description: `Blog post created using TOGNINJA BLOG WRITER Assistant (${data.ai?.method || 'Assistant API'})`,
+          title: "Success!",
+          description: `Blog post ${publishStatus} successfully! Redirecting to blog management...`,
         });
+
+        // Clear form and redirect after short delay
+        setTimeout(() => {
+          setUploadedImages([]);
+          setContentGuidance('');
+          setCustomSlug('');
+          window.location.href = '/admin/blog-management';
+        }, 2000);
         
         console.log('🎊 Generation completed successfully!');
       } else {
@@ -553,54 +544,22 @@ export default function AutoBlogGenerator() {
               </CardContent>
             </Card>
 
-            {/* Right Side - Generated Content */}
+            {/* Status Panel - Streamlined */}
             <Card>
               <CardHeader>
-                <CardTitle>Generated Content</CardTitle>
-                <CardDescription>Preview and review your AI-generated blog post</CardDescription>
+                <CardTitle>AutoBlog Status</CardTitle>
+                <CardDescription>Blog posts are created directly based on your publishing option</CardDescription>
               </CardHeader>
               <CardContent>
-                {!generatedContent ? (
-                  <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                    <FileText className="h-16 w-16 mb-4" />
-                    <p className="text-center">Your generated content will appear here</p>
+                <div className="flex flex-col items-center justify-center h-64 text-gray-600">
+                  <FileText className="h-16 w-16 mb-4 text-blue-500" />
+                  <div className="text-center space-y-2">
+                    <p className="font-medium">Streamlined Blog Creation</p>
+                    <p className="text-sm">• No preview required</p>
+                    <p className="text-sm">• Direct publishing based on your selection</p>
+                    <p className="text-sm">• Edit posts in Blog Management after creation</p>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2">{generatedContent.title}</h3>
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {generatedContent.tags.map((tag, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">{tag}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="text-sm text-gray-600 dark:text-gray-400 border-l-4 border-blue-500 pl-3">
-                      <strong>Meta Description:</strong> {generatedContent.metaDescription}
-                    </div>
-                    
-                    <div className="text-sm text-gray-600 dark:text-gray-400 border-l-4 border-green-500 pl-3">
-                      <strong>Excerpt:</strong> {generatedContent.excerpt}
-                    </div>
-                    
-                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg max-h-64 overflow-y-auto">
-                      <div 
-                        className="prose prose-sm max-w-none dark:prose-invert"
-                        dangerouslySetInnerHTML={{ __html: generatedContent.content }}
-                      />
-                    </div>
-
-                    <div className="flex gap-2 pt-4">
-                      <Button onClick={publishContent} className="flex-1">
-                        {publishingOption === 'draft' ? 'Save Draft' : publishingOption === 'publish' ? 'Publish Now' : 'Schedule Post'}
-                      </Button>
-                      <Button variant="outline" onClick={() => setGeneratedContent(null)}>
-                        Clear
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </div>
