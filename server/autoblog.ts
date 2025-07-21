@@ -633,21 +633,10 @@ Create complete blog package with all sections per your training. Include SEO ta
         console.log('✅ REAL Assistant content preview:', content.substring(0, 300) + '...');
 
         // Parse the sophisticated response from REAL Assistant
-        const parsedContent = this.parseStructuredResponse(content);
+        const parsedContent = this.parseStructuredResponse(content, images, 'assistant-api');
         console.log('📋 Parsed content result:', parsedContent ? 'Structured format detected' : 'No structured format');
         
-        // If assistant didn't follow structured format, force it
-        if (!parsedContent) {
-          console.log('🔧 ===== FORCING STRUCTURED FORMAT =====');
-          console.log('🔧 Reason: Missing structured sections');
-          console.log('🔧 Original content length:', content.length);
-          const forcedStructure = this.forceStructuredFormat(content, assistantId);
-          console.log('🔧 Forced structure content length:', forcedStructure.content_html.length);
-          console.log('🔧 ===== FORCED STRUCTURE APPLIED =====');
-          return forcedStructure;
-        }
-        
-        console.log('✅ Assistant followed structured format - using original response');
+        // Return parsed content
         return parsedContent;
       }
 
@@ -1500,9 +1489,8 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
         `<img src="${img.publicUrl}" alt="Photography session image ${index + 1}" class="blog-image" />`
       ).join('\n');
 
-      // Generate content using Assistant API directly
-      const assistantResult = await this.generateWithAssistantAPI(
-        assistantId,
+      // Generate content using sophisticated TOGNINJA prompt template
+      const assistantResult = await this.generateWithSophisticatedPrompt(
         processedImages,
         {
           ...input,
@@ -1513,10 +1501,10 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       );
       
       if (!assistantResult) {
-        throw new Error('❌ ASSISTANT API FAILED - Check OpenAI API configuration.');
+        throw new Error('❌ SOPHISTICATED PROMPT FAILED - Check OpenAI API configuration.');
       }
 
-      console.log('✅ ASSISTANT API SUCCESS');
+      console.log('✅ SOPHISTICATED PROMPT SUCCESS');
       
       // FIX #5: Log raw assistant response (already logged in generateWithAssistantAPI)
       console.log('✅ Assistant response logged - check above for full JSON output');
