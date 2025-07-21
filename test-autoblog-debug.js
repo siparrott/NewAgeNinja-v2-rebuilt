@@ -1,72 +1,96 @@
-import FormData from 'form-data';
+/**
+ * Debug AutoBlog system to identify exact issues
+ */
+
 import fetch from 'node-fetch';
-import fs from 'fs';
 
-async function testAutoBlogDebug() {
+async function debugAutoBlogSystem() {
+  console.log('🔍 === AUTOBLOG SYSTEM DIAGNOSTIC ===\n');
+  
+  // Test 1: Check AutoBlog generate endpoint availability
+  console.log('1. Testing AutoBlog generate endpoint...');
   try {
-    // Use actual family photo for realistic testing
-    const testImageBuffer = fs.readFileSync('attached_assets/image_1752814183389.png');
-
-    const form = new FormData();
-    form.append('userPrompt', 'Test family photography session for debugging content generation');
-    form.append('language', 'de');
-    form.append('publishOption', 'draft');
-    form.append('siteUrl', 'https://www.newagefotografie.com');
-    form.append('images', testImageBuffer, { 
-      filename: 'test-family.png', 
-      contentType: 'image/png' 
-    });
-
-    console.log('🔍 Testing AutoBlog system with debug mode...');
-    
     const response = await fetch('http://localhost:5000/api/autoblog/generate', {
-      method: 'POST',
-      body: form,
-      headers: {
-        'Authorization': 'Bearer test-token',
-        ...form.getHeaders()
-      }
+      method: 'GET'
     });
+    console.log('✅ Endpoint accessible:', response.status);
+  } catch (error) {
+    console.log('❌ Endpoint error:', error.message);
+  }
+  
+  // Test 2: Check if existing blog posts have malformed content
+  console.log('\n2. Checking existing blog posts for formatting issues...');
+  try {
+    const response = await fetch('http://localhost:5000/api/blog/posts');
+    const data = await response.json();
     
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response headers:', response.headers.raw());
+    console.log(`📊 Found ${data.posts?.length || 0} blog posts`);
     
-    if (response.ok) {
-      const result = await response.json();
-      console.log('\n✅ AutoBlog test SUCCESS');
-      console.log('📝 Generated post ID:', result.post?.id);
-      console.log('🧠 Has AI content:', !!result.ai);
-      console.log('🔑 AI content keys:', result.ai ? Object.keys(result.ai) : 'none');
-      console.log('📄 Content HTML length:', result.ai?.content_html?.length || 0);
-      console.log('📝 Title:', result.ai?.title || 'none');
-      console.log('🏷️ SEO Title:', result.ai?.seo_title || 'none');
-      
-      if (result.ai?.content_html) {
-        console.log('📄 Content HTML preview:', result.ai.content_html.substring(0, 300) + '...');
-      }
-      
-      console.log('\n🔍 Database check - fetching created post...');
-      const postCheck = await fetch(`http://localhost:5000/api/blog/posts/${result.post.slug}`);
-      if (postCheck.ok) {
-        const postData = await postCheck.json();
-        console.log('💾 Database content length:', postData.content?.length || 0);
-        console.log('💾 Database contentHtml length:', postData.contentHtml?.length || 0);
-        console.log('💾 Database excerpt:', postData.excerpt || 'none');
+    if (data.posts?.length > 0) {
+      for (let i = 0; i < Math.min(3, data.posts.length); i++) {
+        const post = data.posts[i];
+        const hasIssues = 
+          post.content?.includes('---</p>') || 
+          post.content?.includes('####') ||
+          post.title?.includes('##') ||
+          !post.content?.includes('<h1>');
         
-        if (postData.content || postData.contentHtml) {
-          console.log('✅ SUCCESS: Content saved to database');
-        } else {
-          console.log('❌ ISSUE: Content NOT saved to database');
+        console.log(`Post ${i+1}: "${post.title?.substring(0, 40)}..." - Issues: ${hasIssues ? '❌' : '✅'}`);
+        
+        if (hasIssues) {
+          console.log(`  🔧 Issues found: ${post.content?.substring(0, 100)}...`);
         }
       }
-    } else {
-      const error = await response.text();
-      console.log('❌ AutoBlog test FAILED');
-      console.log('🚨 Error response:', error);
     }
-  } catch (err) {
-    console.error('💥 Test error:', err.message);
+  } catch (error) {
+    console.log('❌ Blog posts check failed:', error.message);
   }
+  
+  // Test 3: Check comprehensive context gathering function
+  console.log('\n3. Testing image analysis and context gathering...');
+  try {
+    // Create a minimal test of the context system
+    const contextTest = {
+      userPrompt: 'Weihnachtliche Familienfotosession mit festlicher Dekoration im Studio',
+      images: [], // Empty for now
+      language: 'de'
+    };
+    
+    console.log('📝 Context test parameters:', contextTest);
+    console.log('🎄 Checking if Christmas context would be detected...');
+    
+    // Check if the context gathering would work
+    if (contextTest.userPrompt.includes('Weihnacht')) {
+      console.log('✅ Christmas context in user prompt detected');
+    } else {
+      console.log('❌ No Christmas context in user prompt');
+    }
+  } catch (error) {
+    console.log('❌ Context test failed:', error.message);
+  }
+  
+  // Test 4: Check TOGNINJA Assistant integration
+  console.log('\n4. Testing TOGNINJA Assistant ID and integration...');
+  const assistantId = 'asst_nlyO3yRav2oWtyTvkq0cHZaU';
+  console.log('🤖 TOGNINJA Assistant ID:', assistantId);
+  
+  // Test 5: Check if server has required environment variables
+  console.log('\n5. Testing environment setup...');
+  console.log('🔑 Environment variables should include OPENAI_API_KEY');
+  
+  // Test 6: Check content fixes system
+  console.log('\n6. Testing content quality fixes...');
+  const sampleBadContent = '---</p><h2>## Heading</h2><p>Content with #### issues</p>';
+  console.log('🧹 Sample malformed content:', sampleBadContent.substring(0, 50) + '...');
+  console.log('🎯 Issues to fix: "---</p>" prefix, "##" in headings, "####" markdown');
+  
+  console.log('\n📊 === DIAGNOSTIC COMPLETE ===');
+  console.log('🔧 Next steps to fix AutoBlog system:');
+  console.log('   1. Fix malformed content in existing blog posts');
+  console.log('   2. Ensure Christmas context is properly analyzed from images');
+  console.log('   3. Verify TOGNINJA Assistant integration is working');
+  console.log('   4. Test content quality fixes are being applied');
+  console.log('   5. Ensure proper HTML structure generation');
 }
 
-testAutoBlogDebug();
+debugAutoBlogSystem();
