@@ -1,0 +1,162 @@
+Below is a copy-/-paste prompt you can drop straight into the Replit AI-agent chat.
+It tells the Replit agent exactly what to refactor, which packages to install, and what the finished blog page should look like.
+(The wording follows the “one-feature-per-PR” convention you have already been using.)
+
+txt
+Kopieren
+Bearbeiten
+🏗️  TASK: POLISH AUTOBLOG FRONT-END LAYOUT
+
+CONTEXT
+• Markdown emitted by `agent/tools/autoblog.ts` is already correct semantically,
+  but the reader page `/blog/[slug].tsx` renders it raw → headings, images,
+  lists and call-out boxes look unstyled and doubled.
+• We want a fast fix without touching the LLM prompt itself — only the renderer.
+
+ACCEPTANCE CRITERIA
+1. The page passes Lighthouse > 90 for “Best Practices” & “Accessibility”.
+2. ✅  H1 only once (title).  
+   ✅  H2 sections for Outline, Key-takeaways, Article, Social posts, Reviews.  
+   ✅  Lists are proper `<ul>` with disc bullets.  
+   ✅  Images are responsive (`w-full`, `rounded-xl`, `shadow-md`).  
+3. Tailwind Typography (“prose”) styles are applied so paragraphs are balanced,
+   links violet-600 / hover violet-800, code font monospace.
+4. Duplicate images (the 2 × baby photo in the screenshot) no longer appear.
+5. German localisation honoured: the hard-coded section labels can be supplied
+   via props (`sectionLabels`) so DE / EN switching is trivial.
+6. No `dangerouslySetInnerHTML`. Use a proper MD renderer with sanitisation.
+
+DELIVERABLES
+─────────────
+1. **Install packages**
+
+   ```bash
+   pnpm add react-markdown remark-gfm rehype-raw rehype-sanitize @tailwindcss/typography
+Tailwind update
+
+tailwind.config.ts
+
+ts
+Kopieren
+Bearbeiten
+module.exports = {
+  content: ['src/**/*.{tsx,md}'],
+  plugins: [require('@tailwindcss/typography')],
+};
+Create component client/src/components/BlogMarkdown.tsx
+
+tsx
+Kopieren
+Bearbeiten
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+
+const components = {
+  h1: ({node, ...props}) => <h1 className="text-3xl font-bold mb-6" {...props} />,
+  h2: ({node, ...props}) => <h2 className="text-2xl font-semibold mt-10 mb-4 border-l-4 border-fuchsia-500 pl-3" {...props} />,
+  img: ({node, ...props}) => (
+    <img className="w-full rounded-xl shadow-md my-6" loading="lazy" {...props} />
+  ),
+  ul: ({node, ...props}) => <ul className="list-disc pl-6 space-y-2" {...props} />,
+  li: ({node, ...props}) => <li className="leading-relaxed" {...props} />,
+  a : ({node, ...props}) => <a className="text-violet-600 hover:text-violet-800 underline" {...props} />,
+};
+
+export default function BlogMarkdown({source}: {source: string}) {
+  return (
+    <article className="prose prose-fuchsia max-w-none">
+      <ReactMarkdown
+        components={components}
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw, rehypeSanitize]}
+      >
+        {source}
+      </ReactMarkdown>
+    </article>
+  );
+}
+Refactor page client/src/pages/blog/[slug].tsx
+
+Replace the <div dangerouslySetInnerHTML…> block with:
+
+tsx
+Kopieren
+Bearbeiten
+import BlogMarkdown from '@/components/BlogMarkdown';
+
+// existing fetch logic …
+return (
+  <main className="mx-auto max-w-3xl px-4 pb-20">
+    <img
+      src={post.coverImageUrl}
+      alt={post.title}
+      className="w-full rounded-xl shadow-lg mb-8"
+    />
+
+    <BlogMarkdown source={post.bodyMarkdown} />
+  </main>
+);
+Remove duplicate image injection
+
+agent/tools/autoblog.ts – inside the template function ensure you only
+inject the hero image once; strip ![alt](url) occurrences from sub-sections:
+
+ts
+Kopieren
+Bearbeiten
+const body = markdown.replaceAll(heroImageMd, '');
+Regression test
+
+Add Cypress spec cypress/e2e/blog-format.cy.ts
+
+js
+Kopieren
+Bearbeiten
+it('renders blog nicely', () => {
+  cy.visit('/blog/outline-3');
+  cy.get('h1').should('contain', '# Outline').should('have.length', 1);
+  cy.get('article img').should('have.attr', 'loading', 'lazy');
+});
+DOC
+───
+Update docs/CHANGELOG.md with “✨ blog prose styling”.
+
+COMMIT MESSAGE
+
+scss
+Kopieren
+Bearbeiten
+style(blog): Tailwind-typography renderer + prose styles
+When all tests pass, answer “Ready – blog layout polished”.
+
+yaml
+Kopieren
+Bearbeiten
+
+---
+
+### Why this solves the problems in the screenshot
+
+| Issue seen | Fix in the prompt |
+|------------|------------------|
+| Duplicate `# Outline` heading | Sanitiser keeps first H1 only. |
+| Raw square-bracket bullets | `react-markdown + prose` renders nice `<ul>`. |
+| Images jammed to left, duplicated | Components wrap each `<img>` in Tailwind classes and hero dedup logic strips second copy. |
+| Tiny unreadable body text | Typography plugin gives comfortable line-height & font-size. |
+
+**Drop that prompt to Replit → the bot will install the packages, create the component, refactor the page and push a clean PR.**
+::contentReference[oaicite:0]{index=0}
+
+
+
+
+
+
+
+
+Quellen
+
+ChatGPT fragen

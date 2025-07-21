@@ -4,6 +4,7 @@ import Layout from '../components/layout/Layout';
 import { supabase } from '../lib/supabase';
 import { Calendar, ArrowLeft, Clock } from 'lucide-react';
 import { Helmet } from 'react-helmet';
+import BlogMarkdown from '@/components/BlogMarkdown';
 
 interface BlogPost {
   id: string;
@@ -194,17 +195,16 @@ const BlogPostPage: React.FC = () => {
               <img
                 src={post.imageUrl}
                 alt={post.title}
-                className="w-full h-auto rounded-lg shadow-lg max-h-96 object-cover"
+                className="w-full rounded-xl shadow-lg mb-8"
                 loading="lazy"
                 onError={(e) => {
-                  // console.error removed
                   const parent = e.currentTarget.parentElement;
                   if (parent) {
                     parent.innerHTML = `
-                      <div class="w-full h-48 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg shadow-lg flex items-center justify-center">
+                      <div class="w-full h-48 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl shadow-lg flex items-center justify-center">
                         <div class="text-center">
                           <svg class="w-16 h-16 text-purple-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2V4a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2z"></path>
                           </svg>
                           <p class="text-purple-600 font-medium">${post.title}</p>
                         </div>
@@ -220,86 +220,15 @@ const BlogPostPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-lg p-6 md:p-8 mb-8">
             {(post.contentHtml || post.content) ? (
               <div className="max-w-none">
-                {/* Custom CSS for blog content */}
-                <style dangerouslySetInnerHTML={{__html: `
-                  .blog-post-content {
-                    line-height: 1.8;
-                    color: #374151;
-                  }
-                  .blog-post-content h1 {
-                    font-size: 2.25rem;
-                    font-weight: bold;
-                    color: #1f2937;
-                    margin: 2rem 0 1rem 0;
-                    padding-bottom: 0.5rem;
-                    border-bottom: 3px solid #8b5cf6;
-                  }
-                  .blog-post-content h2 {
-                    font-size: 1.875rem;
-                    font-weight: bold;
-                    color: #1f2937;
-                    margin: 2rem 0 1rem 0;
-                    padding: 1rem;
-                    border-left: 4px solid #8b5cf6;
-                    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
-                    border-radius: 8px;
-                  }
-                  .blog-post-content h3 {
-                    font-size: 1.5rem;
-                    font-weight: 600;
-                    color: #374151;
-                    margin: 1.5rem 0 0.75rem 0;
-                  }
-                  .blog-post-content p {
-                    margin: 1rem 0;
-                    text-align: justify;
-                    line-height: 1.7;
-                  }
-                  .blog-post-content ul, .blog-post-content ol {
-                    margin: 1rem 0;
-                    padding-left: 2rem;
-                  }
-                  .blog-post-content li {
-                    margin: 0.5rem 0;
-                    line-height: 1.6;
-                  }
-                  .blog-post-content img {
-                    margin: 2rem auto;
-                    border-radius: 12px;
-                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-                    max-width: 100%;
-                    height: auto;
-                    display: block;
-                  }
-                  .blog-post-content blockquote {
-                    border-left: 4px solid #8b5cf6;
-                    background: #f8fafc;
-                    padding: 1rem 1.5rem;
-                    margin: 1.5rem 0;
-                    border-radius: 0 8px 8px 0;
-                    font-style: italic;
-                  }
-                  .blog-post-content strong {
-                    font-weight: 700;
-                    color: #1f2937;
-                  }
-                  .blog-post-content a {
-                    color: #8b5cf6;
-                    text-decoration: underline;
-                    transition: color 0.2s ease;
-                  }
-                  .blog-post-content a:hover {
-                    color: #7c3aed;
-                  }
-                  .section-divider {
-                    height: 1px;
-                    background: linear-gradient(to right, transparent, #e5e7eb, transparent);
-                    margin: 3rem 0;
-                  }
-                `}} />
-                <div 
-                  className="blog-post-content"
-                  dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content }}
+                <BlogMarkdown 
+                  source={post.contentHtml || post.content} 
+                  sectionLabels={{
+                    outline: 'Inhaltsverzeichnis',
+                    keyTakeaways: 'Wichtigste Erkenntnisse',
+                    article: 'Artikel',
+                    socialPosts: 'Social Media Posts',
+                    reviews: 'Bewertungen'
+                  }}
                 />
               </div>
             ) : (

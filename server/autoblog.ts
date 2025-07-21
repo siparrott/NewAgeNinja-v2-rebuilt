@@ -344,7 +344,7 @@ Key Features: High-quality photography, professional editing, personal service
 SESSION DETAILS:
 - Images uploaded: ${images.length} photography session images
 - Business: New Age Fotografie Wien
-- Content type: ${input.contentLanguage || 'deutsch'} blog post
+- Content type: ${input.language || 'deutsch'} blog post
 - Publishing: ${input.publishOption || 'draft'}
 
 BRIEF GUIDANCE:
@@ -369,7 +369,7 @@ Use your sophisticated training to create complete blog content with outline, ke
             headers: {
               'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
             },
-            body: formData
+            body: formData as any
           });
 
           if (uploadResponse.ok) {
