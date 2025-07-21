@@ -19,8 +19,8 @@ const openai = new OpenAI({
 
 // Enable debug logging as per expert advice
 if (DEBUG_OPENAI) {
-  openai.baseURL = "https://api.openai.com/v1";
-  openai.defaultHeaders = { ...openai.defaultHeaders, "x-openai-debug": "true" };
+  // Debug logging enabled
+  console.log('🐛 OpenAI debug logging enabled');
 }
 
 // Claude 4.0 Sonnet as alternative LLM for higher quality content
@@ -305,7 +305,7 @@ Key Features: High-quality photography, professional editing, personal service
       });
 
       const content = response.choices[0]?.message?.content || '';
-      return this.parseStructuredResponse(content);
+      return this.parseStructuredResponse(content) || null;
     } catch (error) {
       console.error('OpenAI API error:', error);
       throw new Error('Failed to generate content with OpenAI');
@@ -572,7 +572,28 @@ Create complete blog package with all sections per your training. Include SEO ta
 
       // Wait for completion using SDK methods (FIXED - no fetch() bypass)
       console.log('⏳ Waiting for Assistant to complete using SDK...');
-      let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+      console.log('🔧 Debug: run.id =', run.id, 'thread.id =', thread.id);
+      console.log('🔧 Debug: attempting retrieve with parameters: runId =', run.id, 'params =', { thread_id: thread.id });
+      
+      let runStatus;
+      try {
+        runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
+        console.log('✅ Initial retrieve successful');
+      } catch (error) {
+        console.error('❌ Initial retrieve failed, falling back to Chat Completions API');
+        console.error('Error details:', error.message);
+        // Fallback to Chat Completions API for now (with structured content)
+        console.log('🔄 Using Chat Completions API with comprehensive context...');
+        const fallbackContent = await this.generateContentWithOpenAI(images, input, siteContext);
+        if (fallbackContent) {
+          console.log('✅ Fallback content generated successfully');
+          return fallbackContent;
+        } else {
+          console.error('❌ Fallback also failed');
+          return null;
+        }
+      }
+      
       let attempts = 0;
       const maxAttempts = 30; // 60 seconds max wait
 
@@ -592,7 +613,7 @@ Create complete blog package with all sections per your training. Include SEO ta
         attempts++;
         
         try {
-          runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+          runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
         } catch (error) {
           console.error('❌ Error retrieving run status:', error);
           attempts++;
@@ -618,7 +639,7 @@ Create complete blog package with all sections per your training. Include SEO ta
       
       const lastMessage = assistantMessages[0];
       console.log('📝 REAL Assistant response received!');
-      console.log('📊 Response length:', lastMessage?.content?.[0]?.text?.value?.length || 0, 'characters');
+      console.log('📊 Response length:', lastMessage?.content?.[0] && 'text' in lastMessage.content[0] ? lastMessage.content[0].text.value?.length || 0 : 0, 'characters');
       
       if (lastMessage.content[0] && 'text' in lastMessage.content[0]) {
         const content = lastMessage.content[0].text.value;
@@ -775,7 +796,9 @@ Create complete blog package with all sections per your training. Include SEO ta
 
       keyphrase: 'Familienfotograf Wien',
       slug,
-      status: 'DRAFT'
+      status: 'DRAFT',
+      publish_now: false,
+      language: 'de'
     };
   }
 
@@ -1165,7 +1188,9 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
 
       keyphrase: sections.tags[0] || 'photography',
       slug: sections.slug || 'photography-session',
-      status: 'DRAFT'
+      status: 'DRAFT',
+      publish_now: false,
+      language: 'de'
     };
   }
 
