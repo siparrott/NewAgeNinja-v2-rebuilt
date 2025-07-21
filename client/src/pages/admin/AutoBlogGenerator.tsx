@@ -37,6 +37,17 @@ export default function AutoBlogGenerator() {
   const [progressMessage, setProgressMessage] = useState("");
   const [completedPost, setCompletedPost] = useState<{id: string, title: string, slug: string, status: string} | null>(null);
   
+  // Add viewPost function for viewing completed blog
+  const viewPost = () => {
+    if (completedPost) {
+      // Open blog post in new tab
+      const blogUrl = completedPost.status === 'published' 
+        ? `/blog/${completedPost.slug}` 
+        : `/admin/blog/edit/${completedPost.id}`;
+      window.open(blogUrl, '_blank');
+    }
+  };
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -116,7 +127,7 @@ export default function AutoBlogGenerator() {
   };
 
   const createAnotherPost = () => {
-    // Reset form for new post
+    // Reset form for new post - clear all previous blog data as requested
     setUploadedImages([]);
     setContentGuidance('');
     setCustomSlug('');
@@ -124,12 +135,6 @@ export default function AutoBlogGenerator() {
     setCompletedPost(null);
     setGenerationProgress(0);
     setProgressMessage('');
-  };
-
-  const viewPost = () => {
-    if (completedPost) {
-      window.open(`/blog/${completedPost.slug}`, '_blank');
-    }
   };
 
   const generateBlogPost = async () => {
@@ -346,14 +351,13 @@ export default function AutoBlogGenerator() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Side - Generate Blog Post */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Generate Blog Post</CardTitle>
-                <CardDescription>Upload up to 3 images from your photography session</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+          {/* Single Column Layout - Progress bar and completion buttons integrated */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Generate Blog Post</CardTitle>
+              <CardDescription>Upload up to 3 images from your photography session</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
                 {/* Session Images */}
                 <div>
                   <Label className="text-base font-medium">Session Images *</Label>
@@ -470,9 +474,53 @@ export default function AutoBlogGenerator() {
                   </RadioGroup>
                 </div>
 
+                {/* Progress Bar - Integrated into main form */}
+                {isGenerating && (
+                  <div className="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border">
+                    <div className="text-center">
+                      <Wand2 className="h-8 w-8 mx-auto text-purple-500 animate-spin mb-3" />
+                      <p className="font-medium text-lg mb-2">{progressMessage}</p>
+                      <Progress value={generationProgress} className="w-full mb-2" />
+                      <p className="text-sm text-gray-500">{generationProgress}% complete</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Completion Status - Integrated into main form */}
+                {completedPost && (
+                  <div className="space-y-4 p-6 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200">
+                    <div className="text-center">
+                      <div className="flex justify-center mb-4">
+                        <div className="bg-green-100 rounded-full p-3">
+                          <Check className="h-8 w-8 text-green-600" />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-lg">Blog Post Created Successfully!</h3>
+                        <p className="text-sm font-medium">{completedPost.title}</p>
+                        <Badge variant={completedPost.status === 'published' ? 'default' : 'secondary'}>
+                          {completedPost.status === 'published' ? 'Published' : 'Draft'}
+                        </Badge>
+                      </div>
+
+                      <div className="flex gap-3 justify-center pt-4">
+                        <Button onClick={viewPost} variant="outline" className="flex-1">
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          View Completed Blog
+                        </Button>
+                        <Button onClick={createAnotherPost} className="flex-1">
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          Create New Blog
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <Button 
                   onClick={generateBlogPost} 
-                  disabled={isGenerating || uploadedImages.length === 0}
+                  disabled={isGenerating || uploadedImages.length === 0 || completedPost !== null}
                   className="w-full"
                   size="lg"
                 >
@@ -480,6 +528,11 @@ export default function AutoBlogGenerator() {
                     <>
                       <Wand2 className="mr-2 h-4 w-4 animate-spin" />
                       Generating Content...
+                    </>
+                  ) : completedPost ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Blog Created Successfully
                     </>
                   ) : (
                     <>
@@ -490,77 +543,6 @@ export default function AutoBlogGenerator() {
                 </Button>
               </CardContent>
             </Card>
-
-            {/* Progress/Status Panel */}
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {completedPost ? 'Blog Post Created!' : isGenerating ? 'Generating Content...' : 'AutoBlog Status'}
-                </CardTitle>
-                <CardDescription>
-                  {completedPost 
-                    ? `${completedPost.status === 'published' ? 'Published' : 'Saved as draft'} successfully`
-                    : isGenerating 
-                      ? 'Using TOGNINJA Assistant with sophisticated prompt structure'
-                      : 'Blog posts created directly with outline, key takeaways, and YOAST SEO'
-                  }
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isGenerating && (
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <Wand2 className="h-12 w-12 mx-auto text-purple-500 animate-spin mb-4" />
-                      <p className="font-medium text-lg mb-2">{progressMessage}</p>
-                      <Progress value={generationProgress} className="w-full mb-2" />
-                      <p className="text-sm text-gray-500">{generationProgress}% complete</p>
-                    </div>
-                  </div>
-                )}
-
-                {completedPost && (
-                  <div className="space-y-4 text-center">
-                    <div className="flex justify-center mb-4">
-                      <div className="bg-green-100 rounded-full p-4">
-                        <Check className="h-12 w-12 text-green-600" />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-lg">{completedPost.title}</h3>
-                      <Badge variant={completedPost.status === 'published' ? 'default' : 'secondary'}>
-                        {completedPost.status === 'published' ? 'Published' : 'Draft'}
-                      </Badge>
-                    </div>
-
-                    <div className="flex gap-3 justify-center pt-4">
-                      <Button onClick={viewPost} variant="outline" className="flex-1">
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        View Post
-                      </Button>
-                      <Button onClick={createAnotherPost} className="flex-1">
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        Create Another
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {!isGenerating && !completedPost && (
-                  <div className="flex flex-col items-center justify-center h-64 text-gray-600">
-                    <FileText className="h-16 w-16 mb-4 text-blue-500" />
-                    <div className="text-center space-y-2">
-                      <p className="font-medium">Sophisticated Content Generation</p>
-                      <p className="text-sm">• Outline with 6+ H2 sections</p>
-                      <p className="text-sm">• Key takeaways and review snippets</p>
-                      <p className="text-sm">• YOAST SEO optimization</p>
-                      <p className="text-sm">• Strategic image embedding</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
     </AdminLayout>
