@@ -412,20 +412,70 @@ export async function runAgent(studioId: string, userId: string, message: string
           });
           
           if (successfulResults.length > 0) {
-            // Generate intelligent response based on the task context
-            const hasEmailRequest = message.toLowerCase().includes('email') || message.toLowerCase().includes('send');
-            const hasInvoiceRequest = message.toLowerCase().includes('invoice');
-            const hasSearchRequest = message.toLowerCase().includes('find') || message.toLowerCase().includes('search');
+            // CRITICAL FIX: Present actual data to user instead of generic messages
+            const actualData = successfulResults.map(r => {
+              try {
+                return JSON.parse(r.content).data;
+              } catch {
+                return null;
+              }
+            }).filter(d => d !== null);
             
-            if (hasEmailRequest) {
-              finalResponse = "I found the contact information. Please confirm if you'd like me to send the email, or specify the email content you want to send.";
-            } else if (hasInvoiceRequest) {
-              // Continue with autonomous invoice creation instead of asking
-              finalResponse = "I found the client information and will proceed to create the invoice with the specified items.";
-            } else if (hasSearchRequest) {
-              finalResponse = "I successfully found the requested information. What would you like me to do next with this data?";
+            // Format response based on actual data returned
+            if (message.toLowerCase().includes('lead') || message.toLowerCase().includes('find') || message.toLowerCase().includes('list')) {
+              // Check for count data first
+              const countData = actualData.find(d => d.count !== undefined && d.year !== undefined);
+              if (countData) {
+                finalResponse = `I found ${countData.count} leads in ${countData.year}. Let me get the detailed list for you.`;
+                // Use read_crm_leads to get actual lead data
+                return finalResponse;
+              }
+              
+              const leads = actualData.find(d => Array.isArray(d) && d.length > 0 && d[0].name);
+              const leadData = actualData.find(d => d.leads && Array.isArray(d.leads));
+              
+              if (leadData && leadData.leads) {
+                // Handle listLeadsTool response format
+                const leadList = leadData.leads.slice(0, 5).map(lead => 
+                  `• ${lead.name} (${lead.email}) - Status: ${lead.status}`
+                ).join('\n');
+                finalResponse = `Here are your leads:\n${leadList}${leadData.leads.length > 5 ? `\n...and ${leadData.leads.length - 5} more leads` : ''}`;
+              } else if (leads) {
+                const leadList = leads.slice(0, 5).map(lead => 
+                  `• ${lead.name} (${lead.email}) - Status: ${lead.status || 'new'}`
+                ).join('\n');
+                finalResponse = `Here are your leads:\n${leadList}\n\n${leads.length > 5 ? `...and ${leads.length - 5} more leads` : ''}`;
+              } else {
+                finalResponse = "I found the requested information. The data has been retrieved successfully.";
+              }
+            } else if (message.toLowerCase().includes('client')) {
+              const clients = actualData.find(d => Array.isArray(d) && d.length > 0 && d[0].first_name);
+              if (clients) {
+                const clientList = clients.slice(0, 5).map(client => 
+                  `• ${client.first_name} ${client.last_name} (${client.email})`
+                ).join('\n');
+                finalResponse = `Here are your clients:\n${clientList}\n\n${clients.length > 5 ? `...and ${clients.length - 5} more clients` : ''}`;
+              } else {
+                finalResponse = "I found the client information you requested.";
+              }
+            } else if (message.toLowerCase().includes('invoice')) {
+              const invoiceData = actualData.find(d => d.invoice_id || d.status === 'created');
+              if (invoiceData) {
+                finalResponse = `✅ Invoice created successfully!\n• Invoice #${invoiceData.invoice_number}\n• Total: €${invoiceData.total}\n• Status: ${invoiceData.status}${invoiceData.needs_review ? '\n⚠️ Some items need review - check pricing before sending' : ''}`;
+              } else {
+                finalResponse = "Invoice operation completed successfully.";
+              }
+            } else if (message.toLowerCase().includes('email') || message.toLowerCase().includes('send')) {
+              finalResponse = "I found the contact information. Please specify the email content you want to send.";
             } else {
-              finalResponse = "Task completed successfully. The requested information has been retrieved.";
+              // Generic success but with data context
+              const dataTypes = actualData.map(d => {
+                if (Array.isArray(d)) return `${d.length} records`;
+                if (d.invoice_id) return 'invoice';
+                if (d.name || d.first_name) return 'contact';
+                return 'data item';
+              });
+              finalResponse = `✅ Successfully retrieved: ${dataTypes.join(', ')}. What would you like me to do with this information?`;
             }
           } else {
             finalResponse = "No successful results to report.";

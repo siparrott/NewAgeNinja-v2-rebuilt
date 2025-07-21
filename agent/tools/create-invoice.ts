@@ -33,7 +33,17 @@ export const createInvoiceTool = {
           if (item.sku) {
             const price = await getPriceBySku(ctx.studioId, item.sku);
             if (!price) {
-              throw new Error(`invoice:no_products - SKU "${item.sku}" not found in price list. Available SKUs: DIGI-10, CANVAS-A4, PRINTS-20, FAMILY-BASIC, NEWBORN-DELUXE`);
+              // Instead of throwing error, create custom item with needs_review flag
+              console.log(`⚠️ SKU "${item.sku}" not found, creating custom item with needs_review flag`);
+              invoiceItems.push({
+                description: `${item.sku} (SKU not found - needs review)`,
+                quantity: item.qty || 1,
+                unit_price: 0,
+                total: 0,
+                needs_review: true,
+                original_sku: item.sku
+              });
+              continue;
             }
             invoiceItems.push({
               description: price.label,
@@ -55,14 +65,24 @@ export const createInvoiceTool = {
         if (args.sku) {
           const price = await getPriceBySku(ctx.studioId, args.sku);
           if (!price) {
-            throw new Error(`invoice:no_products - SKU "${args.sku}" not found in price list. Available SKUs: DIGI-10, CANVAS-A4, PRINTS-20, FAMILY-BASIC, NEWBORN-DELUXE`);
+            // Instead of throwing error, create custom item with needs_review flag  
+            console.log(`⚠️ SKU "${args.sku}" not found, creating custom item with needs_review flag`);
+            invoiceItems.push({
+              description: `${args.sku} (SKU not found - needs review)`,
+              quantity: 1,
+              unit_price: 0,
+              total: 0,
+              needs_review: true,
+              original_sku: args.sku
+            });
+          } else {
+            invoiceItems.push({
+              description: price.label,
+              quantity: 1,
+              unit_price: Number(price.unit_price),
+              total: Number(price.unit_price)
+            });
           }
-          invoiceItems.push({
-            description: price.label,
-            quantity: 1,
-            unit_price: Number(price.unit_price),
-            total: Number(price.unit_price)
-          });
         } else if (args.custom_amount) {
           invoiceItems.push({
             description: args.custom_label || "Custom service",
@@ -79,6 +99,10 @@ export const createInvoiceTool = {
 
       const invoiceTotal = invoiceItems.reduce((sum, item) => sum + item.total, 0);
       const description = invoiceItems.map(item => `${item.quantity}x ${item.description}`).join(", ");
+      
+      // Check if any items need review
+      const needsReview = invoiceItems.some(item => item.needs_review);
+      const status = needsReview ? 'draft' : 'pending';
 
       // Create invoice in database
       const invoiceResult = await sql`
@@ -89,7 +113,7 @@ export const createInvoiceTool = {
           'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(FLOOR(RANDOM() * 9999)::text, 4, '0'),
           ${invoiceTotal},
           ${invoiceTotal},
-          'pending',
+          ${status},
           ${args.notes || ''},
           CURRENT_DATE,
           CURRENT_DATE + INTERVAL '30 days'
@@ -110,16 +134,26 @@ export const createInvoiceTool = {
         `;
       }
 
-      return {
-        status: "created",
+      const result: any = {
+        status: needsReview ? "created_with_review" : "created",
         invoice_id: invoice.id,
         invoice_number: invoice.invoice_number,
         description: description,
         total: invoiceTotal,
         currency: "EUR",
         client_id: args.client_id,
-        items: invoiceItems
+        items: invoiceItems,
+        needs_review: needsReview
       };
+
+      if (needsReview) {
+        result.review_message = "⚠️ Some SKUs were not found in the price list. Items marked for review with €0 amount. Please update pricing before sending invoice.";
+      }
+
+      // Ensure we always return meaningful data
+      console.log(`✅ Invoice created: ${invoice.invoice_number} for client ${args.client_id}, total: €${invoiceTotal}`);
+      
+      return result;
 
     } catch (error) {
       console.error('❌ create_invoice error:', error);

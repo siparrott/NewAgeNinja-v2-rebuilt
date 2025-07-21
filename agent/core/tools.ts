@@ -39,6 +39,7 @@ import { readCrmMessages, createCrmMessages, updateCrmMessages } from "../tools/
 import { readCrmLeads as readCrmLeadsEnhanced } from "../tools/read-crm-leads";
 import { findLeadTool } from "../tools/find-lead";
 import { enumerateLeadsTool } from "../tools/enumerate-leads";
+import { listLeadsTool } from "../tools/list-leads";
 
 export interface AgentTool {
   name: string;
@@ -261,6 +262,9 @@ toolRegistry.register(getClientSegmentsTool);
 
 // Add log interaction tool
 toolRegistry.register(logInteractionTool);
+
+// Add user-friendly list leads tool
+toolRegistry.register(listLeadsTool);
 
 // Add gallery management tools - temporarily disabled due to import issues
 // galleryTools.forEach(tool => {
