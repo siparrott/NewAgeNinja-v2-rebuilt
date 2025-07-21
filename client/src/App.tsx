@@ -396,7 +396,7 @@ function App() {
                   path="/admin/autoblog" 
                   element={
                     <ProtectedRoute>
-                      <AdminAutoBlogPage />
+                      <AutoBlogGenerator />
                     </ProtectedRoute>
                   } 
                 />
