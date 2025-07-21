@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Removed tabs import - streamlined to single form
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Upload, Check, Wand2, FileText, ExternalLink, RotateCcw } from 'lucide-react';
@@ -24,7 +24,7 @@ interface UploadedImage {
 export default function AutoBlogGenerator() {
   console.log('🟢 AutoBlogGenerator component loaded - CACHE REFRESH VERSION 3.0');
   
-  const [activeTab, setActiveTab] = useState("advanced");
+  // Removed activeTab state - streamlined interface
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [contentGuidance, setContentGuidance] = useState("");
   const [contentLanguage, setContentLanguage] = useState("deutsch");
@@ -36,9 +36,6 @@ export default function AutoBlogGenerator() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState("");
   const [completedPost, setCompletedPost] = useState<{id: string, title: string, slug: string, status: string} | null>(null);
-  const [chatMessages, setChatMessages] = useState<Array<{role: string, content: string}>>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [threadId, setThreadId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -265,113 +262,20 @@ export default function AutoBlogGenerator() {
     }
   };
 
-  const sendChatMessage = async () => {
-    if (!chatInput.trim()) return;
-
-    const userMessage = chatInput;
-    setChatInput("");
-    setChatMessages(prev => [...prev, { role: "user", content: userMessage }]);
-
-    try {
-      // Force localhost URL for development and use autoblog chat endpoint
-      const chatApiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? 'http://localhost:5000/api/autoblog/chat'
-        : '/api/autoblog/chat';
-
-      const response = await fetch(chatApiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          threadId,
-          assistantId: 'asst_nlyO3yRav2oWtyTvkq0cHZaU'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-
-      const data = await response.json();
-      setThreadId(data.threadId);
-      setChatMessages(prev => [...prev, { role: "assistant", content: data.response }]);
-
-    } catch (error: any) {
-      console.error('Chat error:', error);
-      toast({
-        title: "Chat failed",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  // Removed chat functionality - streamlined to Advanced Generation only
 
   // Removed publishContent function since we're using direct workflow
 
   return (
     <AdminLayout>
-      <div className="container mx-auto p-6 max-w-7xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AutoBlog Generator v3.0</h1>
-        <p className="text-gray-600 dark:text-gray-400">Generate professional blog content using TOGNINJA assistant - Fixed Endpoint Version</p>
-        <div className="text-xs text-green-600 mt-1">✅ Using correct /api/autoblog/generate endpoint</div>
-      </div>
+      <div className="container mx-auto p-6 max-w-6xl">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AutoBlog Generator</h1>
+          <p className="text-gray-600 dark:text-gray-400">Generate professional blog content using TOGNINJA assistant</p>
+          <div className="text-xs text-green-600 mt-1">✅ Using correct /api/autoblog/generate endpoint</div>
+        </div>
 
-      <Tabs defaultValue={activeTab} className="w-full">
-        <TabsList className="grid w-fit grid-cols-2 mb-6">
-          <TabsTrigger value="chat">Direct Chat Interface</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced Generation</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="chat" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wand2 className="h-5 w-5" />
-                TOGNINJA Assistant Chat
-              </CardTitle>
-              <CardDescription>
-                Direct conversation with your trained content writing assistant
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="border rounded-lg p-4 h-96 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-                  {chatMessages.length === 0 ? (
-                    <p className="text-gray-500 text-center">Start a conversation with TOGNINJA assistant...</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {chatMessages.map((msg, idx) => (
-                        <div key={idx} className={`p-3 rounded-lg ${msg.role === 'user' ? 'bg-blue-100 dark:bg-blue-900 ml-12' : 'bg-white dark:bg-gray-800 mr-12'}`}>
-                          <div className="font-semibold text-sm mb-1">
-                            {msg.role === 'user' ? 'You' : 'TOGNINJA Assistant'}
-                          </div>
-                          <div className="text-sm">{msg.content}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Type your message to TOGNINJA assistant..."
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendChatMessage()}
-                    rows={2}
-                  />
-                  <Button onClick={sendChatMessage} disabled={!chatInput.trim()}>
-                    Send
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="advanced" className="space-y-6">
+        <div className="space-y-6">
           {/* AutoBlog Features */}
           <Card>
             <CardHeader>
@@ -393,7 +297,7 @@ export default function AutoBlogGenerator() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Direct Chat Interface</span>
+                  <span className="text-sm">Streamlined Blog Creation</span>
                 </div>
               </div>
             </CardContent>
@@ -614,8 +518,7 @@ export default function AutoBlogGenerator() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
       </div>
     </AdminLayout>
   );
