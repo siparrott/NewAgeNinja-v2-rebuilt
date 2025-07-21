@@ -1,6 +1,7 @@
 // Tool registration and management
 import { createOpenAITool } from "../util/json-schema";
 import { updateMemoryTool } from "../tools/update-memory";
+import { logInteractionTool } from "../tools/log-interaction";
 import { convertLeadTool } from "../tools/convert-lead";
 import { reportLeadsTool } from "../tools/report-leads";
 
@@ -257,6 +258,9 @@ toolRegistry.register(redeemVoucherTool);
 import { listTopClientsTool, getClientSegmentsTool } from "../tools/top-clients";
 toolRegistry.register(listTopClientsTool);
 toolRegistry.register(getClientSegmentsTool);
+
+// Add log interaction tool
+toolRegistry.register(logInteractionTool);
 
 // Add gallery management tools - temporarily disabled due to import issues
 // galleryTools.forEach(tool => {

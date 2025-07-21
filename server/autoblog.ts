@@ -495,10 +495,12 @@ ADDITIONAL CONTEXT SOURCES:
   async generateWithSophisticatedPrompt(
     images: ProcessedImage[], 
     input: AutoBlogInput, 
-    siteContext: string
+    siteContext: string,
+    assistantId: string
   ): Promise<AutoBlogParsed | null> {
     try {
       console.log('🎯 === SOPHISTICATED TOGNINJA PROMPT TEMPLATE ===');
+      console.log('🔑 Using Assistant ID:', assistantId);
       
       // STEP 1: Analyze images for context
       let imageContext = 'Professional photography session';
@@ -562,7 +564,7 @@ Create complete blog package with all sections per your training. Include SEO ta
       console.log('🚀 Running TOGNINJA BLOG WRITER Assistant using proper SDK...');
       const run = await openai.beta.threads.runs.create(thread.id, {
         assistant_id: assistantId,
-        max_tokens: 2000, // Fix #5: Increased from default 256 to support full articles
+        // max_tokens: 2000, // Removed - not supported in Assistant API
         temperature: 0.7,
         metadata: { feature: "autoblog", studioId: "newage-fotografie" }
       });
@@ -618,7 +620,7 @@ Create complete blog package with all sections per your training. Include SEO ta
       console.log('📝 REAL Assistant response received!');
       console.log('📊 Response length:', lastMessage?.content?.[0]?.text?.value?.length || 0, 'characters');
       
-      if (lastMessage.content[0].type === 'text') {
+      if (lastMessage.content[0] && 'text' in lastMessage.content[0]) {
         const content = lastMessage.content[0].text.value;
         
         // FIX #5: Log raw assistant response for debugging
@@ -633,7 +635,7 @@ Create complete blog package with all sections per your training. Include SEO ta
         console.log('✅ REAL Assistant content preview:', content.substring(0, 300) + '...');
 
         // Parse the sophisticated response from REAL Assistant
-        const parsedContent = this.parseStructuredResponse(content, images, 'assistant-api');
+        const parsedContent = this.parseStructuredResponse(content);
         console.log('📋 Parsed content result:', parsedContent ? 'Structured format detected' : 'No structured format');
         
         // Return parsed content
@@ -689,7 +691,7 @@ Create complete blog package with all sections per your training. Include SEO ta
   /**
    * Force structured format from assistant's raw content
    */
-  private forceStructuredFormat(content: string, assistantId: string): AutoBlogParsed {
+  private forceStructuredFormat(content: string): AutoBlogParsed {
     console.log('🔧 Forcing structured format on assistant content...');
     
     // Extract title/headline from content
@@ -1497,7 +1499,8 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
           contentGuidance: fullUserPrompt, // Pass complete prompt
           imageMarkdown // Include image references
         } as AutoBlogInput,
-        enhancedContext
+        enhancedContext,
+        assistantId
       );
       
       if (!assistantResult) {
