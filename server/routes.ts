@@ -5818,6 +5818,109 @@ Current system status: The AI agent system is temporarily unavailable. Please tr
   app.use('/api/website-wizard', websiteWizardRoutes);
   app.use('/api/gallery', galleryShopRouter);
 
+  // Fix blog post formatting endpoint
+  app.post('/api/blog/posts/fix-formatting', async (req: Request, res: Response) => {
+    try {
+      // Get all blog posts that need formatting fixes
+      const posts = await db.query.blogPosts.findMany({
+        limit: 50
+      });
+      
+      console.log(`Checking ${posts.length} blog posts for formatting issues...`);
+      let fixedCount = 0;
+      
+      for (const post of posts) {
+        const content = post.content || '';
+        
+        // Check if content is a wall of text without proper HTML structure
+        const needsFormatting = content.length > 500 && 
+                               !content.includes('<p>') && 
+                               content.split('.').length > 10;
+        
+        if (needsFormatting) {
+          console.log(`Fixing formatting for: ${post.title}`);
+          
+          const structuredContent = convertPlainTextToStructuredHTML(content);
+          
+          // Update the post with properly formatted content
+          await storage.updateBlogPost(post.id, {
+            content: structuredContent,
+            contentHtml: structuredContent,
+            excerpt: generateExcerptFromHTML(structuredContent)
+          });
+          
+          fixedCount++;
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Fixed formatting for ${fixedCount} blog posts`,
+        totalChecked: posts.length,
+        totalFixed: fixedCount
+      });
+      
+    } catch (error) {
+      console.error('Error fixing blog formatting:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to fix blog formatting' 
+      });
+    }
+  });
+
+  // Helper functions for blog formatting
+  function convertPlainTextToStructuredHTML(content: string): string {
+    if (!content || content.includes('<p>')) {
+      return content; // Already formatted
+    }
+
+    console.log('Converting plain text to structured HTML...');
+    
+    // Split content into sentences, removing empty ones
+    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    let structuredHTML = '';
+    
+    // Group sentences into paragraphs (2-3 sentences per paragraph)
+    const paragraphs = [];
+    for (let i = 0; i < sentences.length; i += 2) {
+      const paragraph = sentences.slice(i, i + 2).join('. ').trim();
+      if (paragraph.length > 30) {
+        paragraphs.push(paragraph.endsWith('.') ? paragraph : paragraph + '.');
+      }
+    }
+    
+    // Create structured content with H2 headings every 3-4 paragraphs
+    const sectionHeadings = [
+      'Professionelle Fotografie in Wien',
+      'Unser Ansatz bei der Familienfotografie', 
+      'Tipps für Ihre nächste Fotosession',
+      'Die Bedeutung authentischer Momente',
+      'Warum New Age Fotografie wählen',
+      'Kontakt und Buchung'
+    ];
+    
+    let headingIndex = 0;
+    
+    for (let i = 0; i < paragraphs.length; i++) {
+      // Add H2 heading every 3 paragraphs
+      if (i > 0 && i % 3 === 0 && headingIndex < sectionHeadings.length) {
+        structuredHTML += `<h2>${sectionHeadings[headingIndex]}</h2>\n\n`;
+        headingIndex++;
+      }
+      
+      structuredHTML += `<p>${paragraphs[i]}</p>\n\n`;
+    }
+    
+    return structuredHTML;
+  }
+
+  function generateExcerptFromHTML(htmlContent: string): string {
+    // Strip HTML and get first 150 characters
+    const plainText = htmlContent.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    return plainText.substring(0, 150) + '...';
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }

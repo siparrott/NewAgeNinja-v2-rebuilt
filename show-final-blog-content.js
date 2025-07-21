@@ -1,36 +1,56 @@
-// Show the final generated German blog content
+/**
+ * Fix blog formatting and restore proper structure
+ */
+
 import fetch from 'node-fetch';
 
-async function showFinalBlogContent() {
+console.log('🔧 FIXING: Blog post formatting to restore proper display...');
+
+async function fixBlogFormatting() {
   try {
-    console.log('=== Final Generated German Blog Content ===');
+    // Call the fix formatting API endpoint
+    const response = await fetch('http://localhost:5000/api/blog/posts/fix-formatting', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
     
-    const response = await fetch('http://localhost:5000/api/blog/posts/familienfotosession-wien-emotionen');
-    const post = await response.json();
+    const result = await response.json();
+    console.log('✅ Formatting fix result:', result);
     
-    console.log('📄 Title:', post.title);
-    console.log('🔍 SEO Title:', post.seoTitle);
-    console.log('📝 Meta Description:', post.metaDescription);
-    console.log('🏷️  Tags:', post.tags);
-    console.log('📅 Published:', post.publishedAt);
-    console.log('🖼️  Cover Image:', post.imageUrl);
-    console.log('📊 Status:', post.status);
-    console.log('🔗 Slug:', post.slug);
+    // Now show the first blog post to verify the fix
+    const postsResponse = await fetch('http://localhost:5000/api/blog/posts?limit=1');
+    const postsData = await postsResponse.json();
+    const firstPost = postsData.posts[0];
     
-    console.log('\n=== Full German Blog Content ===');
-    console.log(post.contentHtml);
-    
-    console.log('\n=== Summary ===');
-    console.log('✅ German language content generated successfully');
-    console.log('✅ Professional photography focus');
-    console.log('✅ Vienna-specific context included');
-    console.log('✅ SEO-optimized structure');
-    console.log('✅ Images properly embedded');
-    console.log('✅ Complete blog post ready for publication');
+    if (firstPost) {
+      console.log('\n📝 FIRST BLOG POST AFTER FIX:');
+      console.log('=================================');
+      console.log('Title:', firstPost.title);
+      console.log('Content preview:', firstPost.content.substring(0, 500) + '...');
+      console.log('Has <p> tags:', firstPost.content.includes('<p>') ? '✅' : '❌');
+      console.log('Has <h2> tags:', firstPost.content.includes('<h2>') ? '✅' : '❌');
+      console.log('Content length:', firstPost.content.length);
+      
+      // Count structural elements
+      const paragraphs = (firstPost.content.match(/<p>/g) || []).length;
+      const headings = (firstPost.content.match(/<h2>/g) || []).length;
+      
+      console.log(`\n📊 STRUCTURE ANALYSIS:`);
+      console.log(`Paragraphs: ${paragraphs}`);
+      console.log(`H2 headings: ${headings}`);
+      console.log(`Total HTML elements: ${paragraphs + headings}`);
+      
+      if (paragraphs > 5 && headings > 1) {
+        console.log('🎉 SUCCESS: Blog post now has proper structure for display!');
+      } else {
+        console.log('⚠️ WARNING: Blog post may still need manual formatting');
+      }
+    }
     
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error fixing blog formatting:', error.message);
   }
 }
 
-showFinalBlogContent();
+// Run the fix
+fixBlogFormatting();
