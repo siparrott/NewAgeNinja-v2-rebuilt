@@ -797,8 +797,12 @@ NEW AGE FOTOGRAFIE COMPREHENSIVE BUSINESS DETAILS:
 - Seasonal offerings: Holiday sessions, back-to-school portraits, summer family sessions
 `;
 
-    // 6. Additional context from internal data sources
-    console.log('🔍 STEP 6: Gathering internal business data...');
+    // 6. Knowledge Base context from support articles
+    console.log('📚 STEP 6: Gathering Knowledge Base articles and support content...');
+    const knowledgeBaseContext = await this.gatherKnowledgeBaseContext();
+
+    // 7. Additional context from internal data sources
+    console.log('🔍 STEP 7: Gathering internal business data...');
     const internalContext = await this.gatherInternalBusinessContext();
 
     const comprehensiveContext = `
@@ -813,6 +817,8 @@ ${onlineReviewsContext}
 
 ${businessContext}
 
+${knowledgeBaseContext}
+
 ${internalContext}
 
 USER SESSION DETAILS:
@@ -822,6 +828,7 @@ ADDITIONAL CONTEXT SOURCES:
 - Real-time website scraping for current content and voice
 - Vienna-specific SEO keyword research and competitor analysis
 - Comprehensive business service details and unique selling propositions
+- Knowledge base articles and support content for technical expertise
 - Internal business data and client testimonials
 - Seasonal and local Vienna photography market insights
 - Professional photography industry best practices and trends
@@ -1252,6 +1259,73 @@ Create complete blog package with all sections per your training. Include SEO ta
     console.log('📊 Paragraphs created:', (htmlContent.match(/<p>/g) || []).length);
     
     return htmlContent;
+  }
+
+  /**
+   * Gather Knowledge Base context for comprehensive content generation
+   */
+  async gatherKnowledgeBaseContext(): Promise<string> {
+    try {
+      console.log('📚 Gathering Knowledge Base articles...');
+      
+      // Import database connection and schema
+      const { db } = await import('./db');
+      const { knowledgeBase } = await import('../shared/schema');
+      const { eq, desc } = await import('drizzle-orm');
+      
+      // Fetch active knowledge base articles
+      const articles = await db.select().from(knowledgeBase)
+        .where(eq(knowledgeBase.status, 'published'))
+        .orderBy(desc(knowledgeBase.updated_at))
+        .limit(20); // Get most recent 20 articles
+      
+      if (articles.length === 0) {
+        return `KNOWLEDGE BASE CONTEXT:
+No published articles found in knowledge base. System will rely on general photography expertise.`;
+      }
+
+      // Organize articles by category
+      const categorizedArticles: { [key: string]: any[] } = {};
+      articles.forEach(article => {
+        const category = article.category || 'General';
+        if (!categorizedArticles[category]) {
+          categorizedArticles[category] = [];
+        }
+        categorizedArticles[category].push(article);
+      });
+
+      // Build comprehensive knowledge base context
+      let knowledgeContext = `KNOWLEDGE BASE CONTEXT (${articles.length} articles):
+
+`;
+
+      Object.keys(categorizedArticles).forEach(category => {
+        knowledgeContext += `\n${category.toUpperCase()} ARTICLES:\n`;
+        categorizedArticles[category].forEach(article => {
+          knowledgeContext += `- ${article.title}: ${article.summary || article.content?.substring(0, 200) || 'No summary available'}\n`;
+          if (article.tags && article.tags.length > 0) {
+            knowledgeContext += `  Tags: ${article.tags.join(', ')}\n`;
+          }
+        });
+      });
+
+      knowledgeContext += `\nKEY EXPERTISE AREAS:
+- Photography techniques and best practices
+- Client communication and service delivery
+- Studio equipment and setup guidance
+- Seasonal photography trends and opportunities
+- Vienna-specific location and market insights
+- Technical photography knowledge and troubleshooting
+- Business operations and customer service standards`;
+
+      console.log('✅ Knowledge Base context gathered:', knowledgeContext.substring(0, 300) + '...');
+      return knowledgeContext;
+
+    } catch (error) {
+      console.error('❌ Failed to gather Knowledge Base context:', error);
+      return `KNOWLEDGE BASE CONTEXT:
+Error accessing knowledge base. Using general photography expertise as fallback.`;
+    }
   }
 
   /**

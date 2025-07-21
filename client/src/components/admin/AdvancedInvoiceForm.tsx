@@ -218,8 +218,8 @@ const AdvancedInvoiceForm: React.FC<AdvancedInvoiceFormProps> = ({
     }
     
     const filtered = clients.filter(client =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (client.address1 && client.address1.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (client.city && client.city.toLowerCase().includes(searchTerm.toLowerCase()))
     );

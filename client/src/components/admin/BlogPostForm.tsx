@@ -172,7 +172,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ post, isEditing = false }) 
           .from('blog_posts')
           .insert({
             title: apiData.title,
-            slug: apiData.title.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-'),
+            slug: apiData.title?.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, '-') || '',
             excerpt: apiData.excerpt,
             content: apiData.contentHtml?.replace(/<[^>]*>/g, '') || '', // Strip HTML for plain text content
             content_html: apiData.contentHtml,

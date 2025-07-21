@@ -52,8 +52,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   const selectedClient = clients.find(c => c.id === formData.client_id);
   const filteredPriceList = priceList.filter(item =>
-    item.name.toLowerCase().includes(priceListSearch.toLowerCase()) ||
-    item.category.toLowerCase().includes(priceListSearch.toLowerCase()) ||
+    item.name?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
+    item.category?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
     item.description?.toLowerCase().includes(priceListSearch.toLowerCase())
   );
 
