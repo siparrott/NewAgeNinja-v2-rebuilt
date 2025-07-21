@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Check, Wand2, FileText } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Upload, Check, Wand2, FileText, ExternalLink, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface UploadedImage {
@@ -30,8 +31,11 @@ export default function AutoBlogGenerator() {
   const [websiteUrl, setWebsiteUrl] = useState("https://www.newagefotografie.com");
   const [customSlug, setCustomSlug] = useState("");
   const [publishingOption, setPublishingOption] = useState("draft");
-  // Removed: preview functionality for streamlined workflow
+  // Progress and completion tracking
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState("");
+  const [completedPost, setCompletedPost] = useState<{id: string, title: string, slug: string, status: string} | null>(null);
   const [chatMessages, setChatMessages] = useState<Array<{role: string, content: string}>>([]);
   const [chatInput, setChatInput] = useState("");
   const [threadId, setThreadId] = useState<string | null>(null);
@@ -83,6 +87,23 @@ export default function AutoBlogGenerator() {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const createAnotherPost = () => {
+    // Reset form for new post
+    setUploadedImages([]);
+    setContentGuidance('');
+    setCustomSlug('');
+    setPublishingOption('draft');
+    setCompletedPost(null);
+    setGenerationProgress(0);
+    setProgressMessage('');
+  };
+
+  const viewPost = () => {
+    if (completedPost) {
+      window.open(`/blog/${completedPost.slug}`, '_blank');
+    }
+  };
+
   const generateBlogPost = async () => {
     console.log('🔵 FIXED Generate button clicked - version 2.0 starting process...');
     console.log('📊 Current state:', {
@@ -105,8 +126,27 @@ export default function AutoBlogGenerator() {
 
     console.log('✅ Images validated - proceeding with generation');
     setIsGenerating(true);
+    setGenerationProgress(0);
+    setProgressMessage("Starting content generation...");
+    setCompletedPost(null);
+    
+    // Simulate progress updates
+    const progressInterval = setInterval(() => {
+      setGenerationProgress(prev => {
+        if (prev < 90) return prev + 10;
+        return prev;
+      });
+    }, 3000);
+    
+    const updateProgress = (progress: number, message: string) => {
+      setGenerationProgress(progress);
+      setProgressMessage(message);
+    };
     
     try {
+      updateProgress(10, "Processing images...");
+      
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Brief delay for UX
       // Create FormData for file upload
       const formData = new FormData();
       
@@ -143,10 +183,15 @@ export default function AutoBlogGenerator() {
       
       console.log('🌐 Using API URL:', apiUrl);
 
+      updateProgress(30, "Analyzing images with TOGNINJA Assistant...");
+      
       const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData, // No Content-Type header - browser sets it automatically with boundary
       });
+      
+      updateProgress(60, "Generating sophisticated content structure...");
+      clearInterval(progressInterval);
 
       const requestDuration = Date.now() - startTime;
       console.log(`⏱️ Request completed in ${requestDuration}ms`);
@@ -184,21 +229,15 @@ export default function AutoBlogGenerator() {
           publishStatus: publishingOption
         });
 
-        // Success - navigate directly to blog management (no preview needed)
-        const publishStatus = publishingOption === 'publish' ? 'published' : 'saved as draft';
+        updateProgress(100, "Blog post generated successfully!");
         
-        toast({
-          title: "Success!",
-          description: `Blog post ${publishStatus} successfully! Redirecting to blog management...`,
+        // Set completion data
+        setCompletedPost({
+          id: data.post.id,
+          title: data.post.title,
+          slug: data.post.slug || data.post.id,
+          status: publishingOption === 'publish' ? 'published' : 'draft'
         });
-
-        // Clear form and redirect after short delay
-        setTimeout(() => {
-          setUploadedImages([]);
-          setContentGuidance('');
-          setCustomSlug('');
-          window.location.href = '/admin/blog-management';
-        }, 2000);
         
         console.log('🎊 Generation completed successfully!');
       } else {
@@ -221,6 +260,7 @@ export default function AutoBlogGenerator() {
       });
     } finally {
       console.log('🏁 Finally block - resetting isGenerating to false');
+      clearInterval(progressInterval);
       setIsGenerating(false);
     }
   };
@@ -504,22 +544,73 @@ export default function AutoBlogGenerator() {
               </CardContent>
             </Card>
 
-            {/* Status Panel - Streamlined */}
+            {/* Progress/Status Panel */}
             <Card>
               <CardHeader>
-                <CardTitle>AutoBlog Status</CardTitle>
-                <CardDescription>Blog posts are created directly based on your publishing option</CardDescription>
+                <CardTitle>
+                  {completedPost ? 'Blog Post Created!' : isGenerating ? 'Generating Content...' : 'AutoBlog Status'}
+                </CardTitle>
+                <CardDescription>
+                  {completedPost 
+                    ? `${completedPost.status === 'published' ? 'Published' : 'Saved as draft'} successfully`
+                    : isGenerating 
+                      ? 'Using TOGNINJA Assistant with sophisticated prompt structure'
+                      : 'Blog posts created directly with outline, key takeaways, and YOAST SEO'
+                  }
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col items-center justify-center h-64 text-gray-600">
-                  <FileText className="h-16 w-16 mb-4 text-blue-500" />
-                  <div className="text-center space-y-2">
-                    <p className="font-medium">Streamlined Blog Creation</p>
-                    <p className="text-sm">• No preview required</p>
-                    <p className="text-sm">• Direct publishing based on your selection</p>
-                    <p className="text-sm">• Edit posts in Blog Management after creation</p>
+                {isGenerating && (
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <Wand2 className="h-12 w-12 mx-auto text-purple-500 animate-spin mb-4" />
+                      <p className="font-medium text-lg mb-2">{progressMessage}</p>
+                      <Progress value={generationProgress} className="w-full mb-2" />
+                      <p className="text-sm text-gray-500">{generationProgress}% complete</p>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {completedPost && (
+                  <div className="space-y-4 text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="bg-green-100 rounded-full p-4">
+                        <Check className="h-12 w-12 text-green-600" />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-lg">{completedPost.title}</h3>
+                      <Badge variant={completedPost.status === 'published' ? 'default' : 'secondary'}>
+                        {completedPost.status === 'published' ? 'Published' : 'Draft'}
+                      </Badge>
+                    </div>
+
+                    <div className="flex gap-3 justify-center pt-4">
+                      <Button onClick={viewPost} variant="outline" className="flex-1">
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        View Post
+                      </Button>
+                      <Button onClick={createAnotherPost} className="flex-1">
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Create Another
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {!isGenerating && !completedPost && (
+                  <div className="flex flex-col items-center justify-center h-64 text-gray-600">
+                    <FileText className="h-16 w-16 mb-4 text-blue-500" />
+                    <div className="text-center space-y-2">
+                      <p className="font-medium">Sophisticated Content Generation</p>
+                      <p className="text-sm">• Outline with 6+ H2 sections</p>
+                      <p className="text-sm">• Key takeaways and review snippets</p>
+                      <p className="text-sm">• YOAST SEO optimization</p>
+                      <p className="text-sm">• Strategic image embedding</p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
