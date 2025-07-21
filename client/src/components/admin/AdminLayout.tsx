@@ -55,7 +55,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        // Fetch new leads count
+        // Fetch new leads count (database uses lowercase status values)
         const leadsResponse = await fetch('/api/crm/leads?status=new');
         if (leadsResponse.ok) {
           const leads = await leadsResponse.json();
