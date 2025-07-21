@@ -1,0 +1,177 @@
+CRM Operations Assistant issues 
+CRM Operations Assistant
+AI-powered business automation
+
+
+Hello! I'm your CRM Operations Assistant. I can help you:
+
+📧 Send booking confirmations & replies
+📅 Manage appointments & schedules  
+👥 Create & update client records
+💰 Generate & send invoices
+📊 Run reports & analyze data
+⚡ Automate routine tasks
+
+What would you like me to help you with today?
+
+05:39 PM
+
+hi how are you
+
+05:39 PM
+
+I'm here and ready to assist you! How can I help you today?
+
+05:39 PM
+
+can you list my new leads in the crm
+
+05:39 PM
+
+Task completed successfully. The requested information has been retrieved.
+
+05:39 PM
+
+can i read it
+
+05:40 PM
+
+Task completed successfully. The requested information has been retrieved.
+
+05:40 PM
+
+can you send matt pantling an email offering him an appointment next week on sat at 9am
+
+05:40 PM
+
+I found the contact information. Please confirm if you'd like me to send the email, or specify the email content you want to send.
+
+05:40 PM
+
+can you show me the draft email
+
+05:40 PM
+
+✅ Found 0 leads for "draft email"
+
+05:40 PM
+
+the draft email you will send him
+
+05:41 PM
+
+I found the contact information. Please confirm if you'd like me to send the email, or specify the email content you want to send.
+
+05:41 PM
+
+can you see how many unread emails we have?
+
+05:41 PM
+
+I encountered an issue while trying to check for unread emails. It seems there was a problem with the email monitoring process. 
+
+Would you like me to attempt this again or assist you with something else?
+
+05:41 PM
+
+can you make an invoice for simon parrott for 10 digital images and a a4 leinwand
+
+05:42 PM
+
+❌ Invoice creation failed: invoice:no_products - SKU "DIGI-10" not found in price list. Available SKUs: DIGI-10, CANVAS-A4, PRINTS-20, FAMILY-BASIC, NEWBORN-DELUXE
+
+05:42 PM
+
+
+ChatGPT:
+
+Nachgedacht für 15 Sekunden
+What just happened & why the invoice call failed
+Step	What the agent tried	Why it broke
+1	Parsed your request → “10 digital images” = SKU DIGI-10 and “A4 Leinwand” = SKU CANVAS-A4	Good so far
+2	Called create_crm_invoice tool with an item array containing the two SKUs	
+3	Supabase RPC invoice_create(…) validates every line-item against price_list	
+4	The RPC returned invoice:no_products because it couldn’t find one of the SKUs in the query result	- Most common cause: case/whitespace mismatch – e.g. the row in crm_price_list is actually stored as Digi-10 or DIGI-10 (trailing space).
+- 2nd cause: the assistant’s price cache is stale; it still shows the old list in the error message.
+
+Notice that the error text itself is contradictory: it says “SKU ‘DIGI-10’ not found” and lists DIGI-10 as “available”. That’s the tell-tale sign of a string-mismatch (unicode hyphen vs ASCII, trailing space, etc.).
+
+Quick fix you can do right now
+Open crm_price_list in Supabase Studio
+
+Search for both SKUs exactly:
+
+sql
+Kopieren
+Bearbeiten
+select sku, length(sku), ascii(substring(sku,4,1)) from crm_price_list
+where sku ilike '%DIGI%'
+If you see duplicates such as DIGI-10 (unicode hyphen U+2011) and DIGI-10 (ASCII hyphen 45), keep the ASCII one and delete the other – or normalise them all to lowercase/ASCII.
+
+Once the row truly matches the ASCII string DIGI-10, the invoice creation will succeed.
+
+“Bullet-proof” improvements for the agent (Replit prompt)
+Paste the block below into your Replit agent.
+It will:
+
+add a price-list normaliser (trims, lower-cases, converts fancy hyphens to -)
+
+make the invoice tool auto-fallback to a custom line-item (so it never hard-fails in front of a user)
+
+write a Jest test that verifies the behaviour.
+
+plaintext
+Kopieren
+Bearbeiten
+🚀 **PATCH: Make invoice creation bullet-proof**
+
+SCOPE
+1. Pre-validation normaliser in `agent/tools/helpers/normaliseSku.ts`
+   • Returns ASCII-only, trimmed, lower-case string.
+2. Modify `agent/tools/createInvoice.ts`
+   • map every requested item through `normaliseSku`
+   • abort fallback removed; if `priceLookup.length===0` push a
+     `{ description, qty, unit_price }` custom line-item with price 0
+     and flag `needs_review=true`.
+3. Update Supabase RPC `invoice_create`:
+   • if `needs_review` present → do NOT raise `invoice:no_products`
+     (return 200 with `status="draft"` instead).
+4. Jest test `__tests__/invoiceSkuNormalise.test.ts`
+   • feed `DIGI-10`, `DIGI-10 `, ` digi-10` → expect same SKU
+5. Update README > Agent 🧩 FAQ > “Why did my invoice fail?”
+
+AFTER CODE CHANGES
+```bash
+npm run migrate
+npm run test
+curl -X POST /api/crm/invoice \
+     -d '{"clientId":"test","items":[{"sku":"DIGI-10","qty":1},{"sku":"CANVAS-A4"}]}'
+EXPECTED RESULT
+200 OK JSON shows invoice draft even if one SKU still mismatches; needs_review flag lets finance team patch it before sending.
+
+🔚 When patches & tests pass, reply with the markdown table:
+
+Fix	Status
+SKU normaliser in place	✅/❌
+Fallback custom line-item	✅/❌
+Test suite green	✅/❌
+
+yaml
+Kopieren
+Bearbeiten
+
+---
+
+### One more safeguard
+
+Add this **agent-side check** to avoid the “silent” replies you saw:
+
+```ts
+if (toolResult.ok && toolResult.data == null) {
+  throw new Error("TOOL_RETURNED_NULL");
+}
+and handle it in run-agent.ts with a polite,
+
+“I couldn’t retrieve that, but here’s what went wrong …”
+
+No more “Task completed successfully” with nothing to show.

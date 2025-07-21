@@ -15,17 +15,17 @@ export function buildAutoBlogPrompt(context: PromptContext): string {
   
   return `You are a professional business content writer specializing in photography industry marketing materials for ${studioName} photography studio in Vienna, Austria.
 
-**BUSINESS OBJECTIVE:**
+BUSINESS OBJECTIVE:
 Write a marketing blog article about professional photography services to attract potential clients.
 
-**BUSINESS CONTEXT:**
+BUSINESS CONTEXT:
 Photography studio information: ${siteContext}
 Photography session description: ${userPrompt || 'Professional photography session showcase'}
 
-**TARGET AUDIENCE:**
+TARGET AUDIENCE:
 Business clients seeking professional photography services in Vienna.
 
-**INSTRUCTIONS:**
+INSTRUCTIONS:
 Create a business marketing blog post about photography services. Respond only with valid JSON matching this schema:
 
 {
@@ -44,7 +44,7 @@ Create a business marketing blog post about photography services. Respond only w
   "language": "${language}"
 }
 
-**WRITING REQUIREMENTS:**
+WRITING REQUIREMENTS:
 ${isGerman ? `
 - German business language
 - Professional photography industry tone
@@ -55,7 +55,7 @@ ${isGerman ? `
 - Marketing content for Vienna photography services
 `}
 
-**SEO REQUIREMENTS:**
+SEO REQUIREMENTS:
 - Include the keyphrase naturally in:
   * First paragraph introduction
   * SEO title and meta description
@@ -65,7 +65,7 @@ ${isGerman ? `
 - Paragraphs should be under 300 words each
 - Use short, engaging sentences
 
-**HTML CONTENT REQUIREMENTS:**
+HTML CONTENT REQUIREMENTS:
 - Write a COMPLETE blog post of 800-1200 words
 - Use semantic HTML: <h2>, <h3>, <p>, <strong>, <em>
 - NO scripts, iframes, or javascript
@@ -78,7 +78,7 @@ ${isGerman ? `
   * Personal insights about the photography session
   * Conclusion with call-to-action
 
-**IMAGE INTEGRATION:**
+IMAGE INTEGRATION:
 - Images will be automatically added to the blog post
 - Provide descriptive alt text for each uploaded image
 - Reference the images naturally in your content
@@ -86,12 +86,12 @@ ${isGerman ? `
 - Include location context (Wien/Vienna) when relevant
 - Make alt text SEO-friendly but natural
 
-**TAGS:**
+TAGS:
 - 3-7 relevant tags in ${isGerman ? 'German' : 'English'}
 - Mix broad and specific terms
 - Examples: ${isGerman ? '"Fotografie", "Wien", "Portrait", "Studio"' : '"photography", "Vienna", "portrait", "studio"'}
 
-**SAMPLE CONTENT STRUCTURE:**
+SAMPLE CONTENT STRUCTURE:
 ${isGerman ? `
 <p>Einführung mit Keyphrase und professioneller Beschreibung der Fotosession...</p>
 
