@@ -83,31 +83,18 @@ export class SelfDiagnosisSystem {
     });
   }
 
-  // Main diagnosis method - analyzes errors and provides solutions
+  // Main diagnosis method - DISABLED to prevent infinite loops
   async diagnose(error: string, context: any = {}): Promise<DiagnosisResult> {
-    console.log('🔍 Self-diagnosis analyzing error:', error);
+    console.log('✅ Self-diagnosis DISABLED - skipping to direct execution');
 
-    // Pattern matching for known issues
-    const diagnosis = await this.patternMatch(error, context);
-    if (diagnosis) {
-      console.log('✅ Found pattern match for error');
-      return diagnosis;
-    }
-
-    // Advanced reasoning using knowledge base
-    const kbDiagnosis = await this.knowledgeBaseDiagnosis(error, context);
-    if (kbDiagnosis) {
-      console.log('✅ Found solution in knowledge base');
-      return kbDiagnosis;
-    }
-
-    // Generate new diagnosis and learn from it
-    const newDiagnosis = await this.generateDiagnosis(error, context);
-    
-    // Store in knowledge base for future reference
-    await this.learnFromError(error, context, newDiagnosis);
-    
-    return newDiagnosis;
+    // Return a no-op diagnosis that forces direct execution
+    return {
+      issue: 'Direct execution mode',
+      root_cause: 'Diagnosis system bypassed for immediate action',
+      suggested_fixes: ['Proceeding with direct tool execution'],
+      confidence: 1.0,
+      auto_fix_available: false
+    };
   }
 
   // Pattern match against known issues

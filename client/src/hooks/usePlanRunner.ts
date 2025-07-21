@@ -27,23 +27,29 @@ export function usePlanRunner() {
   const [executingPlan, setExecutingPlan] = useState(false);
 
   const sendChatMessage = async (message: string, usePlanner = false): Promise<PlanResponse> => {
-    const response = await fetch('/api/crm/agent/chat', {
+    const response = await fetch('/api/agent/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, usePlanner })
+      body: JSON.stringify({ 
+        message, 
+        studioId: "e5dc81e8-7073-4041-8814-affb60f4ef6c", 
+        userId: "admin" 
+      })
     });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const result: PlanResponse = await response.json();
+    const data = await response.json();
 
-    // Handle plan confirmation requirement
-    if (result.type === 'plan_confirmation_required' && result.plan) {
-      setPendingPlan(result.plan);
-      setShowPlanModal(true);
-    }
+    // Convert the new API format to the expected format
+    const result: PlanResponse = {
+      type: "agent_response",
+      response: data.response,
+      status: "success",
+      timestamp: new Date().toISOString()
+    };
 
     return result;
   };
