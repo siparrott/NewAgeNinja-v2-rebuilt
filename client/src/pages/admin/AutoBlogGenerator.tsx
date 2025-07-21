@@ -40,6 +40,37 @@ export default function AutoBlogGenerator() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Fix existing blog post formatting
+  const handleFixBlogFormatting = async () => {
+    try {
+      const response = await fetch('/api/blog/posts/fix-formatting', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fix blog formatting');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: "Blog Formatting Fixed!",
+        description: `Successfully updated ${result.fixed} blog posts with structured formatting`,
+      });
+    } catch (error) {
+      console.error('Error fixing blog formatting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fix blog formatting. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     
@@ -299,6 +330,18 @@ export default function AutoBlogGenerator() {
                   <Check className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Streamlined Blog Creation</span>
                 </div>
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <Button 
+                  onClick={handleFixBlogFormatting}
+                  variant="outline" 
+                  size="sm"
+                  className="text-xs"
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Fix Blog Formatting
+                </Button>
+                <p className="text-xs text-gray-500 mt-1">Convert existing blog posts from wall-of-text to structured format</p>
               </div>
             </CardContent>
           </Card>

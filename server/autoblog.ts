@@ -1123,7 +1123,7 @@ Create complete blog package with all sections per your training. Include SEO ta
   </div>
 
   <div class="main-content">
-    ${content}
+    ${this.convertTextToStructuredHTML(content)}
   </div>
 
   <div class="review-snippets">
@@ -1170,6 +1170,88 @@ Create complete blog package with all sections per your training. Include SEO ta
       publish_now: false,
       language: 'de'
     };
+  }
+
+  /**
+   * Convert raw text content to structured HTML with proper headings and paragraphs
+   */
+  private convertTextToStructuredHTML(content: string): string {
+    console.log('🔧 Converting text to structured HTML...');
+    
+    // Remove any existing HTML tags first
+    let cleanContent = content.replace(/<[^>]*>/g, '').trim();
+    
+    // Split content into lines and process
+    const lines = cleanContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    let htmlContent = '';
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Detect headings by common patterns
+      if (line.match(/^(##?\s+|H[12]:\s*)/i) || 
+          line.match(/^(Einführung|Warum|Der persönliche|Tipps|Was Sie|Nach dem)/i) ||
+          line.match(/^\d+\.\s+[A-ZÄÖÜ]/)) {
+        // This is a heading
+        const cleanHeading = line.replace(/^(##?\s+|H[12]:\s*|\d+\.\s*)/i, '').trim();
+        htmlContent += `<h2>${cleanHeading}</h2>\n`;
+      } else if (line.length > 50) {
+        // This is likely a paragraph (longer content)
+        htmlContent += `<p>${line}</p>\n`;
+      } else if (line.length > 10) {
+        // Short line, could be a list item or small paragraph
+        if (line.match(/^[-•*]\s/)) {
+          // Convert to list item
+          const listItem = line.replace(/^[-•*]\s/, '').trim();
+          htmlContent += `<li>${listItem}</li>\n`;
+        } else {
+          htmlContent += `<p>${line}</p>\n`;
+        }
+      }
+    }
+    
+    // If we don't have enough structure, split long paragraphs
+    if (!htmlContent.includes('<h2>')) {
+      console.log('🔧 No headings detected, splitting into structured paragraphs...');
+      
+      // Split content by sentences and group into paragraphs
+      const sentences = cleanContent.split(/[.!?]+\s+/).filter(s => s.trim().length > 10);
+      htmlContent = '';
+      
+      // Create structured content with artificial headings
+      const headings = [
+        'Einführung in die Familienfotografie',
+        'Die Bedeutung professioneller Familienfotos',
+        'Unser Fotostudio in Wien',
+        'Tipps für das perfekte Familienfoto',
+        'Nachbearbeitung und Ergebnisse'
+      ];
+      
+      const sentencesPerSection = Math.ceil(sentences.length / headings.length);
+      
+      for (let i = 0; i < headings.length; i++) {
+        htmlContent += `<h2>${headings[i]}</h2>\n`;
+        
+        const sectionStart = i * sentencesPerSection;
+        const sectionEnd = Math.min((i + 1) * sentencesPerSection, sentences.length);
+        
+        for (let j = sectionStart; j < sectionEnd; j++) {
+          if (sentences[j] && sentences[j].trim().length > 0) {
+            const sentence = sentences[j].trim();
+            // Make sure each sentence ends with proper punctuation
+            const punctuatedSentence = sentence.match(/[.!?]$/) ? sentence : sentence + '.';
+            htmlContent += `<p>${punctuatedSentence}</p>\n`;
+          }
+        }
+      }
+    }
+    
+    console.log('✅ Text converted to structured HTML');
+    console.log('📊 Structured content length:', htmlContent.length, 'characters');
+    console.log('📊 H2 headings found:', (htmlContent.match(/<h2>/g) || []).length);
+    console.log('📊 Paragraphs created:', (htmlContent.match(/<p>/g) || []).length);
+    
+    return htmlContent;
   }
 
   /**
