@@ -333,6 +333,169 @@ Key Features: High-quality photography, professional editing, personal service
   }
 
   /**
+   * Generate content using REAL TOGNINJA BLOG WRITER Assistant with minimal context override
+   */
+  async generateWithTOGNinjaAssistant(images: ProcessedImage[], input: AutoBlogInput, context: string): Promise<string | null> {
+    try {
+      console.log('🚀 Using REAL TOGNINJA BLOG WRITER Assistant with preserved training...');
+      
+      // Create minimal context that preserves Assistant's sophisticated training
+      const minimalContext = `
+SESSION DETAILS:
+- Images uploaded: ${images.length} photography session images
+- Business: New Age Fotografie Wien
+- Content type: ${input.contentLanguage || 'deutsch'} blog post
+- Publishing: ${input.publishOption || 'draft'}
+
+BRIEF GUIDANCE:
+${input.contentGuidance || 'Create professional photography blog content'}
+
+Use your sophisticated training to create complete blog content with outline, key takeaways, YOAST SEO optimization, and all structured sections.`;
+
+      // Use the TOGNINJA BLOG WRITER Assistant ID directly
+      const assistantId = 'asst_nlyO3yRav2oWtyTvkq0cHZaU';
+      
+      // Upload images to OpenAI Files API for real image analysis
+      const uploadedFiles = [];
+      for (const image of images) {
+        try {
+          const formData = new FormData();
+          const blob = new Blob([image.buffer], { type: 'image/jpeg' });
+          formData.append('file', blob, `session-image-${uploadedFiles.length + 1}.jpg`);
+          formData.append('purpose', 'vision');
+
+          const uploadResponse = await fetch('https://api.openai.com/v1/files', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            },
+            body: formData
+          });
+
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json();
+            uploadedFiles.push(uploadResult.id);
+            console.log('✅ Uploaded image to OpenAI:', uploadResult.id);
+          }
+        } catch (error) {
+          console.error('❌ Image upload failed:', error);
+        }
+      }
+
+      // Create thread
+      const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({})
+      });
+
+      const thread = await threadResponse.json();
+
+      // Send message with images
+      const messageContent = [
+        {
+          type: "text",
+          text: minimalContext
+        }
+      ];
+
+      // Add image file references
+      uploadedFiles.forEach(fileId => {
+        messageContent.push({
+          type: "image_file",
+          image_file: {
+            file_id: fileId
+          }
+        });
+      });
+
+      await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content: messageContent
+        })
+      });
+
+      // Create run
+      const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          assistant_id: assistantId
+        })
+      });
+
+      let runStatus = await runResponse.json();
+      console.log('✅ TOGNINJA run created:', runStatus.id, 'Status:', runStatus.status);
+
+      // Wait for completion
+      let attempts = 0;
+      while (runStatus.status !== 'completed' && attempts < 30) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${runStatus.id}`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+        runStatus = await statusResponse.json();
+        console.log(`TOGNINJA Assistant status (${attempts + 1}/30):`, runStatus.status);
+        attempts++;
+      }
+
+      if (runStatus.status === 'completed') {
+        const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+        const messagesData = await messagesResponse.json();
+        const lastMessage = messagesData.data[0];
+        const sophisticatedContent = lastMessage?.content[0]?.text?.value || null;
+        
+        // Cleanup uploaded files
+        for (const fileId of uploadedFiles) {
+          try {
+            await fetch(`https://api.openai.com/v1/files/${fileId}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              }
+            });
+          } catch (error) {
+            console.error('Failed to delete file:', fileId);
+          }
+        }
+        
+        console.log('✅ TOGNINJA ASSISTANT COMPLETED:', sophisticatedContent ? sophisticatedContent.length + ' characters' : 'No content');
+        return sophisticatedContent;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ TOGNINJA Assistant error:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get raw Assistant content without structured parsing
    */
   async getRawAssistantContent(images: ProcessedImage[], input: AutoBlogInput, siteContext: string, assistantId: string): Promise<string | null> {
@@ -1735,22 +1898,33 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
         assistantId
       );
       
-      // If structured parsing failed, create content directly from Assistant response
+      // If structured parsing failed, try the REAL TOGNINJA BLOG WRITER Assistant with simpler context
       if (!assistantResult) {
-        console.log('⚠️ Structured parsing failed, using raw Assistant content directly...');
+        console.log('⚠️ Structured parsing failed, trying REAL TOGNINJA ASSISTANT with minimal override...');
         
-        // Get the raw Assistant response and create blog post with proper image embedding
-        const rawContent = await this.getRawAssistantContent(processedImages, input, enhancedContext, assistantId);
-        if (rawContent) {
-          console.log('✅ Using raw Assistant content, creating blog post with proper image embedding');
-          const directPost = await this.createBlogPostFromRawContent(rawContent, processedImages, authorId, input);
-          return {
-            success: true,
-            post: directPost,
-            message: 'Blog post created successfully from Assistant content'
-          };
-        } else {
-          throw new Error('❌ SOPHISTICATED PROMPT FAILED - Check OpenAI API configuration.');
+        try {
+          // Use the REAL TOGNINJA BLOG WRITER Assistant with minimal context
+          const sophisticatedContent = await this.generateWithTOGNinjaAssistant(processedImages, input, enhancedContext);
+          
+          if (sophisticatedContent) {
+            console.log('✅ TOGNINJA ASSISTANT SUCCESS - Generated sophisticated content');
+            
+            // Try to parse the sophisticated content
+            const parsedSophisticated = this.parseStructuredResponse(sophisticatedContent);
+            if (parsedSophisticated) {
+              console.log('✅ Successfully parsed sophisticated TOGNINJA content');
+              return await this.createBlogPost(parsedSophisticated, processedImages, authorId, input);
+            } else {
+              console.log('⚠️ Could not parse sophisticated content, forcing structured format...');
+              const forcedStructure = this.forceStructuredFormat(sophisticatedContent, processedImages);
+              return await this.createBlogPost(forcedStructure, processedImages, authorId, input);
+            }
+          } else {
+            throw new Error('❌ TOGNINJA ASSISTANT FAILED - No response received');
+          }
+        } catch (error) {
+          console.error('❌ TOGNINJA ASSISTANT ERROR:', error);
+          throw new Error('❌ SOPHISTICATED PROMPT FAILED - Check OpenAI API configuration and Assistant ID.');
         }
       }
 
