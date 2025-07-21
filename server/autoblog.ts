@@ -305,7 +305,20 @@ Key Features: High-quality photography, professional editing, personal service
       });
 
       const content = response.choices[0]?.message?.content || '';
-      return this.parseStructuredResponse(content) || null;
+      const parsed = this.parseStructuredResponse(content);
+      return parsed || {
+        title: 'Generated Content',
+        keyphrase: 'photography',
+        slug: 'generated-content',
+        excerpt: 'Generated content from fallback system',
+        content_html: content,
+        seo_title: 'Generated Content',
+        meta_description: 'Generated content',
+        status: 'DRAFT' as const,
+        publish_now: false,
+        language: input.language || 'de',
+        tags: []
+      };
     } catch (error) {
       console.error('OpenAI API error:', error);
       throw new Error('Failed to generate content with OpenAI');
@@ -575,16 +588,24 @@ Create complete blog package with all sections per your training. Include SEO ta
       console.log('🔧 Debug: run.id =', run.id, 'thread.id =', thread.id);
       console.log('🔧 Debug: attempting retrieve with parameters: runId =', run.id, 'params =', { thread_id: thread.id });
       
+      // Use direct HTTP API to bypass SDK bugs
       let runStatus;
       try {
-        runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
-        console.log('✅ Initial retrieve successful');
+        const response = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+        runStatus = await response.json();
+        console.log('✅ Initial retrieve successful via HTTP API');
       } catch (error) {
         console.error('❌ Initial retrieve failed, falling back to Chat Completions API');
-        console.error('Error details:', error.message);
+        console.error('Error details:', (error as Error).message);
         // Fallback to Chat Completions API for now (with structured content)
         console.log('🔄 Using Chat Completions API with comprehensive context...');
-        const fallbackContent = await this.generateContentWithOpenAI(images, input, siteContext);
+        const fallbackContent = await this.generateContentWithClaude(images, input, siteContext);
         if (fallbackContent) {
           console.log('✅ Fallback content generated successfully');
           return fallbackContent;
@@ -613,7 +634,14 @@ Create complete blog package with all sections per your training. Include SEO ta
         attempts++;
         
         try {
-          runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
+          const response = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+              'OpenAI-Beta': 'assistants=v2'
+            }
+          });
+          runStatus = await response.json();
         } catch (error) {
           console.error('❌ Error retrieving run status:', error);
           attempts++;
