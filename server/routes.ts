@@ -5832,21 +5832,24 @@ Current system status: The AI agent system is temporarily unavailable. Please tr
       for (const post of posts) {
         const content = post.content || '';
         
-        // Check if content is a wall of text without proper HTML structure
-        const needsFormatting = content.length > 500 && 
-                               !content.includes('<p>') && 
-                               content.split('.').length > 10;
+        // Check if content has malformed HTML at the beginning (like "---</p>")
+        const needsCleaning = content.includes('---</p>') || content.startsWith('---') || 
+                             content.match(/^[-\s]*<\/[^>]*>/);
         
-        if (needsFormatting) {
-          console.log(`Fixing formatting for: ${post.title}`);
+        if (needsCleaning) {
+          console.log(`Cleaning malformed HTML for: ${post.title}`);
           
-          const structuredContent = convertPlainTextToStructuredHTML(content);
+          // Clean the malformed HTML content
+          let cleanContent = content.replace(/^[-\s]*<\/[^>]*>/g, '');
+          if (cleanContent.startsWith('---')) {
+            cleanContent = cleanContent.replace(/^[-\s]+/, '');
+          }
           
-          // Update the post with properly formatted content
+          // Update the post with cleaned content
           await storage.updateBlogPost(post.id, {
-            content: structuredContent,
-            contentHtml: structuredContent,
-            excerpt: generateExcerptFromHTML(structuredContent)
+            content: cleanContent,
+            contentHtml: cleanContent,
+            excerpt: generateExcerptFromHTML(cleanContent)
           });
           
           fixedCount++;
