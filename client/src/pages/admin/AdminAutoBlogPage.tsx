@@ -141,6 +141,7 @@ export default function AdminAutoBlogPage() {
         formData.append('images', file);
       });
       
+      formData.append('contentGuidance', userPrompt);
       formData.append('userPrompt', userPrompt);
       formData.append('language', language);
       formData.append('publishOption', publishOption);

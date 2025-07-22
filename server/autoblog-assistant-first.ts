@@ -1025,7 +1025,7 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
           console.log('🌟 FEATURED IMAGE SET:', featuredImageUrl);
         } else if (images.length > 0) {
           // Fallback: use first uploaded image URL
-          const fallbackUrl = `http://localhost:5000/blog-images/${images[0].filename}`;
+          const fallbackUrl = images[0].publicUrl;
           parsedData.image_url = fallbackUrl;
           console.log('🌟 FEATURED IMAGE FALLBACK:', fallbackUrl);
         }
@@ -1036,18 +1036,18 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
         title: parsedData.title,
         slug: input.customSlug || parsedData.slug,
         content: parsedData.content_html,
-        contentHtml: parsedData.content_html,
+        content_html: parsedData.content_html,
         excerpt: parsedData.excerpt,
-        imageUrl: parsedData.image_url || images[0]?.publicUrl || null,
-        seoTitle: parsedData.seo_title,
-        metaDescription: parsedData.meta_description,
+        image_url: parsedData.image_url || images[0]?.publicUrl || null,
+        seo_title: parsedData.seo_title,
+        meta_description: parsedData.meta_description,
         published: input.publishOption === 'publish',
-        publishedAt: input.publishOption === 'publish' ? new Date() : null,
-        scheduledFor: input.publishOption === 'schedule' && input.scheduledFor ? new Date(input.scheduledFor) : null,
+        published_at: input.publishOption === 'publish' ? new Date() : null,
+        scheduled_for: input.publishOption === 'schedule' && input.scheduledFor ? new Date(input.scheduledFor) : null,
         status: input.publishOption === 'publish' ? 'PUBLISHED' : 
                 input.publishOption === 'schedule' ? 'SCHEDULED' : 'DRAFT',
         tags: parsedData.tags,
-        authorId: authorId
+        author_id: authorId
       };
       
       console.log('🎯 ASSISTANT-FIRST BLOG POST CREATED');

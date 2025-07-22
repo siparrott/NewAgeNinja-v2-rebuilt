@@ -1120,8 +1120,15 @@ Bitte versuchen Sie es später noch einmal.`;
       const endIndex = startIndex + limit;
       const paginatedPosts = posts.slice(startIndex, endIndex);
       
+      // Map database fields to frontend-expected field names
+      const mappedPosts = paginatedPosts.map(post => ({
+        ...post,
+        imageUrl: post.image_url || post.imageUrl || null,
+        contentHtml: post.contentHtml || post.content_html || post.content
+      }));
+      
       res.json({ 
-        posts: paginatedPosts,
+        posts: mappedPosts,
         count: totalPosts,
         totalPages,
         currentPage: page,
@@ -1161,7 +1168,9 @@ Bitte versuchen Sie es später noch einmal.`;
         post: {
           ...post,
           // Ensure contentHtml field is properly mapped
-          contentHtml: post.contentHtml || post.content_html || post.content
+          contentHtml: post.contentHtml || post.content_html || post.content,
+          // CRITICAL FIX: Map image_url to imageUrl for frontend compatibility
+          imageUrl: post.image_url || post.imageUrl || null
         }
       });
     } catch (error) {
