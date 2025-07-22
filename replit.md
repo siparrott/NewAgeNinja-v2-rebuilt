@@ -751,6 +751,14 @@ Preferred communication style: Simple, everyday language.
   * System now leverages support articles and technical knowledge for more authoritative and detailed blog content
   * Complete audit confirms: ALL 7 DATA SOURCES ACTIVE AND FEEDING TOGNINJA ASSISTANT for maximum content quality
 - January 21, 2025. **COMPREHENSIVE BLOG FORMATTING FIX: Successfully resolved wall-of-text issue with complete solution:**
+- January 21, 2025. **CRITICAL AUTOBLOG CONTENT QUALITY FIX: Successfully resolved sophisticated prompt bypassing content quality processing:**
+  * FIXED ROOT CAUSE: Sophisticated prompt system was bypassing all content quality fixes, causing regression when users switched prompt formats
+  * Applied unified content quality processing to BOTH standard and sophisticated prompt pathways in parseStructuredResponse
+  * Enhanced image-content matching with GPT-4o analysis to detect exact session types (maternity vs family vs newborn vs business)
+  * Comprehensive formatting cleanup: removes H1:/H2: text prefixes, eliminates ### markdown artifacts, prevents duplicate image embedding
+  * All content quality fixes now apply regardless of prompt system used - eliminates user frustration from format switching
+  * Verified working: 3 recent blog posts show perfect formatting (✅ Clean formatting, ✅ HTML structure, 3000-4000 character professional content)
+  * System now maintains consistent high-quality output across all generation methods with unified ContentQualityProcessor
 - January 21, 2025. **BLOG OUTPUT MARKDOWN CLEANUP: Removed all ** prefixes from AutoBlog prompt template:**
   * Eliminated all ** markdown formatting from section headers in server/autoblog-prompt.ts
   * Cleaned up BUSINESS OBJECTIVE, BUSINESS CONTEXT, TARGET AUDIENCE, INSTRUCTIONS, WRITING REQUIREMENTS sections

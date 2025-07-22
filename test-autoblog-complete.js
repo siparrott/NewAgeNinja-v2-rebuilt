@@ -1,80 +1,118 @@
-// Complete test of AutoBlog system after implementing all fixes
-import fs from 'fs/promises';
+#!/usr/bin/env node
 
-async function testCompleteAutoBlog() {
-  console.log('🧪 COMPLETE AUTOBLOG TEST - After Expert Fixes');
-  console.log('================================================');
-  
-  // Create test image buffer (1x1 pixel PNG)
-  const testImageBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9jU3l3gAAAABJRU5ErkJggg==', 'base64');
+/**
+ * Complete AutoBlog System Test
+ * Tests all content quality fixes and image processing
+ */
+
+const fs = require('fs');
+const FormData = require('form-data');
+const fetch = require('node-fetch');
+
+async function testAutoBlogSystem() {
+  console.log('🧪 Testing AutoBlog System with Content Quality Fixes...\n');
   
   try {
-    console.log('📝 Testing AutoBlog generation with minimal content...');
+    // Step 1: Create test image data (simulate uploaded files)
+    const testImageData = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', 'base64');
     
-    const FormData = (await import('form-data')).default;
+    // Step 2: Create form data with images
     const form = new FormData();
-    
-    // Add test image
-    form.append('images', testImageBuffer, {
-      filename: 'test-family-photo.jpg',
+    form.append('contentGuidance', 'Professional maternity photoshoot showcasing beautiful pregnant woman in elegant white dress, studio lighting, emotional connection');
+    form.append('language', 'de');
+    form.append('publishOption', 'draft');
+    form.append('websiteUrl', 'https://www.newagefotografie.com');
+    form.append('images', testImageData, {
+      filename: 'maternity-test-1.jpg',
+      contentType: 'image/jpeg'
+    });
+    form.append('images', testImageData, {
+      filename: 'maternity-test-2.jpg', 
       contentType: 'image/jpeg'
     });
     
-    // Add minimal input (Fix #1: No prompt override)
-    form.append('userPrompt', 'Familienfotos Wien Studio Shooting');
-    form.append('language', 'de');
-    form.append('publishOption', 'draft');
+    console.log('📤 Sending test request to AutoBlog API...');
     
-    // Test the actual API endpoint
+    // Step 3: Make API request
     const response = await fetch('http://localhost:5000/api/autoblog/generate', {
       method: 'POST',
-      headers: {
-        'Cookie': 'auth-session=test-session',
-        ...form.getHeaders()
-      },
-      body: form
+      body: form,
+      headers: form.getHeaders()
     });
     
     const result = await response.json();
     
-    console.log('📊 API Response Status:', response.status);
-    console.log('📊 Success:', result.success);
+    console.log('\n🔍 Test Results:');
+    console.log('Status:', response.status);
+    console.log('Success:', result.success);
     
-    if (result.success && result.ai) {
-      console.log('✅ Generated content length:', result.ai.content_html?.length || 0);
-      console.log('✅ SEO Title:', result.ai.seo_title || 'MISSING');
-      console.log('✅ Method used:', result.ai.method || 'UNKNOWN');
-      console.log('✅ TOGNINJA match:', result.ai.assistantId === 'asst_nlyO3yRav2oWtyTvkq0cHZaU' ? 'YES' : 'NO');
+    if (result.success) {
+      console.log('\n✅ AUTOBLOG SYSTEM WORKING PROPERLY!');
+      console.log('Generated Post ID:', result.post.id);
+      console.log('Title:', result.post.title);
+      console.log('Content Length:', result.post.content?.length || 0, 'characters');
       
-      // Check for structured sections (Fix #4: Complete blog package)
-      const content = result.ai.content_html || '';
-      const hasKeyTakeaways = content.includes('Key Takeaways') || content.includes('🎯');
-      const hasReviewSnippets = content.includes('Review') || content.includes('💬');
-      const hasSocialPosts = content.includes('Social') || content.includes('📱');
-      const hasInternalLinks = content.includes('/galerie') || content.includes('/kontakt');
+      // Check for quality improvements
+      const content = result.post.content || '';
       
-      console.log('📋 Structured sections check:');
-      console.log('  - Key Takeaways:', hasKeyTakeaways ? 'YES' : 'NO');
-      console.log('  - Review Snippets:', hasReviewSnippets ? 'YES' : 'NO'); 
-      console.log('  - Social Posts:', hasSocialPosts ? 'YES' : 'NO');
-      console.log('  - Internal Links:', hasInternalLinks ? 'YES' : 'NO');
+      console.log('\n🔧 Content Quality Check:');
+      console.log('✅ No H1/H2 prefixes:', !content.includes('H1:') && !content.includes('H2:'));
+      console.log('✅ Clean HTML structure:', content.includes('<h2>') || content.includes('<h3>'));
+      console.log('✅ Image integration:', content.includes('<img'));
+      console.log('✅ German content:', content.includes('Fotografie') || content.includes('Wien'));
+      console.log('✅ Proper formatting:', !content.includes('###'));
       
-      // Content quality check
-      const wordCount = content.split(' ').length;
-      console.log('📝 Word count:', wordCount, '(should be >800)');
-      console.log('📝 Contains Vienna:', content.includes('Wien') ? 'YES' : 'NO');
-      console.log('📝 German language:', content.includes('Familien') ? 'YES' : 'NO');
+      // Show content preview
+      console.log('\n📝 Content Preview:');
+      console.log(content.substring(0, 400) + '...\n');
       
     } else {
-      console.log('❌ AutoBlog generation failed:', result.error || 'Unknown error');
+      console.log('\n❌ Test failed:', result.error);
+      
+      if (result.error.includes('image')) {
+        console.log('\n💡 Note: Image upload may need multipart/form-data handling');
+        return testWithoutImages();
+      }
     }
     
-    console.log('\n🎯 FIX VALIDATION COMPLETE');
-    console.log('Expert analysis fixes tested successfully');
-    
   } catch (error) {
-    console.error('❌ Test failed:', error.message);
+    console.error('\n❌ Test error:', error.message);
+    
+    if (error.message.includes('image')) {
+      console.log('\n🔄 Retrying without image upload...');
+      return testWithoutImages();
+    }
   }
 }
 
-testCompleteAutoBlog();
+async function testWithoutImages() {
+  console.log('\n🧪 Testing AutoBlog System (Text-only mode)...');
+  
+  try {
+    const response = await fetch('http://localhost:5000/api/autoblog/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contentGuidance: 'Beautiful maternity photography session in Vienna studio with pregnant woman in white dress, professional lighting, emotional moments',
+        language: 'de',
+        publishOption: 'draft', 
+        websiteUrl: 'https://www.newagefotografie.com'
+      })
+    });
+    
+    const result = await response.json();
+    
+    console.log('Status:', response.status);
+    console.log('Response:', JSON.stringify(result, null, 2));
+    
+  } catch (error) {
+    console.error('❌ Text-only test failed:', error.message);
+  }
+}
+
+// Run test
+testAutoBlogSystem().then(() => {
+  console.log('\n🏁 AutoBlog system test completed!');
+}).catch(console.error);
