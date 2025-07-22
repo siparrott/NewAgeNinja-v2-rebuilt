@@ -121,7 +121,41 @@ export class AssistantFirstAutoBlogGenerator {
     comprehensiveContext += `- Unique selling points: Professional studio, Vienna location, weekend availability\n\n`;
     
     comprehensiveContext += `=== END COMPREHENSIVE CONTEXT ===\n\n`;
-    comprehensiveContext += `TASK: Generate German blog post in your trained 8-section format with all uploaded images embedded strategically.`;
+    
+    // TASK: Use YOUR exact YAML format
+    comprehensiveContext += `### INPUT
+PRIMARY_KEYPHRASE: Familienfotograf Wien
+SHOOT_TYPE: Professional family photography session
+LANGUAGE: de
+
+### TASK
+Create a **full blog package** ≥1200 words:
+
+1. **SEO Title** – include keyphrase
+2. **Slug** – kebab-case
+3. **Meta Description** (120–156 chars, CTA)
+4. **H1** – conversational headline
+5. **Outline** – 6-8 H2s (each 300-500 words in final article)
+6. **Full Article** – include internal links (/galerie, /kontakt, /warteliste)
+7. **Key Takeaways** – bullet list
+8. **Review Snippets** – 2-3 authentic quotes
+
+### DELIVERABLE FORMAT (exact order)
+**SEO Title:**  
+**Slug:**  
+**Headline (H1):**  
+
+**Meta Description:**  
+
+**Outline:**  
+
+**Key Takeaways:**  
+
+**Blog Article:**  
+
+**Review Snippets:**  
+
+CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, NOT just an outline!`;
     
     console.log('✅ ALL 7 CONTEXTUAL DATA SOURCES GATHERED - LENGTH:', comprehensiveContext.length);
     return comprehensiveContext;
