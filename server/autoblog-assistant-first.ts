@@ -1000,6 +1000,10 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
         parsedData.content_html = this.embedUploadedImages(parsedData.content_html, images);
         console.log('📄 CONTENT AFTER EMBEDDING:', parsedData.content_html.length, 'chars');
         
+        // CRITICAL: Clean escaped quotes that break HTML rendering
+        parsedData.content_html = parsedData.content_html.replace(/\\"/g, '"');
+        console.log('🧹 CLEANED ESCAPED QUOTES FROM HTML');
+        
         // VERIFICATION: Check if images were actually embedded
         const imageCount = (parsedData.content_html.match(/<img/g) || []).length;
         console.log('🔍 VERIFICATION: Found', imageCount, 'embedded images in final content');
@@ -1012,6 +1016,19 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
           ).join('\n\n');
           parsedData.content_html = emergencyImages + '\n\n' + parsedData.content_html;
         }
+        
+        // CRITICAL: SET FEATURED IMAGE AUTOMATICALLY
+        const firstImageMatch = parsedData.content_html.match(/<img[^>]+src="([^">]+)"/);
+        if (firstImageMatch) {
+          const featuredImageUrl = firstImageMatch[1];
+          parsedData.image_url = featuredImageUrl;
+          console.log('🌟 FEATURED IMAGE SET:', featuredImageUrl);
+        } else if (images.length > 0) {
+          // Fallback: use first uploaded image URL
+          const fallbackUrl = `http://localhost:5000/blog-images/${images[0].filename}`;
+          parsedData.image_url = fallbackUrl;
+          console.log('🌟 FEATURED IMAGE FALLBACK:', fallbackUrl);
+        }
       }
       
       // STEP 3: Create blog post with YOUR Assistant's content
@@ -1021,7 +1038,7 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
         content: parsedData.content_html,
         contentHtml: parsedData.content_html,
         excerpt: parsedData.excerpt,
-        imageUrl: images[0]?.publicUrl || null,
+        imageUrl: parsedData.image_url || images[0]?.publicUrl || null,
         seoTitle: parsedData.seo_title,
         metaDescription: parsedData.meta_description,
         published: input.publishOption === 'publish',
