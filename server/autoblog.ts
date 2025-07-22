@@ -649,7 +649,7 @@ Key Features: High-quality photography, professional editing, personal service
       scheduledFor: input.publishOption === 'schedule' ? input.scheduledFor : null,
       status: status,
       seoTitle: firstHeading,
-      metaDescription: excerpt,
+      meta_description: excerpt,
       authorId: authorId
     };
 
@@ -2049,7 +2049,7 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
         excerpt: aiContent.excerpt || aiContent.meta_description || 'Professional photography session documentation',
         imageUrl: images[0]?.publicUrl || null,
         seoTitle: aiContent.seo_title || aiContent.title || 'Professional Photography Session',
-        metaDescription: aiContent.meta_description || aiContent.excerpt || 'Explore our professional photography services in Vienna.',
+        meta_description: aiContent.meta_description || aiContent.excerpt || 'Explore our professional photography services in Vienna.',
         published: input.publishOption === 'publish',
         publishedAt: input.publishOption === 'publish' ? new Date() : null,
         scheduledFor: input.publishOption === 'schedule' && input.scheduledFor ? new Date(input.scheduledFor) : null,
@@ -2062,7 +2062,7 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       console.log('Blog post SEO metadata check:');
       console.log('- Title:', !!blogPostData.title, blogPostData.title?.length || 0, 'chars');
       console.log('- SEO Title:', !!blogPostData.seoTitle, blogPostData.seoTitle?.length || 0, 'chars');
-      console.log('- Meta Description:', !!blogPostData.metaDescription, blogPostData.metaDescription?.length || 0, 'chars');
+      console.log('- Meta Description:', !!blogPostData.meta_description, blogPostData.meta_description?.length || 0, 'chars');
       console.log('- Excerpt:', !!blogPostData.excerpt, blogPostData.excerpt?.length || 0, 'chars');
       console.log('- Tags:', blogPostData.tags?.length || 0, 'tags');
       console.log('- Custom slug used:', !!input.customSlug, 'Final slug:', finalSlug);
@@ -2151,23 +2151,6 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       const createdPost = await storage.createBlogPost(result.blogPost);
       
       return createdPost;
-
-      console.log('✅ SOPHISTICATED PROMPT SUCCESS');
-      
-      // FIX #5: Log raw assistant response (already logged in generateWithAssistantAPI)
-      console.log('✅ Assistant response logged - check above for full JSON output');
-
-      // Step 4: Create blog post with NO modification to respect your Assistant training
-      console.log('Creating blog post with your trained Assistant output...');
-      console.log('REAL Assistant content length:', typeof assistantResult === 'object' ? assistantResult?.content_html?.length || 0 : 0);
-      const createdPost = await this.createBlogPost(assistantResult, processedImages, authorId, input);
-      console.log('Blog post created successfully with ID:', createdPost.id);
-
-      return {
-        success: true,
-        post: createdPost,
-        ai: assistantResult
-      };
 
     } catch (error) {
       console.error('AutoBlog generation failed:', error);
