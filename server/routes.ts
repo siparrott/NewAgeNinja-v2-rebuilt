@@ -1154,7 +1154,16 @@ Bitte versuchen Sie es später noch einmal.`;
       if (!post) {
         return res.status(404).json({ error: "Post not found" });
       }
-      res.json(post);
+      
+      // Return post in consistent format with `post` wrapper for frontend compatibility
+      res.json({ 
+        success: true,
+        post: {
+          ...post,
+          // Ensure contentHtml field is properly mapped
+          contentHtml: post.contentHtml || post.content_html || post.content
+        }
+      });
     } catch (error) {
       console.error("Error fetching blog post:", error);
       res.status(500).json({ error: "Internal server error" });

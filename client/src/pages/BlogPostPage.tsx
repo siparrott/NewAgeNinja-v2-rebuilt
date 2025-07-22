@@ -55,7 +55,10 @@ const BlogPostPage: React.FC = () => {
       }
       
       const data = await response.json();
-      setPost(data);
+      
+      // Handle both wrapped and direct post responses
+      const post = data.post || data;
+      setPost(post);
       
       // Fetch related posts
       fetchRelatedPosts(data.id);
@@ -302,7 +305,7 @@ const BlogPostPage: React.FC = () => {
                 `}} />
                 <div 
                   className="blog-post-content prose prose-purple max-w-none"
-                  dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content }}
+                  dangerouslySetInnerHTML={{ __html: post.contentHtml || post.content_html || post.content }}
                 />
               </div>
             ) : (

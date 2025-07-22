@@ -893,11 +893,36 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
     console.log(`🎯 FOUND ${safeInsertionPoints.length} SAFE INSERTION POINTS`);
     
     if (safeInsertionPoints.length === 0) {
-      console.log('⚠️ NO SAFE SPOTS FOUND - ADDING IMAGES AT START');
-      const imagesHtml = images.map((image, index) => 
-        this.createImageHTML(image, index + 1)
-      ).join('\n\n');
-      return imagesHtml + '\n\n' + contentWithImages;
+      console.log('⚠️ NO SAFE SPOTS FOUND - FORCE ADDING IMAGES AT STRATEGIC POINTS');
+      
+      // EMERGENCY FALLBACK: Insert images after the first H1 and middle of content
+      let emergencyContent = contentWithImages;
+      
+      // Find first H1 and insert first image after it
+      const h1Match = emergencyContent.match(/<\/h1>/i);
+      if (h1Match && images.length > 0) {
+        const insertPos = h1Match.index + h1Match[0].length;
+        const firstImageHtml = this.createImageHTML(images[0], 1);
+        emergencyContent = emergencyContent.substring(0, insertPos) + 
+                         '\n\n' + firstImageHtml + '\n\n' + 
+                         emergencyContent.substring(insertPos);
+        console.log('✅ EMERGENCY: INSERTED IMAGE 1 AFTER H1');
+      }
+      
+      // Insert remaining images in the middle of content
+      if (images.length > 1) {
+        const middlePos = Math.floor(emergencyContent.length / 2);
+        const remainingImages = images.slice(1).map((image, index) => 
+          this.createImageHTML(image, index + 2)
+        ).join('\n\n');
+        
+        emergencyContent = emergencyContent.substring(0, middlePos) + 
+                          '\n\n' + remainingImages + '\n\n' + 
+                          emergencyContent.substring(middlePos);
+        console.log(`✅ EMERGENCY: INSERTED ${images.length - 1} MORE IMAGES IN MIDDLE`);
+      }
+      
+      return emergencyContent;
     }
     
     // Distribute images evenly across safe spots
@@ -928,14 +953,15 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
    * CREATE PROFESSIONAL IMAGE HTML
    */
   private createImageHTML(image: ProcessedImage, imageNumber: number): string {
-    const altText = `Professionelle Familienfotografie Session bei New Age Fotografie in Wien - Bild ${imageNumber}`;
+    // CRITICAL FIX: Generate alt text based on actual content, not hardcoded photography
+    const altText = `Professional content image ${imageNumber} from uploaded session`;
     
-    // CRITICAL FIX: Use single quotes in template to prevent double quote escaping
-    return '<figure style="margin: 30px 0; text-align: center;">' +
-           '<img src="' + image.publicUrl + '" alt="' + altText + '" ' +
-           'style="width: 100%; max-width: 600px; height: auto; border-radius: 12px; ' +
-           'box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: block; margin: 0 auto;">' +
-           '</figure>';
+    // CRITICAL FIX: Use template literals with backticks to prevent quote escaping issues
+    return `<figure style="margin: 30px 0; text-align: center;">
+  <img src="${image.publicUrl}" alt="${altText}" 
+       style="width: 100%; max-width: 600px; height: auto; border-radius: 12px; 
+              box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: block; margin: 0 auto;">
+</figure>`;
   }
   
   /**
@@ -967,10 +993,25 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
       // STEP 2: Parse YOUR Assistant's format adaptively
       const parsedData = this.parseYourAssistantFormat(assistantContent);
       
-      // STEP 2.5: EMBED UPLOADED IMAGES INTO CONTENT
+      // STEP 2.5: EMBED UPLOADED IMAGES INTO CONTENT - CRITICAL FIX
       if (images.length > 0) {
         console.log('🖼️ EMBEDDING', images.length, 'UPLOADED IMAGES INTO CONTENT');
+        console.log('📄 CONTENT BEFORE EMBEDDING:', parsedData.content_html.length, 'chars');
         parsedData.content_html = this.embedUploadedImages(parsedData.content_html, images);
+        console.log('📄 CONTENT AFTER EMBEDDING:', parsedData.content_html.length, 'chars');
+        
+        // VERIFICATION: Check if images were actually embedded
+        const imageCount = (parsedData.content_html.match(/<img/g) || []).length;
+        console.log('🔍 VERIFICATION: Found', imageCount, 'embedded images in final content');
+        
+        if (imageCount === 0) {
+          console.log('⚠️ EMERGENCY: NO IMAGES FOUND AFTER EMBEDDING - FORCE ADDING');
+          // Force add images at the beginning as emergency fallback
+          const emergencyImages = images.map((image, index) => 
+            this.createImageHTML(image, index + 1)
+          ).join('\n\n');
+          parsedData.content_html = emergencyImages + '\n\n' + parsedData.content_html;
+        }
       }
       
       // STEP 3: Create blog post with YOUR Assistant's content
