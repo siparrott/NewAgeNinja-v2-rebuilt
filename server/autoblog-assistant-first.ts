@@ -40,6 +40,53 @@ const BLOG_ASSISTANT = 'asst_nlyO3yRav2oWtyTvkq0cHZaU'; // YOUR TOGNINJA BLOG WR
 export class AssistantFirstAutoBlogGenerator {
 
   /**
+   * PROCESS UPLOADED IMAGES - Convert files to ProcessedImage format
+   */
+  private async processImages(files: Express.Multer.File[]): Promise<ProcessedImage[]> {
+    if (!files || files.length === 0) {
+      return [];
+    }
+    
+    console.log('📁 Processing', files.length, 'uploaded images...');
+    const processedImages: ProcessedImage[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const timestamp = Date.now();
+      const filename = `autoblog-${timestamp}-${i + 1}.jpg`;
+      
+      // Create public directory if it doesn't exist
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const publicDir = path.join(process.cwd(), 'server', 'public', 'blog-images');
+      
+      try {
+        await fs.mkdir(publicDir, { recursive: true });
+      } catch (error) {
+        // Directory already exists
+      }
+      
+      // Save the file
+      const fullPath = path.join(publicDir, filename);
+      await fs.writeFile(fullPath, file.buffer);
+      
+      // Create public URL  
+      const baseUrl = process.env.PUBLIC_SITE_BASE_URL || 'http://localhost:5000';
+      const publicUrl = `${baseUrl}/blog-images/${filename}`;
+      
+      processedImages.push({
+        filename: fullPath,
+        publicUrl: publicUrl,
+        buffer: file.buffer
+      });
+      
+      console.log(`✅ Processed image ${i + 1}: ${filename}`);
+    }
+    
+    return processedImages;
+  }
+
+  /**
    * REAL IMAGE ANALYSIS WITH GPT-4o VISION
    */
   private async analyzeUploadedImages(images: ProcessedImage[]): Promise<string> {
@@ -784,13 +831,18 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
    * MAIN ORCHESTRATION - ASSISTANT-FIRST APPROACH
    */
   async generateBlog(
-    images: ProcessedImage[],
+    files: Express.Multer.File[],
     input: AutoBlogInput,
     authorId: string,
     context: string = 'Create German blog post about photography session'
   ): Promise<AutoBlogResult> {
     try {
       console.log('🚀 ASSISTANT-FIRST AUTOBLOG GENERATION STARTING');
+      console.log('📁 Processing', files.length, 'uploaded files...');
+      
+      // STEP 0: Process uploaded images first
+      const images = await this.processImages(files);
+      console.log('✅ Images processed:', images.length);
       
       // STEP 1: Get content from YOUR trained Assistant
       const assistantContent = await this.getYourAssistantContent(images, input, context);
@@ -832,17 +884,27 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
       console.log('🎯 ASSISTANT-FIRST BLOG POST CREATED');
       console.log('- Title:', blogPost.title);
       console.log('- Content length:', blogPost.contentHtml.length);
-      console.log('- Tags:', blogPost.tags.length);
+      console.log('- Tags:', blogPost.tags?.length || 0);
+      console.log('- Images embedded:', images.length);
+      
+      // Save to database
+      const { storage } = await import('./storage');
+      const savedPost = await storage.createBlogPost(blogPost as any);
+      
+      console.log('✅ BLOG POST SAVED TO DATABASE - ID:', savedPost.id);
       
       return {
         success: true,
-        blogPost: blogPost as any,
-        message: 'Blog generated using YOUR trained TOGNINJA BLOG WRITER Assistant',
+        post: savedPost,
+        blogPost: savedPost,
+        message: 'Blog generated using YOUR trained TOGNINJA BLOG WRITER Assistant with REAL image analysis and embedding',
         metadata: {
           method: 'assistant-first-adaptive',
           assistant_id: BLOG_ASSISTANT,
           content_length: assistantContent.length,
-          parsing_success: true
+          parsing_success: true,
+          images_embedded: images.length > 0,
+          image_count: images.length
         }
       };
       

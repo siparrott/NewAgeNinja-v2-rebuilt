@@ -5370,7 +5370,7 @@ Was interessiert Sie am meisten?`;
   // FIX #2: AutoBlog route now exclusively uses TOGNINJA Assistant API (Fix from expert analysis)
   app.post("/api/autoblog/generate", authenticateUser, autoblogUpload.array('images', 3), async (req: Request, res: Response) => {
     try {
-      const { AutoBlogOrchestrator } = await import('./autoblog');
+      const { AssistantFirstAutoBlogGenerator } = await import('./autoblog-assistant-first');
       const { autoBlogInputSchema } = await import('./autoblog-schema');
       
       // FIX #2: Parse ALL form data properly
@@ -5400,8 +5400,8 @@ Was interessiert Sie am meisten?`;
         });
       }
 
-      // Initialize AutoBlog orchestrator
-      const orchestrator = new AutoBlogOrchestrator();
+      // Initialize Assistant-First AutoBlog generator with REAL image analysis
+      const generator = new AssistantFirstAutoBlogGenerator();
       
       // FIX #2: Pass ALL form data to orchestrator including images and guidance
       console.log('🔧 FIX #2: Passing complete form data to AutoBlog orchestrator...');
@@ -5414,12 +5414,11 @@ Was interessiert Sie am meisten?`;
         imageCount: req.files?.length || 0
       });
 
-      // Generate blog post with complete form data
-      const result = await orchestrator.generateAutoBlog(
+      // Generate blog post with REAL image analysis and Assistant-First approach
+      const result = await generator.generateBlog(
         req.files as Express.Multer.File[],
         input,
-        authorId,
-        "e5dc81e8-7073-4041-8814-affb60f4ef6c" // pass studio ID for assistant lookup
+        authorId
       );
 
       res.json(result);
