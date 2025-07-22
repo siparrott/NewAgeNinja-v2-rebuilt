@@ -411,22 +411,7 @@ Use your sophisticated training to create complete blog content that EXACTLY mat
       const thread = await threadResponse.json();
 
       // Send message with images
-      const messageContent = [
-        {
-          type: "text",
-          text: minimalContext
-        }
-      ];
-
-      // Add image file references
-      uploadedFiles.forEach(fileId => {
-        messageContent.push({
-          type: "image_file",
-          image_file: {
-            file_id: fileId
-          }
-        });
-      });
+      // Images are analyzed separately and included in context text - no file attachments needed
 
       await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
         method: 'POST',
@@ -437,12 +422,7 @@ Use your sophisticated training to create complete blog content that EXACTLY mat
         },
         body: JSON.stringify({
           role: 'user',
-          content: [
-            {
-              type: "text",
-              text: enhancedContext
-            }
-          ]
+          content: enhancedContext
         })
       });
 
@@ -531,8 +511,8 @@ Use your sophisticated training to create complete blog content that EXACTLY mat
    */
   async getRawAssistantContent(images: ProcessedImage[], input: AutoBlogInput, siteContext: string, assistantId: string): Promise<string | null> {
     try {
-      // Use the same sophisticated prompt but return raw content
-      const userMessage = this.buildSophisticatedPrompt(input, siteContext);
+      // Use simple context for raw content
+      const userMessage = `Create a German blog post about this photography session: ${input.contentGuidance || 'Professional photography session'}`;
       
       const thread = await openai.beta.threads.create();
       await openai.beta.threads.messages.create(thread.id, {
@@ -1047,7 +1027,28 @@ Create complete blog package with all sections per your training. Include SEO ta
         const parsedContent = this.parseStructuredResponse(content);
         console.log('📋 Parsed content result:', parsedContent ? 'Structured format detected' : 'No structured format');
         
-        // Return parsed content
+        // CRITICAL FIX: Apply content quality processing to sophisticated responses too
+        if (parsedContent && parsedContent.content_html) {
+          console.log('🔧 Applying content quality fixes to sophisticated response...');
+          
+          // Get image analysis for content matching
+          const imageAnalysis = await contentProcessor.analyzeImagesForAccurateContent(images, openai);
+          console.log('📸 Image analysis for content matching:', imageAnalysis);
+          
+          // Clean formatting (remove H1/H2 prefixes, fix ### markdown)
+          parsedContent.content_html = contentProcessor.cleanContentFormatting(parsedContent.content_html);
+          
+          // Embed images without duplication
+          parsedContent.content_html = contentProcessor.embedImagesWithoutDuplication(
+            parsedContent.content_html,
+            images,
+            images[0]?.publicUrl // First image is typically featured
+          );
+          
+          console.log('✅ Content quality fixes applied to sophisticated response');
+        }
+        
+        // Return parsed content with quality fixes
         return parsedContent;
       }
 
@@ -1286,8 +1287,8 @@ Create complete blog package with all sections per your training. Include SEO ta
       
       // Fetch active knowledge base articles
       const articles = await db.select().from(knowledgeBase)
-        .where(eq(knowledgeBase.status, 'published'))
-        .orderBy(desc(knowledgeBase.updated_at))
+        .where(eq(knowledgeBase.published, true))
+        .orderBy(desc(knowledgeBase.updatedAt))
         .limit(20); // Get most recent 20 articles
       
       if (articles.length === 0) {
@@ -2083,7 +2084,7 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
               return await this.createBlogPost(parsedSophisticated, processedImages, authorId, input);
             } else {
               console.log('⚠️ Could not parse sophisticated content, forcing structured format...');
-              const forcedStructure = this.forceStructuredFormat(sophisticatedContent, processedImages);
+              const forcedStructure = this.forceStructuredFormat(sophisticatedContent);
               return await this.createBlogPost(forcedStructure, processedImages, authorId, input);
             }
           } else {
