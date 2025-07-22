@@ -32,6 +32,7 @@ interface AutoBlogResult {
     assistant_id: string;
     content_length: number;
     parsing_success: boolean;
+    image_count?: number;
   };
 }
 
@@ -901,7 +902,7 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
       // Find first H1 and insert first image after it
       const h1Match = emergencyContent.match(/<\/h1>/i);
       if (h1Match && images.length > 0) {
-        const insertPos = h1Match.index + h1Match[0].length;
+        const insertPos = (h1Match.index || 0) + h1Match[0].length;
         const firstImageHtml = this.createImageHTML(images[0], 1);
         emergencyContent = emergencyContent.substring(0, insertPos) + 
                          '\n\n' + firstImageHtml + '\n\n' + 
@@ -1021,12 +1022,12 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
         const firstImageMatch = parsedData.content_html.match(/<img[^>]+src="([^">]+)"/);
         if (firstImageMatch) {
           const featuredImageUrl = firstImageMatch[1];
-          parsedData.image_url = featuredImageUrl;
+          (parsedData as any).image_url = featuredImageUrl;
           console.log('🌟 FEATURED IMAGE SET:', featuredImageUrl);
         } else if (images.length > 0) {
           // Fallback: use first uploaded image URL
           const fallbackUrl = images[0].publicUrl;
-          parsedData.image_url = fallbackUrl;
+          (parsedData as any).image_url = fallbackUrl;
           console.log('🌟 FEATURED IMAGE FALLBACK:', fallbackUrl);
         }
       }
@@ -1038,7 +1039,7 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
         content: parsedData.content_html,
         content_html: parsedData.content_html,
         excerpt: parsedData.excerpt,
-        image_url: parsedData.image_url || images[0]?.publicUrl || null,
+        image_url: (parsedData as any).image_url || images[0]?.publicUrl || null,
         seo_title: parsedData.seo_title,
         meta_description: parsedData.meta_description,
         published: input.publishOption === 'publish',
@@ -1052,7 +1053,7 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
       
       console.log('🎯 ASSISTANT-FIRST BLOG POST CREATED');
       console.log('- Title:', blogPost.title);
-      console.log('- Content length:', blogPost.contentHtml.length);
+      console.log('- Content length:', blogPost.content_html.length);
       console.log('- Tags:', blogPost.tags?.length || 0);
       console.log('- Images embedded:', images.length);
       
