@@ -171,17 +171,16 @@ export class AssistantFirstAutoBlogGenerator {
     
     // STEP 2A: UNIVERSAL METADATA EXTRACTION - handles ALL possible formats
     
-    // Title patterns - covers every possible format
+    // Title patterns - YOUR EXACT FORMAT from updated prompt
     const titlePatterns = [
-      // Your exact format
+      // Your EXACT updated format
       /\*\*SEO Title:\*\*\s*(.+?)(?=\n|$)/i,
       /\*\*Headline \(H1\):\*\*\s*(.+?)(?=\n|$)/i,
-      // Alternative formats
-      /(?:title|seo_title|headline):\s*["']?([^"'\n]+)["']?/i,
-      /^#\s+(.+)$/m,
+      // Fallback patterns if format varies slightly
       /SEO Title:\s*(.+?)(?=\n|$)/i,
-      /Headline:\s*(.+?)(?=\n|$)/i,
-      // First meaningful line fallback
+      /Headline \(H1\):\s*(.+?)(?=\n|$)/i,
+      /^#\s+(.+)$/m,
+      // Emergency fallback
       /^(.+?)(?:\n|$)/m
     ];
     
@@ -193,12 +192,12 @@ export class AssistantFirstAutoBlogGenerator {
       }
     }
     
-    // Meta description patterns
+    // Meta description patterns - YOUR EXACT FORMAT
     const metaPatterns = [
       /\*\*Meta Description:\*\*\s*(.+?)(?=\n|$)/i,
       /Meta Description:\s*(.+?)(?=\n|$)/i,
-      /(?:meta_description|description|summary):\s*["']?([^"'\n]+)["']?/i,
-      /(?:excerpt|summary):\s*["']?([^"'\n]+)["']?/i
+      // Fallbacks
+      /(?:meta_description|description|summary):\s*["']?([^"'\n]+)["']?/i
     ];
     
     for (const pattern of metaPatterns) {
@@ -209,10 +208,11 @@ export class AssistantFirstAutoBlogGenerator {
       }
     }
     
-    // Slug patterns
+    // Slug patterns - YOUR EXACT FORMAT
     const slugPatterns = [
       /\*\*Slug:\*\*\s*(.+?)(?=\n|$)/i,
       /Slug:\s*(.+?)(?=\n|$)/i,
+      // Fallback
       /slug:\s*["']?([^"'\n]+)["']?/i
     ];
     
@@ -283,25 +283,28 @@ export class AssistantFirstAutoBlogGenerator {
     
     let html = content;
     
-    // STEP 3A: Handle YOUR EXACT deliverable format first
-    const yourFormatReplacements = [
-      // Your exact format with ** markers
-      { pattern: /\*\*SEO Title:\*\*\s*(.+?)(?=\n|$)/gm, replacement: '' }, // Remove metadata
-      { pattern: /\*\*Slug:\*\*\s*(.+?)(?=\n|$)/gm, replacement: '' }, // Remove metadata  
-      { pattern: /\*\*Headline \(H1\):\*\*\s*(.+?)(?=\n|$)/gm, replacement: '<h1 style="font-size: 2rem; font-weight: 700; margin: 2rem 0 1rem 0; color: #1f2937;">$1</h1>' },
-      { pattern: /\*\*Meta Description:\*\*\s*(.+?)(?=\n|$)/gm, replacement: '' }, // Remove metadata
+    // STEP 3A: Handle YOUR EXACT deliverable format from updated prompt
+    const yourExactFormatReplacements = [
+      // Remove metadata sections (they're extracted separately)
+      { pattern: /\*\*SEO Title:\*\*\s*[^\n]*\n?/gm, replacement: '' },
+      { pattern: /\*\*Slug:\*\*\s*[^\n]*\n?/gm, replacement: '' },
+      { pattern: /\*\*Meta Description:\*\*\s*[^\n]*\n?/gm, replacement: '' },
       
-      // Section headers with your format
+      // Convert H1 to proper HTML
+      { pattern: /\*\*Headline \(H1\):\*\*\s*(.+?)(?=\n|$)/gm, replacement: '<h1 style="font-size: 2rem; font-weight: 700; margin: 2rem 0 1rem 0; color: #1f2937;">$1</h1>' },
+      
+      // Convert your exact section headers to styled H2s
       { pattern: /\*\*Outline:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">📋 Blog Outline</h2>' },
+      
       { pattern: /\*\*Key Takeaways:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">🎯 Key Takeaways</h2>' },
-      { pattern: /\*\*Blog Article:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">📝 Main Article</h2>' },
-      { pattern: /\*\*Review Snippets:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">💬 Customer Reviews</h2>' },
-      { pattern: /\*\*Social Media Posts:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">📱 Social Media</h2>' },
-      { pattern: /\*\*YOAST Checklist:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">✅ SEO Checklist</h2>' }
+      
+      { pattern: /\*\*Blog Article:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">📝 Blog Article</h2>' },
+      
+      { pattern: /\*\*Review Snippets:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">💬 Review Snippets</h2>' }
     ];
     
-    // Apply YOUR format replacements first
-    for (const replacement of yourFormatReplacements) {
+    // Apply YOUR EXACT format replacements first
+    for (const replacement of yourExactFormatReplacements) {
       html = html.replace(replacement.pattern, replacement.replacement);
     }
     
