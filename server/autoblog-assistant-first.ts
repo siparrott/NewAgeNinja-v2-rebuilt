@@ -648,8 +648,11 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
     }
     
     // Ensure unique slug to prevent database conflicts
-    if (result.slug && !result.slug.includes(Date.now().toString())) {
-      result.slug = result.slug + '-' + Date.now();
+    if (result.slug) {
+      const timestamp = Date.now();
+      if (!result.slug.includes(timestamp.toString())) {
+        result.slug = result.slug + '-' + timestamp;
+      }
     }
     
     // Tags patterns - handle any format
