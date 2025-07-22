@@ -1276,31 +1276,6 @@ Create complete blog package with all sections per your training. Include SEO ta
     };
   }
 
-    // Generate meta description
-    const metaDescription = `Familienfotograf Wien: Professionelle Familienfotografie im Studio für unvergessliche Erinnerungen. Jetzt Termin vereinbaren!`;
-    
-    // Generate excerpt
-    const excerpt = content.substring(0, 200).replace(/<[^>]*>/g, '').trim() + '...';
-    
-    // Generate tags
-    const tags = ['Familienfotograf Wien', 'Familienfotografie', 'Studio Wien', 'Familienfotos', 'Fotoshooting Wien'];
-
-    return {
-      title,
-      seo_title: `${title} | New Age Fotografie Wien`,
-      meta_description: metaDescription,
-      content_html: structuredContent,
-      excerpt,
-      tags,
-
-      keyphrase: 'Familienfotograf Wien',
-      slug,
-      status: 'DRAFT',
-      publish_now: false,
-      language: 'de'
-    };
-  }
-
   /**
    * Convert raw text content to structured HTML with proper headings and paragraphs
    */
@@ -2168,45 +2143,14 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       const { AssistantFirstAutoBlogGenerator } = await import('./autoblog-assistant-first');
       const assistantFirstGenerator = new AssistantFirstAutoBlogGenerator();
       
-      try {
-        const result = await assistantFirstGenerator.generateBlog(processedImages, input, authorId, enhancedContext);
-        console.log('✅ ASSISTANT-FIRST SUCCESS:', result.message);
-        
-        // Store in database
-        const { storage } = await import('./storage');
-        const createdPost = await storage.createBlogPost(result.blogPost);
-        
-        return createdPost;
-        
-      } catch (assistantFirstError) {
-        console.error('❌ ASSISTANT-FIRST FAILED:', assistantFirstError);
-        console.log('⚠️ Falling back to original system as emergency backup...');
-        
-        try {
-          // Use the REAL TOGNINJA BLOG WRITER Assistant with minimal context
-          const sophisticatedContent = await this.generateWithTOGNinjaAssistant(processedImages, input, enhancedContext);
-          
-          if (sophisticatedContent) {
-            console.log('✅ TOGNINJA ASSISTANT SUCCESS - Generated sophisticated content');
-            
-            // Try to parse the sophisticated content
-            const parsedSophisticated = this.parseStructuredResponse(sophisticatedContent);
-            if (parsedSophisticated) {
-              console.log('✅ Successfully parsed sophisticated TOGNINJA content');
-              return await this.createBlogPost(parsedSophisticated, processedImages, authorId, input);
-            } else {
-              console.log('⚠️ Could not parse sophisticated content, forcing structured format...');
-              const forcedStructure = this.forceStructuredFormat(sophisticatedContent);
-              return await this.createBlogPost(forcedStructure, processedImages, authorId, input);
-            }
-          } else {
-            throw new Error('❌ TOGNINJA ASSISTANT FAILED - No response received');
-          }
-        } catch (error) {
-          console.error('❌ TOGNINJA ASSISTANT ERROR:', error);
-          throw new Error('❌ SOPHISTICATED PROMPT FAILED - Check OpenAI API configuration and Assistant ID.');
-        }
-      }
+      const result = await assistantFirstGenerator.generateBlog(processedImages, input, authorId, enhancedContext);
+      console.log('✅ ASSISTANT-FIRST SUCCESS:', result.message);
+      
+      // Store in database
+      const { storage } = await import('./storage');
+      const createdPost = await storage.createBlogPost(result.blogPost);
+      
+      return createdPost;
 
       console.log('✅ SOPHISTICATED PROMPT SUCCESS');
       
