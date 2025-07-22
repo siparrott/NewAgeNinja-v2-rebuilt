@@ -283,19 +283,21 @@ export class AssistantFirstAutoBlogGenerator {
     
     let cleanedContent = content;
     
-    // Remove Social Posts section completely
+    // Remove Social Posts section completely - ALL VARIATIONS
     cleanedContent = cleanedContent.replace(/\*\*?Social Posts?:?\*\*?[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
     cleanedContent = cleanedContent.replace(/Social Posts?:[\s\S]*?(?=\n\*\*|$)/gi, '');
-    cleanedContent = cleanedContent.replace(/✨[^✨]*?#[A-Za-z\s]+/g, '');
-    cleanedContent = cleanedContent.replace(/👶[^👶]*?#[A-Za-z\s]+/g, '');
+    cleanedContent = cleanedContent.replace(/✨[^✨]*?#[A-Za-z\s#]+/g, '');
+    cleanedContent = cleanedContent.replace(/👶[^👶]*?#[A-Za-z\s#]+/g, '');
+    cleanedContent = cleanedContent.replace(/📸[^📸]*?#[A-Za-z\s#]+/g, '');
+    cleanedContent = cleanedContent.replace(/💕[^💕]*?#[A-Za-z\s#]+/g, '');
     
-    // Remove YOAST Compliance section completely
+    // Remove YOAST Compliance section completely - ALL VARIATIONS  
     cleanedContent = cleanedContent.replace(/\*\*?YOAST Compliance:?\*\*?[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
     cleanedContent = cleanedContent.replace(/YOAST Compliance:[\s\S]*?(?=\n\*\*|$)/gi, '');
-    cleanedContent = cleanedContent.replace(/✅[^✅]*?(?=\n|$)/g, '');
+    cleanedContent = cleanedContent.replace(/✅[^✅\n]*(?:Keyphrase|Title|Slug|Meta|Headline|Introduction|Density|Links|Length)[^\n]*\n?/g, '');
     
     // Remove any other unwanted sections that might appear
-    cleanedContent = cleanedContent.replace(/\*\*?(?:Additional Notes?|Extra Content|Bonus Content):?\*\*?[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
+    cleanedContent = cleanedContent.replace(/\*\*?(?:Additional Notes?|Extra Content|Bonus Content|SEO Notes?):?\*\*?[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
     
     console.log('✅ UNWANTED SECTIONS REMOVED - USER\'S 8-SECTION FORMAT ENFORCED');
     return cleanedContent;
@@ -320,12 +322,12 @@ export class AssistantFirstAutoBlogGenerator {
       // Convert H1 to proper HTML
       { pattern: /\*\*Headline \(H1\):\*\*\s*(.+?)(?=\n|$)/gm, replacement: '<h1 style="font-size: 2rem; font-weight: 700; margin: 2rem 0 1rem 0; color: #1f2937;">$1</h1>' },
       
-      // Convert your exact section headers to styled H2s
+      // Convert your exact section headers to styled H2s - CORRECT ORDER: Outline, Key Takeaways, Blog Article, Review Snippets
       { pattern: /\*\*Outline:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">📋 Blog Outline</h2>' },
       
       { pattern: /\*\*Key Takeaways:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">🎯 Key Takeaways</h2>' },
       
-      { pattern: /\*\*Blog Article:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">📝 Blog Article</h2>' },
+      { pattern: /\*\*(?:Full Article|Blog Article):\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">📝 Full Article</h2>' },
       
       { pattern: /\*\*Review Snippets:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">💬 Review Snippets</h2>' }
     ];
