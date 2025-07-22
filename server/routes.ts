@@ -5384,62 +5384,58 @@ Was interessiert Sie am meisten?`;
     }
   });
 
-  // AutoBlog generation endpoint
-  // FIX #2: AutoBlog route now exclusively uses TOGNINJA Assistant API (Fix from expert analysis)
+  // AutoBlog generation endpoint - COMPLETE SYSTEM
   app.post("/api/autoblog/generate", authenticateUser, autoblogUpload.array('images', 3), async (req: Request, res: Response) => {
     try {
-      const { AssistantFirstAutoBlogGenerator } = await import('./autoblog-assistant-first');
-      const { autoBlogInputSchema } = await import('./autoblog-schema');
+      const { CompleteAutoBlogSystem } = await import('./autoblog-complete-system');
       
-      // FIX #2: Parse ALL form data properly
-      const input = autoBlogInputSchema.parse({
-        contentGuidance: req.body.contentGuidance || req.body.userPrompt, // Support both field names
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ success: false, error: 'At least one image is required' });
+      }
+
+      console.log('🚀 Starting complete AutoBlog generation...');
+      console.log(`📁 Received ${files.length} image files`);
+      
+      const autoblogSystem = new CompleteAutoBlogSystem();
+      const result = await autoblogSystem.generateBlog(files, {
+        contentGuidance: req.body.contentGuidance || req.body.userPrompt,
         language: req.body.language || 'de',
-        siteUrl: req.body.siteUrl,
+        customSlug: req.body.customSlug,
         publishOption: req.body.publishOption || 'draft',
-        scheduledFor: req.body.scheduledFor,
-        customSlug: req.body.customSlug
+        scheduledFor: req.body.scheduledFor
+      }, req.user!.id);
+
+      if (!result.success) {
+        return res.status(500).json(result);
+      }
+
+      // Save to database with correct field names
+      const { storage } = await import('./storage');
+      const savedPost = await storage.createBlogPost({
+        title: result.blogPost!.title,
+        content: result.blogPost!.content,
+        contentHtml: result.blogPost!.contentHtml,
+        slug: result.blogPost!.slug,
+        excerpt: result.blogPost!.excerpt,
+        seoTitle: result.blogPost!.seoTitle,
+        metaDescription: result.blogPost!.metaDescription,
+        imageUrl: result.blogPost!.imageUrl,
+        status: result.blogPost!.status,
+        scheduledFor: result.blogPost!.scheduledFor,
+        tags: result.blogPost!.tags,
+        authorId: req.user!.id
       });
 
-      // Check if files were uploaded
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'At least one image is required' 
-        });
-      }
+      console.log('✅ Blog post saved to database with ID:', savedPost.id);
+      console.log('✅ Featured image URL:', savedPost.imageUrl);
 
-      // Get user ID for blog post creation
-      const authorId = req.user?.id;
-      if (!authorId) {
-        return res.status(401).json({ 
-          success: false, 
-          error: 'User authentication required' 
-        });
-      }
-
-      // Initialize Assistant-First AutoBlog generator with REAL image analysis
-      const generator = new AssistantFirstAutoBlogGenerator();
+      res.json({
+        success: true,
+        blogPost: savedPost,
+        message: 'Blog post generated and saved successfully'
+      });
       
-      // FIX #2: Pass ALL form data to orchestrator including images and guidance
-      console.log('🔧 FIX #2: Passing complete form data to AutoBlog orchestrator...');
-      console.log('Form data received:', {
-        contentGuidance: input.contentGuidance,
-        language: input.language,
-        siteUrl: input.siteUrl,
-        publishOption: input.publishOption,
-        customSlug: input.customSlug,
-        imageCount: req.files?.length || 0
-      });
-
-      // Generate blog post with REAL image analysis and Assistant-First approach
-      const result = await generator.generateBlog(
-        req.files as Express.Multer.File[],
-        input,
-        authorId
-      );
-
-      res.json(result);
     } catch (error) {
       console.error('AutoBlog generation error:', error);
       
