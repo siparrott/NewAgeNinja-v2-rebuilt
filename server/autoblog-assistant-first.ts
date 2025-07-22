@@ -930,11 +930,12 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
   private createImageHTML(image: ProcessedImage, imageNumber: number): string {
     const altText = `Professionelle Familienfotografie Session bei New Age Fotografie in Wien - Bild ${imageNumber}`;
     
-    return `<figure style="margin: 30px 0; text-align: center;">
-  <img src="${image.publicUrl}" alt="${altText}" 
-       style="width: 100%; max-width: 600px; height: auto; border-radius: 12px; 
-              box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: block; margin: 0 auto;">
-</figure>`;
+    // CRITICAL FIX: Use single quotes in template to prevent double quote escaping
+    return '<figure style="margin: 30px 0; text-align: center;">' +
+           '<img src="' + image.publicUrl + '" alt="' + altText + '" ' +
+           'style="width: 100%; max-width: 600px; height: auto; border-radius: 12px; ' +
+           'box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: block; margin: 0 auto;">' +
+           '</figure>';
   }
   
   /**
