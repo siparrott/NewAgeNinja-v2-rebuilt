@@ -146,7 +146,7 @@ export class AssistantFirstAutoBlogGenerator {
   }
   
   /**
-   * STEP 2: ADAPTIVE PARSING - Analyze YOUR Assistant's format and adapt
+   * STEP 2: UNIVERSAL PARSING - Works with ANY Assistant output format
    */
   parseYourAssistantFormat(content: string): {
     title: string;
@@ -157,7 +157,7 @@ export class AssistantFirstAutoBlogGenerator {
     tags: string[];
     content_html: string;
   } {
-    console.log('🔍 ANALYZING YOUR ASSISTANT FORMAT - ADAPTIVE PARSING');
+    console.log('🔍 UNIVERSAL PARSING - WORKS WITH ANY FORMAT YOUR ASSISTANT OUTPUTS');
     
     const result = {
       title: '',
@@ -169,26 +169,34 @@ export class AssistantFirstAutoBlogGenerator {
       content_html: ''
     };
     
-    // STEP 2A: Extract metadata using flexible patterns
+    // STEP 2A: UNIVERSAL METADATA EXTRACTION - handles ALL possible formats
     
-    // Title extraction - handle multiple formats
+    // Title patterns - covers every possible format
     const titlePatterns = [
+      // Your exact format
+      /\*\*SEO Title:\*\*\s*(.+?)(?=\n|$)/i,
+      /\*\*Headline \(H1\):\*\*\s*(.+?)(?=\n|$)/i,
+      // Alternative formats
       /(?:title|seo_title|headline):\s*["']?([^"'\n]+)["']?/i,
       /^#\s+(.+)$/m,
-      /(?:^|\n)(.+?)\n(?:=|--)/m, // Underlined titles
-      /^(.+?)(?:\n|$)/m // First line fallback
+      /SEO Title:\s*(.+?)(?=\n|$)/i,
+      /Headline:\s*(.+?)(?=\n|$)/i,
+      // First meaningful line fallback
+      /^(.+?)(?:\n|$)/m
     ];
     
     for (const pattern of titlePatterns) {
       const match = content.match(pattern);
       if (match && match[1] && match[1].trim().length > 5) {
-        result.title = match[1].trim();
+        result.title = match[1].trim().replace(/\*\*/g, ''); // Remove any ** formatting
         break;
       }
     }
     
-    // Meta description
+    // Meta description patterns
     const metaPatterns = [
+      /\*\*Meta Description:\*\*\s*(.+?)(?=\n|$)/i,
+      /Meta Description:\s*(.+?)(?=\n|$)/i,
       /(?:meta_description|description|summary):\s*["']?([^"'\n]+)["']?/i,
       /(?:excerpt|summary):\s*["']?([^"'\n]+)["']?/i
     ];
@@ -196,23 +204,35 @@ export class AssistantFirstAutoBlogGenerator {
     for (const pattern of metaPatterns) {
       const match = content.match(pattern);
       if (match && match[1]) {
-        result.meta_description = match[1].trim();
+        result.meta_description = match[1].trim().replace(/\*\*/g, '');
         break;
       }
     }
     
-    // Slug extraction
-    const slugMatch = content.match(/slug:\s*["']?([^"'\n]+)["']?/i);
-    if (slugMatch && slugMatch[1]) {
-      result.slug = slugMatch[1].trim();
-    } else if (result.title) {
+    // Slug patterns
+    const slugPatterns = [
+      /\*\*Slug:\*\*\s*(.+?)(?=\n|$)/i,
+      /Slug:\s*(.+?)(?=\n|$)/i,
+      /slug:\s*["']?([^"'\n]+)["']?/i
+    ];
+    
+    for (const pattern of slugPatterns) {
+      const match = content.match(pattern);
+      if (match && match[1]) {
+        result.slug = match[1].trim().replace(/\*\*/g, '');
+        break;
+      }
+    }
+    
+    // Generate slug from title if not found
+    if (!result.slug && result.title) {
       result.slug = result.title.toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .substring(0, 50);
     }
     
-    // Tags extraction - handle multiple formats
+    // Tags patterns - handle any format
     const tagsPatterns = [
       /tags:\s*\[([^\]]+)\]/i,
       /tags:\s*["']([^"']+)["']/i,
@@ -227,58 +247,67 @@ export class AssistantFirstAutoBlogGenerator {
       }
     }
     
-    // Fallbacks if no metadata found
+    // HIGH-QUALITY FALLBACKS with Vienna context
     if (!result.title) result.title = 'Familienfotografie in Wien - Authentische Momente';
-    if (!result.meta_description) result.meta_description = 'Professionelle Familienfotografie in Wien für unvergessliche Erinnerungen.';
-    if (!result.tags.length) result.tags = ['photography', 'wien', 'family'];
+    if (!result.meta_description) result.meta_description = 'Professionelle Familienfotografie in Wien für unvergessliche Erinnerungen - Studio Schönbrunner Str. 25.';
+    if (!result.tags.length) result.tags = ['familienfotografie', 'wien', 'photography', 'family'];
     if (!result.slug) result.slug = 'familienfotografie-wien-' + Date.now();
     
     result.seo_title = result.title + ' | New Age Fotografie Wien';
     result.excerpt = result.meta_description;
     
-    console.log('✅ EXTRACTED METADATA:', {
-      title: result.title.length,
-      meta_description: result.meta_description.length,
+    console.log('✅ UNIVERSAL METADATA EXTRACTED:', {
+      title: result.title,
+      meta_description: result.meta_description.substring(0, 50) + '...',
       tags: result.tags.length,
-      slug: result.slug.length
+      slug: result.slug
     });
     
-    // STEP 2B: Process main content - PRESERVE YOUR ASSISTANT'S STRUCTURE
-    let mainContent = content;
+    // STEP 2B: CONTENT PROCESSING - Take EVERYTHING from your Assistant
+    console.log('🎯 PROCESSING YOUR ASSISTANT\'S FULL CONTENT...');
     
-    // Remove extracted metadata lines but keep the main content intact
-    const metadataLines = [
-      /^(title|seo_title|meta_description|description|slug|tags|excerpt|keywords):\s*[^\n]*\n/gmi,
-      /^---[\s\S]*?---\n?/m // YAML frontmatter
-    ];
+    // Take the COMPLETE response from your Assistant and convert to HTML
+    // Do NOT strip anything - preserve ALL the sophisticated content
+    result.content_html = this.convertYourFormatToHTML(content);
     
-    for (const pattern of metadataLines) {
-      mainContent = mainContent.replace(pattern, '');
-    }
-    
-    mainContent = mainContent.trim();
-    
-    // STEP 2C: Convert to HTML while preserving YOUR Assistant's structure
-    result.content_html = this.convertYourFormatToHTML(mainContent);
-    
-    console.log('✅ ADAPTIVE PARSING COMPLETE - HTML LENGTH:', result.content_html.length);
+    console.log('✅ UNIVERSAL PARSING COMPLETE - HTML LENGTH:', result.content_html.length);
     
     return result;
   }
   
   /**
-   * STEP 3: INTELLIGENT HTML CONVERSION - Adapts to ANY format
+   * STEP 3: UNIVERSAL HTML CONVERSION - Handles YOUR exact format and any variations
    */
   private convertYourFormatToHTML(content: string): string {
-    console.log('🔄 CONVERTING YOUR ASSISTANT FORMAT TO HTML - INTELLIGENT CONVERSION');
+    console.log('🔄 UNIVERSAL HTML CONVERSION - HANDLES ANY FORMAT');
     
     let html = content;
     
-    // INTELLIGENT STRUCTURE DETECTION
+    // STEP 3A: Handle YOUR EXACT deliverable format first
+    const yourFormatReplacements = [
+      // Your exact format with ** markers
+      { pattern: /\*\*SEO Title:\*\*\s*(.+?)(?=\n|$)/gm, replacement: '' }, // Remove metadata
+      { pattern: /\*\*Slug:\*\*\s*(.+?)(?=\n|$)/gm, replacement: '' }, // Remove metadata  
+      { pattern: /\*\*Headline \(H1\):\*\*\s*(.+?)(?=\n|$)/gm, replacement: '<h1 style="font-size: 2rem; font-weight: 700; margin: 2rem 0 1rem 0; color: #1f2937;">$1</h1>' },
+      { pattern: /\*\*Meta Description:\*\*\s*(.+?)(?=\n|$)/gm, replacement: '' }, // Remove metadata
+      
+      // Section headers with your format
+      { pattern: /\*\*Outline:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">📋 Blog Outline</h2>' },
+      { pattern: /\*\*Key Takeaways:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">🎯 Key Takeaways</h2>' },
+      { pattern: /\*\*Blog Article:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">📝 Main Article</h2>' },
+      { pattern: /\*\*Review Snippets:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">💬 Customer Reviews</h2>' },
+      { pattern: /\*\*Social Media Posts:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">📱 Social Media</h2>' },
+      { pattern: /\*\*YOAST Checklist:\*\*\s*/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">✅ SEO Checklist</h2>' }
+    ];
     
-    // Handle various heading formats YOUR Assistant might use
-    const headingReplacements = [
-      // Markdown style
+    // Apply YOUR format replacements first
+    for (const replacement of yourFormatReplacements) {
+      html = html.replace(replacement.pattern, replacement.replacement);
+    }
+    
+    // STEP 3B: Handle alternative heading formats as backup
+    const alternativeHeadingReplacements = [
+      // Standard markdown
       { pattern: /^# (.+)$/gm, replacement: '<h1 style="font-size: 2rem; font-weight: 700; margin: 2rem 0 1rem 0; color: #1f2937;">$1</h1>' },
       { pattern: /^## (.+)$/gm, replacement: '<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">$1</h2>' },
       { pattern: /^### (.+)$/gm, replacement: '<h3 style="font-size: 1.3rem; font-weight: 600; margin: 25px 0 15px 0; color: #a855f7;">$1</h3>' },
@@ -289,8 +318,8 @@ export class AssistantFirstAutoBlogGenerator {
       { pattern: /^H3:\s*(.+)$/gm, replacement: '<h3 style="font-size: 1.3rem; font-weight: 600; margin: 25px 0 15px 0; color: #a855f7;">$1</h3>' }
     ];
     
-    // Apply heading replacements
-    for (const replacement of headingReplacements) {
+    // Apply alternative formats if needed
+    for (const replacement of alternativeHeadingReplacements) {
       html = html.replace(replacement.pattern, replacement.replacement);
     }
     
