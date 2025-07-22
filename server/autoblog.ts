@@ -2162,23 +2162,25 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
         `<img src="${img.publicUrl}" alt="Photography session image ${index + 1}" class="blog-image" />`
       ).join('\n');
 
-      // DISABLED: Generate content using YOUR trained Assistant directly (no prompt override)
-      console.log('🎯 Using YOUR trained TOGNINJA BLOG WRITER Assistant directly - no prompt modification');
-      const assistantResult = await this.generateWithTOGNinjaAssistant(processedImages, input, enhancedContext);
+      // 🚀 NEW ASSISTANT-FIRST ARCHITECTURE - ADAPTS TO YOUR PROMPT UPDATES
+      console.log('🚀 USING NEW ASSISTANT-FIRST ARCHITECTURE - FULLY ADAPTIVE');
       
-      // Parse the result from YOUR trained Assistant
-      if (typeof assistantResult === 'string') {
-        // Convert string response to parsed format
-        const parsedResult = this.parseStructuredResponse(assistantResult);
-        if (parsedResult) {
-          return await this.createBlogPost(parsedResult, processedImages, authorId, input);
-        } else {
-          // Force structure if needed
-          const forcedStructure = this.forceStructuredFormat(assistantResult);
-          return await this.createBlogPost(forcedStructure, processedImages, authorId, input);
-        }
-      } else if (!assistantResult) {
-        console.log('⚠️ Structured parsing failed, trying REAL TOGNINJA ASSISTANT with minimal override...');
+      const { AssistantFirstAutoBlogGenerator } = await import('./autoblog-assistant-first');
+      const assistantFirstGenerator = new AssistantFirstAutoBlogGenerator();
+      
+      try {
+        const result = await assistantFirstGenerator.generateBlog(processedImages, input, authorId, enhancedContext);
+        console.log('✅ ASSISTANT-FIRST SUCCESS:', result.message);
+        
+        // Store in database
+        const { storage } = await import('./storage');
+        const createdPost = await storage.createBlogPost(result.blogPost);
+        
+        return createdPost;
+        
+      } catch (assistantFirstError) {
+        console.error('❌ ASSISTANT-FIRST FAILED:', assistantFirstError);
+        console.log('⚠️ Falling back to original system as emergency backup...');
         
         try {
           // Use the REAL TOGNINJA BLOG WRITER Assistant with minimal context
