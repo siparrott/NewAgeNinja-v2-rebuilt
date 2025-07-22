@@ -276,12 +276,39 @@ export class AssistantFirstAutoBlogGenerator {
   }
   
   /**
+   * STEP 2B: REMOVE UNWANTED SECTIONS - USER'S EXACT 8-SECTION FORMAT
+   */
+  private removeUnwantedSections(content: string): string {
+    console.log('🚫 REMOVING UNWANTED SECTIONS - ENFORCING USER\'S 8-SECTION FORMAT');
+    
+    let cleanedContent = content;
+    
+    // Remove Social Posts section completely
+    cleanedContent = cleanedContent.replace(/\*\*?Social Posts?:?\*\*?[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
+    cleanedContent = cleanedContent.replace(/Social Posts?:[\s\S]*?(?=\n\*\*|$)/gi, '');
+    cleanedContent = cleanedContent.replace(/✨[^✨]*?#[A-Za-z\s]+/g, '');
+    cleanedContent = cleanedContent.replace(/👶[^👶]*?#[A-Za-z\s]+/g, '');
+    
+    // Remove YOAST Compliance section completely
+    cleanedContent = cleanedContent.replace(/\*\*?YOAST Compliance:?\*\*?[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
+    cleanedContent = cleanedContent.replace(/YOAST Compliance:[\s\S]*?(?=\n\*\*|$)/gi, '');
+    cleanedContent = cleanedContent.replace(/✅[^✅]*?(?=\n|$)/g, '');
+    
+    // Remove any other unwanted sections that might appear
+    cleanedContent = cleanedContent.replace(/\*\*?(?:Additional Notes?|Extra Content|Bonus Content):?\*\*?[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
+    
+    console.log('✅ UNWANTED SECTIONS REMOVED - USER\'S 8-SECTION FORMAT ENFORCED');
+    return cleanedContent;
+  }
+
+  /**
    * STEP 3: UNIVERSAL HTML CONVERSION - Handles YOUR exact format and any variations
    */
   private convertYourFormatToHTML(content: string): string {
     console.log('🔄 UNIVERSAL HTML CONVERSION - HANDLES ANY FORMAT');
     
-    let html = content;
+    // FIRST: Remove unwanted sections to match user's exact format
+    let html = this.removeUnwantedSections(content);
     
     // STEP 3A: Handle YOUR EXACT deliverable format from updated prompt
     const yourExactFormatReplacements = [
