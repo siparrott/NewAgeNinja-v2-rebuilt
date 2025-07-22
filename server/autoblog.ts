@@ -1063,72 +1063,218 @@ Create complete blog package with all sections per your training. Include SEO ta
   }
 
   /**
-   * Force structured format from assistant's raw content
+   * Parse YOUR trained TOGNINJA BLOG WRITER Assistant's output and convert to structured HTML
    */
   private forceStructuredFormat(content: string): AutoBlogParsed {
-    console.log('🔧 Forcing structured format on assistant content...');
+    console.log('🎯 Parsing YOUR TOGNINJA Assistant content and converting to structured HTML...');
     
-    // Extract title/headline from content
-    const titleMatch = content.match(/^#\s*(.+)$/m) || content.match(/^(.+)$/m);
-    const title = titleMatch ? titleMatch[1].trim() : 'Familienfotograf Wien: Unvergessliche Momente';
+    try {
+      // First try to extract structured elements from your Assistant's YAML/structured output
+      const extractedData = this.extractYourAssistantData(content);
+      
+      // Convert the content to proper HTML format with purple theme styling
+      const htmlContent = this.convertYourAssistantToHTML(content, extractedData);
+      
+      return {
+        title: extractedData.title,
+        seo_title: extractedData.seo_title,
+        meta_description: extractedData.meta_description,
+        content_html: htmlContent,
+        excerpt: extractedData.excerpt,
+        tags: extractedData.tags,
+        keyphrase: extractedData.tags[0] || 'familienfotografie',
+        slug: extractedData.slug,
+        status: 'DRAFT',
+        publish_now: false,
+        language: 'de'
+      };
+      
+    } catch (error) {
+      console.error('❌ Failed to parse YOUR Assistant content:', error);
+      return this.createFallbackStructure(content);
+    }
+  }
+
+  /**
+   * Extract data from YOUR Assistant's structured output
+   */
+  private extractYourAssistantData(content: string): any {
+    const data: any = {
+      tags: ['photography', 'wien', 'family']
+    };
     
-    // Generate slug from title
-    const slug = title.toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .substring(0, 50);
+    // Extract title - handle various formats your Assistant uses
+    const titlePatterns = [
+      /seo_title:\s*["']?([^"'\n]+)["']?/i,
+      /title:\s*["']?([^"'\n]+)["']?/i,
+      /headline:\s*["']?([^"'\n]+)["']?/i,
+      /^#\s+(.+)$/m
+    ];
     
-    // Create structured HTML content with all required sections
+    for (const pattern of titlePatterns) {
+      const match = content.match(pattern);
+      if (match && match[1]) {
+        data.title = match[1].trim();
+        break;
+      }
+    }
+    
+    if (!data.title) {
+      data.title = 'Familienfotografie in Wien - Authentische Momente';
+    }
+    
+    // Extract other metadata
+    const metaMatch = content.match(/meta_description:\s*["']?([^"'\n]+)["']?/i);
+    data.meta_description = metaMatch ? metaMatch[1].trim() : 
+      'Professionelle Familienfotografie in Wien - Authentische Momente für die Ewigkeit festgehalten.';
+    
+    const slugMatch = content.match(/slug:\s*["']?([^"'\n]+)["']?/i);
+    data.slug = slugMatch ? slugMatch[1].trim() : 
+      data.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').substring(0, 50);
+    
+    data.seo_title = data.title + ' | New Age Fotografie Wien';
+    data.excerpt = data.meta_description;
+    
+    // Extract tags if present
+    const tagsMatch = content.match(/tags:\s*\[([^\]]+)\]/i);
+    if (tagsMatch) {
+      data.tags = tagsMatch[1].split(',').map((tag: string) => tag.trim().replace(/['"]/g, ''));
+    }
+    
+    return data;
+  }
+
+  /**
+   * Convert YOUR Assistant's content to properly formatted HTML
+   */
+  private convertYourAssistantToHTML(content: string, extractedData: any): string {
+    console.log('🔄 Converting YOUR Assistant content to structured HTML...');
+    
+    // Remove YAML front matter and metadata lines
+    let cleanContent = content;
+    cleanContent = cleanContent.replace(/^---[\s\S]*?---\n?/m, '');
+    cleanContent = cleanContent.replace(/^(seo_title|meta_description|slug|tags|excerpt|title|headline):\s*[^\n]*\n/gmi, '');
+    cleanContent = cleanContent.trim();
+    
+    // Start building the HTML structure
+    let html = `<div class="blog-post-content">`;
+    
+    // Add the main title
+    html += `<h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 2rem; color: #1f2937;">${extractedData.title}</h1>`;
+    
+    // Process the content line by line
+    const lines = cleanContent.split('\n');
+    let currentSection = '';
+    let inList = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i].trim();
+      
+      if (!line) {
+        if (inList) {
+          html += '</ul>';
+          inList = false;
+        }
+        continue;
+      }
+      
+      // Handle headings
+      if (line.startsWith('# ')) {
+        if (inList) { html += '</ul>'; inList = false; }
+        const heading = line.substring(2);
+        html += `<h1>${heading}</h1>`;
+      } else if (line.startsWith('## ')) {
+        if (inList) { html += '</ul>'; inList = false; }
+        const heading = line.substring(3);
+        html += `<h2 class="blog-h2" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 15px 25px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">${heading}</h2>`;
+      } else if (line.startsWith('### ')) {
+        if (inList) { html += '</ul>'; inList = false; }
+        const heading = line.substring(4);
+        html += `<h3 style="font-size: 1.3rem; font-weight: 600; margin: 25px 0 15px 0; color: #a855f7;">${heading}</h3>`;
+      } 
+      // Handle list items
+      else if (line.startsWith('- ') || line.startsWith('* ')) {
+        const listItem = line.substring(2);
+        if (!inList) {
+          html += '<ul style="margin: 20px 0; padding-left: 25px;">';
+          inList = true;
+        }
+        html += `<li style="margin-bottom: 8px; color: #374151;">${this.processInlineFormatting(listItem)}</li>`;
+      } 
+      // Handle regular paragraphs
+      else {
+        if (inList) { html += '</ul>'; inList = false; }
+        if (line.length > 20) { // Only add substantial lines as paragraphs
+          html += `<p style="margin: 20px 0; line-height: 1.7; color: #374151; text-align: justify;">${this.processInlineFormatting(line)}</p>`;
+        }
+      }
+    }
+    
+    if (inList) html += '</ul>';
+    
+    // Add professional closing section with Vienna context
+    html += `
+      <div style="margin-top: 40px; padding: 25px; background: linear-gradient(135deg, #f8f9ff, #fff5f5); border-radius: 12px; border-left: 4px solid #a855f7;">
+        <h3 style="color: #a855f7; margin-bottom: 15px;">📸 Ihr nächster Schritt</h3>
+        <p style="margin-bottom: 15px; color: #374151;">Bereit für authentische Familienfotos in Wien? Vereinbaren Sie noch heute Ihr persönliches Beratungsgespräch!</p>
+        <p style="margin: 0;">
+          <strong>Kontakt:</strong> 
+          <a href="/kontakt" style="color: #a855f7; text-decoration: none;">Termin vereinbaren</a> | 
+          <a href="/warteliste" style="color: #a855f7; text-decoration: none;">Warteliste</a> | 
+          <a href="/galerie" style="color: #a855f7; text-decoration: none;">Portfolio ansehen</a>
+        </p>
+      </div>
+    `;
+    
+    html += '</div>';
+    
+    console.log('✅ Converted YOUR Assistant content to structured HTML, length:', html.length);
+    return html;
+  }
+
+  /**
+   * Process inline formatting (bold, italic, links)
+   */
+  private processInlineFormatting(text: string): string {
+    // Handle bold text
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Handle italic text  
+    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    // Handle prices (€149, €295, etc.)
+    text = text.replace(/(€\d+)/g, '<strong style="color: #a855f7;">$1</strong>');
+    
+    return text;
+  }
+
+  /**
+   * Create fallback structure if all parsing fails
+   */
+  private createFallbackStructure(content: string): AutoBlogParsed {
+    const title = 'Familienfotografie in Wien - Authentische Momente';
     const structuredContent = `
-<div class="blog-post-structured">
+<div class="blog-post-content">
   <h1>${title}</h1>
-  
-  <div class="blog-outline">
-    <h2>📋 Outline:</h2>
-    <ul>
-      <li>H2: Einführung in die Welt der Familienfotografie in Wien</li>
-      <li>H2: Warum ein Studio-Fotoshooting? Vorteile der professionellen Umgebung</li>
-      <li>H2: Der persönliche Touch: Wie wird das Fotoshooting einzigartig?</li>
-      <li>H2: Tipps zur Vorbereitung auf Ihr Familienfotoshooting</li>
-      <li>H2: Was Sie beim Familienfotografen in Wien erwarten können</li>
-      <li>H2: Nach dem Shooting: Die Bearbeitung der Bildkollektion und Auswahl</li>
-    </ul>
-  </div>
-
-  <div class="key-takeaways">
-    <h2>🎯 Key Takeaways:</h2>
-    <ul>
-      <li>Professionelle Familienfotografie in Wien bietet einzigartige Erinnerungen</li>
-      <li>Studio-Umgebung sorgt für optimale Lichtverhältnisse und entspannte Atmosphäre</li>
-      <li>Persönliche Beratung und Vorbereitung sind entscheidend für gelungene Aufnahmen</li>
-      <li>Nachbearbeitung und Bildauswahl sind Teil des professionellen Services</li>
-    </ul>
-  </div>
-
-  <div class="main-content">
-    ${this.convertTextToStructuredHTML(content)}
-  </div>
-
-  <div class="review-snippets">
-    <h2>💬 Review Snippets:</h2>
-    <blockquote>
-      <p>"Die Familienfotos sind wunderschön geworden! Die entspannte Atmosphäre im Studio hat unseren Kindern sehr geholfen, sich natürlich zu verhalten."</p>
-      <footer>— Sarah M., Wien</footer>
-    </blockquote>
-    <blockquote>
-      <p>"Professionelle Beratung und traumhafte Ergebnisse. Wir kommen gerne wieder für weitere Familienshootings!"</p>
-      <footer>— Michael und Lisa K., Wien</footer>
-    </blockquote>
-  </div>
-
-  <div class="internal-links">
-    <p>Entdecken Sie mehr: <a href="/galerie">Beispiele unserer Familienfotos</a> | <a href="/kontakt">Termin vereinbaren</a> | <a href="/warteliste">Warteliste für beliebte Termine</a></p>
-  </div>
-
-  <div class="external-links">
-    <p>Weitere Informationen: <a href="https://www.wien.info/de/reiseziele/familie" target="_blank">Wien für Familien</a> | <a href="https://www.wien.gv.at/freizeit/bildung/kindergarten/" target="_blank">Familienfreundliches Wien</a></p>
+  <div style="margin: 20px 0; line-height: 1.7; color: #374151;">
+    ${this.processInlineFormatting(content.replace(/\n/g, '</p><p style="margin: 20px 0; line-height: 1.7; color: #374151;">'))}
   </div>
 </div>`;
+
+    return {
+      title,
+      seo_title: title + ' | New Age Fotografie Wien',
+      meta_description: 'Professionelle Familienfotografie in Wien - Authentische Momente für die Ewigkeit.',
+      content_html: structuredContent,
+      excerpt: 'Professionelle Familienfotografie in Wien',
+      tags: ['photography', 'wien', 'family'],
+      keyphrase: 'familienfotografie',
+      slug: 'familienfotografie-wien-authentische-momente',
+      status: 'DRAFT',
+      publish_now: false,
+      language: 'de'
+    };
+  }
 
     // Generate meta description
     const metaDescription = `Familienfotograf Wien: Professionelle Familienfotografie im Studio für unvergessliche Erinnerungen. Jetzt Termin vereinbaren!`;
