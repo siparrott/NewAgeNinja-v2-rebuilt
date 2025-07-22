@@ -111,6 +111,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- January 22, 2025. **IMAGE INSERTION FIX: Fixed missing uploaded images in Assistant-First system:**
+  * **ROOT CAUSE**: Assistant-First system was not embedding uploaded images into blog content
+  * **SYMPTOM**: Only featured image displayed, uploaded session images missing from blog posts
+  * **IMMEDIATE FIX**: Added embedUploadedImages() function to Assistant-First system  
+  * **STRATEGIC PLACEMENT**: Images now distributed across H2 sections with professional styling
+  * **PROFESSIONAL STYLING**: Enhanced image HTML with shadows, responsive design, and German alt text
+  * **COMPLETE WORKFLOW**: Upload → Assistant content → Image embedding → Purple HTML → Database storage
+  * **USER GUARANTEE FULFILLED**: All uploaded images now appear in generated blog posts with perfect styling
 - January 22, 2025. **CRITICAL HTML RENDERING FIX: Fixed malformed HTML causing blog posts to display as plain text:**
   * **ROOT CAUSE**: Blog posts contained malformed HTML with ```html prefixes that prevented browser rendering
   * **SYMPTOMS**: Blog content displayed as plain text instead of styled HTML with purple sections

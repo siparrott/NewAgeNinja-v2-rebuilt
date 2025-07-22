@@ -430,6 +430,71 @@ export class AssistantFirstAutoBlogGenerator {
     console.log('✅ HTML CONVERSION COMPLETE - LENGTH:', html.length);
     return html;
   }
+
+  /**
+   * STEP 2.5: EMBED UPLOADED IMAGES INTO CONTENT 
+   */
+  private embedUploadedImages(content: string, images: ProcessedImage[]): string {
+    console.log('🖼️ EMBEDDING UPLOADED IMAGES - COUNT:', images.length);
+    
+    if (!images || images.length === 0) {
+      console.log('⚠️ NO IMAGES TO EMBED');
+      return content;
+    }
+    
+    let contentWithImages = content;
+    
+    // Find H2 sections for strategic image placement
+    const h2Matches = Array.from(contentWithImages.matchAll(/<h2[^>]*>.*?<\/h2>/gi));
+    
+    if (h2Matches.length === 0) {
+      console.log('⚠️ NO H2 SECTIONS FOUND - ADDING IMAGES AT START');
+      // Add images at the beginning if no H2 sections
+      const imagesHtml = images.map((image, index) => 
+        this.createImageHTML(image, index + 1)
+      ).join('\n');
+      return imagesHtml + '\n' + contentWithImages;
+    }
+    
+    // Distribute images across H2 sections
+    const sectionsPerImage = Math.max(1, Math.floor(h2Matches.length / images.length));
+    
+    images.forEach((image, imageIndex) => {
+      const targetSectionIndex = Math.min(
+        imageIndex * sectionsPerImage, 
+        h2Matches.length - 1
+      );
+      
+      const imageHtml = this.createImageHTML(image, imageIndex + 1);
+      
+      // Insert after the target H2 section
+      const h2Match = h2Matches[targetSectionIndex];
+      if (h2Match && h2Match.index !== undefined) {
+        const insertPosition = h2Match.index + h2Match[0].length;
+        contentWithImages = contentWithImages.substring(0, insertPosition) + 
+                           '\n' + imageHtml + '\n' + 
+                           contentWithImages.substring(insertPosition);
+        
+        console.log(`✅ EMBEDDED IMAGE ${imageIndex + 1} AFTER H2 SECTION ${targetSectionIndex + 1}`);
+      }
+    });
+    
+    console.log('✅ ALL IMAGES EMBEDDED SUCCESSFULLY');
+    return contentWithImages;
+  }
+  
+  /**
+   * CREATE PROFESSIONAL IMAGE HTML
+   */
+  private createImageHTML(image: ProcessedImage, imageNumber: number): string {
+    const altText = `Professionelle Familienfotografie Session bei New Age Fotografie in Wien - Bild ${imageNumber}`;
+    
+    return `<figure style="margin: 30px 0; text-align: center;">
+  <img src="${image.publicUrl}" alt="${altText}" 
+       style="width: 100%; max-width: 600px; height: auto; border-radius: 12px; 
+              box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: block; margin: 0 auto;">
+</figure>`;
+  }
   
   /**
    * MAIN ORCHESTRATION - ASSISTANT-FIRST APPROACH
@@ -454,6 +519,12 @@ export class AssistantFirstAutoBlogGenerator {
       
       // STEP 2: Parse YOUR Assistant's format adaptively
       const parsedData = this.parseYourAssistantFormat(assistantContent);
+      
+      // STEP 2.5: EMBED UPLOADED IMAGES INTO CONTENT
+      if (images.length > 0) {
+        console.log('🖼️ EMBEDDING', images.length, 'UPLOADED IMAGES INTO CONTENT');
+        parsedData.content_html = this.embedUploadedImages(parsedData.content_html, images);
+      }
       
       // STEP 3: Create blog post with YOUR Assistant's content
       const blogPost = {
