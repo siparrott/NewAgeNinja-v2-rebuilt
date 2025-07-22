@@ -86,12 +86,10 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
     all_day: false,
     calendar_id: '',
     category_id: '',
-    color: '#3B82F6',
-    visibility: 'public' as 'public' | 'private' | 'confidential',
+    color: '#3B82F6',    visibility: 'public' as 'public' | 'private' | 'confidential',
     importance: 'normal' as 'low' | 'normal' | 'high',
     is_recurring: false,
-    recurrence_rule: '',
-    attendees: [] as { email: string; name?: string; role: 'organizer' | 'attendee' | 'optional'; status: 'pending' | 'accepted' | 'declined' | 'tentative'; response_date?: string; notes?: string }[],
+    recurrence_rule: '',    attendees: [] as { email: string; name?: string; role: 'organizer' | 'attendee' | 'optional'; status: 'pending' | 'accepted' | 'declined' | 'tentative'; response_date?: string; notes?: string }[],
     reminders: [] as { type: 'email' | 'popup' | 'sms' | 'push'; minutes_before: number }[]
   });
 
@@ -117,10 +115,10 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
       setVisibleCalendars(calendarsData.map(cal => cal.id));
 
       // Auto-select first calendar for new events if none selected
-      if (calendarsData.length > 0) {
+      if (calendarsData.length > 0 && !eventForm.calendar_id) {
         setEventForm(prev => ({
           ...prev,
-          calendar_id: prev.calendar_id || calendarsData[0].id
+          calendar_id: calendarsData[0].id
         }));
       }
 
@@ -371,7 +369,7 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
       start_time: '',
       end_time: '',
       all_day: false,
-      calendar_id: calendars.length > 0 ? calendars[0].id : '',
+      calendar_id: '',
       category_id: '',
       color: '#3B82F6',
       visibility: 'public',
@@ -698,7 +696,7 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
                       </label>
                       <input
                         type="datetime-local"
-                        value={eventForm.start_time ? eventForm.start_time.slice(0, 16) : ''}
+                        value={eventForm.start_time.slice(0, 16)}
                         onChange={(e) => setEventForm(prev => ({ ...prev, start_time: e.target.value + ':00.000Z' }))}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
@@ -711,7 +709,7 @@ const NextGenCalendar: React.FC<NextGenCalendarProps> = ({ className = '' }) => 
                       </label>
                       <input
                         type="datetime-local"
-                        value={eventForm.end_time ? eventForm.end_time.slice(0, 16) : ''}
+                        value={eventForm.end_time.slice(0, 16)}
                         onChange={(e) => setEventForm(prev => ({ ...prev, end_time: e.target.value + ':00.000Z' }))}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required

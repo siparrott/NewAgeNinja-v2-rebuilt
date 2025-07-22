@@ -141,7 +141,6 @@ export default function AdminAutoBlogPage() {
         formData.append('images', file);
       });
       
-      formData.append('contentGuidance', userPrompt);
       formData.append('userPrompt', userPrompt);
       formData.append('language', language);
       formData.append('publishOption', publishOption);
@@ -171,7 +170,7 @@ export default function AdminAutoBlogPage() {
       if (resultData.success) {
         toast({
           title: "Blog post generated!",
-          description: `Successfully created "${resultData.blogPost?.title || resultData.post?.title || 'new blog post'}"`,
+          description: `Successfully created "${resultData.ai?.title || 'new blog post'}"`,
         });
         
         // Clear form
@@ -578,7 +577,7 @@ export default function AdminAutoBlogPage() {
               </div>
             )}
 
-            {result && result.success && (result.ai || result.blogPost || result.post) && (
+            {result && result.success && result.ai && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                   <CheckCircle className="h-5 w-5 text-green-600" />
@@ -589,28 +588,28 @@ export default function AdminAutoBlogPage() {
                 <div className="space-y-3">
                   <div>
                     <Label className="text-sm font-medium">Title</Label>
-                    <p className="text-lg font-semibold">{(result.ai || result.blogPost || result.post)?.title}</p>
+                    <p className="text-lg font-semibold">{result.ai.title}</p>
                   </div>
                   
                   <div>
                     <Label className="text-sm font-medium">SEO Title</Label>
-                    <p className="text-sm text-muted-foreground">{(result.ai || result.blogPost || result.post)?.seo_title}</p>
+                    <p className="text-sm text-muted-foreground">{result.ai.seo_title}</p>
                   </div>
                   
                   <div>
                     <Label className="text-sm font-medium">Meta Description</Label>
-                    <p className="text-sm text-muted-foreground">{(result.ai || result.blogPost || result.post)?.meta_description}</p>
+                    <p className="text-sm text-muted-foreground">{result.ai.meta_description}</p>
                   </div>
                   
                   <div>
                     <Label className="text-sm font-medium">Excerpt</Label>
-                    <p className="text-sm">{(result.ai || result.blogPost || result.post)?.excerpt}</p>
+                    <p className="text-sm">{result.ai.excerpt}</p>
                   </div>
                   
                   <div>
                     <Label className="text-sm font-medium">Tags</Label>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {(result.ai || result.blogPost || result.post)?.tags?.map((tag: string, index: number) => (
+                      {result.ai.tags?.map((tag: string, index: number) => (
                         <Badge key={index} variant="outline" className="text-xs">
                           {tag}
                         </Badge>
@@ -620,8 +619,8 @@ export default function AdminAutoBlogPage() {
                   
                   <div>
                     <Label className="text-sm font-medium">Status</Label>
-                    <Badge variant={(result.ai || result.blogPost || result.post)?.status === 'PUBLISHED' ? 'default' : 'secondary'}>
-                      {(result.ai || result.blogPost || result.post)?.status}
+                    <Badge variant={result.ai.status === 'PUBLISHED' ? 'default' : 'secondary'}>
+                      {result.ai.status}
                     </Badge>
                   </div>
                 </div>
@@ -629,32 +628,18 @@ export default function AdminAutoBlogPage() {
                 {/* Action Buttons */}
                 <div className="flex gap-2 pt-4">
                   <Button 
-                    size="sm"
-                    onClick={() => window.open(`/blog/${(result.ai || result.blogPost || result.post)?.slug}`, '_blank')}
-                  >
-                    View Completed Blog
-                  </Button>
-                  <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => {
-                      setResult(null);
-                      setSelectedImages([]);
-                      setUserPrompt('');
-                      setCustomSlug('');
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
-                    }}
-                  >
-                    Create New Blog
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => window.open(`/admin/blog/edit/${(result.post || result.blogPost)?.id}`, '_blank')}
+                    onClick={() => window.open(`/admin/blog/edit/${result.post?.id}`, '_blank')}
                   >
                     Edit Post
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.open(`/blog/${result.ai?.slug}`, '_blank')}
+                  >
+                    Preview
                   </Button>
                 </div>
               </div>

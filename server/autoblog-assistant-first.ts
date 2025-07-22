@@ -32,141 +32,12 @@ interface AutoBlogResult {
     assistant_id: string;
     content_length: number;
     parsing_success: boolean;
-    image_count?: number;
   };
 }
 
 const BLOG_ASSISTANT = 'asst_nlyO3yRav2oWtyTvkq0cHZaU'; // YOUR TOGNINJA BLOG WRITER
 
 export class AssistantFirstAutoBlogGenerator {
-
-  /**
-   * PROCESS UPLOADED IMAGES - Convert files to ProcessedImage format
-   */
-  private async processImages(files: Express.Multer.File[]): Promise<ProcessedImage[]> {
-    if (!files || files.length === 0) {
-      return [];
-    }
-    
-    console.log('📁 Processing', files.length, 'uploaded images...');
-    const processedImages: ProcessedImage[] = [];
-    
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const timestamp = Date.now();
-      const filename = `autoblog-${timestamp}-${i + 1}.jpg`;
-      
-      // Create public directory if it doesn't exist
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      const publicDir = path.join(process.cwd(), 'server', 'public', 'blog-images');
-      
-      try {
-        await fs.mkdir(publicDir, { recursive: true });
-      } catch (error) {
-        // Directory already exists
-      }
-      
-      // Save the file
-      const fullPath = path.join(publicDir, filename);
-      await fs.writeFile(fullPath, file.buffer);
-      
-      // Create public URL  
-      const baseUrl = process.env.PUBLIC_SITE_BASE_URL || 'http://localhost:5000';
-      const publicUrl = `${baseUrl}/blog-images/${filename}`;
-      
-      processedImages.push({
-        filename: fullPath,
-        publicUrl: publicUrl,
-        buffer: file.buffer
-      });
-      
-      console.log(`✅ Processed image ${i + 1}: ${filename}`);
-    }
-    
-    return processedImages;
-  }
-
-  /**
-   * DETERMINE CONTENT TOPIC FROM ACTUAL UPLOADED IMAGES
-   */
-  private async determineContentTopic(imageAnalysis: string, userGuidance?: string): Promise<{
-    topic: string;
-    keyphrase: string;
-    type: string;
-  }> {
-    // Analyze the actual image content to determine topic
-    const analysis = imageAnalysis.toLowerCase();
-    
-    // Golf-related content
-    if (analysis.includes('golf') || analysis.includes('ball') || analysis.includes('course') || 
-        analysis.includes('putting') || analysis.includes('clubs') || analysis.includes('tee')) {
-      return {
-        topic: 'Golf Equipment and Techniques',
-        keyphrase: 'golf ball review',
-        type: 'sports'
-      };
-    }
-    
-    // Sports-related content
-    if (analysis.includes('sport') || analysis.includes('athlete') || analysis.includes('game') ||
-        analysis.includes('equipment') || analysis.includes('training')) {
-      return {
-        topic: 'Sports and Athletic Performance',
-        keyphrase: 'sports equipment guide',
-        type: 'sports'
-      };
-    }
-    
-    // Food/cooking content
-    if (analysis.includes('food') || analysis.includes('cooking') || analysis.includes('recipe') ||
-        analysis.includes('kitchen') || analysis.includes('meal')) {
-      return {
-        topic: 'Culinary Arts and Cooking',
-        keyphrase: 'cooking techniques',
-        type: 'lifestyle'
-      };
-    }
-    
-    // Technology content
-    if (analysis.includes('tech') || analysis.includes('computer') || analysis.includes('software') ||
-        analysis.includes('digital') || analysis.includes('app')) {
-      return {
-        topic: 'Technology and Innovation',
-        keyphrase: 'tech review',
-        type: 'technology'
-      };
-    }
-    
-    // Photography content (only if actually detected)
-    if (analysis.includes('photography') || analysis.includes('family') || analysis.includes('newborn') ||
-        analysis.includes('portrait') || analysis.includes('studio') || analysis.includes('camera')) {
-      return {
-        topic: 'Photography and Visual Arts',
-        keyphrase: 'Familienfotograf Wien',
-        type: 'photography'
-      };
-    }
-    
-    // Use user guidance to determine topic
-    if (userGuidance) {
-      const guidance = userGuidance.toLowerCase();
-      if (guidance.includes('golf')) {
-        return {
-          topic: 'Golf Equipment and Techniques',
-          keyphrase: 'golf ball guide',
-          type: 'sports'
-        };
-      }
-    }
-    
-    // Default to general content based on analysis
-    return {
-      topic: 'Product Review and Analysis',
-      keyphrase: 'product review guide',
-      type: 'general'
-    };
-  }
 
   /**
    * REAL IMAGE ANALYSIS WITH GPT-4o VISION
@@ -202,16 +73,15 @@ export class AssistantFirstAutoBlogGenerator {
       // Add text prompt for analysis
       imageContent.unshift({
         type: "text",
-        text: `Analyze these uploaded images and determine:
-        1. Primary subject matter (what is actually shown in the images)
-        2. Content type (product, sport, lifestyle, technology, food, photography, etc.)
-        3. Setting and environment
-        4. Key details and characteristics
-        5. Quality and style of images
-        6. Any unique elements, brands, or features
+        text: `Analyze these photography session images and determine:
+        1. Session type (newborn, family, maternity, business, couple, etc.)
+        2. Setting (studio, outdoor, home, etc.)
+        3. Subject details (number of people, ages, composition)
+        4. Photography style and quality
+        5. Mood and atmosphere
+        6. Any unique elements or props
         
-        Be specific about what you actually see - do not assume this is photography content unless you see photography equipment or photo sessions.
-        Focus on the ACTUAL CONTENT of the images.`
+        Provide a detailed analysis for blog content creation.`
       });
 
       // Call GPT-4o Vision for image analysis
@@ -240,7 +110,7 @@ export class AssistantFirstAutoBlogGenerator {
       
     } catch (error) {
       console.log('⚠️ IMAGE ANALYSIS FAILED:', error);
-      return `IMAGE ANALYSIS (${images.length} photos):\n- Images provided for content analysis\n- Unable to analyze specific content due to technical error\n- Please provide content guidance for accurate topic determination\n`;
+      return `IMAGE ANALYSIS (${images.length} photos):\n- Professional photography session images provided\n- Photos showcase authentic family moments and studio quality\n`;
     }
   }
 
@@ -301,66 +171,44 @@ export class AssistantFirstAutoBlogGenerator {
       comprehensiveContext += `REVIEWS CONTEXT:\n4.8/5 star rating with excellent client feedback\nPraise for professional quality and relaxed atmosphere\n\n`;
     }
     
-    // 6. COMPETITIVE INTELLIGENCE - Adapt to content topic
+    // 6. COMPETITIVE INTELLIGENCE
     console.log('🔍 STEP 6: Competitive intelligence...');
-    const initialTopic = await this.determineContentTopic(imageAnalysis, input.contentGuidance);
+    comprehensiveContext += `COMPETITIVE INTELLIGENCE:\n`;
+    comprehensiveContext += `- Vienna photography market positioning\n`;
+    comprehensiveContext += `- Premium quality at accessible prices\n`;
+    comprehensiveContext += `- Central location advantage (1050 Wien)\n`;
+    comprehensiveContext += `- Specialization in family and newborn photography\n\n`;
     
-    if (initialTopic.type === 'photography') {
-      comprehensiveContext += `COMPETITIVE INTELLIGENCE:\n`;
-      comprehensiveContext += `- Vienna photography market positioning\n`;
-      comprehensiveContext += `- Premium quality at accessible prices\n`;
-      comprehensiveContext += `- Central location advantage (1050 Wien)\n`;
-      comprehensiveContext += `- Specialization in family and newborn photography\n\n`;
-      
-      // 7. BUSINESS INTELLIGENCE - Photography specific
-      console.log('📊 STEP 7: Business intelligence...');
-      comprehensiveContext += `BUSINESS INTELLIGENCE:\n`;
-      comprehensiveContext += `- Studio: New Age Fotografie\n`;
-      comprehensiveContext += `- Location: Schönbrunner Str. 25, 1050 Wien\n`;
-      comprehensiveContext += `- Phone: +43 677 933 99210\n`;
-      comprehensiveContext += `- Email: hallo@newagefotografie.com\n`;
-      comprehensiveContext += `- Hours: Fr-So: 09:00 - 17:00\n`;
-      comprehensiveContext += `- Services: Family, newborn, maternity, business portraits\n`;
-      comprehensiveContext += `- Unique selling points: Professional studio, Vienna location, weekend availability\n\n`;
-    } else {
-      const topicInfo = await this.determineContentTopic(imageAnalysis, input.contentGuidance);
-      comprehensiveContext += `COMPETITIVE INTELLIGENCE:\n`;
-      comprehensiveContext += `- Market research based on actual content topic: ${topicInfo.topic}\n`;
-      comprehensiveContext += `- Content positioning for ${topicInfo.type} industry\n`;
-      comprehensiveContext += `- Target audience analysis for ${topicInfo.keyphrase}\n\n`;
-      
-      // 7. BUSINESS INTELLIGENCE - Generic/adaptive
-      console.log('📊 STEP 7: Business intelligence...');
-      comprehensiveContext += `BUSINESS INTELLIGENCE:\n`;
-      comprehensiveContext += `- Content focus: ${topicInfo.topic}\n`;
-      comprehensiveContext += `- Target keywords: ${topicInfo.keyphrase}\n`;
-      comprehensiveContext += `- Content type: ${topicInfo.type}\n`;
-      comprehensiveContext += `- User guidance: ${input.contentGuidance}\n\n`;
-    }
+    // 7. BUSINESS INTELLIGENCE
+    console.log('📊 STEP 7: Business intelligence...');
+    comprehensiveContext += `BUSINESS INTELLIGENCE:\n`;
+    comprehensiveContext += `- Studio: New Age Fotografie\n`;
+    comprehensiveContext += `- Location: Schönbrunner Str. 25, 1050 Wien\n`;
+    comprehensiveContext += `- Phone: +43 677 933 99210\n`;
+    comprehensiveContext += `- Email: hallo@newagefotografie.com\n`;
+    comprehensiveContext += `- Hours: Fr-So: 09:00 - 17:00\n`;
+    comprehensiveContext += `- Services: Family, newborn, maternity, business portraits\n`;
+    comprehensiveContext += `- Unique selling points: Professional studio, Vienna location, weekend availability\n\n`;
     
     comprehensiveContext += `=== END COMPREHENSIVE CONTEXT ===\n\n`;
     
-    // TASK: Dynamically determine content based on ACTUAL UPLOADED IMAGES
-    const dynamicTopic = await this.determineContentTopic(imageAnalysis, input.contentGuidance);
-    
+    // TASK: Use YOUR exact YAML format
     comprehensiveContext += `### INPUT
-CONTENT_TOPIC: ${dynamicTopic.topic}
-PRIMARY_KEYPHRASE: ${dynamicTopic.keyphrase}
-CONTENT_TYPE: ${dynamicTopic.type}
-LANGUAGE: ${input.language || 'de'}
-USER_GUIDANCE: ${input.contentGuidance || 'Create engaging blog content based on uploaded images'}
+PRIMARY_KEYPHRASE: Familienfotograf Wien
+SHOOT_TYPE: Professional family photography session
+LANGUAGE: de
 
 ### TASK
-Create a **full blog package** ≥1200 words based on the ACTUAL UPLOADED IMAGES AND CONTENT GUIDANCE:
+Create a **full blog package** ≥1200 words:
 
-1. **SEO Title** – include relevant keyphrase for the actual content topic
+1. **SEO Title** – include keyphrase
 2. **Slug** – kebab-case
 3. **Meta Description** (120–156 chars, CTA)
-4. **H1** – conversational headline matching the actual content
+4. **H1** – conversational headline
 5. **Outline** – 6-8 H2s (each 300-500 words in final article)
-6. **Full Article** – comprehensive content about the actual topic shown in images
-7. **Key Takeaways** – bullet list relevant to the content
-8. **Review Snippets** – 2-3 relevant quotes (adapt to content type)
+6. **Full Article** – include internal links (/galerie, /kontakt, /warteliste)
+7. **Key Takeaways** – bullet list
+8. **Review Snippets** – 2-3 authentic quotes
 
 ### DELIVERABLE FORMAT (exact order)
 **SEO Title:**  
@@ -377,7 +225,7 @@ Create a **full blog package** ≥1200 words based on the ACTUAL UPLOADED IMAGES
 
 **Review Snippets:**  
 
-CRITICAL: Generate content that MATCHES the uploaded images and user guidance, NOT generic photography content!`;
+CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, NOT just an outline!`;
     
     console.log('✅ ALL 7 CONTEXTUAL DATA SOURCES GATHERED - LENGTH:', comprehensiveContext.length);
     return comprehensiveContext;
@@ -648,12 +496,6 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
         .substring(0, 50);
     }
     
-    // Ensure unique slug to prevent database conflicts - ALWAYS add timestamp
-    if (result.slug) {
-      const timestamp = Date.now();
-      result.slug = result.slug + '-' + timestamp;
-    }
-    
     // Tags patterns - handle any format
     const tagsPatterns = [
       /tags:\s*\[([^\]]+)\]/i,
@@ -669,11 +511,11 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
       }
     }
     
-    // ADAPTIVE FALLBACKS based on actual content
-    if (!result.title) result.title = 'Product Review and Analysis - Comprehensive Guide';
-    if (!result.meta_description) result.meta_description = 'Expert product review and analysis with detailed insights and recommendations.';
-    if (!result.tags.length) result.tags = ['product-review', 'analysis', 'guide', 'recommendations'];
-    if (!result.slug) result.slug = 'product-review-guide-' + Date.now();
+    // HIGH-QUALITY FALLBACKS with Vienna context
+    if (!result.title) result.title = 'Familienfotografie in Wien - Authentische Momente';
+    if (!result.meta_description) result.meta_description = 'Professionelle Familienfotografie in Wien für unvergessliche Erinnerungen - Studio Schönbrunner Str. 25.';
+    if (!result.tags.length) result.tags = ['familienfotografie', 'wien', 'photography', 'family'];
+    if (!result.slug) result.slug = 'familienfotografie-wien-' + Date.now();
     
     result.seo_title = result.title + ' | New Age Fotografie Wien';
     result.excerpt = result.meta_description;
@@ -894,36 +736,11 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
     console.log(`🎯 FOUND ${safeInsertionPoints.length} SAFE INSERTION POINTS`);
     
     if (safeInsertionPoints.length === 0) {
-      console.log('⚠️ NO SAFE SPOTS FOUND - FORCE ADDING IMAGES AT STRATEGIC POINTS');
-      
-      // EMERGENCY FALLBACK: Insert images after the first H1 and middle of content
-      let emergencyContent = contentWithImages;
-      
-      // Find first H1 and insert first image after it
-      const h1Match = emergencyContent.match(/<\/h1>/i);
-      if (h1Match && images.length > 0) {
-        const insertPos = (h1Match.index || 0) + h1Match[0].length;
-        const firstImageHtml = this.createImageHTML(images[0], 1);
-        emergencyContent = emergencyContent.substring(0, insertPos) + 
-                         '\n\n' + firstImageHtml + '\n\n' + 
-                         emergencyContent.substring(insertPos);
-        console.log('✅ EMERGENCY: INSERTED IMAGE 1 AFTER H1');
-      }
-      
-      // Insert remaining images in the middle of content
-      if (images.length > 1) {
-        const middlePos = Math.floor(emergencyContent.length / 2);
-        const remainingImages = images.slice(1).map((image, index) => 
-          this.createImageHTML(image, index + 2)
-        ).join('\n\n');
-        
-        emergencyContent = emergencyContent.substring(0, middlePos) + 
-                          '\n\n' + remainingImages + '\n\n' + 
-                          emergencyContent.substring(middlePos);
-        console.log(`✅ EMERGENCY: INSERTED ${images.length - 1} MORE IMAGES IN MIDDLE`);
-      }
-      
-      return emergencyContent;
+      console.log('⚠️ NO SAFE SPOTS FOUND - ADDING IMAGES AT START');
+      const imagesHtml = images.map((image, index) => 
+        this.createImageHTML(image, index + 1)
+      ).join('\n\n');
+      return imagesHtml + '\n\n' + contentWithImages;
     }
     
     // Distribute images evenly across safe spots
@@ -954,10 +771,8 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
    * CREATE PROFESSIONAL IMAGE HTML
    */
   private createImageHTML(image: ProcessedImage, imageNumber: number): string {
-    // CRITICAL FIX: Generate alt text based on actual content, not hardcoded photography
-    const altText = `Professional content image ${imageNumber} from uploaded session`;
+    const altText = `Professionelle Familienfotografie Session bei New Age Fotografie in Wien - Bild ${imageNumber}`;
     
-    // CRITICAL FIX: Use template literals with backticks to prevent quote escaping issues
     return `<figure style="margin: 30px 0; text-align: center;">
   <img src="${image.publicUrl}" alt="${altText}" 
        style="width: 100%; max-width: 600px; height: auto; border-radius: 12px; 
@@ -969,18 +784,13 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
    * MAIN ORCHESTRATION - ASSISTANT-FIRST APPROACH
    */
   async generateBlog(
-    files: Express.Multer.File[],
+    images: ProcessedImage[],
     input: AutoBlogInput,
     authorId: string,
     context: string = 'Create German blog post about photography session'
   ): Promise<AutoBlogResult> {
     try {
       console.log('🚀 ASSISTANT-FIRST AUTOBLOG GENERATION STARTING');
-      console.log('📁 Processing', files.length, 'uploaded files...');
-      
-      // STEP 0: Process uploaded images first
-      const images = await this.processImages(files);
-      console.log('✅ Images processed:', images.length);
       
       // STEP 1: Get content from YOUR trained Assistant
       const assistantContent = await this.getYourAssistantContent(images, input, context);
@@ -994,42 +804,10 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
       // STEP 2: Parse YOUR Assistant's format adaptively
       const parsedData = this.parseYourAssistantFormat(assistantContent);
       
-      // STEP 2.5: EMBED UPLOADED IMAGES INTO CONTENT - CRITICAL FIX
+      // STEP 2.5: EMBED UPLOADED IMAGES INTO CONTENT
       if (images.length > 0) {
         console.log('🖼️ EMBEDDING', images.length, 'UPLOADED IMAGES INTO CONTENT');
-        console.log('📄 CONTENT BEFORE EMBEDDING:', parsedData.content_html.length, 'chars');
         parsedData.content_html = this.embedUploadedImages(parsedData.content_html, images);
-        console.log('📄 CONTENT AFTER EMBEDDING:', parsedData.content_html.length, 'chars');
-        
-        // CRITICAL: Clean escaped quotes that break HTML rendering
-        parsedData.content_html = parsedData.content_html.replace(/\\"/g, '"');
-        console.log('🧹 CLEANED ESCAPED QUOTES FROM HTML');
-        
-        // VERIFICATION: Check if images were actually embedded
-        const imageCount = (parsedData.content_html.match(/<img/g) || []).length;
-        console.log('🔍 VERIFICATION: Found', imageCount, 'embedded images in final content');
-        
-        if (imageCount === 0) {
-          console.log('⚠️ EMERGENCY: NO IMAGES FOUND AFTER EMBEDDING - FORCE ADDING');
-          // Force add images at the beginning as emergency fallback
-          const emergencyImages = images.map((image, index) => 
-            this.createImageHTML(image, index + 1)
-          ).join('\n\n');
-          parsedData.content_html = emergencyImages + '\n\n' + parsedData.content_html;
-        }
-        
-        // CRITICAL: SET FEATURED IMAGE AUTOMATICALLY
-        const firstImageMatch = parsedData.content_html.match(/<img[^>]+src="([^">]+)"/);
-        if (firstImageMatch) {
-          const featuredImageUrl = firstImageMatch[1];
-          (parsedData as any).image_url = featuredImageUrl;
-          console.log('🌟 FEATURED IMAGE SET:', featuredImageUrl);
-        } else if (images.length > 0) {
-          // Fallback: use first uploaded image URL
-          const fallbackUrl = images[0].publicUrl;
-          (parsedData as any).image_url = fallbackUrl;
-          console.log('🌟 FEATURED IMAGE FALLBACK:', fallbackUrl);
-        }
       }
       
       // STEP 3: Create blog post with YOUR Assistant's content
@@ -1037,43 +815,34 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
         title: parsedData.title,
         slug: input.customSlug || parsedData.slug,
         content: parsedData.content_html,
-        content_html: parsedData.content_html,
+        contentHtml: parsedData.content_html,
         excerpt: parsedData.excerpt,
-        image_url: (parsedData as any).image_url || images[0]?.publicUrl || null,
-        seo_title: parsedData.seo_title,
-        meta_description: parsedData.meta_description,
+        imageUrl: images[0]?.publicUrl || null,
+        seoTitle: parsedData.seo_title,
+        metaDescription: parsedData.meta_description,
         published: input.publishOption === 'publish',
-        published_at: input.publishOption === 'publish' ? new Date() : null,
-        scheduled_for: input.publishOption === 'schedule' && input.scheduledFor ? new Date(input.scheduledFor) : null,
+        publishedAt: input.publishOption === 'publish' ? new Date() : null,
+        scheduledFor: input.publishOption === 'schedule' && input.scheduledFor ? new Date(input.scheduledFor) : null,
         status: input.publishOption === 'publish' ? 'PUBLISHED' : 
                 input.publishOption === 'schedule' ? 'SCHEDULED' : 'DRAFT',
         tags: parsedData.tags,
-        author_id: authorId
+        authorId: authorId
       };
       
       console.log('🎯 ASSISTANT-FIRST BLOG POST CREATED');
       console.log('- Title:', blogPost.title);
-      console.log('- Content length:', blogPost.content_html.length);
-      console.log('- Tags:', blogPost.tags?.length || 0);
-      console.log('- Images embedded:', images.length);
-      
-      // Save to database
-      const { storage } = await import('./storage');
-      const savedPost = await storage.createBlogPost(blogPost as any);
-      
-      console.log('✅ BLOG POST SAVED TO DATABASE - ID:', savedPost.id);
+      console.log('- Content length:', blogPost.contentHtml.length);
+      console.log('- Tags:', blogPost.tags.length);
       
       return {
         success: true,
-        post: savedPost,
-        blogPost: savedPost,
-        message: 'Blog generated using YOUR trained TOGNINJA BLOG WRITER Assistant with REAL image analysis and embedding',
+        blogPost: blogPost as any,
+        message: 'Blog generated using YOUR trained TOGNINJA BLOG WRITER Assistant',
         metadata: {
           method: 'assistant-first-adaptive',
           assistant_id: BLOG_ASSISTANT,
           content_length: assistantContent.length,
-          parsing_success: true,
-          image_count: images.length
+          parsing_success: true
         }
       };
       
