@@ -346,26 +346,8 @@ Key Features: High-quality photography, professional editing, personal service
       // ENHANCED: Use accurate image analysis for content matching
       const imageAwareContext = await this.gatherComprehensiveContext(images, input);
       
-      // Create enhanced context with real image analysis
-      const enhancedContext = `
-SESSION DETAILS:
-- Images uploaded: ${images.length} ${imageAnalysis.sessionType} photography session images
-- Subjects: ${imageAnalysis.subjects}
-- Setting: ${imageAnalysis.setting}
-- Mood: ${imageAnalysis.emotions}
-- Style: ${imageAnalysis.clothing}
-- Specifics: ${imageAnalysis.specifics}
-- Business: New Age Fotografie Wien
-- Content type: ${input.language || 'deutsch'} blog post
-- Publishing: ${input.publishOption || 'draft'}
-
-CONTENT MATCHING REQUIREMENTS:
-${contentProcessor.buildImageAwarePrompt(imageAnalysis, input.contentGuidance || '')}
-
-COMPREHENSIVE CONTEXT:
-${imageAwareContext}
-
-Use your sophisticated training to create complete blog content that EXACTLY matches the uploaded ${imageAnalysis.sessionType} images with outline, key takeaways, YOAST SEO optimization, and all structured sections.`;
+      // MINIMAL CONTEXT - Let your trained Assistant use its own sophisticated prompt
+      const enhancedContext = `${imageAnalysis.sessionType} photography session - ${input.contentGuidance || 'create German blog post'} - Language: ${input.language || 'de'}`;
 
       // Use the TOGNINJA BLOG WRITER Assistant ID directly
       const assistantId = 'asst_nlyO3yRav2oWtyTvkq0cHZaU';
@@ -1027,26 +1009,8 @@ Create complete blog package with all sections per your training. Include SEO ta
         const parsedContent = this.parseStructuredResponse(content);
         console.log('📋 Parsed content result:', parsedContent ? 'Structured format detected' : 'No structured format');
         
-        // CRITICAL FIX: Apply content quality processing to sophisticated responses too
-        if (parsedContent && parsedContent.content_html) {
-          console.log('🔧 Applying content quality fixes to sophisticated response...');
-          
-          // Get image analysis for content matching
-          const imageAnalysis = await contentProcessor.analyzeImagesForAccurateContent(images, openai);
-          console.log('📸 Image analysis for content matching:', imageAnalysis);
-          
-          // Clean formatting (remove H1/H2 prefixes, fix ### markdown)
-          parsedContent.content_html = contentProcessor.cleanContentFormatting(parsedContent.content_html);
-          
-          // Embed images without duplication
-          parsedContent.content_html = contentProcessor.embedImagesWithoutDuplication(
-            parsedContent.content_html,
-            images,
-            images[0]?.publicUrl // First image is typically featured
-          );
-          
-          console.log('✅ Content quality fixes applied to sophisticated response');
-        }
+        // NO PROCESSING - Let your trained Assistant output be used as-is
+        console.log('🎯 Using REAL Assistant output without modification - respecting your trained prompt');
         
         // Return parsed content with quality fixes
         return parsedContent;
@@ -1285,10 +1249,8 @@ Create complete blog package with all sections per your training. Include SEO ta
       const { knowledgeBase } = await import('../shared/schema');
       const { eq, desc } = await import('drizzle-orm');
       
-      // Fetch active knowledge base articles
+      // Fetch active knowledge base articles - using correct schema
       const articles = await db.select().from(knowledgeBase)
-        .where(eq(knowledgeBase.published, true))
-        .orderBy(desc(knowledgeBase.updatedAt))
         .limit(20); // Get most recent 20 articles
       
       if (articles.length === 0) {
@@ -2054,20 +2016,22 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
         `<img src="${img.publicUrl}" alt="Photography session image ${index + 1}" class="blog-image" />`
       ).join('\n');
 
-      // Generate content using sophisticated TOGNINJA prompt template
-      const assistantResult = await this.generateWithSophisticatedPrompt(
-        processedImages,
-        {
-          ...input,
-          contentGuidance: fullUserPrompt, // Pass complete prompt
-          imageMarkdown // Include image references
-        } as AutoBlogInput,
-        enhancedContext,
-        assistantId
-      );
+      // DISABLED: Generate content using YOUR trained Assistant directly (no prompt override)
+      console.log('🎯 Using YOUR trained TOGNINJA BLOG WRITER Assistant directly - no prompt modification');
+      const assistantResult = await this.generateWithTOGNinjaAssistant(processedImages, input, enhancedContext);
       
-      // If structured parsing failed, try the REAL TOGNINJA BLOG WRITER Assistant with simpler context
-      if (!assistantResult) {
+      // Parse the result from YOUR trained Assistant
+      if (typeof assistantResult === 'string') {
+        // Convert string response to parsed format
+        const parsedResult = this.parseStructuredResponse(assistantResult);
+        if (parsedResult) {
+          return await this.createBlogPost(parsedResult, processedImages, authorId, input);
+        } else {
+          // Force structure if needed
+          const forcedStructure = this.forceStructuredFormat(assistantResult);
+          return await this.createBlogPost(forcedStructure, processedImages, authorId, input);
+        }
+      } else if (!assistantResult) {
         console.log('⚠️ Structured parsing failed, trying REAL TOGNINJA ASSISTANT with minimal override...');
         
         try {
@@ -2101,9 +2065,9 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       // FIX #5: Log raw assistant response (already logged in generateWithAssistantAPI)
       console.log('✅ Assistant response logged - check above for full JSON output');
 
-      // Step 4: Create blog post with minimal content processing
-      console.log('Creating blog post...');
-      console.log('AI content before creating post - HTML length:', assistantResult.content_html?.length || 0);
+      // Step 4: Create blog post with NO modification to respect your Assistant training
+      console.log('Creating blog post with your trained Assistant output...');
+      console.log('REAL Assistant content length:', typeof assistantResult === 'object' ? assistantResult?.content_html?.length || 0 : 0);
       const createdPost = await this.createBlogPost(assistantResult, processedImages, authorId, input);
       console.log('Blog post created successfully with ID:', createdPost.id);
 
