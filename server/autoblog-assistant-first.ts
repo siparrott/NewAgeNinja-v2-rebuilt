@@ -1014,7 +1014,6 @@ CRITICAL: Generate content that MATCHES the uploaded images and user guidance, N
           assistant_id: BLOG_ASSISTANT,
           content_length: assistantContent.length,
           parsing_success: true,
-          images_embedded: images.length,
           image_count: images.length
         }
       };
