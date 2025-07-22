@@ -87,6 +87,87 @@ export class AssistantFirstAutoBlogGenerator {
   }
 
   /**
+   * DETERMINE CONTENT TOPIC FROM ACTUAL UPLOADED IMAGES
+   */
+  private async determineContentTopic(imageAnalysis: string, userGuidance?: string): Promise<{
+    topic: string;
+    keyphrase: string;
+    type: string;
+  }> {
+    // Analyze the actual image content to determine topic
+    const analysis = imageAnalysis.toLowerCase();
+    
+    // Golf-related content
+    if (analysis.includes('golf') || analysis.includes('ball') || analysis.includes('course') || 
+        analysis.includes('putting') || analysis.includes('clubs') || analysis.includes('tee')) {
+      return {
+        topic: 'Golf Equipment and Techniques',
+        keyphrase: 'golf ball review',
+        type: 'sports'
+      };
+    }
+    
+    // Sports-related content
+    if (analysis.includes('sport') || analysis.includes('athlete') || analysis.includes('game') ||
+        analysis.includes('equipment') || analysis.includes('training')) {
+      return {
+        topic: 'Sports and Athletic Performance',
+        keyphrase: 'sports equipment guide',
+        type: 'sports'
+      };
+    }
+    
+    // Food/cooking content
+    if (analysis.includes('food') || analysis.includes('cooking') || analysis.includes('recipe') ||
+        analysis.includes('kitchen') || analysis.includes('meal')) {
+      return {
+        topic: 'Culinary Arts and Cooking',
+        keyphrase: 'cooking techniques',
+        type: 'lifestyle'
+      };
+    }
+    
+    // Technology content
+    if (analysis.includes('tech') || analysis.includes('computer') || analysis.includes('software') ||
+        analysis.includes('digital') || analysis.includes('app')) {
+      return {
+        topic: 'Technology and Innovation',
+        keyphrase: 'tech review',
+        type: 'technology'
+      };
+    }
+    
+    // Photography content (only if actually detected)
+    if (analysis.includes('photography') || analysis.includes('family') || analysis.includes('newborn') ||
+        analysis.includes('portrait') || analysis.includes('studio') || analysis.includes('camera')) {
+      return {
+        topic: 'Photography and Visual Arts',
+        keyphrase: 'Familienfotograf Wien',
+        type: 'photography'
+      };
+    }
+    
+    // Use user guidance to determine topic
+    if (userGuidance) {
+      const guidance = userGuidance.toLowerCase();
+      if (guidance.includes('golf')) {
+        return {
+          topic: 'Golf Equipment and Techniques',
+          keyphrase: 'golf ball guide',
+          type: 'sports'
+        };
+      }
+    }
+    
+    // Default to general content based on analysis
+    return {
+      topic: 'Product Review and Analysis',
+      keyphrase: 'product review guide',
+      type: 'general'
+    };
+  }
+
+  /**
    * REAL IMAGE ANALYSIS WITH GPT-4o VISION
    */
   private async analyzeUploadedImages(images: ProcessedImage[]): Promise<string> {
@@ -120,15 +201,16 @@ export class AssistantFirstAutoBlogGenerator {
       // Add text prompt for analysis
       imageContent.unshift({
         type: "text",
-        text: `Analyze these photography session images and determine:
-        1. Session type (newborn, family, maternity, business, couple, etc.)
-        2. Setting (studio, outdoor, home, etc.)
-        3. Subject details (number of people, ages, composition)
-        4. Photography style and quality
-        5. Mood and atmosphere
-        6. Any unique elements or props
+        text: `Analyze these uploaded images and determine:
+        1. Primary subject matter (what is actually shown in the images)
+        2. Content type (product, sport, lifestyle, technology, food, photography, etc.)
+        3. Setting and environment
+        4. Key details and characteristics
+        5. Quality and style of images
+        6. Any unique elements, brands, or features
         
-        Provide a detailed analysis for blog content creation.`
+        Be specific about what you actually see - do not assume this is photography content unless you see photography equipment or photo sessions.
+        Focus on the ACTUAL CONTENT of the images.`
       });
 
       // Call GPT-4o Vision for image analysis
@@ -157,7 +239,7 @@ export class AssistantFirstAutoBlogGenerator {
       
     } catch (error) {
       console.log('⚠️ IMAGE ANALYSIS FAILED:', error);
-      return `IMAGE ANALYSIS (${images.length} photos):\n- Professional photography session images provided\n- Photos showcase authentic family moments and studio quality\n`;
+      return `IMAGE ANALYSIS (${images.length} photos):\n- Images provided for content analysis\n- Unable to analyze specific content due to technical error\n- Please provide content guidance for accurate topic determination\n`;
     }
   }
 
@@ -218,44 +300,66 @@ export class AssistantFirstAutoBlogGenerator {
       comprehensiveContext += `REVIEWS CONTEXT:\n4.8/5 star rating with excellent client feedback\nPraise for professional quality and relaxed atmosphere\n\n`;
     }
     
-    // 6. COMPETITIVE INTELLIGENCE
+    // 6. COMPETITIVE INTELLIGENCE - Adapt to content topic
     console.log('🔍 STEP 6: Competitive intelligence...');
-    comprehensiveContext += `COMPETITIVE INTELLIGENCE:\n`;
-    comprehensiveContext += `- Vienna photography market positioning\n`;
-    comprehensiveContext += `- Premium quality at accessible prices\n`;
-    comprehensiveContext += `- Central location advantage (1050 Wien)\n`;
-    comprehensiveContext += `- Specialization in family and newborn photography\n\n`;
+    const initialTopic = await this.determineContentTopic(imageAnalysis, input.contentGuidance);
     
-    // 7. BUSINESS INTELLIGENCE
-    console.log('📊 STEP 7: Business intelligence...');
-    comprehensiveContext += `BUSINESS INTELLIGENCE:\n`;
-    comprehensiveContext += `- Studio: New Age Fotografie\n`;
-    comprehensiveContext += `- Location: Schönbrunner Str. 25, 1050 Wien\n`;
-    comprehensiveContext += `- Phone: +43 677 933 99210\n`;
-    comprehensiveContext += `- Email: hallo@newagefotografie.com\n`;
-    comprehensiveContext += `- Hours: Fr-So: 09:00 - 17:00\n`;
-    comprehensiveContext += `- Services: Family, newborn, maternity, business portraits\n`;
-    comprehensiveContext += `- Unique selling points: Professional studio, Vienna location, weekend availability\n\n`;
+    if (initialTopic.type === 'photography') {
+      comprehensiveContext += `COMPETITIVE INTELLIGENCE:\n`;
+      comprehensiveContext += `- Vienna photography market positioning\n`;
+      comprehensiveContext += `- Premium quality at accessible prices\n`;
+      comprehensiveContext += `- Central location advantage (1050 Wien)\n`;
+      comprehensiveContext += `- Specialization in family and newborn photography\n\n`;
+      
+      // 7. BUSINESS INTELLIGENCE - Photography specific
+      console.log('📊 STEP 7: Business intelligence...');
+      comprehensiveContext += `BUSINESS INTELLIGENCE:\n`;
+      comprehensiveContext += `- Studio: New Age Fotografie\n`;
+      comprehensiveContext += `- Location: Schönbrunner Str. 25, 1050 Wien\n`;
+      comprehensiveContext += `- Phone: +43 677 933 99210\n`;
+      comprehensiveContext += `- Email: hallo@newagefotografie.com\n`;
+      comprehensiveContext += `- Hours: Fr-So: 09:00 - 17:00\n`;
+      comprehensiveContext += `- Services: Family, newborn, maternity, business portraits\n`;
+      comprehensiveContext += `- Unique selling points: Professional studio, Vienna location, weekend availability\n\n`;
+    } else {
+      const topicInfo = await this.determineContentTopic(imageAnalysis, input.contentGuidance);
+      comprehensiveContext += `COMPETITIVE INTELLIGENCE:\n`;
+      comprehensiveContext += `- Market research based on actual content topic: ${topicInfo.topic}\n`;
+      comprehensiveContext += `- Content positioning for ${topicInfo.type} industry\n`;
+      comprehensiveContext += `- Target audience analysis for ${topicInfo.keyphrase}\n\n`;
+      
+      // 7. BUSINESS INTELLIGENCE - Generic/adaptive
+      console.log('📊 STEP 7: Business intelligence...');
+      comprehensiveContext += `BUSINESS INTELLIGENCE:\n`;
+      comprehensiveContext += `- Content focus: ${topicInfo.topic}\n`;
+      comprehensiveContext += `- Target keywords: ${topicInfo.keyphrase}\n`;
+      comprehensiveContext += `- Content type: ${topicInfo.type}\n`;
+      comprehensiveContext += `- User guidance: ${input.contentGuidance}\n\n`;
+    }
     
     comprehensiveContext += `=== END COMPREHENSIVE CONTEXT ===\n\n`;
     
-    // TASK: Use YOUR exact YAML format
+    // TASK: Dynamically determine content based on ACTUAL UPLOADED IMAGES
+    const dynamicTopic = await this.determineContentTopic(imageAnalysis, input.contentGuidance);
+    
     comprehensiveContext += `### INPUT
-PRIMARY_KEYPHRASE: Familienfotograf Wien
-SHOOT_TYPE: Professional family photography session
-LANGUAGE: de
+CONTENT_TOPIC: ${dynamicTopic.topic}
+PRIMARY_KEYPHRASE: ${dynamicTopic.keyphrase}
+CONTENT_TYPE: ${dynamicTopic.type}
+LANGUAGE: ${input.language || 'de'}
+USER_GUIDANCE: ${input.contentGuidance || 'Create engaging blog content based on uploaded images'}
 
 ### TASK
-Create a **full blog package** ≥1200 words:
+Create a **full blog package** ≥1200 words based on the ACTUAL UPLOADED IMAGES AND CONTENT GUIDANCE:
 
-1. **SEO Title** – include keyphrase
+1. **SEO Title** – include relevant keyphrase for the actual content topic
 2. **Slug** – kebab-case
 3. **Meta Description** (120–156 chars, CTA)
-4. **H1** – conversational headline
+4. **H1** – conversational headline matching the actual content
 5. **Outline** – 6-8 H2s (each 300-500 words in final article)
-6. **Full Article** – include internal links (/galerie, /kontakt, /warteliste)
-7. **Key Takeaways** – bullet list
-8. **Review Snippets** – 2-3 authentic quotes
+6. **Full Article** – comprehensive content about the actual topic shown in images
+7. **Key Takeaways** – bullet list relevant to the content
+8. **Review Snippets** – 2-3 relevant quotes (adapt to content type)
 
 ### DELIVERABLE FORMAT (exact order)
 **SEO Title:**  
@@ -272,7 +376,7 @@ Create a **full blog package** ≥1200 words:
 
 **Review Snippets:**  
 
-CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, NOT just an outline!`;
+CRITICAL: Generate content that MATCHES the uploaded images and user guidance, NOT generic photography content!`;
     
     console.log('✅ ALL 7 CONTEXTUAL DATA SOURCES GATHERED - LENGTH:', comprehensiveContext.length);
     return comprehensiveContext;
@@ -543,6 +647,11 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
         .substring(0, 50);
     }
     
+    // Ensure unique slug to prevent database conflicts
+    if (result.slug && !result.slug.includes(Date.now().toString())) {
+      result.slug = result.slug + '-' + Date.now();
+    }
+    
     // Tags patterns - handle any format
     const tagsPatterns = [
       /tags:\s*\[([^\]]+)\]/i,
@@ -558,11 +667,11 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
       }
     }
     
-    // HIGH-QUALITY FALLBACKS with Vienna context
-    if (!result.title) result.title = 'Familienfotografie in Wien - Authentische Momente';
-    if (!result.meta_description) result.meta_description = 'Professionelle Familienfotografie in Wien für unvergessliche Erinnerungen - Studio Schönbrunner Str. 25.';
-    if (!result.tags.length) result.tags = ['familienfotografie', 'wien', 'photography', 'family'];
-    if (!result.slug) result.slug = 'familienfotografie-wien-' + Date.now();
+    // ADAPTIVE FALLBACKS based on actual content
+    if (!result.title) result.title = 'Product Review and Analysis - Comprehensive Guide';
+    if (!result.meta_description) result.meta_description = 'Expert product review and analysis with detailed insights and recommendations.';
+    if (!result.tags.length) result.tags = ['product-review', 'analysis', 'guide', 'recommendations'];
+    if (!result.slug) result.slug = 'product-review-guide-' + Date.now();
     
     result.seo_title = result.title + ' | New Age Fotografie Wien';
     result.excerpt = result.meta_description;
