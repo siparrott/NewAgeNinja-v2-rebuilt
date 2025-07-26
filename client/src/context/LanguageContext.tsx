@@ -619,7 +619,7 @@ const translations = {
     
     // Homepage
     'home.hero.title': 'Familien- & Neugeborenenfotograf in Wien, dem Sie vertrauen können',
-    'home.hero.subtitle': 'das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...',
+    'home.hero.subtitle': 'Endlich ein Fotostudio',
     'home.hero.cta': 'Jetzt Shooting Buchen',
     'home.services.title': 'Business-Headshots & Preise',
     'home.services.description1': 'Erleben Sie maßgeschneiderte Fotoshootings in unserem kundenorientierten Studio. Wir legen großen Wert auf Details und schaffen eine komfortable Umgebung.',
