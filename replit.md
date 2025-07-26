@@ -122,6 +122,11 @@ Preferred communication style: Simple, everyday language.
   * **ROBUST IMAGE POSITIONING**: Images now distribute evenly across H2 sections (Key Takeaways, Full Article, Review Snippets) with proper figure tags and styling
   * **SOPHISTICATED CONTENT GENERATION**: System produces authentic German blog posts with Vienna-specific context, proper 8-section format, and comprehensive SEO optimization
   * **DATABASE VERIFIED**: Blog posts contain proper `<figure>` tags with working image URLs proving image insertion is operational
+- January 26, 2025. **NAVIGATION SCROLL BEHAVIOR FIX**: Fixed homepage menu navigation issue where clicking menu items took users to bottom of page instead of top:
+  * Created ScrollToTop component that automatically scrolls to top on route changes
+  * Integrated ScrollToTop component into App.tsx Router for global scroll-to-top behavior
+  * Fixed navigation issue where users were incorrectly taken to bottom of pages when clicking menu items
+  * All navigation links now properly take users to the top of the destination page
 - January 26, 2025. **CRITICAL PRICING CORRECTION**: Fixed "Spezial Fotoshooting" voucher pricing error from €95.00 to €195.00:
   * Updated "Spezial Familienshooting" voucher product in database to correct price of €195.00
   * Confirmed "Erster Geburtstag & Großeltern Spezial" voucher remains at €95.00 as intended
