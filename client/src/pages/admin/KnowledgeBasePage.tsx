@@ -122,7 +122,7 @@ const KnowledgeBasePage: React.FC = () => {
         {
           id: '2', 
           title: 'What are your photography packages?',
-          content: 'We offer several packages: Family Session (€195), Newborn Session (€295), Maternity Session (€195), and Business Headshots (€95). All packages include professional editing and digital gallery access.',
+          content: 'We offer several packages: Family Session (€299), Newborn Session (€399), Maternity Session (€349), and Business Headshots (€199). All packages include professional editing and digital gallery access.',
           category: 'Pricing & Packages',
           tags: ['pricing', 'packages', 'family', 'newborn'],
           isActive: true,

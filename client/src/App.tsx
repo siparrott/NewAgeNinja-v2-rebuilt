@@ -73,7 +73,6 @@ import GalleryPage from './pages/GalleryPage';
 import PublicGalleriesPage from './pages/PublicGalleriesPage';
 import ChatBot from './components/chat/ChatBot';
 import { GalleryShopTest } from './pages/GalleryShopTest';
-import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
@@ -83,8 +82,7 @@ function App() {
           <CartProvider>
             <LanguageProvider>
               <Router>
-                <ScrollToTop />
-                <Routes>
+              <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/fotoshootings" element={<FotoshootingsPage />} />
                 <Route path="/fotoshootings/business" element={<BusinessFotoshootingPage />} />

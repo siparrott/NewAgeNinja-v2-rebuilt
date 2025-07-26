@@ -111,13 +111,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- January 26, 2025. **HOMEPAGE VOUCHER SECTION REDIRECT FIX**: Replaced static voucher message with direct link to Gutschein page:
-  * **USER REQUEST FULFILLED**: Instead of showing "Gutscheine werden überarbeitet" message, homepage now redirects to existing Gutschein page
-  * **IMPROVED USER EXPERIENCE**: Visitors can now directly access actual voucher offers from homepage
-  * **CONSISTENT NAVIGATION**: Homepage voucher section now matches navigation structure with proper /gutschein link
-  * **ENHANCED MESSAGING**: Added compelling description "Verschenken Sie unvergessliche Momente" for better conversion
-  * **BUTTON UPDATED**: Changed from "Jetzt Kontakt aufnehmen" to "Gutscheine ansehen" with proper routing
-  * **ELIMINATED PRICING CONFUSION**: Removed all references to incorrect €199, €249, €299 pricing throughout application
 - January 26, 2025. **COMPLETE AUTOBLOG IMAGE EMBEDDING AND DATE FIX**: Successfully resolved all image distribution and date handling issues:
   * **FIXED COMPLEX REGEX ISSUES**: Replaced problematic regex pattern matching with robust multi-strategy image insertion logic
   * **IMPROVED IMAGE DISTRIBUTION**: Enhanced embedUploadedImages function with 3-tier fallback system: H2 sections → paragraphs → start position
@@ -129,26 +122,6 @@ Preferred communication style: Simple, everyday language.
   * **ROBUST IMAGE POSITIONING**: Images now distribute evenly across H2 sections (Key Takeaways, Full Article, Review Snippets) with proper figure tags and styling
   * **SOPHISTICATED CONTENT GENERATION**: System produces authentic German blog posts with Vienna-specific context, proper 8-section format, and comprehensive SEO optimization
   * **DATABASE VERIFIED**: Blog posts contain proper `<figure>` tags with working image URLs proving image insertion is operational
-- January 26, 2025. **HOMEPAGE VOUCHER MISMATCH RESOLVED**: Fixed homepage displaying incorrect voucher offers and pricing:
-  * Replaced hardcoded voucher section with dynamic API data fetching from /api/vouchers/products
-  * Updated homepage to display correct vouchers: "Erster Geburtstag & Großeltern Spezial" (€95), "Babybauch bis Baby Paket" (€295), "Spezial Familienshooting" (€195)
-  * Fixed voucher pricing to match /vouchers page instead of incorrect €199, €249, €299 pricing
-  * Enhanced homepage voucher cards with proper API integration and loading states
-  * Connected voucher cards to proper Stripe checkout workflow via /vouchers/checkout/:id routes
-  * Added fallback images for vouchers based on content type (family, baby, pregnancy)
-  * Implemented responsive voucher grid with proper styling and navigation links
-- January 26, 2025. **NAVIGATION SCROLL BEHAVIOR FIX**: Fixed homepage menu navigation issue where clicking menu items took users to bottom of page instead of top:
-  * Created ScrollToTop component that automatically scrolls to top on route changes
-  * Integrated ScrollToTop component into App.tsx Router for global scroll-to-top behavior
-  * Fixed navigation issue where users were incorrectly taken to bottom of pages when clicking menu items
-  * All navigation links now properly take users to the top of the destination page
-- January 26, 2025. **CRITICAL PRICING CORRECTION**: Fixed "Spezial Fotoshooting" voucher pricing error from €95.00 to €195.00:
-  * Updated "Spezial Familienshooting" voucher product in database to correct price of €195.00
-  * Confirmed "Erster Geburtstag & Großeltern Spezial" voucher remains at €95.00 as intended
-  * Comprehensive Settings view added for coupon management with professional configuration options
-  * Fixed react-hook-form integration and TypeScript errors in voucher creation system
-  * Enhanced modal dialog opacity for better UI readability and user experience
-  * Settings functionality now connects to comprehensive coupon management interface
 - January 26, 2025. **COMPLETE CONTACT INFORMATION UPDATE**: Successfully updated all contact information across website:
   * Corrected phone number from +43 677 933 99210 to +43 677 633 99210 throughout all files
   * Added office and correspondence address: Julius Tandler Platz 5 / 13, 1090 Wien with German labeling "Büro- und Korrespondenzadresse"
