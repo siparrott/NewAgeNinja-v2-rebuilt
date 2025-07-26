@@ -349,11 +349,13 @@ const VoucherCheckoutPage: React.FC = () => {
                 />
               </div>
               <div className="p-6">
-                <div className="flex items-center space-x-2 mb-3">
-                  <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                    BABY
-                  </span>
-                </div>
+                {voucher.category && (
+                  <div className="flex items-center space-x-2 mb-3">
+                    <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                      {voucher.category.toUpperCase()}
+                    </span>
+                  </div>
+                )}
                 
                 <h1 className="text-2xl font-bold text-gray-900 mb-3">{voucher.name}</h1>
                 
@@ -362,10 +364,12 @@ const VoucherCheckoutPage: React.FC = () => {
                     <Calendar className="w-4 h-4" />
                     <span>Gültig bis {new Date(Date.now() + voucher.validityPeriod * 24 * 60 * 60 * 1000).toLocaleDateString('de-DE')}</span>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-4 h-4" />
-                    <span>{voucher.sessionDuration} Min.</span>
-                  </div>
+                  {voucher.sessionDuration && (
+                    <div className="flex items-center space-x-1">
+                      <Clock className="w-4 h-4" />
+                      <span>{voucher.sessionDuration} Min.</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mb-6">
@@ -388,10 +392,9 @@ const VoucherCheckoutPage: React.FC = () => {
                       <Check className="w-4 h-4 mr-2 text-green-600" />
                       Geschäftsbedingungen
                     </h3>
-                    <p className="text-sm text-gray-600">
-                      {voucher.validityPeriod} Monate ab Kauf/datum gültig. Beinhaltet: Cake-Smash-Setup und Familienporträts mit 
-                      Großeltern. 25 bearbeitete Fotos inklusive.
-                    </p>
+                    <div className="text-sm text-gray-600 whitespace-pre-line">
+                      {voucher.description}
+                    </div>
                   </div>
                 </div>
               </div>
