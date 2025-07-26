@@ -111,6 +111,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- January 26, 2025. **COMPLETE CONTACT INFORMATION UPDATE**: Successfully updated all contact information across website:
+  * Corrected phone number from +43 677 933 99210 to +43 677 633 99210 throughout all files
+  * Added office and correspondence address: Julius Tandler Platz 5 / 13, 1090 Wien with German labeling "Büro- und Korrespondenzadresse"
+  * Enhanced contact page with proper address hierarchy: office for correspondence, studio for sessions
+  * Updated footer with complete contact information section including both addresses
+  * Implemented internationalization for "Street parking available" - displays as "Straßenparkplätze verfügbar" when German language selected
+  * Added translation key 'contact.streetParking' to LanguageContext for proper multilingual support
+  * Updated project documentation with correct contact details
 - January 22, 2025. **COMPLETE ASSISTANT-FIRST SYSTEM FIX: Resolved content generation and image insertion issues:**
   * **PROBLEM 1**: Assistant was only generating outlines instead of complete 8-section blog posts 
   * **ROOT CAUSE**: Task instruction didn't match user's exact YAML format training

@@ -293,7 +293,10 @@ const translations = {
     'common.time': 'Time',
     'common.language': 'Language',
     'common.currency': 'Currency',
-    'common.timezone': 'Timezone'
+    'common.timezone': 'Timezone',
+    
+    // Location/Contact
+    'contact.streetParking': 'Street parking available'
   },
   de: {
     'nav.home': 'Startseite',
@@ -581,7 +584,10 @@ const translations = {
     'modal.delete_post_warning': 'Sind Sie sicher, dass Sie diesen Beitrag löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
     
     // Messages
-    'message.error.failed_to_update_post_status': 'Fehler beim Aktualisieren des Beitragsstatus. Bitte versuchen Sie es erneut.'
+    'message.error.failed_to_update_post_status': 'Fehler beim Aktualisieren des Beitragsstatus. Bitte versuchen Sie es erneut.',
+    
+    // Location/Contact
+    'contact.streetParking': 'Straßenparkplätze verfügbar'
   }
 };
 
