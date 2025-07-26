@@ -24,10 +24,14 @@ const HomePage: React.FC = () => {
 
   // Debug logging
   React.useEffect(() => {
+    console.log('=== VOUCHER DEBUG INFO ===');
     console.log('Voucher products data:', voucherProducts);
     console.log('Loading state:', vouchersLoading);
     console.log('Error state:', vouchersError);
-  }, [voucherProducts, vouchersLoading, vouchersError]);
+    console.log('Render key:', renderKey);
+    console.log('Current URL:', window.location.href);
+    console.log('=== END VOUCHER DEBUG ===');
+  }, [voucherProducts, vouchersLoading, vouchersError, renderKey]);
 
   const testimonials = [
     {
@@ -101,11 +105,24 @@ const HomePage: React.FC = () => {
     }
   ];
 
-  // Force refresh every 10 seconds if data is stale
+  // Force complete page reload if cached content is detected
   React.useEffect(() => {
+    // Check if we're seeing cached content by looking for the old pricing
+    const checkForCachedContent = () => {
+      const pageContent = document.body.innerHTML;
+      if (pageContent.includes('€199') || pageContent.includes('€249') || pageContent.includes('€299')) {
+        console.log('Cached content detected, forcing complete reload');
+        window.location.reload();
+      }
+    };
+    
+    // Check immediately and after a delay
+    setTimeout(checkForCachedContent, 1000);
+    setTimeout(checkForCachedContent, 3000);
+    
     const interval = setInterval(() => {
       setRenderKey(Date.now());
-    }, 10000);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
