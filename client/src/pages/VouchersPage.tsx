@@ -50,6 +50,8 @@ const VouchersPage: React.FC = () => {
     },
     staleTime: 0,
     gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
   
   // console.log removed
@@ -241,9 +243,14 @@ const VoucherProductCard: React.FC<{ voucher: VoucherProduct; onPurchase: (vouch
         <h3 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
           {voucher.name}
         </h3>
-        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+        <div className="text-gray-600 text-sm mb-4 whitespace-pre-line" style={{ 
+          display: '-webkit-box',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden'
+        }}>
           {voucher.description}
-        </p>
+        </div>
         
         {/* Validity */}
         <div className="flex items-center justify-between mb-4">
