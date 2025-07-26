@@ -5132,7 +5132,7 @@ What would you like help with today? Just describe the task and I'll guide you t
 
 **Professionelle Fotoshootings:**
 • Kleines Paket: 1 Foto + Datei + 40x30cm Leinwand: €95
-• Standard Paket: 5 Fotos + Dateien + 60x40cm Leinwand: €195  
+• Standard Paket: 5 Fotos + Dateien + 60x40cm Leinwand: €95  
 • Premium Paket: 10 Fotos + Dateien + 70x50cm Leinwand: €295
 • Digital Paket: 10 digitale Bilder: €250 - **BESTSELLER!**
 
@@ -5184,7 +5184,7 @@ WhatsApp: 0677 633 99210`;
 
 **Familienfotos Pakete:**
 • Kleines Paket: 1 Foto + Datei + 40x30cm Leinwand: €95
-• Mittleres Paket: 5 Fotos + Dateien + 60x40cm Leinwand: €195  
+• Mittleres Paket: 5 Fotos + Dateien + 60x40cm Leinwand: €95  
 • Großes Paket: 10 Fotos + Dateien + 70x50cm Leinwand: €295
 • 10er Paket (nur digitale Bilder): €250 - **BESTSELLER!**
 
@@ -5223,7 +5223,7 @@ Möchten Sie einen Termin vereinbaren?`;
 
 **Professionelle Fotoshootings:**
 • Kleines Paket: 1 Foto + Datei + 40x30cm Leinwand: €95
-• Standard Paket: 5 Fotos + Dateien + 60x40cm Leinwand: €195  
+• Standard Paket: 5 Fotos + Dateien + 60x40cm Leinwand: €95  
 • Premium Paket: 10 Fotos + Dateien + 70x50cm Leinwand: €295
 • Digital Paket: 10 digitale Bilder: €250 - **BESTSELLER!**
 
