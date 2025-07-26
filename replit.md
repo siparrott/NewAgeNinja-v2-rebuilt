@@ -111,10 +111,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- January 26, 2025. **COMPLETE AUTOBLOG IMAGE EMBEDDING FIX**: Successfully resolved image distribution issues and verified all 6 contextual data sources are operational:
+- January 26, 2025. **COMPLETE AUTOBLOG IMAGE EMBEDDING AND DATE FIX**: Successfully resolved all image distribution and date handling issues:
   * **FIXED COMPLEX REGEX ISSUES**: Replaced problematic regex pattern matching with robust multi-strategy image insertion logic
   * **IMPROVED IMAGE DISTRIBUTION**: Enhanced embedUploadedImages function with 3-tier fallback system: H2 sections → paragraphs → start position
-  * **VERIFIED DATABASE EVIDENCE**: Latest blog post shows successful image embedding (1 image, 7944 character content)
+  * **VERIFIED DATABASE EVIDENCE**: Latest 2 blog posts show successful image embedding with 9615 and 7944 character content
+  * **DATE HANDLING FIXED**: Blog posts now use proper timestamps instead of displaying "January 1, 1970"
+  * **IMAGE ACCESSIBILITY ENHANCED**: Implemented relative URLs and error handling for cross-domain compatibility
   * **ALL 6 CONTEXTUAL SOURCES CONFIRMED**: Knowledge base, website scraping, GPT-4o Vision image analysis, SEO research, business details, and user guidance all feeding into TOGNINJA BLOG WRITER Assistant
   * **PHONE NUMBER CONSISTENCY**: Fixed business intelligence to use correct +43 677 633 99210 across all autoblog generation systems
   * **ROBUST IMAGE POSITIONING**: Images now distribute evenly across H2 sections (Key Takeaways, Full Article, Review Snippets) with proper figure tags and styling

@@ -733,7 +733,8 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
           const nextElementEnd = afterH2.search(/<\/p>|<\/ul>|<\/li>/);
           
           if (nextElementEnd !== -1) {
-            const insertionPoint = h2End + nextElementEnd + afterH2.match(/<\/p>|<\/ul>|<\/li>/)?.[0]?.length || 4;
+            const matchLength = afterH2.match(/<\/p>|<\/ul>|<\/li>/)?.[0]?.length || 4;
+            const insertionPoint = h2End + nextElementEnd + matchLength;
             const imageHtml = this.createImageHTML(images[i], i + 1);
             
             contentWithImages = contentWithImages.substring(0, insertionPoint) + 
@@ -788,10 +789,16 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
   private createImageHTML(image: ProcessedImage, imageNumber: number): string {
     const altText = `Professionelle Familienfotografie Session bei New Age Fotografie in Wien - Bild ${imageNumber}`;
     
+    // Use relative path for images to ensure they work regardless of domain
+    const imageUrl = image.publicUrl.startsWith('http') ? 
+      image.publicUrl : 
+      `/blog-images/${image.filename}`;
+    
     return `<figure style="margin: 30px 0; text-align: center;">
-  <img src="${image.publicUrl}" alt="${altText}" 
+  <img src="${imageUrl}" alt="${altText}" 
        style="width: 100%; max-width: 600px; height: auto; border-radius: 12px; 
-              box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: block; margin: 0 auto;">
+              box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: block; margin: 0 auto;"
+       onerror="this.style.display='none';">
 </figure>`;
   }
   
@@ -826,6 +833,9 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
       }
       
       // STEP 3: Create blog post with YOUR Assistant's content
+      // Use current time for blog post date (upload timestamp will be handled by database)
+      const currentTimestamp = new Date();
+      
       const blogPost = {
         title: parsedData.title,
         slug: input.customSlug || parsedData.slug,
@@ -836,12 +846,13 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
         seoTitle: parsedData.seo_title,
         metaDescription: parsedData.meta_description,
         published: input.publishOption === 'publish',
-        publishedAt: input.publishOption === 'publish' ? new Date() : null,
+        publishedAt: input.publishOption === 'publish' ? currentTimestamp : null,
         scheduledFor: input.publishOption === 'schedule' && input.scheduledFor ? new Date(input.scheduledFor) : null,
         status: input.publishOption === 'publish' ? 'PUBLISHED' : 
                 input.publishOption === 'schedule' ? 'SCHEDULED' : 'DRAFT',
         tags: parsedData.tags,
-        authorId: authorId
+        authorId: authorId,
+        createdAt: currentTimestamp  // Set creation date to current time
       };
       
       console.log('🎯 ASSISTANT-FIRST BLOG POST CREATED');
