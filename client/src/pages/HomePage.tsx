@@ -1,13 +1,20 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { ChevronRight } from 'lucide-react';
 import Typewriter from 'typewriter-effect';
 import CountUp from 'react-countup';
 import photoGridImage from '../assets/photo-grid.jpg';
+import { type VoucherProduct } from '@shared/schema';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+
+  // Fetch voucher products from API
+  const { data: voucherProducts, isLoading: vouchersLoading } = useQuery<VoucherProduct[]>({
+    queryKey: ['/api/vouchers/products'],
+  });
 
   const testimonials = [
     {
@@ -372,79 +379,50 @@ const HomePage: React.FC = () => {
       {/* Voucher Grid Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Pregnancy Photoshoot */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="aspect-[4/3] overflow-hidden">
-                <img 
-                  src="https://i.imgur.com/Vd6xtPg.jpg"
-                  alt="Pregnancy photoshoot"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-purple-900 mb-2">Schwangerschafts-Shooting</h3>
-                <p className="text-gray-600 mb-4">Professionelle Fotografie für werdende Mütter</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-purple-600">€199</span>
-                  <button 
-                    onClick={() => navigate('/gutschein/maternity')}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full transition-colors"
-                  >
-                    Jetzt Buchen
-                  </button>
-                </div>
-              </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-purple-900">
+            Unsere Fotoshooting-Gutscheine
+          </h2>
+          {vouchersLoading ? (
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
             </div>
-
-            {/* Family Photoshoot */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="aspect-[4/3] overflow-hidden">
-                <img 
-                  src="https://i.imgur.com/4m5hoL9.jpg"
-                  alt="Family photoshoot"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-purple-900 mb-2">Familien-Shooting</h3>
-                <p className="text-gray-600 mb-4">Unvergessliche Momente für die ganze Familie</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-purple-600">€249</span>
-                  <button 
-                    onClick={() => navigate('/gutschein/family')}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full transition-colors"
-                  >
-                    Jetzt Buchen
-                  </button>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {voucherProducts?.filter(voucher => voucher.isActive).map((voucher) => (
+                <div key={voucher.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img 
+                      src={voucher.imageUrl || 
+                        (voucher.name.toLowerCase().includes('baby') || voucher.name.toLowerCase().includes('neugeboren') 
+                          ? "https://i.imgur.com/QWOgLqX.jpg"
+                          : voucher.name.toLowerCase().includes('famil')
+                          ? "https://i.imgur.com/4m5hoL9.jpg"
+                          : "https://i.imgur.com/Vd6xtPg.jpg"
+                        )
+                      }
+                      alt={voucher.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-purple-900 mb-2">{voucher.name}</h3>
+                    <p className="text-gray-600 mb-4 line-clamp-3">
+                      {voucher.description?.split('\n')[0] || 'Professionelle Fotografie für besondere Momente'}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-2xl font-bold text-purple-600">€{voucher.price}</span>
+                      <button 
+                        onClick={() => navigate(`/vouchers/checkout/${voucher.id}`)}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full transition-colors"
+                      >
+                        Jetzt Buchen
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-
-            {/* Newborn Photoshoot */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="aspect-[4/3] overflow-hidden">
-                <img 
-                  src="https://i.imgur.com/QWOgLqX.jpg"
-                  alt="Newborn photoshoot"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-purple-900 mb-2">Neugeborenen-Shooting</h3>
-                <p className="text-gray-600 mb-4">Erste Momente Ihres kleinen Wunders</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-purple-600">€299</span>
-                  <button 
-                    onClick={() => navigate('/gutschein/newborn')}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full transition-colors"
-                  >
-                    Jetzt Buchen
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 

@@ -122,6 +122,14 @@ Preferred communication style: Simple, everyday language.
   * **ROBUST IMAGE POSITIONING**: Images now distribute evenly across H2 sections (Key Takeaways, Full Article, Review Snippets) with proper figure tags and styling
   * **SOPHISTICATED CONTENT GENERATION**: System produces authentic German blog posts with Vienna-specific context, proper 8-section format, and comprehensive SEO optimization
   * **DATABASE VERIFIED**: Blog posts contain proper `<figure>` tags with working image URLs proving image insertion is operational
+- January 26, 2025. **HOMEPAGE VOUCHER MISMATCH RESOLVED**: Fixed homepage displaying incorrect voucher offers and pricing:
+  * Replaced hardcoded voucher section with dynamic API data fetching from /api/vouchers/products
+  * Updated homepage to display correct vouchers: "Erster Geburtstag & Großeltern Spezial" (€95), "Babybauch bis Baby Paket" (€295), "Spezial Familienshooting" (€195)
+  * Fixed voucher pricing to match /vouchers page instead of incorrect €199, €249, €299 pricing
+  * Enhanced homepage voucher cards with proper API integration and loading states
+  * Connected voucher cards to proper Stripe checkout workflow via /vouchers/checkout/:id routes
+  * Added fallback images for vouchers based on content type (family, baby, pregnancy)
+  * Implemented responsive voucher grid with proper styling and navigation links
 - January 26, 2025. **NAVIGATION SCROLL BEHAVIOR FIX**: Fixed homepage menu navigation issue where clicking menu items took users to bottom of page instead of top:
   * Created ScrollToTop component that automatically scrolls to top on route changes
   * Integrated ScrollToTop component into App.tsx Router for global scroll-to-top behavior
