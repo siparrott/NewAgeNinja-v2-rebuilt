@@ -184,7 +184,7 @@ export class AssistantFirstAutoBlogGenerator {
     comprehensiveContext += `BUSINESS INTELLIGENCE:\n`;
     comprehensiveContext += `- Studio: New Age Fotografie\n`;
     comprehensiveContext += `- Location: Schönbrunner Str. 25, 1050 Wien\n`;
-    comprehensiveContext += `- Phone: +43 677 933 99210\n`;
+    comprehensiveContext += `- Phone: +43 677 633 99210\n`;
     comprehensiveContext += `- Email: hallo@newagefotografie.com\n`;
     comprehensiveContext += `- Hours: Fr-So: 09:00 - 17:00\n`;
     comprehensiveContext += `- Services: Family, newborn, maternity, business portraits\n`;
@@ -696,7 +696,7 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
   }
 
   /**
-   * STEP 2.5: EMBED UPLOADED IMAGES INTO CONTENT - SAFE HTML POSITIONING
+   * STEP 2.5: EMBED UPLOADED IMAGES INTO CONTENT - IMPROVED ROBUST POSITIONING
    */
   private embedUploadedImages(content: string, images: ProcessedImage[]): string {
     console.log('🖼️ EMBEDDING UPLOADED IMAGES - COUNT:', images.length);
@@ -708,62 +708,77 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
     
     let contentWithImages = content;
     
-    // Find safe insertion points - after complete H2 sections (not in the middle of elements)
-    const safeInsertionPoints: { position: number, sectionName: string }[] = [];
+    // STRATEGY 1: Find H2 sections for primary insertion points
+    const h2Matches = Array.from(contentWithImages.matchAll(/<h2[^>]*class="blog-h2"[^>]*>([^<]*)<\/h2>/g));
+    console.log(`🎯 FOUND ${h2Matches.length} H2 SECTIONS FOR IMAGE DISTRIBUTION`);
     
-    // Look for complete H2 sections followed by their content
-    const h2SectionRegex = /<h2[^>]*>([^<]*)<\/h2>\s*([^<]*(?:<[^h][^>]*>[^<]*<\/[^>]+>[^<]*)*)/gi;
-    let match;
-    
-    while ((match = h2SectionRegex.exec(contentWithImages)) !== null) {
-      const sectionName = match[1].replace(/[📋🎯📝💬]/g, '').trim();
-      const endPosition = match.index + match[0].length;
+    if (h2Matches.length >= 2) {
+      // Distribute images across H2 sections (skip first H2, distribute in others)
+      const sectionsToUse = h2Matches.slice(1); // Skip "Blog Outline", use others
+      const sectionsPerImage = Math.max(1, Math.ceil(sectionsToUse.length / images.length));
       
-      // Find a safe spot after this section (after a paragraph or list)
-      const afterSection = contentWithImages.substring(endPosition);
-      const nextSafeSpot = afterSection.search(/(<\/p>|<\/ul>|<\/li>)\s*(?=<(?:h[123]|p|ul))/);
+      // Work backwards to maintain correct positions
+      for (let i = images.length - 1; i >= 0; i--) {
+        const sectionIndex = Math.min(i * sectionsPerImage, sectionsToUse.length - 1);
+        const targetSection = sectionsToUse[sectionIndex];
+        
+        if (targetSection && targetSection.index !== undefined) {
+          const sectionName = targetSection[1].replace(/[📋🎯📝💬]/g, '').trim();
+          
+          // Find end of the H2 element
+          const h2End = targetSection.index + targetSection[0].length;
+          
+          // Find next paragraph or list after this H2 to insert after
+          const afterH2 = contentWithImages.substring(h2End);
+          const nextElementEnd = afterH2.search(/<\/p>|<\/ul>|<\/li>/);
+          
+          if (nextElementEnd !== -1) {
+            const insertionPoint = h2End + nextElementEnd + afterH2.match(/<\/p>|<\/ul>|<\/li>/)?.[0]?.length || 4;
+            const imageHtml = this.createImageHTML(images[i], i + 1);
+            
+            contentWithImages = contentWithImages.substring(0, insertionPoint) + 
+                               '\n\n' + imageHtml + '\n\n' + 
+                               contentWithImages.substring(insertionPoint);
+            
+            console.log(`✅ EMBEDDED IMAGE ${i + 1} AFTER ${sectionName} SECTION`);
+          }
+        }
+      }
+    } else {
+      // STRATEGY 2: Fallback - distribute across paragraphs
+      console.log('📝 FALLBACK: DISTRIBUTING IMAGES ACROSS PARAGRAPHS');
+      const paragraphMatches = Array.from(contentWithImages.matchAll(/<\/p>/g));
       
-      if (nextSafeSpot !== -1) {
-        const matchResult = afterSection.match(/(<\/p>|<\/ul>|<\/li>)/);
-        const matchLength = matchResult?.[0]?.length || 0;
-        safeInsertionPoints.push({
-          position: endPosition + nextSafeSpot + matchLength,
-          sectionName: sectionName
-        });
+      if (paragraphMatches.length > 0) {
+        const paragraphsPerImage = Math.max(1, Math.ceil(paragraphMatches.length / images.length));
+        
+        // Work backwards to maintain positions
+        for (let i = images.length - 1; i >= 0; i--) {
+          const paragraphIndex = Math.min(i * paragraphsPerImage, paragraphMatches.length - 1);
+          const targetParagraph = paragraphMatches[paragraphIndex];
+          
+          if (targetParagraph && targetParagraph.index !== undefined) {
+            const insertionPoint = targetParagraph.index + 4; // After </p>
+            const imageHtml = this.createImageHTML(images[i], i + 1);
+            
+            contentWithImages = contentWithImages.substring(0, insertionPoint) + 
+                               '\n\n' + imageHtml + '\n\n' + 
+                               contentWithImages.substring(insertionPoint);
+            
+            console.log(`✅ EMBEDDED IMAGE ${i + 1} AFTER PARAGRAPH ${paragraphIndex + 1}`);
+          }
+        }
+      } else {
+        // STRATEGY 3: Final fallback - add at the beginning
+        console.log('⚠️ NO SAFE SPOTS FOUND - ADDING IMAGES AT START');
+        const imagesHtml = images.map((image, index) => 
+          this.createImageHTML(image, index + 1)
+        ).join('\n\n');
+        contentWithImages = imagesHtml + '\n\n' + contentWithImages;
       }
     }
     
-    console.log(`🎯 FOUND ${safeInsertionPoints.length} SAFE INSERTION POINTS`);
-    
-    if (safeInsertionPoints.length === 0) {
-      console.log('⚠️ NO SAFE SPOTS FOUND - ADDING IMAGES AT START');
-      const imagesHtml = images.map((image, index) => 
-        this.createImageHTML(image, index + 1)
-      ).join('\n\n');
-      return imagesHtml + '\n\n' + contentWithImages;
-    }
-    
-    // Distribute images evenly across safe spots
-    const spotsPerImage = Math.max(1, Math.floor(safeInsertionPoints.length / images.length));
-    
-    // Work backwards to maintain correct positions after insertions
-    for (let i = images.length - 1; i >= 0; i--) {
-      const targetSpotIndex = Math.min(
-        i * spotsPerImage, 
-        safeInsertionPoints.length - 1
-      );
-      
-      const insertionPoint = safeInsertionPoints[targetSpotIndex];
-      const imageHtml = this.createImageHTML(images[i], i + 1);
-      
-      contentWithImages = contentWithImages.substring(0, insertionPoint.position) + 
-                         '\n\n' + imageHtml + '\n\n' + 
-                         contentWithImages.substring(insertionPoint.position);
-      
-      console.log(`✅ EMBEDDED IMAGE ${i + 1} AFTER ${insertionPoint.sectionName} SECTION`);
-    }
-    
-    console.log('✅ ALL IMAGES EMBEDDED SAFELY');
+    console.log('✅ ALL IMAGES EMBEDDED SUCCESSFULLY');
     return contentWithImages;
   }
   
