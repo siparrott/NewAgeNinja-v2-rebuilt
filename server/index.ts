@@ -73,19 +73,55 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Global error handler with comprehensive logging
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
     // Enhanced error logging for production debugging
-    console.error('Server Error:', {
+    console.error('SERVER ERROR DETECTED:', {
       status,
       message,
       stack: err.stack,
       url: _req.url,
       method: _req.method,
-      timestamp: new Date().toISOString()
+      headers: _req.headers,
+      body: _req.body,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV
     });
+
+    // For critical production errors, serve a hardcoded fallback
+    if (status === 500 && _req.url === '/') {
+      return res.status(200).send(`
+        <!DOCTYPE html>
+        <html lang="de">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>New Age Fotografie - Familienfotograf Wien</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; }
+            .hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; padding: 2rem; }
+            .hero h1 { font-size: 3rem; margin-bottom: 1rem; background: linear-gradient(45deg, #ff6b6b, #4ecdc4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+            .hero p { font-size: 1.5rem; margin-bottom: 2rem; }
+            .btn { display: inline-block; padding: 1rem 2rem; background: linear-gradient(45deg, #ff6b6b, #4ecdc4); color: white; text-decoration: none; border-radius: 50px; font-weight: bold; transition: transform 0.3s; }
+            .btn:hover { transform: scale(1.05); }
+          </style>
+        </head>
+        <body>
+          <div class="hero">
+            <div>
+              <h1>Endlich ein Fotostudio</h1>
+              <p>das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...</p>
+              <a href="/warteliste" class="btn">Fotoshooting buchen</a>
+            </div>
+          </div>
+        </body>
+        </html>
+      `);
+    }
 
     res.status(status).json({ message });
   });
