@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AdminLayout from "../../components/admin/AdminLayout";
+import SettingsView from "../../components/admin/voucher/SettingsView";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -370,7 +371,7 @@ export default function AdminVoucherSalesPageV3() {
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setActiveView("settings")}>
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>
@@ -434,6 +435,19 @@ export default function AdminVoucherSalesPageV3() {
                   Sales ({stats.totalSales})
                 </div>
               </button>
+              <button
+                onClick={() => setActiveView("settings")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeView === "settings"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </div>
+              </button>
             </nav>
           </div>
 
@@ -469,6 +483,9 @@ export default function AdminVoucherSalesPageV3() {
                 sales={voucherSales || []} 
                 isLoading={isLoadingSales}
               />
+            )}
+            {activeView === "settings" && (
+              <SettingsView />
             )}
           </div>
         </div>
