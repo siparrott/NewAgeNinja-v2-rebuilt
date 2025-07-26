@@ -315,17 +315,12 @@ const VoucherCheckoutPage: React.FC = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <img 
-                src="/logo.png" 
+                src="/company-logo.svg" 
                 alt="New Age Fotografie Logo" 
                 className="h-8 w-auto mr-3"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  // Fallback to NAF badge if logo fails to load
-                  target.style.display = 'none';
-                  const fallback = document.createElement('div');
-                  fallback.className = 'h-8 w-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded flex items-center justify-center mr-3';
-                  fallback.innerHTML = '<span class="text-white font-bold text-xs">NAF</span>';
-                  target.parentElement?.insertBefore(fallback, target);
+                  target.src = "/logo.png"; // Fallback to PNG version
                 }}
               />
               <span className="text-xl font-bold text-gray-900">NEW AGE FOTOGRAFIE</span>
@@ -393,12 +388,12 @@ const VoucherCheckoutPage: React.FC = () => {
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
                   <div className="flex items-center mb-2">
                     <img 
-                      src="/logo.png" 
+                      src="/company-logo.svg" 
                       alt="New Age Fotografie Logo" 
                       className="h-8 w-auto mr-3"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
+                        target.src = "/logo.png"; // Fallback to PNG version
                       }}
                     />
                     <h3 className="font-semibold text-purple-900">Anbieter: New Age Fotografie</h3>

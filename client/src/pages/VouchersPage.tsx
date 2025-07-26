@@ -114,12 +114,12 @@ const VouchersPage: React.FC = () => {
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
               <img 
-                src="/logo.png" 
+                src="/company-logo.svg" 
                 alt="New Age Fotografie Logo" 
                 className="h-16 w-auto mr-4"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
+                  target.src = "/logo.png"; // Fallback to PNG version
                 }}
               />
               <div className="text-left">
