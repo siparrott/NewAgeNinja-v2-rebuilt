@@ -122,6 +122,13 @@ Preferred communication style: Simple, everyday language.
   * **ROBUST IMAGE POSITIONING**: Images now distribute evenly across H2 sections (Key Takeaways, Full Article, Review Snippets) with proper figure tags and styling
   * **SOPHISTICATED CONTENT GENERATION**: System produces authentic German blog posts with Vienna-specific context, proper 8-section format, and comprehensive SEO optimization
   * **DATABASE VERIFIED**: Blog posts contain proper `<figure>` tags with working image URLs proving image insertion is operational
+- January 26, 2025. **CRITICAL PRICING CORRECTION**: Fixed "Spezial Fotoshooting" voucher pricing error from €95.00 to €195.00:
+  * Updated both affected voucher products in database: "Erster Geburtstag & Großeltern Spezial" and "Spezial Familienshooting"
+  * Corrected pricing now displays €195.00 for all special photography packages as intended
+  * Comprehensive Settings view added for coupon management with professional configuration options
+  * Fixed react-hook-form integration and TypeScript errors in voucher creation system
+  * Enhanced modal dialog opacity for better UI readability and user experience
+  * Settings functionality now connects to comprehensive coupon management interface
 - January 26, 2025. **COMPLETE CONTACT INFORMATION UPDATE**: Successfully updated all contact information across website:
   * Corrected phone number from +43 677 933 99210 to +43 677 633 99210 throughout all files
   * Added office and correspondence address: Julius Tandler Platz 5 / 13, 1090 Wien with German labeling "Büro- und Korrespondenzadresse"
