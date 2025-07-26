@@ -314,10 +314,21 @@ const VoucherCheckoutPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <div className="h-8 w-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded flex items-center justify-center">
-                <span className="text-white font-bold text-xs">NAF</span>
-              </div>
-              <span className="ml-3 text-xl font-bold text-gray-900">NEW AGE FOTOGRAFIE</span>
+              <img 
+                src="/logo.png" 
+                alt="New Age Fotografie Logo" 
+                className="h-8 w-auto mr-3"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  // Fallback to NAF badge if logo fails to load
+                  target.style.display = 'none';
+                  const fallback = document.createElement('div');
+                  fallback.className = 'h-8 w-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded flex items-center justify-center mr-3';
+                  fallback.innerHTML = '<span class="text-white font-bold text-xs">NAF</span>';
+                  target.parentElement?.insertBefore(fallback, target);
+                }}
+              />
+              <span className="text-xl font-bold text-gray-900">NEW AGE FOTOGRAFIE</span>
             </div>
             <Button
               variant="ghost"
@@ -380,9 +391,23 @@ const VoucherCheckoutPage: React.FC = () => {
                 </div>
 
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
-                  <h3 className="font-semibold text-purple-900 mb-2">Anbieter: New Age Fotografie</h3>
+                  <div className="flex items-center mb-2">
+                    <img 
+                      src="/logo.png" 
+                      alt="New Age Fotografie Logo" 
+                      className="h-8 w-auto mr-3"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
+                    <h3 className="font-semibold text-purple-900">Anbieter: New Age Fotografie</h3>
+                  </div>
                   <p className="text-sm text-purple-800 mb-2">
                     <strong>Verfügbar:</strong> Noch 25 Gutscheine
+                  </p>
+                  <p className="text-xs text-purple-700">
+                    Professional Fotografie Studio • Wien, Austria
                   </p>
                 </div>
 

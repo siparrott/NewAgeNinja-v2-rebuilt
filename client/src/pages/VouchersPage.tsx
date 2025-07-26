@@ -79,7 +79,7 @@ const VouchersPage: React.FC = () => {
   // Filter vouchers based on search term and category
   const activeVouchers = voucherProducts?.filter(voucher => voucher.isActive) || [];
   
-  const filteredByCategory = selectedCategory && selectedCategory !== 'Alle'
+  const filteredByCategory = selectedCategory && selectedCategory !== 'Alle' as any
     ? activeVouchers.filter(voucher => {
         const name = voucher.name.toLowerCase();
         switch(selectedCategory.toLowerCase()) {
@@ -102,16 +102,37 @@ const VouchersPage: React.FC = () => {
   const displayedVouchers = searchTerm 
     ? filteredByCategory.filter(voucher => 
         voucher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        voucher.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (voucher.description || '').toLowerCase().includes(searchTerm.toLowerCase())
       )
     : filteredByCategory;
 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800">
-          {selectedCategory ? `${selectedCategory} Fotoshooting Gutscheine Wien` : 'Fotoshooting Gutscheine Wien - Familien & Baby'}
-        </h1>
+        {/* Company Logo and Header */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-4">
+              <img 
+                src="/logo.png" 
+                alt="New Age Fotografie Logo" 
+                className="h-16 w-auto mr-4"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+              <div className="text-left">
+                <h1 className="text-3xl font-bold text-gray-800 leading-tight">
+                  NEW AGE FOTOGRAFIE
+                </h1>
+                <p className="text-lg text-purple-600 font-medium">
+                  {selectedCategory ? `${selectedCategory} Fotoshooting Gutscheine Wien` : 'Fotoshooting Gutscheine Wien'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
         
         <div className="lg:grid lg:grid-cols-4 lg:gap-8">
           {/* Sidebar with filters */}
@@ -249,13 +270,13 @@ const VoucherProductCard: React.FC<{ voucher: VoucherProduct; onPurchase: (vouch
           WebkitBoxOrient: 'vertical',
           overflow: 'hidden'
         }}>
-          {voucher.description}
+          {voucher.description || 'Beschreibung folgt in Kürze'}
         </div>
         
         {/* Validity */}
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm text-gray-500">
-            Gültig bis {Math.floor(voucher.validityPeriod / 30)} Monate
+            Gültig bis {Math.floor((voucher.validityPeriod || 365) / 30)} Monate
           </span>
         </div>
         
