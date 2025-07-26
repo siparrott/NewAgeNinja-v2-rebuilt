@@ -110,7 +110,7 @@ const HomePage: React.FC = () => {
               </span>
             </div>
             <button 
-              onClick={() => navigate('/fotoshootings')}
+              onClick={() => navigate('/warteliste')}
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
 {t('home.hero.cta')}

@@ -89,8 +89,8 @@ const translations = {
     // Home Page
     'home.title': 'Family Photographer Vienna - New Age Photography',
     'home.subtitle': 'Professional family photography in Vienna. Book family photos, newborn portraits, maternity sessions in our Vienna studio. Family photographer Vienna, Austria.',
-    'home.hero.title': 'Family & Newborn Photographer in Vienna You Can Trust',
-    'home.hero.description': 'Professional photography sessions in our Vienna studio for families, newborns and business portraits.',
+    'home.hero.title': 'Finally a Photo Studio',
+    'home.hero.description': 'that delivers spontaneous, natural and individual portraits of your family...',
     'home.hero.cta': 'Book Session',
     'home.about.title': 'About Us',
     'home.about.description': 'We specialize in capturing precious family moments with warmth and professionalism.',
@@ -359,9 +359,9 @@ const translations = {
     // Home Page
     'home.title': 'Familienfotograf Wien - New Age Fotografie',
     'home.subtitle': 'Professionelle Familienfotografie in Wien. Buchen Sie Familienfotos, Neugeborenenporträts, Schwangerschaftsfotos in unserem Wiener Studio. Familienfotograf Wien, Österreich.',
-    'home.hero.title': 'Familien- & Neugeborenenfotograf in Wien, dem Sie vertrauen können',
-    'home.hero.description': 'Professionelle Fotoshootings in unserem Wiener Studio für Familien, Neugeborene und Business-Porträts.',
-    'home.hero.cta': 'Session buchen',
+    'home.hero.title': 'Endlich ein Fotostudio',
+    'home.hero.description': 'das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...',
+    'home.hero.cta': 'Fotoshooting buchen',
     'home.about.title': 'Über uns',
     'home.about.description': 'Wir sind spezialisiert darauf, kostbare Familienmomente mit Wärme und Professionalität festzuhalten.',
     'home.services.title': 'Unsere Fotografie-Services',
@@ -530,9 +530,9 @@ const translations = {
     'newborn.feature.propsOutfits': 'Requisiten & Outfits inklusive',
     'newborn.feature.allProps': 'Alle Requisiten & Outfits',
 
-    // Blog Page (German)
-    'blog.title': 'Blog - Fotografie Tipps & Inspiration | New Age Fotografie Wien',
-    'blog.subtitle': 'Fotografie-Blog mit Tipps für Familienfotos, Neugeborenenbilder und Schwangerschaftsfotos. Inspiration und Beratung vom Wiener Familienfotograf.',
+    // Blog Page (German) 
+    'blog.titleDe': 'Blog - Fotografie Tipps & Inspiration | New Age Fotografie Wien',
+    'blog.subtitleDe': 'Fotografie-Blog mit Tipps für Familienfotos, Neugeborenenbilder und Schwangerschaftsfotos. Inspiration und Beratung vom Wiener Familienfotograf.',
     'blog.heroTitle': 'Fotografie Blog - Tipps & Inspiration',
     'blog.heroSubtitle': 'Entdecken Sie Fotografie-Tipps, Behind-the-Scenes und Inspiration für perfekte Familienfotos',
     'blog.searchPlaceholder': 'Blog-Beiträge durchsuchen...',
