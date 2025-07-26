@@ -18,7 +18,7 @@ const KontaktPage: React.FC = () => {
 
   useEffect(() => {
     // SEO Meta Tags
-    document.title = 'Kontakt - Familienfotograf Wien | New Age Fotografie';
+    document.title = t('contact.title');
     
     // Update meta description
     let metaDescription = document.querySelector('meta[name="description"]');
@@ -27,7 +27,7 @@ const KontaktPage: React.FC = () => {
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-    metaDescription.setAttribute('content', 'Kontaktieren Sie unseren Familienfotograf in Wien. Studio: Eingang Ecke Schönbrunnerstraße, Wehrgasse 11A/2+5, 1050 Wien. Tel: +43 677 933 99210. Öffnungszeiten Fr-So 09:00-17:00.');
+    metaDescription.setAttribute('content', t('contact.subtitle'));
 
     // Open Graph tags
     let ogTitle = document.querySelector('meta[property="og:title"]');
@@ -36,7 +36,7 @@ const KontaktPage: React.FC = () => {
       ogTitle.setAttribute('property', 'og:title');
       document.head.appendChild(ogTitle);
     }
-    ogTitle.setAttribute('content', 'Kontakt - Familienfotograf Wien | New Age Fotografie');
+    ogTitle.setAttribute('content', t('contact.title'));
 
     let ogDescription = document.querySelector('meta[property="og:description"]');
     if (!ogDescription) {
@@ -44,12 +44,12 @@ const KontaktPage: React.FC = () => {
       ogDescription.setAttribute('property', 'og:description');
       document.head.appendChild(ogDescription);
     }
-    ogDescription.setAttribute('content', 'Kontaktieren Sie unseren Familienfotograf in Wien. Studio: Eingang Ecke Schönbrunnerstraße, Wehrgasse 11A/2+5, 1050 Wien. Tel: +43 677 933 99210.');
+    ogDescription.setAttribute('content', t('contact.subtitle'));
 
     return () => {
       document.title = 'New Age Fotografie - Familienfotograf Wien';
     };
-  }, []);
+  }, [t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 type Language = 'en' | 'de';
 
@@ -10,8 +10,9 @@ interface LanguageContextType {
 
 const translations = {
   en: {
+    // Navigation
     'nav.home': 'Home',
-    'nav.photoshoots': 'Photoshoots',
+    'nav.photoshoots': 'Photography',
     'nav.vouchers': 'Vouchers',
     'nav.blog': 'Blog',
     'nav.waitlist': 'Waitlist',
@@ -22,12 +23,14 @@ const translations = {
     'nav.admin': 'Admin Dashboard',
     'nav.galleries': 'Client Galleries',
     'nav.myGallery': 'My Gallery',
-    'newsletter.signup': 'Sign up for newsletter',
+
+    // Newsletter
+    'newsletter.signup': 'Get a photography voucher worth €50 print credit.',
     'newsletter.thanks': 'Thank you for signing up! Please check your email for the voucher.',
-    'newsletter.button': 'Sign up',
+    'newsletter.button': 'Sign Up',
     'newsletter.placeholder': 'Your email address',
     'newsletter.error': 'An error occurred. Please try again later.',
-    
+
     // Admin interface
     'admin.dashboard': 'Admin Dashboard',
     'admin.clients': 'Clients',
@@ -37,7 +40,7 @@ const translations = {
     'admin.surveys': 'Surveys',
     'admin.reports': 'Reports',
     'admin.digitalFiles': 'Digital Files',
-    
+
     // Common actions
     'action.create': 'Create',
     'action.edit': 'Edit',
@@ -62,271 +65,135 @@ const translations = {
     'action.add': 'Add',
     'action.remove': 'Remove',
     'action.update': 'Update',
-    
+
     // Status
     'status.active': 'Active',
     'status.inactive': 'Inactive',
     'status.draft': 'Draft',
     'status.published': 'Published',
-    'status.scheduled': 'Scheduled',
-    'status.archived': 'Archived',
     'status.pending': 'Pending',
-    'status.completed': 'Completed',
+    'status.complete': 'Complete',
     'status.cancelled': 'Cancelled',
-    'status.paid': 'Paid',
-    'status.unpaid': 'Unpaid',
-    'status.overdue': 'Overdue',
-    'status.sent': 'Sent',
-    'status.shared': 'Shared',
-    
-    // Forms
-    'form.title': 'Title',
-    'form.name': 'Name',
-    'form.email': 'Email',
-    'form.phone': 'Phone',
-    'form.address': 'Address',
-    'form.description': 'Description',
-    'form.notes': 'Notes',
-    'form.date': 'Date',
-    'form.time': 'Time',
-    'form.price': 'Price',
-    'form.quantity': 'Quantity',
-    'form.total': 'Total',
-    'form.status': 'Status',
-    'form.category': 'Category',
-    'form.tags': 'Tags',
-    'form.required': 'Required',
-    'form.optional': 'Optional',
-    'form.password': 'Password',
-    'form.confirmPassword': 'Confirm Password',
-    
+    'status.scheduled': 'Scheduled',
+
     // Messages
-    'message.success': 'Success',
-    'message.error': 'Error',
-    'message.warning': 'Warning',
-    'message.info': 'Information',
+    'message.error': 'Error loading data',
+    'message.noData': 'No data available yet',
     'message.loading': 'Loading...',
-    'message.saving': 'Saving...',
-    'message.deleting': 'Deleting...',
-    'message.noData': 'No data available',
-    'message.noResults': 'No results found',
-    'message.confirmDelete': 'Are you sure you want to delete this item?',
-    'message.unsavedChanges': 'You have unsaved changes',
-    
-    // Pages
-    'page.home': 'Home',
-    'page.contact': 'Contact',
-    'page.about': 'About',
-    'page.services': 'Services',
-    'page.portfolio': 'Portfolio',
-    'page.blog': 'Blog',
-    'page.galleries': 'Galleries',
-    'page.invoices': 'Invoices',
-    'page.clients': 'Clients',
-    'page.dashboard': 'Dashboard',
-    'page.reports': 'Reports',
-    'page.settings': 'Settings',
-    'page.profile': 'Profile',
-    'page.login': 'Login',
-    'page.register': 'Register',
-      // Gallery
-    'gallery.create': 'Create Gallery',
-    'gallery.edit': 'Edit Gallery',
-    'gallery.images': 'Images',
-    'gallery.upload': 'Upload Images',
-    'gallery.password': 'Password Protection',
-    'gallery.downloadEnabled': 'Download Enabled',
-    'gallery.settings': 'Gallery Settings',  
-    'gallery.preview': 'Gallery Preview',
-    'gallery.share': 'Share Gallery',
-    'gallery.noImages': 'No images uploaded yet',    // Blog
-    'blog.create': 'Create Post',
-    'blog.edit': 'Edit Post',
-    'blog.manage_content': 'Manage your blog content',
-    'blog.search_posts': 'Search posts...',
-    'blog.no_excerpt': 'No excerpt',
-    'blog.no_image': 'No img',
-    'blog.post': 'Post',
-    'blog.publish': 'Publish',
-    'blog.unpublish': 'Unpublish',
-    'blog.no_posts_found': 'No posts found matching your criteria.',
-    'blog.create_first_post': 'Create your first post',
-    
-    // Pagination
-    'pagination.showing': 'Showing',
-    'pagination.of': 'of',
-    'pagination.results': 'results',
-    
-    // Modal
-    'modal.confirm_deletion': 'Confirm Deletion',
-    'modal.delete_post_warning': 'Are you sure you want to delete this post? This action cannot be undone.',
-    
-    // Table
-    'table.actions': 'Actions',
-      // Filters
-    'filter.all_statuses': 'All Statuses',
-      // Clients
-    'clients.add': 'Add Client',
-    'clients.search': 'Search clients...',  
-    'clients.import_logs': 'Import Logs',
-    'clients.more_filters': 'More Filters',
-    'clients.no_phone': 'No phone number',
-    'clients.since': 'Client since',
-    
-    // Messages
-    'message.error.failed_to_update_post_status': 'Failed to update post status. Please try again.',
-    
-    // Invoice
-    'invoice.create': 'Create Invoice',
-    'invoice.edit': 'Edit Invoice',
-    'invoice.items': 'Invoice Items',
-    'invoice.summary': 'Invoice Summary',
-    'invoice.total': 'Total',
-    'invoice.subtotal': 'Subtotal',
-    'invoice.tax': 'Tax',
-    'invoice.discount': 'Discount',
-    'invoice.dueDate': 'Due Date',
-    'invoice.paymentTerms': 'Payment Terms',
-    'invoice.clientDetails': 'Client Details',
-    'invoice.invoiceDetails': 'Invoice Details',
-    'invoice.lineItems': 'Line Items',
-    'invoice.management': 'Invoice Management',
-    'invoice.totalInvoiced': 'Total Invoiced',
-    'invoice.paidAmount': 'Paid Amount',
-    'invoice.overdueAmount': 'Overdue Amount',
-    
-    // Survey
-    'survey.create': 'Create Survey',
-    'survey.edit': 'Edit Survey',
-    'survey.questions': 'Questions',
-    'survey.responses': 'Responses',
-    'survey.analytics': 'Analytics',
-    'survey.publish': 'Publish',
-    'survey.unpublish': 'Unpublish',
-    'survey.builder': 'Survey Builder',
-    'survey.preview': 'Preview Survey',
-    'survey.loadError': 'Unable to Load Survey',
-    'survey.progress': 'Progress',
-    
-    // Calendar
-    'calendar.title': 'Calendar',
-    'calendar.create': 'Create Event',
-    'calendar.edit': 'Edit Event',
-    'calendar.delete': 'Delete Event',
-    'calendar.export': 'Export Calendar',
-    'calendar.import': 'Import Calendar',
-    'calendar.integration': 'Calendar Integration',
-    'calendar.sync': 'Sync Settings',
-    'calendar.autoSync': 'Auto Sync',
-    'calendar.visibility': 'Visibility',
-    'calendar.priority': 'Priority',
-    'calendar.repeat': 'Repeat',
-    'calendar.daily': 'Daily',
-    'calendar.weekly': 'Weekly',
-    'calendar.monthly': 'Monthly',
-    'calendar.yearly': 'Yearly',
-    'calendar.public': 'Public',
-    'calendar.private': 'Private',
-    'calendar.confidential': 'Confidential',
-    'calendar.low': 'Low',
-    'calendar.normal': 'Normal',
-    'calendar.high': 'High',
-    
-    // Email/Inbox
-    'email.inbox': 'Inbox',
-    'email.compose': 'Compose',
-    'email.send': 'Send',
-    'email.reply': 'Reply',
-    'email.forward': 'Forward',
-    'email.delete': 'Delete',
-    'email.archive': 'Archive',
-    'email.star': 'Star',
-    'email.unread': 'Unread',
-    'email.read': 'Read',
-    'email.subject': 'Subject',
-    'email.from': 'From',
-    'email.to': 'To',
-    'email.cc': 'CC',
-    'email.bcc': 'BCC',
-    'email.priority': 'Priority',
-    'email.attachment': 'Attachment',
-    'email.noEmails': 'No emails found',
-    'email.selectEmail': 'Select an email',
-    'email.accounts': 'Accounts',
-    'email.folders': 'Folders',
-    'email.settings': 'Email Settings',
-    'email.sync': 'Sync',
-    'email.assistant': 'AI Email Assistant',
-    'email.automation': 'Automation Hub',
-    
-    // File uploads
-    'file.upload': 'Upload File',
-    'file.choose': 'Choose File',
-    'file.dragDrop': 'or drag and drop them here',
-    'file.processing': 'Processing file...',
-    'file.error': 'File upload error',
-    'file.success': 'File uploaded successfully',
-    
-    // Common phrases
-    'common.all': 'All',
-    'common.none': 'None',
-    'common.yes': 'Yes',
-    'common.no': 'No',
-    'common.or': 'or',
-    'common.and': 'and',
-    'common.of': 'of',
-    'common.in': 'in',
-    'common.on': 'on',
-    'common.at': 'at',
-    'common.by': 'by',
-    'common.from': 'from',
-    'common.to': 'to',
-    'common.with': 'with',
-    'common.without': 'without',
-    'common.today': 'Today',
-    'common.yesterday': 'Yesterday',
-    'common.tomorrow': 'Tomorrow',
-    'common.week': 'Week',
-    'common.month': 'Month',
-    'common.year': 'Year',
-    'common.date': 'Date',
-    'common.time': 'Time',
-    'common.language': 'Language',
-    'common.currency': 'Currency',
-    'common.timezone': 'Timezone',
-    
-    // Location/Contact
-    'contact.streetParking': 'Street parking available',
-    
-    // Homepage
+    'message.success': 'Success!',
+    'message.saved': 'Saved successfully',
+    'message.deleted': 'Deleted successfully',
+    'message.updated': 'Updated successfully',
+    'message.created': 'Created successfully',
+
+    // Home Page
+    'home.title': 'Family Photographer Vienna - New Age Photography',
+    'home.subtitle': 'Professional family photography in Vienna. Book family photos, newborn portraits, maternity sessions in our Vienna studio. Family photographer Vienna, Austria.',
     'home.hero.title': 'Family & Newborn Photographer in Vienna You Can Trust',
-    'home.hero.subtitle': 'that delivers spontaneous, natural and individual portraits of your family...',
-    'home.hero.cta': 'Book Photoshoot Now',
-    'home.services.title': 'Business-Headshots & Prices',
-    'home.services.description1': 'Experience tailored photoshoots in our customer-oriented studio. We pay great attention to detail and create a comfortable environment.',
-    'home.services.description2': 'Our professional photographers find the most flattering angles and capture authentic expressions. Our timeless photos become treasured memories.',
-    'home.services.description3': 'As a family-friendly studio, we offer a relaxed and stress-free atmosphere for unforgettable shoots. Contact us today!',
+    'home.hero.description': 'Professional photography sessions in our Vienna studio for families, newborns and business portraits.',
+    'home.hero.cta': 'Book Session',
+    'home.about.title': 'About Us',
+    'home.about.description': 'We specialize in capturing precious family moments with warmth and professionalism.',
+    'home.services.title': 'Our Photography Services',
+    'home.services.description1': 'As a <strong>Family Photographer in Vienna</strong> and specialized <strong>Newborn Photographer in Vienna</strong>, we create timeless memories in a relaxed studio atmosphere. Even if you are camera-shy or have unpredictable children, we create family portraits that you will treasure forever.',
+    'home.services.description2': '<strong>Our professional photographers find the most flattering angles and capture authentic expressions.</strong> Our timeless photos become treasured memories.',
+    'home.services.description3': 'As a family-friendly studio, we offer a relaxed and stress-free atmosphere for unforgettable shoots. <strong>Contact us today!</strong>',
     'home.vouchers.title': 'Photography Vouchers',
     'home.vouchers.description': 'Give unforgettable moments with our photography vouchers. Perfect for family, friends or as a special gift.',
     'home.vouchers.cta': 'View Vouchers',
-    'home.familyPortraits.title': 'Family Portraits in Vienna & Zurich',
-    'home.familyPortraits.description': 'Our family sessions are about capturing the unique bond you share. From spontaneous moments to staged portraits, we create images you will treasure forever.',
-    'home.newbornShoots.title': 'Newborn Shoots',
-    'home.newbornShoots.description': 'Capture those precious first moments of your little miracle with our gentle newborn photography. Every session is conducted with the utmost care and patience.',
-    'home.businessPortraits.title': 'Business Portraits',
-    'home.businessPortraits.description': 'Professional headshots that make the right impression. Perfect for LinkedIn profiles, company websites, and business materials.',
-    'home.stats.title': 'Trust Our Experience',
-    'home.stats.description': 'Over the years we have photographed hundreds of satisfied families',
-    'home.stats.families': 'Happy Families',
-    'home.stats.sessions': 'Photoshoots',
-    'home.stats.experience': 'Years Experience',
-    'home.stats.recommendation': 'Recommendation Rate',
-    'home.testimonials.title': 'What Our Customers Say',
-    'home.testimonials.description': 'Read the experiences of satisfied families',
-    'home.faq.title': 'FAQs',
-    'home.faq.description': 'Frequently asked questions about family photography'
+
+    // Photoshoots Page
+    'photoshoots.title': 'Photography Sessions Vienna - Family & Newborn Photography',
+    'photoshoots.subtitle': 'Professional photography sessions in Vienna: family portraits, maternity photos, newborn pictures, business headshots',
+    'photoshoots.hero.title': 'Photography Sessions Vienna - Family & Newborn Photography',
+    'photoshoots.hero.subtitle': 'Professional photography sessions in Vienna: family portraits, maternity photos, newborn pictures & business headshots',
+    'photoshoots.familyPortraits.title': 'Family Portraits in Vienna & Zurich',
+    'photoshoots.familyPortraits.description': 'Our family sessions are all about capturing the unique bond you share. From candid moments to posed portraits, we create images you\'ll treasure forever.',
+    'photoshoots.maternity.title': 'Maternity Photography in Vienna & Zurich',
+    'photoshoots.maternity.description': 'Celebrate the beauty of motherhood with our maternity sessions. We create stunning images that highlight this special time in your life.',
+    'photoshoots.newborn.title': 'Newborn Photography in Vienna & Zurich',
+    'photoshoots.newborn.description': 'There\'s nothing more delicate than the first days of a newborn\'s life. Our newborn sessions focus on capturing these fleeting moments with tenderness and care.',
+    'photoshoots.business.title': 'Corporate Photography in Vienna & Zurich',
+    'photoshoots.business.description': 'Enhance your professional image with our corporate photography services. From portraits to team photos, we help you present your business in the best light.',
+    'photoshoots.events.title': 'Event Photography in Vienna & Zurich',
+    'photoshoots.events.description': 'There\'s nothing more exciting than unforgettable moments at events. Our event photography focuses on capturing these special moments with creativity and professionalism.',
+    'photoshoots.weddings.title': 'Wedding Photography in Vienna & Zurich',
+    'photoshoots.weddings.description': 'There\'s nothing more beautiful than the magic of a wedding day. Our wedding photography captures these magical moments with attention to detail and artistic flair.',
+    'photoshoots.features.flexible': 'Flexible Appointments',
+    'photoshoots.features.flexibleDesc': 'We offer flexible appointment scheduling, including weekends',
+    'photoshoots.features.family': 'For the Whole Family',
+    'photoshoots.features.familyDesc': 'Suitable for families of all sizes, including pets',
+    'photoshoots.features.professional': 'Professional Equipment',
+    'photoshoots.features.professionalDesc': 'State-of-the-art camera equipment for best results',
+
+    // Vouchers Page
+    'vouchers.title': 'Photography Session Vouchers Vienna - Gift Ideas',
+    'vouchers.subtitle': 'Photography session vouchers as perfect gift ideas. Family, maternity and newborn photography sessions in Vienna to give as gifts.',
+    'vouchers.hero.title': 'Photography Session Vouchers',
+    'vouchers.hero.description': 'Give unforgettable moments with our photography session vouchers. Perfect for family, friends or special occasions.',
+    'vouchers.search.placeholder': 'Search vouchers...',
+    'vouchers.filter.all': 'All Categories',
+    'vouchers.filter.family': 'Family',
+    'vouchers.filter.newborn': 'Newborn',
+    'vouchers.filter.maternity': 'Maternity',
+    'vouchers.filter.business': 'Business',
+    'vouchers.noResults': 'No vouchers found matching your search.',
+    'vouchers.loading': 'Loading vouchers...',
+    'vouchers.buyNow': 'Buy Now',
+    'vouchers.validFor': 'Valid for',
+    'vouchers.months': 'months',
+
+    // Contact Page
+    'contact.title': 'Contact - Family Photographer Vienna',
+    'contact.subtitle': 'Contact our family photographer in Vienna. Studio: Corner entrance Schönbrunnerstraße, Wehrgasse 11A/2+5, 1050 Vienna. Tel: +43 677 633 99210. Hours: Fri-Sun 09:00-17:00.',
+    'contact.hero.title': 'Contact',
+    'contact.hero.subtitle': 'Get in touch for your photography session',
+    'contact.form.title': 'Send us a message',
+    'contact.form.name': 'Full Name',
+    'contact.form.email': 'Email Address',
+    'contact.form.phone': 'Phone Number',
+    'contact.form.message': 'Your Message',
+    'contact.form.submit': 'Send Message',
+    'contact.form.sending': 'Sending...',
+    'contact.form.success': 'Thank you! Your message has been sent successfully.',
+    'contact.form.error': 'An error occurred. Please try again later.',
+    'contact.info.title': 'Contact Information',
+    'contact.info.email': 'Email',
+    'contact.info.phone': 'Phone',
+    'contact.info.hours': 'Opening Hours',
+    'contact.info.hoursValue': 'Fri-Sun: 09:00 - 17:00',
+    'contact.studio.title': 'Studio Address',
+    'contact.studio.address': 'Schönbrunner Str. 25, 1050 Vienna, Austria',
+    'contact.studio.note': '5 minutes from Kettenbrückengasse',
+    'contact.studio.parking': 'Street parking available',
+    'contact.office.title': 'Office and Correspondence Address',
+    'contact.office.address': 'Julius Tandler Platz 5 / 13, 1090 Vienna',
+
+    // Blog Page
+    'blog.title': 'Photography Blog Vienna - Tips & Inspiration',
+    'blog.subtitle': 'Photography blog with tips, inspiration and behind-the-scenes from our Vienna studio.',
+    'blog.hero.title': 'Photography Blog',
+    'blog.hero.subtitle': 'Tips, inspiration and stories from our photography sessions',
+    'blog.search.placeholder': 'Search articles...',
+    'blog.filter.all': 'All Articles',
+    'blog.filter.family': 'Family Photography',
+    'blog.filter.newborn': 'Newborn Photography',
+    'blog.filter.tips': 'Photography Tips',
+    'blog.noResults': 'No articles found matching your search.',
+    'blog.readMore': 'Read More',
+    'blog.publishedOn': 'Published on',
+    'blog.by': 'by',
+
+    // Gallery filter options  
+    'gallery.filter.family': 'Family',
+    'gallery.filter.newborn': 'Newborn',
+    'gallery.filter.maternity': 'Maternity',
+    'gallery.filter.business': 'Business',
+    'gallery.filter.event': 'Event',
+    'gallery.filter.wedding': 'Wedding',
   },
   de: {
+    // Navigation
     'nav.home': 'Startseite',
     'nav.photoshoots': 'Fotoshootings',
     'nav.vouchers': 'Gutscheine',
@@ -339,12 +206,14 @@ const translations = {
     'nav.admin': 'Admin-Dashboard',
     'nav.galleries': 'Kundengalerien',
     'nav.myGallery': 'Meine Galerie',
+
+    // Newsletter
     'newsletter.signup': 'Sichern Sie sich einen Fotoshooting-Gutschein im Wert von €50 Print Guthaben.',
     'newsletter.thanks': 'Vielen Dank für Ihre Anmeldung! Bitte prüfen Sie Ihre E-Mails für den Gutschein.',
     'newsletter.button': 'Anmelden',
     'newsletter.placeholder': 'Ihre E-Mail-Adresse',
     'newsletter.error': 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.',
-    
+
     // Admin interface
     'admin.dashboard': 'Admin-Dashboard',
     'admin.clients': 'Kunden',
@@ -354,7 +223,7 @@ const translations = {
     'admin.surveys': 'Umfragen',
     'admin.reports': 'Berichte',
     'admin.digitalFiles': 'Digitale Dateien',
-    
+
     // Common actions
     'action.create': 'Erstellen',
     'action.edit': 'Bearbeiten',
@@ -363,7 +232,7 @@ const translations = {
     'action.cancel': 'Abbrechen',
     'action.view': 'Anzeigen',
     'action.search': 'Suchen',
-    'action.filter': 'Filtern',
+    'action.filter': 'Filter zurücksetzen',
     'action.import': 'Importieren',
     'action.export': 'Exportieren',
     'action.duplicate': 'Duplizieren',
@@ -379,292 +248,162 @@ const translations = {
     'action.add': 'Hinzufügen',
     'action.remove': 'Entfernen',
     'action.update': 'Aktualisieren',
-    
+
     // Status
     'status.active': 'Aktiv',
     'status.inactive': 'Inaktiv',
     'status.draft': 'Entwurf',
     'status.published': 'Veröffentlicht',
-    'status.scheduled': 'Geplant',
-    'status.archived': 'Archiviert',
     'status.pending': 'Ausstehend',
-    'status.completed': 'Abgeschlossen',
+    'status.complete': 'Abgeschlossen',
     'status.cancelled': 'Storniert',
-    'status.paid': 'Bezahlt',
-    'status.unpaid': 'Unbezahlt',
-    'status.overdue': 'Überfällig',
-    'status.sent': 'Gesendet',
-    'status.shared': 'Geteilt',
-    
-    // Forms
-    'form.title': 'Titel',
-    'form.name': 'Name',
-    'form.email': 'E-Mail',
-    'form.phone': 'Telefon',
-    'form.address': 'Adresse',
-    'form.description': 'Beschreibung',
-    'form.notes': 'Notizen',
-    'form.date': 'Datum',
-    'form.time': 'Zeit',
-    'form.price': 'Preis',
-    'form.quantity': 'Anzahl',
-    'form.total': 'Gesamt',
-    'form.status': 'Status',
-    'form.category': 'Kategorie',
-    'form.tags': 'Tags',
-    'form.required': 'Erforderlich',
-    'form.optional': 'Optional',
-    'form.password': 'Passwort',
-    'form.confirmPassword': 'Passwort bestätigen',
-    
+    'status.scheduled': 'Geplant',
+
     // Messages
-    'message.success': 'Erfolgreich',
-    'message.error': 'Fehler',
-    'message.warning': 'Warnung',
-    'message.info': 'Information',
+    'message.error': 'Fehler beim Laden der Daten',
+    'message.noData': 'Noch keine Daten verfügbar',
     'message.loading': 'Lädt...',
-    'message.saving': 'Speichert...',
-    'message.deleting': 'Löscht...',
-    'message.noData': 'Keine Daten verfügbar',
-    'message.noResults': 'Keine Ergebnisse gefunden',
-    'message.confirmDelete': 'Sind Sie sicher, dass Sie dieses Element löschen möchten?',
-    'message.unsavedChanges': 'Sie haben ungespeicherte Änderungen',
-    
-    // Pages
-    'page.home': 'Startseite',
-    'page.contact': 'Kontakt',
-    'page.about': 'Über uns',
-    'page.services': 'Dienstleistungen',
-    'page.portfolio': 'Portfolio',
-    'page.blog': 'Blog',
-    'page.galleries': 'Galerien',
-    'page.invoices': 'Rechnungen',
-    'page.clients': 'Kunden',
-    'page.dashboard': 'Dashboard',
-    'page.reports': 'Berichte',
-    'page.settings': 'Einstellungen',
-    'page.profile': 'Profil',
-    'page.login': 'Anmelden',
-    'page.register': 'Registrieren',
-    
-    // Gallery
-    'gallery.create': 'Galerie erstellen',
-    'gallery.edit': 'Galerie bearbeiten',
-    'gallery.images': 'Bilder',
-    'gallery.upload': 'Bilder hochladen',
-    'gallery.password': 'Passwort-Schutz',
-    'gallery.downloadEnabled': 'Download aktiviert',
-    'gallery.settings': 'Galerie-Einstellungen',
-    'gallery.preview': 'Galerie-Vorschau',
-    'gallery.share': 'Galerie teilen',
-    'gallery.noImages': 'Noch keine Bilder hochgeladen',
-    
-    // Invoice
-    'invoice.create': 'Rechnung erstellen',
-    'invoice.edit': 'Rechnung bearbeiten',
-    'invoice.items': 'Rechnungsposten',
-    'invoice.summary': 'Rechnungsübersicht',
-    'invoice.total': 'Gesamt',
-    'invoice.subtotal': 'Zwischensumme',
-    'invoice.tax': 'Steuer',
-    'invoice.discount': 'Rabatt',
-    'invoice.dueDate': 'Fälligkeitsdatum',
-    'invoice.paymentTerms': 'Zahlungsbedingungen',
-    'invoice.clientDetails': 'Kundendetails',
-    'invoice.invoiceDetails': 'Rechnungsdetails',
-    'invoice.lineItems': 'Positionen',
-    'invoice.management': 'Rechnungsverwaltung',
-    'invoice.totalInvoiced': 'Gesamt in Rechnung gestellt',
-    'invoice.paidAmount': 'Bezahlter Betrag',
-    'invoice.overdueAmount': 'Überfälliger Betrag',
-    
-    // Survey
-    'survey.create': 'Umfrage erstellen',
-    'survey.edit': 'Umfrage bearbeiten',
-    'survey.questions': 'Fragen',
-    'survey.responses': 'Antworten',
-    'survey.analytics': 'Analytik',
-    'survey.publish': 'Veröffentlichen',
-    'survey.unpublish': 'Unveröffentlichen',
-    'survey.builder': 'Umfrage-Builder',
-    'survey.preview': 'Umfrage-Vorschau',
-    'survey.loadError': 'Umfrage konnte nicht geladen werden',
-    'survey.progress': 'Fortschritt',
-    
-    // Calendar
-    'calendar.title': 'Kalender',
-    'calendar.create': 'Termin erstellen',
-    'calendar.edit': 'Termin bearbeiten',
-    'calendar.delete': 'Termin löschen',
-    'calendar.export': 'Kalender exportieren',
-    'calendar.import': 'Kalender importieren',
-    'calendar.integration': 'Kalender-Integration',
-    'calendar.sync': 'Sync-Einstellungen',
-    'calendar.autoSync': 'Auto-Sync',
-    'calendar.visibility': 'Sichtbarkeit',
-    'calendar.priority': 'Priorität',
-    'calendar.repeat': 'Wiederholen',
-    'calendar.daily': 'Täglich',
-    'calendar.weekly': 'Wöchentlich',
-    'calendar.monthly': 'Monatlich',
-    'calendar.yearly': 'Jährlich',
-    'calendar.public': 'Öffentlich',
-    'calendar.private': 'Privat',
-    'calendar.confidential': 'Vertraulich',
-    'calendar.low': 'Niedrig',
-    'calendar.normal': 'Normal',
-    'calendar.high': 'Hoch',
-    
-    // Email/Inbox
-    'email.inbox': 'Posteingang',
-    'email.compose': 'Verfassen',
-    'email.send': 'Senden',
-    'email.reply': 'Antworten',
-    'email.forward': 'Weiterleiten',
-    'email.delete': 'Löschen',
-    'email.archive': 'Archivieren',
-    'email.star': 'Markieren',
-    'email.unread': 'Ungelesen',
-    'email.read': 'Gelesen',
-    'email.subject': 'Betreff',
-    'email.from': 'Von',
-    'email.to': 'An',
-    'email.cc': 'CC',
-    'email.bcc': 'BCC',
-    'email.priority': 'Priorität',
-    'email.attachment': 'Anhang',
-    'email.noEmails': 'Keine E-Mails gefunden',
-    'email.selectEmail': 'E-Mail auswählen',
-    'email.accounts': 'Konten',
-    'email.folders': 'Ordner',
-    'email.settings': 'E-Mail-Einstellungen',
-    'email.sync': 'Synchronisieren',
-    'email.assistant': 'KI E-Mail-Assistent',
-    'email.automation': 'Automatisierungs-Hub',
-    
-    // File uploads
-    'file.upload': 'Datei hochladen',
-    'file.choose': 'Datei auswählen',
-    'file.dragDrop': 'oder hier hineinziehen',
-    'file.processing': 'Datei wird verarbeitet...',
-    'file.error': 'Datei-Upload-Fehler',
-    'file.success': 'Datei erfolgreich hochgeladen',
-    
-    // Common phrases
-    'common.all': 'Alle',
-    'common.none': 'Keine',
-    'common.yes': 'Ja',
-    'common.no': 'Nein',
-    'common.or': 'oder',
-    'common.and': 'und',
-    'common.of': 'von',
-    'common.in': 'in',
-    'common.on': 'am',
-    'common.at': 'um',
-    'common.by': 'von',
-    'common.from': 'von',
-    'common.to': 'zu',
-    'common.with': 'mit',
-    'common.without': 'ohne',
-    'common.today': 'Heute',
-    'common.yesterday': 'Gestern',
-    'common.tomorrow': 'Morgen',
-    'common.week': 'Woche',
-    'common.month': 'Monat',
-    'common.year': 'Jahr',
-    'common.date': 'Datum',    'common.time': 'Zeit',
-    'common.language': 'Sprache',
-    'common.currency': 'Währung',
-    'common.timezone': 'Zeitzone',
-    
-    // Blog
-    'blog.create': 'Beitrag erstellen',
-    'blog.edit': 'Beitrag bearbeiten',
-    'blog.manage_content': 'Verwalten Sie Ihre Blog-Inhalte',
-    'blog.search_posts': 'Beiträge suchen...',
-    'blog.no_excerpt': 'Kein Auszug',
-    'blog.no_image': 'Kein Bild',
-    'blog.post': 'Beitrag',
-    'blog.publish': 'Veröffentlichen',
-    'blog.unpublish': 'Unveröffentlichen',
-    'blog.no_posts_found': 'Keine Beiträge gefunden, die Ihren Kriterien entsprechen.',
-    'blog.create_first_post': 'Erstellen Sie Ihren ersten Beitrag',
-    
-    // Table
-    'table.actions': 'Aktionen',
-      // Filters
-    'filter.all_statuses': 'Alle Status',
-      // Clients
-    'clients.add': 'Kunde hinzufügen',
-    'clients.search': 'Kunden suchen...',
-    'clients.import_logs': 'Import-Protokolle',
-    'clients.more_filters': 'Weitere Filter',
-    'clients.no_phone': 'Keine Telefonnummer',
-    'clients.since': 'Kunde seit',
-    
-    // Pagination
-    'pagination.showing': 'Zeige',
-    'pagination.of': 'von',
-    'pagination.results': 'Ergebnisse',
-    
-    // Modal
-    'modal.confirm_deletion': 'Löschung bestätigen',
-    'modal.delete_post_warning': 'Sind Sie sicher, dass Sie diesen Beitrag löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
-    
-    // Messages
-    'message.error.failed_to_update_post_status': 'Fehler beim Aktualisieren des Beitragsstatus. Bitte versuchen Sie es erneut.',
-    
-    // Location/Contact
-    'contact.streetParking': 'Straßenparkplätze verfügbar',
-    
-    // Homepage
+    'message.success': 'Erfolgreich!',
+    'message.saved': 'Erfolgreich gespeichert',
+    'message.deleted': 'Erfolgreich gelöscht',
+    'message.updated': 'Erfolgreich aktualisiert',
+    'message.created': 'Erfolgreich erstellt',
+
+    // Home Page
+    'home.title': 'Familienfotograf Wien - New Age Fotografie',
+    'home.subtitle': 'Professionelle Familienfotografie in Wien. Buchen Sie Familienfotos, Neugeborenenporträts, Schwangerschaftsfotos in unserem Wiener Studio. Familienfotograf Wien, Österreich.',
     'home.hero.title': 'Familien- & Neugeborenenfotograf in Wien, dem Sie vertrauen können',
-    'home.hero.subtitle': 'das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...',
-    'home.hero.cta': 'Jetzt Shooting Buchen',
-    'home.services.title': 'Business-Headshots & Preise',
-    'home.services.description1': 'Erleben Sie maßgeschneiderte Fotoshootings in unserem kundenorientierten Studio. Wir legen großen Wert auf Details und schaffen eine komfortable Umgebung.',
-    'home.services.description2': 'Unsere professionellen Fotografen finden die schmeichelhaftesten Winkel und fangen authentische Ausdrücke ein. Unsere zeitlosen Fotos werden zu wertvollen Erinnerungen.',
-    'home.services.description3': 'Als familienfreundliches Studio bieten wir eine entspannte und stressfreie Atmosphäre für unvergessliche Shootings. Kontaktieren Sie uns noch heute!',
-    'home.vouchers.title': 'Fotoshooting-Gutscheine',
-    'home.vouchers.description': 'Verschenken Sie unvergessliche Momente mit unseren Fotoshooting-Gutscheinen. Perfekt für Familie, Freunde oder als besonderes Geschenk.',
+    'home.hero.description': 'Professionelle Fotoshootings in unserem Wiener Studio für Familien, Neugeborene und Business-Porträts.',
+    'home.hero.cta': 'Session buchen',
+    'home.about.title': 'Über uns',
+    'home.about.description': 'Wir sind spezialisiert darauf, kostbare Familienmomente mit Wärme und Professionalität festzuhalten.',
+    'home.services.title': 'Unsere Fotografie-Services',
+    'home.services.description1': 'Als <strong>Familienfotograf in Wien</strong> und spezialisierter <strong>Neugeborenenfotograf in Wien</strong> erschaffen wir zeitlose Erinnerungen in entspannter Studio-Atmosphäre. Auch wenn Sie kamerascheu sind oder unberechenbare Kinder haben, erstellen wir Familienporträts, die Sie für immer schätzen werden.',
+    'home.services.description2': '<strong>Unsere professionellen Fotografen finden die vorteilhaftesten Winkel und fangen authentische Ausdrücke ein.</strong> Unsere zeitlosen Fotos werden zu geschätzten Erinnerungen.',
+    'home.services.description3': 'Als familienfreundliches Studio bieten wir eine entspannte und stressfreie Atmosphäre für unvergessliche Shootings. <strong>Kontaktieren Sie uns noch heute!</strong>',
+    'home.vouchers.title': 'Fotografie-Gutscheine',
+    'home.vouchers.description': 'Verschenken Sie unvergessliche Momente mit unseren Fotografie-Gutscheinen. Perfekt für Familie, Freunde oder als besonderes Geschenk.',
     'home.vouchers.cta': 'Gutscheine ansehen',
-    'home.familyPortraits.title': 'Familienporträts in Wien & Zurich',
-    'home.familyPortraits.description': 'Unsere Familiensitzungen drehen sich darum, die einzigartige Bindung festzuhalten, die Sie teilen. Von spontanen Momenten bis hin zu inszenierten Porträts schaffen wir Bilder, die Sie für immer schätzen werden.',
-    'home.newbornShoots.title': 'Neugeborenen-Shootings',
-    'home.newbornShoots.description': 'Halten Sie diese kostbaren ersten Momente Ihres kleinen Wunders mit unserer sanften Neugeborenenfotografie fest. Jede Sitzung wird mit größter Sorgfalt und Geduld durchgeführt.',
-    'home.businessPortraits.title': 'Business-Porträts',
-    'home.businessPortraits.description': 'Professionelle Kopffotos, die den richtigen Eindruck hinterlassen. Perfekt für LinkedIn-Profile, Firmenwebsites und Geschäftsmaterialien.',
-    'home.stats.title': 'Vertrauen Sie auf unsere Erfahrung',
-    'home.stats.description': 'Über die Jahre haben wir hunderte von zufriedenen Familien fotografiert',
-    'home.stats.families': 'Zufriedene Familien',
-    'home.stats.sessions': 'Fotoshootings',
-    'home.stats.experience': 'Jahre Erfahrung',
-    'home.stats.recommendation': 'Weiterempfehlungsrate',
-    'home.testimonials.title': 'Was unsere Kunden sagen',
-    'home.testimonials.description': 'Lesen Sie die Erfahrungen zufriedener Familien',
-    'home.faq.title': 'FAQs',
-    'home.faq.description': 'Häufig gestellte Fragen zur Familienfotografie'
+
+    // Photoshoots Page
+    'photoshoots.title': 'Fotoshootings Wien - Familien- & Neugeborenenfotografie',
+    'photoshoots.subtitle': 'Professionelle Fotoshootings in Wien: Familienporträts, Schwangerschaftsfotos, Neugeborenenbilder, Business-Headshots',
+    'photoshoots.hero.title': 'Fotoshootings Wien - Familien- & Neugeborenenfotografie',
+    'photoshoots.hero.subtitle': 'Professionelle Fotoshootings in Wien: Familienporträts, Schwangerschaftsfotos, Neugeborenenbilder & Business-Headshots',
+    'photoshoots.familyPortraits.title': 'Familienporträts in Wien & Zürich',
+    'photoshoots.familyPortraits.description': 'Bei unseren Familiensessions geht es darum, die einzigartige Verbindung festzuhalten, die Sie teilen. Von spontanen Momenten bis hin zu gestellten Porträts erstellen wir Bilder, die Sie für immer schätzen werden.',
+    'photoshoots.maternity.title': 'Schwangerschaftsfotografie in Wien & Zürich',
+    'photoshoots.maternity.description': 'Feiern Sie die Schönheit der Mutterschaft mit unseren Schwangerschaftssessions. Wir erstellen atemberaubende Bilder, die diese besondere Zeit in Ihrem Leben hervorheben.',
+    'photoshoots.newborn.title': 'Neugeborenenfotografie in Wien & Zürich',
+    'photoshoots.newborn.description': 'Es gibt nichts Zarteres als die ersten Tage im Leben eines Neugeborenen. Unsere Neugeborenensessions konzentrieren sich darauf, diese flüchtigen Momente mit Zärtlichkeit und Sorgfalt festzuhalten.',
+    'photoshoots.business.title': 'Unternehmensporträts in Wien & Zürich',
+    'photoshoots.business.description': 'Verbessern Sie Ihr professionelles Image mit unseren Unternehmensporträts. Von Porträts bis hin zu Teamfotos helfen wir Ihnen, Ihr Unternehmen im besten Licht zu präsentieren.',
+    'photoshoots.events.title': 'Eventfotografie in Wien & Zürich',
+    'photoshoots.events.description': 'Es gibt nichts Aufregenderes als unvergessliche Momente bei Events. Unsere Eventfotografie konzentriert sich darauf, diese besonderen Momente mit Kreativität und Professionalität festzuhalten.',
+    'photoshoots.weddings.title': 'Hochzeitsfotografie in Wien & Zürich',
+    'photoshoots.weddings.description': 'Es gibt nichts Schöneres als die Magie eines Hochzeitstages. Unsere Hochzeitsfotografie hält diese magischen Momente mit Liebe zum Detail und künstlerischem Flair fest.',
+    'photoshoots.features.flexible': 'Flexible Termine',
+    'photoshoots.features.flexibleDesc': 'Wir bieten flexible Terminplanung, auch an Wochenenden',
+    'photoshoots.features.family': 'Für die ganze Familie',
+    'photoshoots.features.familyDesc': 'Geeignet für Familien jeder Größe, auch mit Haustieren',
+    'photoshoots.features.professional': 'Professionelle Ausrüstung',
+    'photoshoots.features.professionalDesc': 'Modernste Kameraausrüstung für beste Ergebnisse',
+
+    // Vouchers Page
+    'vouchers.title': 'Fotoshooting Gutscheine Wien - Geschenkideen',
+    'vouchers.subtitle': 'Fotoshooting Gutscheine als perfekte Geschenkidee. Familien-, Schwangerschafts- und Neugeborenen-Fotoshootings in Wien zum Verschenken.',
+    'vouchers.hero.title': 'Fotoshooting Gutscheine Wien',
+    'vouchers.hero.description': 'Verschenken Sie unvergessliche Momente mit unseren Fotoshooting-Gutscheinen. Perfekt für Familie, Freunde oder besondere Anlässe.',
+    'vouchers.search.placeholder': 'Gutscheine suchen...',
+    'vouchers.filter.all': 'Alle Kategorien',
+    'vouchers.filter.family': 'Familie',
+    'vouchers.filter.newborn': 'Neugeborene',
+    'vouchers.filter.maternity': 'Schwangerschaft',
+    'vouchers.filter.business': 'Business',
+    'vouchers.noResults': 'Keine Gutscheine gefunden, die Ihren Kriterien entsprechen.',
+    'vouchers.loading': 'Die Gutscheine konnten nicht geladen werden. Bitte versuchen Sie es später erneut.',
+    'vouchers.buyNow': 'Jetzt kaufen',
+    'vouchers.validFor': 'Gültig für',
+    'vouchers.months': 'Monate',
+
+    // Contact Page
+    'contact.title': 'Kontakt - Familienfotograf Wien | New Age Fotografie',
+    'contact.subtitle': 'Kontaktieren Sie unseren Familienfotograf in Wien. Studio: Eingang Ecke Schönbrunnerstraße, Wehrgasse 11A/2+5, 1050 Wien. Tel: +43 677 633 99210. Öffnungszeiten Fr-So 09:00-17:00.',
+    'contact.hero.title': 'Kontakt',
+    'contact.hero.subtitle': 'Nehmen Sie Kontakt für Ihr Fotoshooting auf',
+    'contact.form.title': 'Senden Sie uns eine Nachricht',
+    'contact.form.name': 'Vollständiger Name',
+    'contact.form.email': 'E-Mail-Adresse',
+    'contact.form.phone': 'Telefonnummer',
+    'contact.form.message': 'Ihre Nachricht',
+    'contact.form.submit': 'Nachricht senden',
+    'contact.form.sending': 'Wird gesendet...',
+    'contact.form.success': 'Vielen Dank! Ihre Nachricht wurde erfolgreich gesendet.',
+    'contact.form.error': 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.',
+    'contact.info.title': 'Kontaktinformationen',
+    'contact.info.email': 'E-Mail',
+    'contact.info.phone': 'Telefon',
+    'contact.info.hours': 'Öffnungszeiten',
+    'contact.info.hoursValue': 'Fr-So: 09:00 - 17:00',
+    'contact.studio.title': 'Studio-Adresse',
+    'contact.studio.address': 'Schönbrunner Str. 25, 1050 Wien, Österreich',
+    'contact.studio.note': '5 Minuten von der Kettenbrückengasse',
+    'contact.studio.parking': 'Straßenparkplätze verfügbar',
+    'contact.office.title': 'Büro- und Korrespondenzadresse',
+    'contact.office.address': 'Julius Tandler Platz 5 / 13, 1090 Wien',
+
+    // Blog Page
+    'blog.title': 'Fotografie Blog Wien - Tipps & Inspiration',
+    'blog.subtitle': 'Fotografie-Blog mit Tipps, Inspiration und Einblicken hinter die Kulissen aus unserem Wiener Studio.',
+    'blog.hero.title': 'Fotografie Blog',
+    'blog.hero.subtitle': 'Tipps, Inspiration und Geschichten aus unseren Fotoshootings',
+    'blog.search.placeholder': 'Artikel suchen...',
+    'blog.filter.all': 'Alle Artikel',
+    'blog.filter.family': 'Familienfotografie',
+    'blog.filter.newborn': 'Neugeborenenfotografie',
+    'blog.filter.tips': 'Foto-Tipps',
+    'blog.noResults': 'Keine Artikel gefunden, die Ihrer Suche entsprechen.',
+    'blog.readMore': 'Weiterlesen',
+    'blog.publishedOn': 'Veröffentlicht am',
+    'blog.by': 'von',
+
+    // Gallery filter options
+    'gallery.filter.family': 'Familie',
+    'gallery.filter.newborn': 'Neugeborene',
+    'gallery.filter.maternity': 'Schwangerschaft',
+    'gallery.filter.business': 'Business',
+    'gallery.filter.event': 'Event',
+    'gallery.filter.wedding': 'Hochzeit',
   }
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>(() => {
-    // Try to get language from localStorage, default to 'de'
-    const savedLang = localStorage.getItem('language');
-    return (savedLang === 'en' || savedLang === 'de') ? savedLang : 'de';
-  });
-
-  useEffect(() => {
-    // Save language preference to localStorage
-    localStorage.setItem('language', language);
-    // Update HTML lang attribute
-    document.documentElement.lang = language;
-  }, [language]);
+  const [language, setLanguage] = useState<Language>('de');
 
   const t = (key: string): string => {
-    return translations[language][key as keyof typeof translations['en']] || key;
+    const keys = key.split('.');
+    let value = translations[language] as any;
+    
+    for (const k of keys) {
+      if (value && typeof value === 'object' && k in value) {
+        value = value[k];
+      } else {
+        // Fallback to German if key not found in English
+        value = translations.de as any;
+        for (const fallbackK of keys) {
+          if (value && typeof value === 'object' && fallbackK in value) {
+            value = value[fallbackK];
+          } else {
+            return key; // Return key if not found in either language
+          }
+        }
+        break;
+      }
+    }
+    
+    return typeof value === 'string' ? value : key;
   };
 
   return (
@@ -674,9 +413,9 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   );
 };
 
-export const useLanguage = () => {
+export const useLanguage = (): LanguageContextType => {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useLanguage must be used within a LanguageProvider');
   }
   return context;
