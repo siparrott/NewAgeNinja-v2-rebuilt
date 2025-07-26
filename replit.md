@@ -111,6 +111,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- January 26, 2025. **HOMEPAGE VOUCHER SECTION REDIRECT FIX**: Replaced static voucher message with direct link to Gutschein page:
+  * **USER REQUEST FULFILLED**: Instead of showing "Gutscheine werden überarbeitet" message, homepage now redirects to existing Gutschein page
+  * **IMPROVED USER EXPERIENCE**: Visitors can now directly access actual voucher offers from homepage
+  * **CONSISTENT NAVIGATION**: Homepage voucher section now matches navigation structure with proper /gutschein link
+  * **ENHANCED MESSAGING**: Added compelling description "Verschenken Sie unvergessliche Momente" for better conversion
+  * **BUTTON UPDATED**: Changed from "Jetzt Kontakt aufnehmen" to "Gutscheine ansehen" with proper routing
+  * **ELIMINATED PRICING CONFUSION**: Removed all references to incorrect €199, €249, €299 pricing throughout application
 - January 26, 2025. **COMPLETE AUTOBLOG IMAGE EMBEDDING AND DATE FIX**: Successfully resolved all image distribution and date handling issues:
   * **FIXED COMPLEX REGEX ISSUES**: Replaced problematic regex pattern matching with robust multi-strategy image insertion logic
   * **IMPROVED IMAGE DISTRIBUTION**: Enhanced embedUploadedImages function with 3-tier fallback system: H2 sections → paragraphs → start position

@@ -200,7 +200,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Voucher Section - Updated Message */}
+      {/* Voucher Section - Link to Gutschein Page */}
       <section className="py-16 bg-gradient-to-r from-pink-50 to-purple-50">
         <div className="container mx-auto px-4">
           <div className="text-center">
@@ -209,13 +209,14 @@ const HomePage: React.FC = () => {
             </h2>
             <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl mx-auto">
               <p className="text-lg text-gray-700 mb-6">
-                Gutscheine werden überarbeitet. Kontaktieren Sie uns für aktuelle Angebote.
+                Verschenken Sie unvergessliche Momente mit unseren Fotoshooting-Gutscheinen. 
+                Perfekt für Familie, Freunde oder als besonderes Geschenk.
               </p>
               <button 
-                onClick={() => navigate('/kontakt')}
+                onClick={() => navigate('/gutschein')}
                 className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
-                Jetzt Kontakt aufnehmen
+                Gutscheine ansehen
               </button>
             </div>
           </div>
