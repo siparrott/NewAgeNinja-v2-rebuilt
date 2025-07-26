@@ -1236,34 +1236,43 @@ const CouponDialog: React.FC<{
             <div className="space-y-2">
               <Label htmlFor="code">Coupon Code</Label>
               <Input 
-                id="code" 
+                {...form.register("code")}
                 placeholder="e.g., WELCOME15"
-                defaultValue={coupon?.code || ''}
+                className="bg-white"
               />
+              {form.formState.errors.code && (
+                <p className="text-sm text-red-600">{form.formState.errors.code.message}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="coupon-name">Coupon Name</Label>
+              <Label htmlFor="name">Coupon Name</Label>
               <Input 
-                id="coupon-name" 
+                {...form.register("name")}
                 placeholder="e.g., Welcome Discount"
-                defaultValue={coupon?.name || ''}
+                className="bg-white"
               />
+              {form.formState.errors.name && (
+                <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
+              )}
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="coupon-description">Description</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea 
-              id="coupon-description" 
+              {...form.register("description")}
               placeholder="Describe this discount offer..."
               rows={2}
-              defaultValue={coupon?.description || ''}
+              className="bg-white"
             />
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="discount-type">Discount Type</Label>
-              <Select defaultValue={coupon?.discountType || 'percentage'}>
-                <SelectTrigger>
+              <Label htmlFor="discountType">Discount Type</Label>
+              <Select 
+                onValueChange={(value) => form.setValue("discountType", value as "percentage" | "fixed_amount")} 
+                defaultValue={form.watch("discountType") || "percentage"}
+              >
+                <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1273,40 +1282,45 @@ const CouponDialog: React.FC<{
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="discount-value">Discount Value</Label>
+              <Label htmlFor="discountValue">Discount Value</Label>
               <Input 
-                id="discount-value" 
+                {...form.register("discountValue")}
                 type="number" 
+                step="0.01"
                 placeholder="15"
-                defaultValue={coupon?.discountValue || ''}
+                className="bg-white"
               />
+              {form.formState.errors.discountValue && (
+                <p className="text-sm text-red-600">{form.formState.errors.discountValue.message}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="min-order">Min Order (€)</Label>
+              <Label htmlFor="minOrderAmount">Min Order (€)</Label>
               <Input 
-                id="min-order" 
+                {...form.register("minOrderAmount")}
                 type="number" 
+                step="0.01"
                 placeholder="100"
-                defaultValue={coupon?.minOrderAmount || ''}
+                className="bg-white"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="usage-limit">Usage Limit</Label>
+              <Label htmlFor="usageLimit">Usage Limit</Label>
               <Input 
-                id="usage-limit" 
+                {...form.register("usageLimit")}
                 type="number" 
                 placeholder="100"
-                defaultValue={coupon?.usageLimit || ''}
+                className="bg-white"
               />
             </div>
             <div className="space-y-2 flex items-center space-x-2 pt-6">
               <Switch 
-                id="coupon-active" 
-                defaultChecked={coupon?.isActive ?? true}
+                checked={form.watch("isActive")}
+                onCheckedChange={(checked) => form.setValue("isActive", checked)}
               />
-              <Label htmlFor="coupon-active">Active</Label>
+              <Label htmlFor="isActive">Active</Label>
             </div>
           </div>
         </div>
