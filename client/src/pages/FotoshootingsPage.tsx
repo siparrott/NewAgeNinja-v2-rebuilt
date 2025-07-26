@@ -2,15 +2,13 @@ import React, { useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Users, Camera } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
 
 const FotoshootingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
 
   useEffect(() => {
     // SEO Meta Tags
-    document.title = t('photoshoots.title');
+    document.title = 'Fotoshootings Wien - Familien & Neugeborenen Fotografie | New Age Fotografie';
     
     // Update meta description
     let metaDescription = document.querySelector('meta[name="description"]');
@@ -19,7 +17,7 @@ const FotoshootingsPage: React.FC = () => {
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-    metaDescription.setAttribute('content', t('photoshoots.subtitle'));
+    metaDescription.setAttribute('content', 'Professionelle Fotoshootings in Wien: Familienporträts, Schwangerschaftsfotos, Neugeborenenbilder, Business-Headshots. Erfahrener Fotograf mit Studio in 1050 Wien.');
 
     // Open Graph tags
     let ogTitle = document.querySelector('meta[property="og:title"]');
@@ -28,47 +26,47 @@ const FotoshootingsPage: React.FC = () => {
       ogTitle.setAttribute('property', 'og:title');
       document.head.appendChild(ogTitle);
     }
-    ogTitle.setAttribute('content', t('photoshoots.title'));
+    ogTitle.setAttribute('content', 'Fotoshootings Wien - Professionelle Fotografie | New Age Fotografie');
 
     return () => {
       document.title = 'New Age Fotografie - Familienfotograf Wien';
     };
-  }, [t]);
+  }, []);
 
   const shootingTypes = [
     {
-      title: t('photoshoots.familyPortraits.title'),
-      description: t('photoshoots.familyPortraits.description'),
+      title: 'Familienporträts in Wien & Zürich',
+      description: 'Unsere Familiensitzungen drehen sich darum, die einzigartige Bindung festzuhalten, die Sie teilen. Von spontanen Momenten bis hin zu inszenierten Porträts schaffen wir Bilder, die Sie für immer schätzen werden.',
       image: 'https://i.postimg.cc/gcKwDrqv/Baby-Pink-Bubbles-20x20.jpg',
       link: '/gutschein/family'
     },
     {
-      title: t('photoshoots.maternity.title'),
-      description: t('photoshoots.maternity.description'),
+      title: 'Schwangerschaftsfotografie in Wien & Zürich',
+      description: 'Feiern Sie die Schönheit der Mutterschaft mit unseren Schwangerschaftssitzungen. Wir schaffen atemberaubende Bilder, die diese besondere Zeit in Ihrem Leben hervorheben.',
       image: 'https://i.postimg.cc/WzrVSs3F/3-J9-A3679-renamed-3632.jpg',
       link: '/gutschein/maternity'
     },
     {
-      title: t('photoshoots.newborn.title'),
-      description: t('photoshoots.newborn.description'),
+      title: 'Neugeborenenfotografie in Wien & Zürich',
+      description: 'Es gibt nichts Zarteres als die ersten Tage im Leben eines Neugeborenen. Unsere Neugeborenensitzungen konzentrieren sich darauf, diese flüchtigen Momente mit Zärtlichkeit und Sorgfalt einzufangen.',
       image: 'https://i.postimg.cc/43YQ9VD4/4-S8-A4770-105-1024x683-Copy.jpg',
       link: '/gutschein/newborn'
     },
     {
-      title: t('photoshoots.business.title'),
-      description: t('photoshoots.business.description'),
+      title: 'Firmenfotografie in Wien & Zürich',
+      description: 'Verbessern Sie Ihr professionelles Image mit unseren Firmenfotografie-Dienstleistungen. Von Porträts bis hin zu Teamfotos helfen wir Ihnen, Ihr Unternehmen im besten Licht zu präsentieren.',
       image: 'https://i.postimg.cc/RZjf8FsX/Whats-App-Image-2025-05-24-at-2-38-45-PM-1.jpg',
       link: '/fotoshootings/business'
     },
     {
-      title: t('photoshoots.events.title'),
-      description: t('photoshoots.events.description'),
+      title: 'Eventfotografie in Wien & Zürich',
+      description: 'Es gibt nichts Aufregenderes als die unvergesslichen Momente bei Veranstaltungen. Unsere Eventfotografie konzentriert sich darauf, diese besonderen Augenblicke mit Kreativität und Professionalität festzuhalten.',
       image: 'https://i.postimg.cc/907tz7nR/21469528-10155302675513124-226449768-n.jpg',
       link: '/fotoshootings/event'
     },
     {
-      title: t('photoshoots.weddings.title'),
-      description: t('photoshoots.weddings.description'),
+      title: 'Hochzeitsfotografie in Wien & Zürich',
+      description: 'Es gibt nichts Schöneres als die Magie eines Hochzeitstages. Unsere Hochzeitsfotografie fängt diese magischen Momente mit Liebe zum Detail und künstlerischem Flair ein.',
       image: 'https://i.postimg.cc/j50XzC6p/4S8A7207.jpg',
       link: '/fotoshootings/wedding'
     }
@@ -81,10 +79,10 @@ const FotoshootingsPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              {t('photoshoots.hero.title')}
+              Fotoshootings Wien - Familien & Neugeborenen Fotografie
             </h1>
             <p className="text-purple-100 text-lg">
-              {t('photoshoots.hero.subtitle')}
+              Professionelle Fotoshootings in Wien: Familienporträts, Schwangerschaftsfotos, Neugeborenenbilder & Business-Headshots
             </p>
           </div>
         </div>
@@ -112,7 +110,7 @@ const FotoshootingsPage: React.FC = () => {
                       onClick={() => navigate(type.link)}
                       className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-8 rounded-lg transition-colors transform hover:scale-105"
                     >
-                      {t('action.view')}
+                      Mehr erfahren
                     </button>
                   </div>
                 </div>
@@ -123,23 +121,23 @@ const FotoshootingsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
             <div className="text-center">
               <Clock size={48} className="text-purple-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-800 mb-2">{t('photoshoots.features.flexible')}</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Flexible Termine</h3>
               <p className="text-gray-600">
-                {t('photoshoots.features.flexibleDesc')}
+                Wir bieten flexible Terminvereinbarung an, auch an Wochenenden
               </p>
             </div>
             <div className="text-center">
               <Users size={48} className="text-purple-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-800 mb-2">{t('photoshoots.features.family')}</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Für die ganze Familie</h3>
               <p className="text-gray-600">
-                {t('photoshoots.features.familyDesc')}
+                Geeignet für Familien jeder Größe, inklusive Haustiere
               </p>
             </div>
             <div className="text-center">
               <Camera size={48} className="text-purple-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-800 mb-2">{t('photoshoots.features.professional')}</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Professionelle Ausrüstung</h3>
               <p className="text-gray-600">
-                {t('photoshoots.features.professionalDesc')}
+                Modernste Kameraausrüstung für beste Ergebnisse
               </p>
             </div>
           </div>

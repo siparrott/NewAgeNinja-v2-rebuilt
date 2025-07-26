@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { Calendar, Mail, Phone, User } from 'lucide-react';
 import { submitWaitlistForm } from '../lib/forms';
-import { useLanguage } from '../context/LanguageContext';
 
 const WartelistePage: React.FC = () => {
-  const { t, language } = useLanguage();
   const [formData, setFormData] = useState({
     fullName: '',
     preferredDate: '',
@@ -19,7 +17,7 @@ const WartelistePage: React.FC = () => {
 
   useEffect(() => {
     // SEO Meta Tags
-    document.title = t('waitlist.title');
+    document.title = 'Termin anfragen - Fotoshooting Wien buchen | New Age Fotografie';
     
     // Update meta description
     let metaDescription = document.querySelector('meta[name="description"]');
@@ -28,12 +26,12 @@ const WartelistePage: React.FC = () => {
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-    metaDescription.setAttribute('content', t('waitlist.subtitle'));
+    metaDescription.setAttribute('content', 'Fotoshooting-Termin in Wien anfragen. Verfügbare Termine an Wochenenden für Familien-, Schwangerschafts- und Neugeborenen-Fotografie.');
 
     return () => {
       document.title = 'New Age Fotografie - Familienfotograf Wien';
     };
-  }, [t]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +43,7 @@ const WartelistePage: React.FC = () => {
       setSuccess(true);
       setFormData({ fullName: '', preferredDate: '', email: '', phone: '', message: '' });
     } catch (err) {
-      setError(t('waitlist.error'));
+      setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
     } finally {
       setLoading(false);
     }
@@ -63,17 +61,19 @@ const WartelistePage: React.FC = () => {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-purple-600 mb-4">
-            {t('waitlist.heroTitle')}
+            Fotoshooting Termin in Wien anfragen
           </h1>
           <p className="text-xl text-gray-600">
-            {t('waitlist.heroSubtitle')}
+            Professioneller <strong>Familienfotograf in Wien</strong> mit flexiblen Terminen.
+            <br />
+            Wir bieten Fotoshootings an Wochenenden - kontaktieren Sie uns für die Verfügbarkeit.
           </p>
         </div>
 
         <div className="max-w-xl mx-auto bg-white rounded-lg shadow-lg p-8">
           {success && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
-              {t('waitlist.success')}
+              Ihre Anfrage wurde erfolgreich gesendet. Wir werden uns in Kürze bei Ihnen melden.
             </div>
           )}
 
@@ -87,7 +87,7 @@ const WartelistePage: React.FC = () => {
             <div>
               <label className="block text-gray-700 font-medium mb-2 flex items-center">
                 <User size={18} className="mr-2 text-purple-600" />
-                {t('waitlist.fullName')} <span className="text-purple-600 ml-1">*</span>
+                Vollname <span className="text-purple-600 ml-1">*</span>
               </label>
               <input
                 type="text"
@@ -96,14 +96,14 @@ const WartelistePage: React.FC = () => {
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 transition-colors"
-                placeholder={t('waitlist.fullNamePlaceholder')}
+                placeholder="Ihr vollständiger Name"
               />
             </div>
 
             <div>
               <label className="block text-gray-700 font-medium mb-2 flex items-center">
                 <Calendar size={18} className="mr-2 text-purple-600" />
-                {t('waitlist.preferredDate')} <span className="text-purple-600 ml-1">*</span>
+                Bevorzugtes Datum für Ihr Shooting <span className="text-purple-600 ml-1">*</span>
               </label>
               <input
                 type="date"
@@ -118,7 +118,7 @@ const WartelistePage: React.FC = () => {
             <div>
               <label className="block text-gray-700 font-medium mb-2 flex items-center">
                 <Mail size={18} className="mr-2 text-purple-600" />
-                {t('waitlist.email')} <span className="text-purple-600 ml-1">*</span>
+                Email Adresse <span className="text-purple-600 ml-1">*</span>
               </label>
               <input
                 type="email"
@@ -127,14 +127,14 @@ const WartelistePage: React.FC = () => {
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 transition-colors"
-                placeholder={t('waitlist.emailPlaceholder')}
+                placeholder="ihre@email.com"
               />
             </div>
 
             <div>
               <label className="block text-gray-700 font-medium mb-2 flex items-center">
                 <Phone size={18} className="mr-2 text-purple-600" />
-                {t('waitlist.phone')} <span className="text-purple-600 ml-1">*</span>
+                WhatsApp / Telefonnummer <span className="text-purple-600 ml-1">*</span>
               </label>
               <input
                 type="tel"
@@ -143,13 +143,13 @@ const WartelistePage: React.FC = () => {
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 transition-colors"
-                placeholder={t('waitlist.phonePlaceholder')}
+                placeholder="+43 "
               />
             </div>
 
             <div>
               <label className="block text-gray-700 font-medium mb-2">
-                {t('waitlist.message')}
+                Ihre Nachricht
               </label>
               <textarea
                 name="message"
@@ -157,7 +157,7 @@ const WartelistePage: React.FC = () => {
                 onChange={handleChange}
                 rows={4}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 transition-colors"
-                placeholder={t('waitlist.messagePlaceholder')}
+                placeholder="Weitere Details zu Ihrem Shooting..."
               />
             </div>
 
@@ -168,11 +168,11 @@ const WartelistePage: React.FC = () => {
                 loading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {loading ? t('form.sending') : t('waitlist.submit')}
+              {loading ? 'Wird gesendet...' : 'Termin anfragen'}
             </button>
 
             <p className="text-sm text-gray-500 text-center">
-              <span className="text-purple-600">*</span> {language === 'en' ? 'Required fields' : 'Pflichtfelder'}
+              <span className="text-purple-600">*</span> Pflichtfelder
             </p>
           </form>
         </div>

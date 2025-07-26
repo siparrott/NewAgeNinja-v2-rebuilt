@@ -3,50 +3,48 @@ import GutscheinLayout from '../../components/gutschein/GutscheinLayout';
 import { Check, Clock, Heart, Camera } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '../../context/LanguageContext';
 
 const MaternityGutscheinPage: React.FC = () => {
   const { addItem } = useCart();
   const navigate = useNavigate();
-  const { t } = useLanguage();
 
   const packages = [
     {
-      title: t('maternity.package.basic'),
-      subtitle: t('maternity.package.basicSub'),
+      title: 'Basic',
+      subtitle: 'Schöne Erinnerungen',
       price: 95,
       originalPrice: 195,
       features: [
-        t('maternity.feature.30min'),
-        t('maternity.feature.1photo'),
-        t('maternity.feature.1outfit'),
-        t('maternity.feature.partnerOptional')
+        '30 Minuten Shooting',
+        '1 bearbeitete Fotos',
+        '1 Outfit',
+        'Partner-Fotos optional'
       ]
     },
     {
-      title: t('maternity.package.premium'),
-      subtitle: t('maternity.package.premiumSub'),
+      title: 'Premium',
+      subtitle: 'Umfangreiche Erinnerungen',
       price: 195,
       originalPrice: 295,
       features: [
-        t('maternity.feature.45min'),
-        t('maternity.feature.5photos'),
-        t('maternity.feature.2outfits'),
-        t('maternity.feature.partnerIncluded')
+        '45 Minuten Shooting',
+        '5 bearbeitete Fotos',
+        '2 Outfits',
+        'Partner-Fotos inklusive'
       ],
       isFeatured: true
     },
     {
-      title: t('maternity.package.deluxe'),
-      subtitle: t('maternity.package.deluxeSub'),
+      title: 'Deluxe',
+      subtitle: 'Das komplette Erlebnis',
       price: 295,
       originalPrice: 295,
       features: [
-        t('maternity.feature.60min'),
-        t('maternity.feature.10photos'),
-        t('maternity.feature.onlineGallery'),
-        t('maternity.feature.3outfits'),
-        t('maternity.feature.partnerFamily')
+        '60 Minuten Shooting',
+        '10 bearbeitete Fotos',
+        'Online Galerie',
+        '3 Outfits',
+        'Partner- & Familienfotos'
       ]
     }
   ];
@@ -125,7 +123,7 @@ const MaternityGutscheinPage: React.FC = () => {
 
   const handleAddToCart = (pkg: typeof packages[0]) => {
     addItem({
-      title: `${t('maternity.title')} - ${pkg.title}`,
+      title: `Schwangerschafts Fotoshooting - ${pkg.title}`,
       price: pkg.price,
       quantity: 1,
       packageType: pkg.subtitle
@@ -135,8 +133,8 @@ const MaternityGutscheinPage: React.FC = () => {
 
   return (
     <GutscheinLayout
-      title={t('maternity.title')}
-      subtitle={t('maternity.subtitle')}
+      title="Schwangerschafts Fotoshooting"
+      subtitle="Magische Momente Ihrer Schwangerschaft"
       image="https://i.postimg.cc/xjZzq5Mc/4S8A5701.jpg"
     >
       <div className="max-w-4xl mx-auto">
@@ -145,19 +143,21 @@ const MaternityGutscheinPage: React.FC = () => {
           <div className="md:grid md:grid-cols-2 items-center">
             <div className="p-8 md:p-12">
               <h2 className="text-3xl font-bold text-purple-900 mb-6">
-                {t('maternity.moments.title')}
+                Ihre schönsten Momente festgehalten ✨
               </h2>
               <p className="text-gray-700 mb-6">
-                {t('maternity.moments.description')}
+                Ihre Schwangerschaft ist eine besondere Zeit voller Vorfreude und Emotionen. 
+                Wir fangen diese einzigartigen Momente in stilvollen, zeitlosen Bildern ein – 
+                ob im Studio oder an Ihrem Wunschort.
               </p>
               <ul className="space-y-4">
                 <li className="flex items-center text-gray-700">
                   <Heart className="text-purple-600 mr-3" size={20} />
-                  {t('maternity.feature.professional')}
+                  Professionelle Betreuung & Styling-Beratung
                 </li>
                 <li className="flex items-center text-gray-700">
                   <Heart className="text-purple-600 mr-3" size={20} />
-                  {t('maternity.feature.timing')}
+                  Beste Zeit: 32.-36. Schwangerschaftswoche
                 </li>
                 <li className="flex items-center text-gray-700">
                   <Heart className="text-purple-600 mr-3" size={20} />

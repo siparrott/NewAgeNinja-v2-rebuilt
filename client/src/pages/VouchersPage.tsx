@@ -4,7 +4,6 @@ import Layout from '../components/layout/Layout';
 import VoucherCard from '../components/vouchers/VoucherCard';
 import CategoryFilter from '../components/vouchers/CategoryFilter';
 import { useAppContext } from '../context/AppContext';
-import { useLanguage } from '../context/LanguageContext';
 import { Search, Package, Gift } from 'lucide-react';
 
 import { type VoucherProduct } from '@shared/schema';
@@ -27,7 +26,6 @@ const getVoucherImagePlaceholder = (voucherName: string) => {
 
 const VouchersPage: React.FC = () => {
   const { selectedCategory } = useAppContext();
-  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = React.useState('');
   
   // Handle voucher purchase
@@ -62,7 +60,7 @@ const VouchersPage: React.FC = () => {
 
   useEffect(() => {
     // SEO Meta Tags
-    document.title = t('vouchers.title');
+    document.title = 'Fotoshooting Gutscheine Wien - Geschenkideen | New Age Fotografie';
     
     // Update meta description
     let metaDescription = document.querySelector('meta[name="description"]');
@@ -71,12 +69,12 @@ const VouchersPage: React.FC = () => {
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-    metaDescription.setAttribute('content', t('vouchers.subtitle'));
+    metaDescription.setAttribute('content', 'Fotoshooting Gutscheine als perfekte Geschenkidee. Familien-, Schwangerschafts- und Neugeborenen-Fotoshootings in Wien zum Verschenken.');
 
     return () => {
       document.title = 'New Age Fotografie - Familienfotograf Wien';
     };
-  }, [t]);
+  }, []);
   
   // Filter vouchers based on search term and category
   const activeVouchers = voucherProducts?.filter(voucher => voucher.isActive) || [];
@@ -129,7 +127,7 @@ const VouchersPage: React.FC = () => {
                   NEW AGE FOTOGRAFIE
                 </h1>
                 <p className="text-lg text-purple-600 font-medium">
-                  {selectedCategory ? `${selectedCategory} ${t('vouchers.hero.title')}` : t('vouchers.hero.title')}
+                  {selectedCategory ? `${selectedCategory} Fotoshooting Gutscheine Wien` : 'Fotoshooting Gutscheine Wien'}
                 </p>
               </div>
             </div>
@@ -141,11 +139,11 @@ const VouchersPage: React.FC = () => {
           <div className="lg:col-span-1">
             {/* Search */}
             <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4 text-gray-800">{t('action.search')}</h2>
+              <h2 className="text-lg font-semibold mb-4 text-gray-800">Suche</h2>
               <div className="relative">
                 <input
                   type="text"
-                  placeholder={t('vouchers.search.placeholder')}
+                  placeholder="Gutscheine suchen..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors"
@@ -176,9 +174,9 @@ const VouchersPage: React.FC = () => {
             ) : error ? (
               <div className="bg-red-50 border border-red-200 p-8 rounded-lg text-center">
                 <Package className="h-12 w-12 text-red-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2 text-red-800">{t('message.error')}</h3>
+                <h3 className="text-lg font-semibold mb-2 text-red-800">Fehler beim Laden der Gutscheine</h3>
                 <p className="text-red-600">
-                  {t('vouchers.loading')}
+                  Die Gutscheine konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
                 </p>
               </div>
             ) : displayedVouchers.length > 0 ? (
@@ -191,12 +189,12 @@ const VouchersPage: React.FC = () => {
               <div className="bg-gray-50 p-8 rounded-lg text-center">
                 <Gift className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2 text-gray-800">
-                  {searchTerm || selectedCategory !== 'Alle' ? t('vouchers.noResults') : t('message.noData')}
+                  {searchTerm || selectedCategory !== 'Alle' ? 'Keine Gutscheine gefunden' : 'Noch keine Gutscheine verfügbar'}
                 </h3>
                 <p className="text-gray-600 mb-4">
                   {searchTerm || selectedCategory !== 'Alle' 
-                    ? t('vouchers.noResults')
-                    : t('message.noData')
+                    ? 'Wir konnten keine Gutscheine finden, die Ihren Kriterien entsprechen.'
+                    : 'Unsere Fotoshooting-Gutscheine werden bald verfügbar sein.'
                   }
                 </p>
                 {(searchTerm || selectedCategory !== 'Alle') && (
@@ -206,7 +204,7 @@ const VouchersPage: React.FC = () => {
                     }}
                     className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
                   >
-                    {t('action.filter')}
+                    Filter zurücksetzen
                   </button>
                 )}
               </div>
