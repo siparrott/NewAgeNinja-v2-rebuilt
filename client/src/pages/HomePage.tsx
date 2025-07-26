@@ -12,9 +12,17 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
   // Fetch voucher products from API
-  const { data: voucherProducts, isLoading: vouchersLoading } = useQuery<VoucherProduct[]>({
+  const { data: voucherProducts, isLoading: vouchersLoading, error: vouchersError } = useQuery({
     queryKey: ['/api/vouchers/products'],
+    staleTime: 0, // Always fetch fresh data
   });
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Voucher products data:', voucherProducts);
+    console.log('Loading state:', vouchersLoading);
+    console.log('Error state:', vouchersError);
+  }, [voucherProducts, vouchersLoading, vouchersError]);
 
   const testimonials = [
     {
@@ -106,8 +114,7 @@ const HomePage: React.FC = () => {
                     loop: true,
                     cursor: '',
                     delay: 50,
-                    deleteSpeed: 50,
-                    pauseFor: 2500
+                    deleteSpeed: 50
                   }}
                 />
               </span>
@@ -388,7 +395,7 @@ const HomePage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {voucherProducts?.filter(voucher => voucher.isActive).map((voucher) => (
+              {(voucherProducts as any[])?.filter((voucher: any) => voucher.isActive).map((voucher: any) => (
                 <div key={voucher.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
                   <div className="aspect-[4/3] overflow-hidden">
                     <img 
