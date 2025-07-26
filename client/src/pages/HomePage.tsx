@@ -89,14 +89,11 @@ const HomePage: React.FC = () => {
       <section className="bg-white">
         <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between">
           <div className="max-w-2xl md:w-3/5 mb-8 md:mb-0">
-            <h1 className="mb-4 leading-tight text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
-              Endlich ein Fotostudio
-            </h1>
             <div className="mb-6">
-              <span className="block text-xl sm:text-2xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
+              <h1 className="block text-xl sm:text-2xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
                 <Typewriter
                   options={{
-                    strings: ['das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...'],
+                    strings: ['Endlich ein Fotostudio'],
                     autoStart: true,
                     loop: true,
                     cursor: '',
@@ -104,16 +101,16 @@ const HomePage: React.FC = () => {
                     deleteSpeed: 50
                   }}
                 />
-              </span>
-              <span className="block text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 tracking-tighter animate-fade-in-up">
+              </h1>
+              <p className="text-lg sm:text-xl text-gray-700 mb-4">
                 das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...
-              </span>
+              </p>
             </div>
             <button 
               onClick={() => navigate('/warteliste')}
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
-              Fotoshooting buchen
+              Book Photoshoot Now
             </button>
           </div>
           <div className="md:w-2/5">
