@@ -90,11 +90,11 @@ app.use((req, res, next) => {
     res.status(status).json({ message });
   });
 
-  // Add a specific middleware to protect API routes from Vite's catch-all
-  app.use('/api/*', (req, res, next) => {
-    // Skip Vite handling for API routes
-    next();
-  });
+  // Remove problematic API middleware that might be causing 403 errors
+  // app.use('/api/*', (req, res, next) => {
+  //   // Skip Vite handling for API routes
+  //   next();
+  // });
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

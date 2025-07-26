@@ -1,37 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { ChevronRight } from 'lucide-react';
 import Typewriter from 'typewriter-effect';
 import CountUp from 'react-countup';
 import photoGridImage from '../assets/photo-grid.jpg';
-import { type VoucherProduct } from '@shared/schema';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  
-  // Force component re-render and cache bust
-  const [renderKey, setRenderKey] = React.useState(Date.now());
-
-  // Fetch voucher products from API with cache busting
-  const { data: voucherProducts, isLoading: vouchersLoading, error: vouchersError } = useQuery({
-    queryKey: ['/api/vouchers/products', renderKey],
-    staleTime: 0, // Always fetch fresh data
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-  });
-
-  // Debug logging
-  React.useEffect(() => {
-    console.log('=== VOUCHER DEBUG INFO ===');
-    console.log('Voucher products data:', voucherProducts);
-    console.log('Loading state:', vouchersLoading);
-    console.log('Error state:', vouchersError);
-    console.log('Render key:', renderKey);
-    console.log('Current URL:', window.location.href);
-    console.log('=== END VOUCHER DEBUG ===');
-  }, [voucherProducts, vouchersLoading, vouchersError, renderKey]);
 
   const testimonials = [
     {
@@ -105,29 +81,8 @@ const HomePage: React.FC = () => {
     }
   ];
 
-  // Force complete page reload if cached content is detected
-  React.useEffect(() => {
-    // Check if we're seeing cached content by looking for the old pricing
-    const checkForCachedContent = () => {
-      const pageContent = document.body.innerHTML;
-      if (pageContent.includes('€199') || pageContent.includes('€249') || pageContent.includes('€299')) {
-        console.log('Cached content detected, forcing complete reload');
-        window.location.reload();
-      }
-    };
-    
-    // Check immediately and after a delay
-    setTimeout(checkForCachedContent, 1000);
-    setTimeout(checkForCachedContent, 3000);
-    
-    const interval = setInterval(() => {
-      setRenderKey(Date.now());
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <Layout key={renderKey}>
+    <Layout>
       {/* Hero Section */}
       <section className="bg-white">
         <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between">
@@ -165,8 +120,6 @@ const HomePage: React.FC = () => {
               alt="Comprehensive family portrait showcase featuring various photography styles including family groups, couples, newborns, maternity, and lifestyle sessions"
               className="w-full rounded-lg shadow-lg"
               onError={(e) => {
-                // Fallback for mobile/loading issues
-                // console.log removed
                 e.currentTarget.src = "https://i.postimg.cc/zGVgt500/Familienportrat-Wien-Krchnavy-Stolz-0105-1024x683-1.jpg";
               }}
               loading="lazy"
@@ -186,34 +139,8 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Counter Section */}
-      <section className="bg-gradient-to-r from-pink-500 to-purple-600 py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="text-white">
-              <div className="text-3xl md:text-4xl font-bold mb-2">
-                <CountUp end={27156} duration={2.5} separator="," />
-              </div>
-              <div className="text-base md:text-lg text-white/90">Glückliche Familien</div>
-            </div>
-            <div className="text-white">
-              <div className="text-3xl md:text-4xl font-bold mb-2">
-                <CountUp end={5431977} duration={2.5} separator="," />
-              </div>
-              <div className="text-base md:text-lg text-white/90">Porträts eingefangen</div>
-            </div>
-            <div className="text-white">
-              <div className="text-3xl md:text-4xl font-bold mb-2">
-                <CountUp end={27} duration={2.5} />
-              </div>
-              <div className="text-base md:text-lg text-white/90">Jahre Berufserfahrung</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Content Sections */}
-      <section className="py-16">
+      {/* Services Introduction */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           {/* First Content Block */}
           <div className="flex flex-col md:flex-row items-center gap-8 mb-16">
@@ -273,7 +200,29 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Content Blocks */}
+      {/* Voucher Section - Updated Message */}
+      <section className="py-16 bg-gradient-to-r from-pink-50 to-purple-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-purple-600 mb-8">
+              Fotoshooting-Gutscheine
+            </h2>
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl mx-auto">
+              <p className="text-lg text-gray-700 mb-6">
+                Gutscheine werden überarbeitet. Kontaktieren Sie uns für aktuelle Angebote.
+              </p>
+              <button 
+                onClick={() => navigate('/kontakt')}
+                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+              >
+                Jetzt Kontakt aufnehmen
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Service Cards */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -368,35 +317,37 @@ const HomePage: React.FC = () => {
             >
               <div className="aspect-[4/3] overflow-hidden">
                 <img 
-                  src="https://i.imgur.com/0KAHvWd.jpg"
-                  alt="Event photography"
+                  src="https://i.imgur.com/gXtGKmm.jpg"
+                  alt="Event Fotografie Wien - Professionelle Veranstaltungsfotografie"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
               <div className="p-6">
-                <h3 className="text-xl font-bold text-purple-900 mb-2">Eventfotografie in Wien & Zurich</h3>
+                <h3 className="text-xl font-bold text-purple-900 mb-2">Event-Fotografie in Wien & Zurich</h3>
                 <p className="text-gray-600">
-                  Es gibt nichts Aufregenderes als die unvergesslichen Momente bei Veranstaltungen. Unsere Eventfotografie konzentriert sich darauf, diese besonderen Augenblicke mit Kreativität und Professionalität festzuhalten.
+                  Von Firmenveranstaltungen bis hin zu privaten Feiern fangen wir die besonderen Momente Ihrer Veranstaltung ein. Lassen Sie uns Ihre wichtigen Ereignisse für die Ewigkeit festhalten.
                 </p>
               </div>
             </div>
 
-            {/* Wedding Photography */}
+            {/* Portrait Photography */}
             <div 
               onClick={() => navigate('/fotoshootings')}
               className="bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-transform hover:-translate-y-1"
             >
               <div className="aspect-[4/3] overflow-hidden">
                 <img 
-                  src="https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg"
-                  alt="Wedding photography"
+                  src="https://i.imgur.com/FPhLGV1.jpg"
+                  alt="Porträtfotografie Wien - Individuelle Porträts im Studio"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
               <div className="p-6">
-                <h3 className="text-xl font-bold text-purple-900 mb-2">Hochzeitsfotografie in Wien & Zurich</h3>
+                <h3 className="text-xl font-bold text-purple-900 mb-2">Porträtfotografie in Wien & Zurich</h3>
                 <p className="text-gray-600">
-                  Es gibt nichts Schöneres als die Magie eines Hochzeitstages. Unsere Hochzeitsfotografie fängt diese magischen Momente mit Liebe zum Detail und künstlerischem Flair ein.
+                  Ob für persönliche oder berufliche Zwecke, unsere Porträtsitzungen sind darauf ausgelegt, Ihre Persönlichkeit und Ihren einzigartigen Stil zur Geltung zu bringen.
                 </p>
               </div>
             </div>
@@ -404,100 +355,75 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Title Section */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-purple-900">
-            Erstklassiges Portraitstudio in Wien & Zürich | Familien-, Neugeborenen-, Schwangerschafts- & Unternehmensfotografie
-          </h2>
-        </div>
-      </section>
-
-      {/* Voucher Grid Section */}
+      {/* Statistics Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-purple-900">
-            Unsere Fotoshooting-Gutscheine
-          </h2>
-          {vouchersLoading ? (
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
-            </div>
-          ) : vouchersError ? (
-            <div className="text-center text-red-600">
-              <p>Fehler beim Laden der Gutscheine. API Error: {JSON.stringify(vouchersError)}</p>
-            </div>
-          ) : !voucherProducts || voucherProducts.length === 0 ? (
-            <div className="text-center text-gray-600">
-              <p>Keine Gutscheine verfügbar. API Response: {JSON.stringify(voucherProducts)}</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {/* Debug Info */}
-              <div className="col-span-full bg-yellow-100 p-4 rounded mb-4">
-                <p className="text-sm">DEBUG: Found {(voucherProducts as any[])?.length} vouchers</p>
-                <pre className="text-xs overflow-auto">{JSON.stringify(voucherProducts, null, 2)}</pre>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-purple-600 mb-4">
+              Vertrauen Sie auf unsere Erfahrung
+            </h2>
+            <p className="text-lg text-gray-700">
+              Über die Jahre haben wir hunderte von zufriedenen Familien fotografiert
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">
+                <CountUp end={500} duration={2.5} separator="," />+
               </div>
-              
-              {(voucherProducts as any[])?.filter((voucher: any) => voucher.isActive).map((voucher: any) => (
-                <div key={voucher.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-                  <div className="aspect-[4/3] overflow-hidden">
-                    <img 
-                      src={voucher.imageUrl || 
-                        (voucher.name.toLowerCase().includes('baby') || voucher.name.toLowerCase().includes('neugeboren') 
-                          ? "https://i.imgur.com/QWOgLqX.jpg"
-                          : voucher.name.toLowerCase().includes('famil')
-                          ? "https://i.imgur.com/4m5hoL9.jpg"
-                          : "https://i.imgur.com/Vd6xtPg.jpg"
-                        )
-                      }
-                      alt={voucher.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-purple-900 mb-2">{voucher.name}</h3>
-                    <p className="text-gray-600 mb-4 line-clamp-3">
-                      {voucher.description?.split('\n')[0] || 'Professionelle Fotografie für besondere Momente'}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-2xl font-bold text-purple-600">€{voucher.price}</span>
-                      <button 
-                        onClick={() => navigate(`/vouchers/checkout/${voucher.id}`)}
-                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full transition-colors"
-                      >
-                        Jetzt Buchen
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              <p className="text-gray-700 font-medium">Zufriedene Familien</p>
             </div>
-          )}
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">
+                <CountUp end={1200} duration={2.5} separator="," />+
+              </div>
+              <p className="text-gray-700 font-medium">Fotoshootings</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">
+                <CountUp end={8} duration={2.5} />+
+              </div>
+              <p className="text-gray-700 font-medium">Jahre Erfahrung</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">
+                <CountUp end={98} duration={2.5} />%
+              </div>
+              <p className="text-gray-700 font-medium">Weiterempfehlungsrate</p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Testimonials Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-purple-900">
-            Was unsere Kunden sagen
-          </h2>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-purple-600 mb-4">
+              Was unsere Kunden sagen
+            </h2>
+            <p className="text-lg text-gray-700">
+              Lesen Sie die Erfahrungen zufriedener Familien
+            </p>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+              <div key={index} className="bg-gray-50 rounded-lg p-6">
                 <div className="flex items-center mb-4">
-                  <img
+                  <img 
                     src={testimonial.image}
                     alt={testimonial.name}
-                    className="w-12 h-12 rounded-full object-cover"
+                    className="w-12 h-12 rounded-full object-cover mr-4"
+                    loading="lazy"
                   />
-                  <div className="ml-4">
-                    <h3 className="font-semibold text-gray-800">{testimonial.name}</h3>
-                    <p className="text-gray-600 text-sm">{testimonial.role}</p>
+                  <div>
+                    <h4 className="font-bold text-purple-900">{testimonial.name}</h4>
+                    <p className="text-sm text-gray-600">{testimonial.role}</p>
                   </div>
                 </div>
-                <p className="text-gray-700">{testimonial.text}</p>
+                <p className="text-gray-700 italic">"{testimonial.text}"</p>
               </div>
             ))}
           </div>
@@ -505,34 +431,65 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-gray-50" id="faq">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-purple-900">
-            FAQs - Häufig gestellte Fragen
-          </h2>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-purple-600 mb-4">
+              FAQs
+            </h2>
+            <p className="text-lg text-gray-700">
+              Häufig gestellte Fragen zur Familienfotografie
+            </p>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {faqImages.map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-                <div className="aspect-[4/3] overflow-hidden rounded-lg mb-6">
-                  <img
+              <div key={index} className="bg-white rounded-lg overflow-hidden shadow-lg">
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img 
                     src={faq.image}
                     alt={faq.alt}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 </div>
-                <h3 className="text-xl font-bold text-purple-900 mb-4">
-                  {faq.title}
-                </h3>
-                <p className="text-gray-700">
-                  {index === 0 && "Unsere Leidenschaft für authentische Momente und unser Engagement für Qualität. Wir verstehen Familie als mehr als nur eine Gruppe von Menschen; es sind die Beziehungen und Liebe, die wir in jedem Bild festhalten. Unser Ansatz verbindet künstlerische Vision mit persönlicher Betreuung, um Fotos zu erschaffen, die Ihre Familiengeschichte erzählen."}
-                  {index === 1 && "Unsere Fotoshootings finden ausschließlich in unserem Studio in Wien statt. Dort haben wir die perfekte Umgebung und professionelles Licht – ideal für natürliche und stilvolle Familienporträts."}
-                  {index === 2 && "Nach der Buchung erhalten Sie von uns eine detaillierte Anleitung zur Vorbereitung – von der Auswahl der Kleidung bis hin zu Tipps für die Gestaltung des Shootings. Unser Ziel ist es, dass Sie sich wohl fühlen und Spaß haben."}
-                  {index === 3 && "Unsere Familienfotoshootings dauern in der Regel bis zu einer Stunde. Wir nehmen uns genug Zeit, um sicherzustellen, dass schöne, natürliche Aufnahmen entstehen – ganz entspannt und ohne Eile."}
-                  {index === 4 && "Absolut! Haustiere sind ein wichtiger Teil der Familie und herzlich willkommen."}
-                  {index === 5 && "Wir wissen: Nicht jeder steht gerne vor der Kamera. Aber genau das ist unsere Stärke! Mit viel Einfühlungsvermögen, Humor und einer lockeren Atmosphäre helfen wir Groß und Klein, sich zu entspannen. Bei uns darf gelacht, gealbert und echt sein – so entstehen die natürlichsten Familienfotos."}
-                </p>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-purple-900 mb-3">
+                    {faq.title}
+                  </h3>
+                  <div className="flex justify-between items-center">
+                    <span className="text-purple-600 font-medium">Mehr erfahren</span>
+                    <ChevronRight className="w-5 h-5 text-purple-600" />
+                  </div>
+                </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-gradient-to-r from-pink-500 to-purple-600">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Bereit für Ihr Familienshooting?
+          </h2>
+          <p className="text-xl text-pink-100 mb-8">
+            Kontaktieren Sie uns noch heute und lassen Sie uns unvergessliche Erinnerungen schaffen
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button 
+              onClick={() => navigate('/fotoshootings')}
+              className="bg-white text-purple-600 font-bold py-3 px-8 rounded-full text-lg hover:bg-gray-100 transition-colors duration-300"
+            >
+              Termin Buchen
+            </button>
+            <button 
+              onClick={() => navigate('/kontakt')}
+              className="border-2 border-white text-white font-bold py-3 px-8 rounded-full text-lg hover:bg-white hover:text-purple-600 transition-colors duration-300"
+            >
+              Kontakt Aufnehmen
+            </button>
           </div>
         </div>
       </section>
