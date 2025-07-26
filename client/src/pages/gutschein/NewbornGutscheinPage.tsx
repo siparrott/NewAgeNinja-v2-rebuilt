@@ -3,47 +3,49 @@ import GutscheinLayout from '../../components/gutschein/GutscheinLayout';
 import { Check, Clock, Heart, Camera } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 
 const NewbornGutscheinPage: React.FC = () => {
   const { addItem } = useCart();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const packages = [
     {
-      title: 'Basic',
-      subtitle: 'Erste Erinnerungen',
+      title: t('newborn.package.basic'),
+      subtitle: t('newborn.package.basicSub'),
       price: 95,
       originalPrice: 195,
       features: [
-        '30min Shooting',
-        '1 bearbeitete Fotos',
-        '2 Setups',
-        'Requisiten inklusive'
+        t('newborn.feature.30min'),
+        t('newborn.feature.1photo'),
+        t('newborn.feature.2setups'),
+        t('newborn.feature.propsIncluded')
       ]
     },
     {
-      title: 'Premium',
-      subtitle: 'Umfangreiche Erinnerungen',
+      title: t('newborn.package.premium'),
+      subtitle: t('newborn.package.premiumSub'),
       price: 195,
       originalPrice: 295,
       features: [
-        '45min Shooting',
-        '5 bearbeitete Fotos',
-        'Familienfotos inklusive',
-        'Requisiten & Outfits inklusive'
+        t('newborn.feature.45min'),
+        t('newborn.feature.5photos'),
+        t('newborn.feature.familyPhotos'),
+        t('newborn.feature.propsOutfits')
       ],
       isFeatured: true
     },
     {
-      title: 'Deluxe',
-      subtitle: 'Das komplette Erlebnis',
+      title: t('newborn.package.deluxe'),
+      subtitle: t('newborn.package.deluxeSub'),
       price: 295,
       originalPrice: 395,
       features: [
-        '1 Stunden Shooting',
-        '10 bearbeitete Fotos',
-        'Familienfotos inklusive',
-        'Alle Requisiten & Outfits'
+        t('newborn.feature.1hour'),
+        t('newborn.feature.10photos'),
+        t('newborn.feature.familyPhotos'),
+        t('newborn.feature.allProps')
       ]
     }
   ];
@@ -122,7 +124,7 @@ const NewbornGutscheinPage: React.FC = () => {
 
   const handleAddToCart = (pkg: typeof packages[0]) => {
     addItem({
-      title: `Neugeborenen Fotoshooting - ${pkg.title}`,
+      title: `${t('newborn.title')} - ${pkg.title}`,
       price: pkg.price,
       quantity: 1,
       packageType: pkg.subtitle
@@ -132,8 +134,8 @@ const NewbornGutscheinPage: React.FC = () => {
 
   return (
     <GutscheinLayout
-      title="Neugeborenen Fotoshooting"
-      subtitle="Die ersten kostbaren Momente Ihres Babys"
+      title={t('newborn.title')}
+      subtitle={t('newborn.subtitle')}
       image="https://i.postimg.cc/WzrVSs3F/3-J9-A3679-renamed-3632.jpg"
     >
       <div className="max-w-4xl mx-auto">

@@ -3,51 +3,53 @@ import GutscheinLayout from '../../components/gutschein/GutscheinLayout';
 import { Check, Clock, Users, Camera, Heart } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 
 const FamilyGutscheinPage: React.FC = () => {
   const { addItem } = useCart();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const packages = [
     {
-      title: 'Family Basic',
-      subtitle: 'Perfect for Small Families',
+      title: t('family.package.basic'),
+      subtitle: t('family.package.basicSub'),
       price: 95,
       originalPrice: 195,
       features: [
-        '30 Minuten Shooting',
-        '1 bearbeitete Fotos',
-        'Begrüßungsgetränk',
-        'Outfit-Wechsel möglich',
-        'Bis zu 12 Erwachsene und 4 Kinder möglich, Haustiere willkommen'
+        t('family.feature.30min'),
+        t('family.feature.1photo'),
+        t('family.feature.welcome'),
+        t('family.feature.outfitChange'),
+        t('family.feature.upTo12')
       ]
     },
     {
-      title: 'Family Premium',
-      subtitle: 'Ideal für größere Familien',
+      title: t('family.package.premium'),
+      subtitle: t('family.package.premiumSub'),
       price: 195,
       originalPrice: 295,
       features: [
-        '45 Minuten Shooting',
-        '5 bearbeitete Fotos',
-        'Begrüßungsgetränk',
-        'Outfit-Wechsel möglich',
-        'Bis zu 12 Erwachsene und 4 Kinder möglich, Haustiere willkommen'
+        t('family.feature.45min'),
+        t('family.feature.5photos'),
+        t('family.feature.welcome'),
+        t('family.feature.outfitChange'),
+        t('family.feature.upTo12')
       ],
       isFeatured: true
     },
     {
-      title: 'Family Deluxe',
-      subtitle: 'Das komplette Familienerlebnis',
+      title: t('family.package.deluxe'),
+      subtitle: t('family.package.deluxeSub'),
       price: 295,
       originalPrice: 395,
       features: [
-        '60 Minuten Shooting',
-        '10 bearbeitete Fotos',
-        'Begrüßungsgetränk',
-        'Outfit-Wechsel möglich',
-        'Alle Kombinationen',
-        'Bis zu 12 Erwachsene und 4 Kinder möglich, Haustiere willkommen'
+        t('family.feature.60min'),
+        t('family.feature.10photos'),
+        t('family.feature.welcome'),
+        t('family.feature.outfitChange'),
+        t('family.feature.allCombinations'),
+        t('family.feature.upTo12')
       ]
     }
   ];
@@ -126,7 +128,7 @@ const FamilyGutscheinPage: React.FC = () => {
 
   const handleAddToCart = (pkg: typeof packages[0]) => {
     addItem({
-      title: `Familien Fotoshooting - ${pkg.title}`,
+      title: `${t('family.title')} - ${pkg.title}`,
       price: pkg.price,
       quantity: 1,
       packageType: pkg.subtitle
@@ -136,8 +138,8 @@ const FamilyGutscheinPage: React.FC = () => {
 
   return (
     <GutscheinLayout
-      title="Familien Fotoshooting"
-      subtitle="Unvergessliche Momente für die ganze Familie"
+      title={t('family.title')}
+      subtitle={t('family.subtitle')}
       image="https://i.imgur.com/o9HCqp0.jpg"
     >
       <div className="max-w-4xl mx-auto">
