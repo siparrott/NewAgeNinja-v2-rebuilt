@@ -393,8 +393,22 @@ const HomePage: React.FC = () => {
             <div className="flex justify-center">
               <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
             </div>
+          ) : vouchersError ? (
+            <div className="text-center text-red-600">
+              <p>Fehler beim Laden der Gutscheine. API Error: {JSON.stringify(vouchersError)}</p>
+            </div>
+          ) : !voucherProducts || voucherProducts.length === 0 ? (
+            <div className="text-center text-gray-600">
+              <p>Keine Gutscheine verfügbar. API Response: {JSON.stringify(voucherProducts)}</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {/* Debug Info */}
+              <div className="col-span-full bg-yellow-100 p-4 rounded mb-4">
+                <p className="text-sm">DEBUG: Found {(voucherProducts as any[])?.length} vouchers</p>
+                <pre className="text-xs overflow-auto">{JSON.stringify(voucherProducts, null, 2)}</pre>
+              </div>
+              
               {(voucherProducts as any[])?.filter((voucher: any) => voucher.isActive).map((voucher: any) => (
                 <div key={voucher.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
                   <div className="aspect-[4/3] overflow-hidden">
