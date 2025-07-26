@@ -169,12 +169,13 @@ const translations = {
     'contact.office.title': 'Office and Correspondence Address',
     'contact.office.address': 'Julius Tandler Platz 5 / 13, 1090 Vienna',
 
-    // Blog Page
+    // Blog Page (English)
     'blog.title': 'Photography Blog Vienna - Tips & Inspiration',
     'blog.subtitle': 'Photography blog with tips, inspiration and behind-the-scenes from our Vienna studio.',
-    'blog.hero.title': 'Photography Blog',
-    'blog.hero.subtitle': 'Tips, inspiration and stories from our photography sessions',
-    'blog.search.placeholder': 'Search articles...',
+    'blog.heroTitle': 'Photography Blog - Tips & Inspiration',
+    'blog.heroSubtitle': 'Discover photography tips, behind-the-scenes and inspiration for perfect family photos',
+    'blog.searchPlaceholder': 'Search blog posts...',
+    'blog.loading': 'Loading posts...',
     'blog.filter.all': 'All Articles',
     'blog.filter.family': 'Family Photography',
     'blog.filter.newborn': 'Newborn Photography',
@@ -183,6 +184,24 @@ const translations = {
     'blog.readMore': 'Read More',
     'blog.publishedOn': 'Published on',
     'blog.by': 'by',
+
+    // Waitlist Page
+    'waitlist.title': 'Request Appointment - Book Photography Session Vienna | New Age Photography',
+    'waitlist.subtitle': 'Request a photography session appointment in Vienna. Available weekend appointments for family, maternity and newborn photography.',
+    'waitlist.heroTitle': 'Request Photography Session Appointment in Vienna',
+    'waitlist.heroSubtitle': 'Professional family photographer in Vienna with flexible appointments. We offer photography sessions on weekends - contact us for availability.',
+    'waitlist.success': 'Your request has been sent successfully. We will contact you shortly.',
+    'waitlist.error': 'An error occurred. Please try again later.',
+    'waitlist.fullName': 'Full Name',
+    'waitlist.fullNamePlaceholder': 'Your full name',
+    'waitlist.preferredDate': 'Preferred Date for Your Shooting',
+    'waitlist.email': 'Email Address',
+    'waitlist.emailPlaceholder': 'your@email.com',
+    'waitlist.phone': 'WhatsApp / Phone Number',
+    'waitlist.phonePlaceholder': '+43 ',
+    'waitlist.message': 'Your Message',
+    'waitlist.messagePlaceholder': 'Share your wishes for the photography session with us...',
+    'waitlist.submit': 'Send Request',
 
     // Gallery filter options  
     'gallery.filter.family': 'Family',
@@ -510,6 +529,32 @@ const translations = {
     'newborn.feature.familyPhotos': 'Familienfotos inklusive',
     'newborn.feature.propsOutfits': 'Requisiten & Outfits inklusive',
     'newborn.feature.allProps': 'Alle Requisiten & Outfits',
+
+    // Blog Page (German)
+    'blog.title': 'Blog - Fotografie Tipps & Inspiration | New Age Fotografie Wien',
+    'blog.subtitle': 'Fotografie-Blog mit Tipps für Familienfotos, Neugeborenenbilder und Schwangerschaftsfotos. Inspiration und Beratung vom Wiener Familienfotograf.',
+    'blog.heroTitle': 'Fotografie Blog - Tipps & Inspiration',
+    'blog.heroSubtitle': 'Entdecken Sie Fotografie-Tipps, Behind-the-Scenes und Inspiration für perfekte Familienfotos',
+    'blog.searchPlaceholder': 'Blog-Beiträge durchsuchen...',
+    'blog.loading': 'Lade Beiträge...',
+
+    // Waitlist Page (German)
+    'waitlist.title': 'Termin anfragen - Fotoshooting Wien buchen | New Age Fotografie',
+    'waitlist.subtitle': 'Fotoshooting-Termin in Wien anfragen. Verfügbare Termine an Wochenenden für Familien-, Schwangerschafts- und Neugeborenen-Fotografie.',
+    'waitlist.heroTitle': 'Fotoshooting Termin in Wien anfragen',
+    'waitlist.heroSubtitle': 'Professioneller Familienfotograf in Wien mit flexiblen Terminen. Wir bieten Fotoshootings an Wochenenden - kontaktieren Sie uns für die Verfügbarkeit.',
+    'waitlist.success': 'Ihre Anfrage wurde erfolgreich gesendet. Wir werden uns in Kürze bei Ihnen melden.',
+    'waitlist.error': 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.',
+    'waitlist.fullName': 'Vollname',
+    'waitlist.fullNamePlaceholder': 'Ihr vollständiger Name',
+    'waitlist.preferredDate': 'Bevorzugtes Datum für Ihr Shooting',
+    'waitlist.email': 'Email Adresse',
+    'waitlist.emailPlaceholder': 'ihre@email.com',
+    'waitlist.phone': 'WhatsApp / Telefonnummer',
+    'waitlist.phonePlaceholder': '+43 ',
+    'waitlist.message': 'Ihre Nachricht',
+    'waitlist.messagePlaceholder': 'Teilen Sie uns Ihre Wünsche für das Fotoshooting mit...',
+    'waitlist.submit': 'Anfrage senden',
   }
 };
 

@@ -61,7 +61,7 @@ const KontaktPage: React.FC = () => {
       setSuccess(true);
       setFormData({ fullName: '', email: '', phone: '', message: '' });
     } catch (err) {
-      setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
+      setError(t('contact.error'));
     } finally {
       setLoading(false);
     }

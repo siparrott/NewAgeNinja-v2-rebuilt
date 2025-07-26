@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { supabase } from '../lib/supabase';
 import { Calendar, ChevronRight, Tag, Search, Loader2 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface BlogPost {
   id: string;
@@ -27,6 +28,7 @@ interface BlogTag {
 }
 
 const BlogPage: React.FC = () => {
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [tags, setTags] = useState<BlogTag[]>([]);
@@ -46,7 +48,7 @@ const BlogPage: React.FC = () => {
 
   useEffect(() => {
     // SEO Meta Tags
-    document.title = 'Blog - Fotografie Tipps & Inspiration | New Age Fotografie Wien';
+    document.title = t('blog.title');
     
     // Update meta description
     let metaDescription = document.querySelector('meta[name="description"]');
@@ -55,7 +57,7 @@ const BlogPage: React.FC = () => {
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-    metaDescription.setAttribute('content', 'Fotografie-Blog mit Tipps für Familienfotos, Neugeborenenbilder und Schwangerschaftsfotos. Inspiration und Beratung vom Wiener Familienfotograf.');
+    metaDescription.setAttribute('content', t('blog.subtitle'));
 
     // Open Graph tags
     let ogTitle = document.querySelector('meta[property="og:title"]');
@@ -64,12 +66,12 @@ const BlogPage: React.FC = () => {
       ogTitle.setAttribute('property', 'og:title');
       document.head.appendChild(ogTitle);
     }
-    ogTitle.setAttribute('content', 'Fotografie Blog - New Age Fotografie Wien');
+    ogTitle.setAttribute('content', t('blog.title'));
 
     return () => {
       document.title = 'New Age Fotografie - Familienfotograf Wien';
     };
-  }, []);
+  }, [t]);
   
   const fetchData = async () => {
     try {
@@ -154,10 +156,10 @@ const BlogPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Fotografie Blog - Tipps & Inspiration
+              {t('blog.heroTitle')}
             </h1>
             <p className="text-purple-100 text-lg">
-              Entdecken Sie Fotografie-Tipps, Behind-the-Scenes und Inspiration für perfekte Familienfotos
+              {t('blog.heroSubtitle')}
             </p>
           </div>
         </div>
@@ -172,7 +174,7 @@ const BlogPage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Search blog posts..."
+                placeholder={t('blog.searchPlaceholder')}
                 value={search}
                 onChange={handleSearchChange}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -182,7 +184,7 @@ const BlogPage: React.FC = () => {
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
-                <span className="ml-2 text-gray-600">Loading posts...</span>
+                <span className="ml-2 text-gray-600">{t('blog.loading')}</span>
               </div>
             ) : error ? (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
