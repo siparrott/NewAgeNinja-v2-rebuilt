@@ -97,7 +97,7 @@ const KontaktPage: React.FC = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <Phone className="w-6 h-6 text-gray-600" />
-                <span className="text-gray-700">+43 677 933 99210</span>
+                <span className="text-gray-700">+43 677 633 99210</span>
               </div>
               <div className="flex items-center space-x-4">
                 <Clock className="w-6 h-6 text-gray-600" />
@@ -106,8 +106,10 @@ const KontaktPage: React.FC = () => {
               <div className="flex items-center space-x-4">
                 <MapPin className="w-6 h-6 text-gray-600" />
                 <div className="text-gray-700">
-                  <div className="font-medium">Eingang Ecke Schönbrunnerstraße</div>
-                  <div>Wehrgasse 11A/2+5, 1050 Wien, Austria</div>
+                  <div className="font-medium">Büro- und Korrespondenzadresse</div>
+                  <div>Julius Tandler Platz 5 / 13, 1090 Wien, Austria</div>
+                  <div className="text-sm text-gray-600 mt-1">Eingang Ecke Schönbrunnerstraße</div>
+                  <div className="text-sm text-gray-600">Studio: Wehrgasse 11A/2+5, 1050 Wien</div>
                 </div>
               </div>
             </div>

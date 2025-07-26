@@ -212,9 +212,10 @@ Preferred communication style: Simple, everyday language.
   * Verified all blog posts display with working thumbnails and pagination controls
   * Updated studio contact information:
     - Email: hallo@newagefotografie.com
-    - Phone: +43 677 933 99210
+    - Phone: +43 677 633 99210
     - Hours: Fr-So: 09:00 - 17:00
-    - Address: Schönbrunner Str. 25, 1050 Wien, Austria
+    - Office Address: Julius Tandler Platz 5 / 13, 1090 Wien, Austria
+    - Studio Address: Schönbrunner Str. 25, 1050 Wien, Austria
     - Location: 5 minutes from Kettenbrückengasse, street parking available
 - July 9, 2025. Fixed CRM leads page and enhanced mobile display:
   * Resolved "Failed to load leads" error by converting leads API functions from Supabase to PostgreSQL endpoints
@@ -236,7 +237,7 @@ Preferred communication style: Simple, everyday language.
   * Enhanced all image alt tags with German SEO keywords: "Neugeborenenfotos im Studio Wien", etc.
   * Added loading="lazy" attributes for Core Web Vitals optimization
   * Created robots.txt and sitemap.xml for technical SEO
-  * Business information updated in structured data: +43 677 933 99210, Schönbrunner Str. 25, 1050 Wien
+  * Business information updated in structured data: +43 677 633 99210, Julius Tandler Platz 5 / 13, 1090 Wien
   * Opening hours: Friday-Sunday 09:00-17:00, email: hallo@newagefotografie.com
 - July 9, 2025. Completed comprehensive frontend SEO optimization across all pages:
   * Updated all main pages with German SEO meta tags and Open Graph properties
@@ -464,7 +465,7 @@ Preferred communication style: Simple, everyday language.
   * Created professional logo design inspired by actual company logo with magenta frame elements
   * Fixed missing invoice items by properly loading from crm_invoice_items database table via getCrmInvoiceItems function
   * Added professional header with stylized NEW AGE FOTOGRAFIE logo including geometric frame design
-  * Included complete studio information: address (Schönbrunner Str. 25, 1050 Wien), phone (+43 677 933 99210), email, website
+  * Included complete studio information: office address (Julius Tandler Platz 5 / 13, 1090 Wien), studio address (Schönbrunner Str. 25, 1050 Wien), phone (+43 677 633 99210), email, website
   * Created modern styled sections with purple backgrounds for invoice header and table headers
   * Added comprehensive payment information section with N26 bank details (IBAN: DE46 1001 1001 2620 9741 97, BIC: NTSBDEB1XXX)
   * Integrated complete German model release consent text as required for photography business compliance

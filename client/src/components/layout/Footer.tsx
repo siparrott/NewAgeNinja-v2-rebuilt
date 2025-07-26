@@ -90,6 +90,29 @@ const Footer: React.FC = () => {
           </div>
           
           <div>
+            <h3 className="text-lg font-semibold mb-4">Kontakt</h3>
+            <ul className="space-y-2 text-gray-300">
+              <li>
+                <span className="text-sm">Büro- und Korrespondenzadresse:</span>
+              </li>
+              <li>
+                <span className="text-sm">Julius Tandler Platz 5 / 13</span>
+              </li>
+              <li>
+                <span className="text-sm">1090 Wien, Austria</span>
+              </li>
+              <li>
+                <span className="text-sm">Tel/WhatsApp: +43 677 633 99210</span>
+              </li>
+              <li>
+                <Link to="/kontakt" className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
+                  Vollständige Kontaktdaten
+                </Link>
+              </li>
+            </ul>
+          </div>
+          
+          <div>
             <h3 className="text-lg font-semibold mb-4">Kategorien</h3>
             <ul className="space-y-2">
               <li>
