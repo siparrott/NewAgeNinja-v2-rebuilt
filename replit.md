@@ -123,8 +123,8 @@ Preferred communication style: Simple, everyday language.
   * **SOPHISTICATED CONTENT GENERATION**: System produces authentic German blog posts with Vienna-specific context, proper 8-section format, and comprehensive SEO optimization
   * **DATABASE VERIFIED**: Blog posts contain proper `<figure>` tags with working image URLs proving image insertion is operational
 - January 26, 2025. **CRITICAL PRICING CORRECTION**: Fixed "Spezial Fotoshooting" voucher pricing error from €95.00 to €195.00:
-  * Updated both affected voucher products in database: "Erster Geburtstag & Großeltern Spezial" and "Spezial Familienshooting"
-  * Corrected pricing now displays €195.00 for all special photography packages as intended
+  * Updated "Spezial Familienshooting" voucher product in database to correct price of €195.00
+  * Confirmed "Erster Geburtstag & Großeltern Spezial" voucher remains at €95.00 as intended
   * Comprehensive Settings view added for coupon management with professional configuration options
   * Fixed react-hook-form integration and TypeScript errors in voucher creation system
   * Enhanced modal dialog opacity for better UI readability and user experience
