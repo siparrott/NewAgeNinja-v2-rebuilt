@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import { registerTestRoutes } from "./routes-test";
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -5817,6 +5818,9 @@ Current system status: The AI agent system is temporarily unavailable. Please tr
   // Website Wizard routes
   app.use('/api/website-wizard', websiteWizardRoutes);
   app.use('/api/gallery', galleryShopRouter);
+
+  // Register test routes
+  registerTestRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

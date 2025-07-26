@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import VoucherPersonalization from '@/components/VoucherPersonalization';
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
@@ -27,6 +29,13 @@ interface VoucherProduct {
   termsAndConditions?: string;
 }
 
+interface PersonalizationData {
+  designType: 'none' | 'birthday' | 'christmas' | 'mothers-day' | 'fathers-day' | 'custom';
+  customPhoto?: File;
+  message?: string;
+  recipientName?: string;
+}
+
 const CheckoutForm: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -35,6 +44,7 @@ const CheckoutForm: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [personalization, setPersonalization] = useState<PersonalizationData>({ designType: 'none' });
   const [customerDetails, setCustomerDetails] = useState({
     firstName: '',
     lastName: '',
@@ -82,6 +92,7 @@ const CheckoutForm: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) => {
           voucherId: voucher.id,
           quantity,
           customerDetails,
+          personalization,
           amount: Math.round(totalPrice * 100) // Convert to cents
         })
       });
@@ -195,6 +206,12 @@ const CheckoutForm: React.FC<{ voucher: VoucherProduct }> = ({ voucher }) => {
           </Button>
         </div>
       </div>
+
+      {/* Voucher Personalization */}
+      <VoucherPersonalization 
+        onPersonalizationChange={setPersonalization}
+        initialData={personalization}
+      />
 
       {/* Payment Details */}
       <div className="bg-white rounded-lg p-6 shadow-sm border">
@@ -355,13 +372,11 @@ const VoucherCheckoutPage: React.FC = () => {
                 />
               </div>
               <div className="p-6">
-                {voucher.category && (
-                  <div className="flex items-center space-x-2 mb-3">
-                    <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                      {voucher.category.toUpperCase()}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center space-x-2 mb-3">
+                  <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    FOTOSHOOTING
+                  </span>
+                </div>
                 
                 <h1 className="text-2xl font-bold text-gray-900 mb-3">{voucher.name}</h1>
                 
