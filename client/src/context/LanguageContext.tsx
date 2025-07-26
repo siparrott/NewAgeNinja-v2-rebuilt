@@ -296,7 +296,35 @@ const translations = {
     'common.timezone': 'Timezone',
     
     // Location/Contact
-    'contact.streetParking': 'Street parking available'
+    'contact.streetParking': 'Street parking available',
+    
+    // Homepage
+    'home.hero.title': 'Family & Newborn Photographer in Vienna You Can Trust',
+    'home.hero.subtitle': 'that delivers spontaneous, natural and individual portraits of your family...',
+    'home.hero.cta': 'Book Photoshoot Now',
+    'home.services.title': 'Business-Headshots & Prices',
+    'home.services.description1': 'Experience tailored photoshoots in our customer-oriented studio. We pay great attention to detail and create a comfortable environment.',
+    'home.services.description2': 'Our professional photographers find the most flattering angles and capture authentic expressions. Our timeless photos become treasured memories.',
+    'home.services.description3': 'As a family-friendly studio, we offer a relaxed and stress-free atmosphere for unforgettable shoots. Contact us today!',
+    'home.vouchers.title': 'Photography Vouchers',
+    'home.vouchers.description': 'Give unforgettable moments with our photography vouchers. Perfect for family, friends or as a special gift.',
+    'home.vouchers.cta': 'View Vouchers',
+    'home.familyPortraits.title': 'Family Portraits in Vienna & Zurich',
+    'home.familyPortraits.description': 'Our family sessions are about capturing the unique bond you share. From spontaneous moments to staged portraits, we create images you will treasure forever.',
+    'home.newbornShoots.title': 'Newborn Shoots',
+    'home.newbornShoots.description': 'Capture those precious first moments of your little miracle with our gentle newborn photography. Every session is conducted with the utmost care and patience.',
+    'home.businessPortraits.title': 'Business Portraits',
+    'home.businessPortraits.description': 'Professional headshots that make the right impression. Perfect for LinkedIn profiles, company websites, and business materials.',
+    'home.stats.title': 'Trust Our Experience',
+    'home.stats.description': 'Over the years we have photographed hundreds of satisfied families',
+    'home.stats.families': 'Happy Families',
+    'home.stats.sessions': 'Photoshoots',
+    'home.stats.experience': 'Years Experience',
+    'home.stats.recommendation': 'Recommendation Rate',
+    'home.testimonials.title': 'What Our Customers Say',
+    'home.testimonials.description': 'Read the experiences of satisfied families',
+    'home.faq.title': 'FAQs',
+    'home.faq.description': 'Frequently asked questions about family photography'
   },
   de: {
     'nav.home': 'Startseite',
@@ -587,7 +615,35 @@ const translations = {
     'message.error.failed_to_update_post_status': 'Fehler beim Aktualisieren des Beitragsstatus. Bitte versuchen Sie es erneut.',
     
     // Location/Contact
-    'contact.streetParking': 'Straßenparkplätze verfügbar'
+    'contact.streetParking': 'Straßenparkplätze verfügbar',
+    
+    // Homepage
+    'home.hero.title': 'Familien- & Neugeborenenfotograf in Wien, dem Sie vertrauen können',
+    'home.hero.subtitle': 'das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...',
+    'home.hero.cta': 'Jetzt Shooting Buchen',
+    'home.services.title': 'Business-Headshots & Preise',
+    'home.services.description1': 'Erleben Sie maßgeschneiderte Fotoshootings in unserem kundenorientierten Studio. Wir legen großen Wert auf Details und schaffen eine komfortable Umgebung.',
+    'home.services.description2': 'Unsere professionellen Fotografen finden die schmeichelhaftesten Winkel und fangen authentische Ausdrücke ein. Unsere zeitlosen Fotos werden zu wertvollen Erinnerungen.',
+    'home.services.description3': 'Als familienfreundliches Studio bieten wir eine entspannte und stressfreie Atmosphäre für unvergessliche Shootings. Kontaktieren Sie uns noch heute!',
+    'home.vouchers.title': 'Fotoshooting-Gutscheine',
+    'home.vouchers.description': 'Verschenken Sie unvergessliche Momente mit unseren Fotoshooting-Gutscheinen. Perfekt für Familie, Freunde oder als besonderes Geschenk.',
+    'home.vouchers.cta': 'Gutscheine ansehen',
+    'home.familyPortraits.title': 'Familienporträts in Wien & Zurich',
+    'home.familyPortraits.description': 'Unsere Familiensitzungen drehen sich darum, die einzigartige Bindung festzuhalten, die Sie teilen. Von spontanen Momenten bis hin zu inszenierten Porträts schaffen wir Bilder, die Sie für immer schätzen werden.',
+    'home.newbornShoots.title': 'Neugeborenen-Shootings',
+    'home.newbornShoots.description': 'Halten Sie diese kostbaren ersten Momente Ihres kleinen Wunders mit unserer sanften Neugeborenenfotografie fest. Jede Sitzung wird mit größter Sorgfalt und Geduld durchgeführt.',
+    'home.businessPortraits.title': 'Business-Porträts',
+    'home.businessPortraits.description': 'Professionelle Kopffotos, die den richtigen Eindruck hinterlassen. Perfekt für LinkedIn-Profile, Firmenwebsites und Geschäftsmaterialien.',
+    'home.stats.title': 'Vertrauen Sie auf unsere Erfahrung',
+    'home.stats.description': 'Über die Jahre haben wir hunderte von zufriedenen Familien fotografiert',
+    'home.stats.families': 'Zufriedene Familien',
+    'home.stats.sessions': 'Fotoshootings',
+    'home.stats.experience': 'Jahre Erfahrung',
+    'home.stats.recommendation': 'Weiterempfehlungsrate',
+    'home.testimonials.title': 'Was unsere Kunden sagen',
+    'home.testimonials.description': 'Lesen Sie die Erfahrungen zufriedener Familien',
+    'home.faq.title': 'FAQs',
+    'home.faq.description': 'Häufig gestellte Fragen zur Familienfotografie'
   }
 };
 

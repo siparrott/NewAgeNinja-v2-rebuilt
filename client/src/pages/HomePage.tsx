@@ -5,9 +5,11 @@ import { ChevronRight } from 'lucide-react';
 import Typewriter from 'typewriter-effect';
 import CountUp from 'react-countup';
 import photoGridImage from '../assets/photo-grid.jpg';
+import { useLanguage } from '../context/LanguageContext';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const testimonials = [
     {
@@ -88,13 +90,13 @@ const HomePage: React.FC = () => {
         <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between">
           <div className="max-w-2xl md:w-3/5 mb-8 md:mb-0">
             <h1 className="mb-4 leading-tight text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
-              Familien- & Neugeborenenfotograf in Wien, dem Sie vertrauen können
+              {t('home.hero.title')}
             </h1>
             <div className="mb-6">
               <span className="block text-xl sm:text-2xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-pink-500 to-purple-600 text-transparent bg-clip-text">
                 <Typewriter
                   options={{
-                    strings: ['Endlich ein Fotostudio...'],
+                    strings: [t('home.hero.subtitle')],
                     autoStart: true,
                     loop: true,
                     cursor: '',
@@ -104,14 +106,14 @@ const HomePage: React.FC = () => {
                 />
               </span>
               <span className="block text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 tracking-tighter animate-fade-in-up">
-                das spontane, natürliche und individuelle Porträts Ihrer Familie liefert...
+                {t('home.hero.subtitle')}
               </span>
             </div>
             <button 
               onClick={() => navigate('/fotoshootings')}
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
-              Jetzt Shooting Buchen
+{t('home.hero.cta')}
             </button>
           </div>
           <div className="md:w-2/5">
@@ -133,7 +135,7 @@ const HomePage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-base sm:text-lg text-gray-700 leading-relaxed">
-              Als <strong>Familienfotograf in Wien</strong> und spezialisierter <strong>Neugeborenenfotograf in Wien</strong> schaffen wir zeitlose Erinnerungen in entspannter Studioatmosphäre. Selbst wenn Sie kamerascheu sind oder unberechenbare Kinder haben, erstellen wir Familienporträts, die Sie für immer schätzen werden.
+              {t('home.services.description1')}
             </p>
           </div>
         </div>
@@ -156,7 +158,7 @@ const HomePage: React.FC = () => {
             </div>
             <div className="md:w-2/3">
               <h2 className="text-2xl md:text-3xl font-bold text-purple-600 mb-4">
-                Babybauch-Shooting & Familienporträts
+                {t('home.familyPortraits.title')}
               </h2>
               <p className="text-gray-700 mb-4">
                 Wir schaffen eine komfortable Umgebung und führen Sie durch die gesamte Sitzung, damit Sie sich entspannt und selbstbewusst fühlen. Unsere <a href="/galerie" className="text-purple-600 font-semibold hover:underline">Galerie mit Beispielen Familienfotos</a> zeigt die Qualität unserer Arbeit.
@@ -184,16 +186,16 @@ const HomePage: React.FC = () => {
             </div>
             <div className="md:w-2/3">
               <h2 className="text-2xl md:text-3xl font-bold text-purple-600 mb-4">
-                Business-Headshots & Preise
+                {t('home.services.title')}
               </h2>
               <p className="text-gray-700 mb-4">
-                Erleben Sie <span className="font-semibold">maßgeschneiderte Fotoshootings in unserem kundenorientierten Studio.</span> Wir legen großen Wert auf Details und schaffen eine komfortable Umgebung.
+{t('home.services.description1')}
               </p>
               <p className="text-gray-700 mb-4">
-                <span className="font-semibold">Unsere professionellen Fotografen finden die schmeichelhaftesten Winkel und fangen authentische Ausdrücke ein.</span> Unsere zeitlosen Fotos werden zu wertvollen Erinnerungen.
+{t('home.services.description2')}
               </p>
               <p className="text-gray-700">
-                Als familienfreundliches Studio bieten wir eine entspannte und stressfreie Atmosphäre für unvergessliche Shootings. <span className="font-semibold">Kontaktieren Sie uns noch heute!</span>
+{t('home.services.description3')}
               </p>
             </div>
           </div>
@@ -205,18 +207,17 @@ const HomePage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-purple-600 mb-8">
-              Fotoshooting-Gutscheine
+              {t('home.vouchers.title')}
             </h2>
             <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl mx-auto">
               <p className="text-lg text-gray-700 mb-6">
-                Verschenken Sie unvergessliche Momente mit unseren Fotoshooting-Gutscheinen. 
-                Perfekt für Familie, Freunde oder als besonderes Geschenk.
+                {t('home.vouchers.description')}
               </p>
               <button 
                 onClick={() => navigate('/gutschein')}
                 className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-medium py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
-                Gutscheine ansehen
+                {t('home.vouchers.cta')}
               </button>
             </div>
           </div>
@@ -241,9 +242,9 @@ const HomePage: React.FC = () => {
                 />
               </div>
               <div className="p-6">
-                <h3 className="text-xl font-bold text-purple-900 mb-2">Familienporträts in Wien & Zurich</h3>
+                <h3 className="text-xl font-bold text-purple-900 mb-2">{t('home.familyPortraits.title')}</h3>
                 <p className="text-gray-600">
-                  Unsere Familiensitzungen drehen sich darum, die einzigartige Bindung festzuhalten, die Sie teilen. Von spontanen Momenten bis hin zu inszenierten Porträts schaffen wir Bilder, die Sie für immer schätzen werden.
+                  {t('home.familyPortraits.description')}
                 </p>
               </div>
             </div>
@@ -283,9 +284,9 @@ const HomePage: React.FC = () => {
                 />
               </div>
               <div className="p-6">
-                <h3 className="text-xl font-bold text-purple-900 mb-2">Neugeborenenfotografie in Wien & Zurich</h3>
+                <h3 className="text-xl font-bold text-purple-900 mb-2">{t('home.newbornShoots.title')}</h3>
                 <p className="text-gray-600">
-                  Es gibt nichts Zarteres als die ersten Tage im Leben eines Neugeborenen. Unsere Neugeborenensitzungen konzentrieren sich darauf, diese flüchtigen Momente mit Zärtlichkeit und Sorgfalt einzufangen.
+                  {t('home.newbornShoots.description')}
                 </p>
               </div>
             </div>
@@ -304,9 +305,9 @@ const HomePage: React.FC = () => {
                 />
               </div>
               <div className="p-6">
-                <h3 className="text-xl font-bold text-purple-900 mb-2">Firmenfotografie in Wien & Zurich</h3>
+                <h3 className="text-xl font-bold text-purple-900 mb-2">{t('home.businessPortraits.title')}</h3>
                 <p className="text-gray-600">
-                  Verbessern Sie Ihr professionelles Image mit unseren Firmenfotografie-Dienstleistungen. Von Porträts bis hin zu Teamfotos helfen wir Ihnen, Ihr Unternehmen im besten Licht zu präsentieren.
+                  {t('home.businessPortraits.description')}
                 </p>
               </div>
             </div>
