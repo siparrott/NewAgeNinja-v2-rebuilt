@@ -10,11 +10,16 @@ import { type VoucherProduct } from '@shared/schema';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Force component re-render and cache bust
+  const [renderKey, setRenderKey] = React.useState(Date.now());
 
-  // Fetch voucher products from API
+  // Fetch voucher products from API with cache busting
   const { data: voucherProducts, isLoading: vouchersLoading, error: vouchersError } = useQuery({
-    queryKey: ['/api/vouchers/products'],
+    queryKey: ['/api/vouchers/products', renderKey],
     staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Debug logging
@@ -96,8 +101,16 @@ const HomePage: React.FC = () => {
     }
   ];
 
+  // Force refresh every 10 seconds if data is stale
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setRenderKey(Date.now());
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <Layout>
+    <Layout key={renderKey}>
       {/* Hero Section */}
       <section className="bg-white">
         <div className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between">
