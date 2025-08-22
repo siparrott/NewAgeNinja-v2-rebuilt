@@ -2,7 +2,9 @@
 // import '../silence-console.js';
 
 import "dotenv/config";
-import express, { type Request, Response, NextFunction } from "express";
+// @ts-ignore
+import express from "express";
+import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes/index.js";
 import { serveStatic, log } from "./vite";
 import "./jobs";
@@ -23,7 +25,7 @@ app.use('/uploads', express.static('public/uploads'));
 
 // Serve blog images statically (before Vite middleware)
 app.use('/blog-images', express.static('server/public/blog-images', {
-  setHeaders: (res, path) => {
+  setHeaders: (res: Response, path: string) => {
     if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
       res.setHeader('Content-Type', 'image/jpeg');
     } else if (path.endsWith('.png')) {
@@ -33,22 +35,22 @@ app.use('/blog-images', express.static('server/public/blog-images', {
 }));
 
 // Domain redirect middleware - redirect root domain to www
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.headers.host === 'newagefotografie.com') {
     return res.redirect(301, `https://www.newagefotografie.com${req.url}`);
   }
   next();
 });
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
+  res.json = function (bodyJson: any) {
     capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
+    return originalResJson.call(res, bodyJson);
   };
 
   res.on("finish", () => {
@@ -91,7 +93,7 @@ app.use((req, res, next) => {
   });
 
   // Add a specific middleware to protect API routes from Vite's catch-all
-  app.use('/api/*', (req, res, next) => {
+  app.use('/api/*', (req: Request, res: Response, next: NextFunction) => {
     // Skip Vite handling for API routes
     next();
   });

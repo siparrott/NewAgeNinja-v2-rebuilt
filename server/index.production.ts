@@ -1,4 +1,6 @@
-import express, { type Request, Response, NextFunction } from "express";
+// @ts-ignore
+import express from "express";
+import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes/index.js";
 import path from "path";
 import fs from "fs";
@@ -11,7 +13,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.set('trust proxy', true);
 
 // Security headers
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -19,7 +21,7 @@ app.use((req, res, next) => {
 });
 
 // Domain redirect middleware - redirect root domain to www
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.headers.host === 'newagefotografie.com') {
     return res.redirect(301, `https://www.newagefotografie.com${req.url}`);
   }
@@ -27,7 +29,7 @@ app.use((req, res, next) => {
 });
 
 // API request logging
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   res.on("finish", () => {
     const duration = Date.now() - start;
@@ -68,7 +70,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
     app.use(express.static(distPath));
     
     // SPA fallback - serve index.html for all non-API routes
-    app.get('*', (req, res) => {
+  app.get('*', (req: Request, res: Response) => {
       const indexPath = path.join(distPath, 'index.html');
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
@@ -81,7 +83,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
     const clientPath = path.join(process.cwd(), 'client');
     app.use(express.static(path.join(clientPath, 'public')));
     
-    app.get('*', (req, res) => {
+  app.get('*', (req: Request, res: Response) => {
       const indexPath = path.join(clientPath, 'index.html');
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
@@ -98,7 +100,8 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
     console.log(`✅ New Age Fotografie CRM production server started on ${host}:${port}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'production'}`);
     console.log(`Working directory: ${process.cwd()}`);
-    console.log(`Static files served from: ${fs.existsSync(distPath) ? distPath : clientPath}`);
+  // If clientPath is not defined, just log distPath
+  console.log(`Static files served from: ${fs.existsSync(distPath) ? distPath : ''}`);
   });
 })().catch(error => {
   console.error('Failed to start server:', error);
