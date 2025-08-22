@@ -4,7 +4,7 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes/index.js";
-import { setupVite, serveStatic, log } from "./vite";
+import { serveStatic, log } from "./vite";
 import "./jobs";
 
 // Override demo mode for production New Age Fotografie site
@@ -100,9 +100,10 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   
-  // For deployment, we'll use development Vite middleware since the build is too complex
-  // This serves the React app properly while keeping production API endpoints
-  if (app.get("env") === "development" || process.env.NODE_ENV === "production") {
+  // Only use Vite middleware in development; serve static in production
+  if (app.get("env") === "development") {
+    // Dynamically import setupVite only in development
+    const { setupVite } = await import("./vite.js");
     await setupVite(app, server);
   } else {
     serveStatic(app);
