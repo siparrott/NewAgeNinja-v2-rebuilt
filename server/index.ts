@@ -4,6 +4,7 @@
 import "dotenv/config";
 // @ts-ignore
 import express from "express";
+import { createServer } from "http";
 import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes/index.js";
 import "./jobs";
@@ -16,6 +17,8 @@ if (!process.env.DEMO_MODE || process.env.DEMO_MODE === 'true') {
 }
 
 const app = express();
+const server = createServer(app);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -43,8 +46,32 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-(async () => {
-  const server = await registerRoutes(app);
+// Register API routes
+registerRoutes(app);
+
+  // Serve static files in production
+  if (process.env.NODE_ENV === 'production') {
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    // Serve static files from dist/public (production build)
+    const distPath = path.join(process.cwd(), 'dist/public');
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      
+      // SPA fallback - serve index.html for all non-API routes
+      app.get('*', (req: Request, res: Response) => {
+        if (!req.path.startsWith('/api/')) {
+          const indexPath = path.join(distPath, 'index.html');
+          if (fs.existsSync(indexPath)) {
+            res.sendFile(indexPath);
+          } else {
+            res.status(404).send('Frontend not built. Run npm run build first.');
+          }
+        }
+      });
+    }
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -69,36 +96,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
   });
 
-
-
-  // Dynamically find available port starting from 5000
-  const findPort = async (startPort: number): Promise<number> => {
-    return new Promise((resolve, reject) => {
-      const testServer = server.listen(startPort, '0.0.0.0', (err?: Error) => {
-        if (err) {
-          // Port is busy, try next one
-          testServer.close();
-          if (startPort < 5010) {
-            findPort(startPort + 1).then(resolve).catch(reject);
-          } else {
-            reject(new Error('No available ports found between 5000-5010'));
-          }
-        } else {
-          testServer.close(() => {
-            resolve(startPort);
-          });
-        }
-      });
-    });
-  };
-
-  const port = await findPort(parseInt(process.env.PORT || '5000', 10));
-  const host = "0.0.0.0";
+  // For Vercel deployment, use the assigned port or default
+  const port = parseInt(process.env.PORT || '5000', 10);
+  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
   
   server.listen(port, host, () => {
-    log(`✅ New Age Fotografie CRM successfully started on ${host}:${port}`);
-    log(`Environment: ${process.env.NODE_ENV}`);
-    log(`Working directory: ${process.cwd()}`);
-    log(`Demo mode: ${process.env.DEMO_MODE}`);
+    console.log(`✅ New Age Fotografie CRM successfully started on ${host}:${port}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`Working directory: ${process.cwd()}`);
+    console.log(`Demo mode: ${process.env.DEMO_MODE}`);
   });
-})();
