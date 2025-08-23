@@ -2,12 +2,10 @@
 // import '../silence-console.js';
 
 import "dotenv/config";
-// @ts-ignore
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import type { Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes/index.js";
-// Disable cron jobs for serverless deployment
-// import "./jobs";
 
 // Override demo mode for production New Age Fotografie site
 // This is NOT a demo - it's the live business website
@@ -18,14 +16,34 @@ if (!process.env.DEMO_MODE || process.env.DEMO_MODE === 'true') {
 
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Basic middleware
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
-// Serve uploaded files statically
-app.use('/uploads', express.static('public/uploads'));
+// Handle favicon specifically for serverless
+app.get('/favicon.ico', (req: Request, res: Response) => {
+  res.status(204).end();
+});
 
-// Serve blog images statically
-app.use('/blog-images', express.static('server/public/blog-images'));
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    routes_loaded: !!registerRoutes
+  });
+});
+
+// Simple test endpoint
+app.get('/api/test', (req: Request, res: Response) => {
+  res.json({
+    message: 'Serverless function is working!',
+    timestamp: new Date().toISOString(),
+    method: req.method,
+    path: req.path
+  });
+});
 
 // Domain redirect middleware - redirect root domain to www
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -35,44 +53,60 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// Simple request logging
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
+  console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
   next();
 });
 
-// Register API routes
-registerRoutes(app);
-
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  // Use dynamic imports for better serverless compatibility
-  Promise.resolve().then(async () => {
-    const path = await import('path');
-    const fs = await import('fs');
-    
-    // Serve static files from dist/public (production build)
-    const distPath = path.join(process.cwd(), 'dist/public');
-    if (fs.existsSync(distPath)) {
-      app.use(express.static(distPath));
-      
-      // SPA fallback - serve index.html for all non-API routes
-      app.get('*', (req: Request, res: Response) => {
-        if (!req.path.startsWith('/api/')) {
-          const indexPath = path.join(distPath, 'index.html');
-          if (fs.existsSync(indexPath)) {
-            res.sendFile(indexPath);
-          } else {
-            res.status(404).send('Frontend not built. Run npm run build first.');
-          }
-        }
-      });
-    }
-  });
+// Register API routes with error handling
+let registerRoutes;
+try {
+  const routesModule = await import("./routes/index.js");
+  registerRoutes = routesModule.registerRoutes;
+  registerRoutes(app);
+  console.log('Routes loaded successfully');
+} catch (error) {
+  console.error('Error loading routes:', error);
+  // Continue without routes for now to test basic functionality
 }
 
+// Serve uploaded files statically (if they exist)
+app.use('/uploads', express.static('public/uploads', { fallthrough: true }));
+
+// Serve blog images statically (if they exist)
+app.use('/blog-images', express.static('server/public/blog-images', { fallthrough: true }));
+
+// Handle static files for production
+if (process.env.NODE_ENV === 'production') {
+  try {
+    // Serve static files from dist/public (production build)
+    const distPath = path.join(process.cwd(), 'dist/public');
+    app.use(express.static(distPath, { fallthrough: true }));
+    
+    // SPA fallback - serve index.html for all non-API routes
+    app.get('*', (req: Request, res: Response) => {
+      if (!req.path.startsWith('/api/') && !req.path.startsWith('/uploads') && !req.path.startsWith('/blog-images')) {
+        try {
+          const indexPath = path.join(distPath, 'index.html');
+          res.sendFile(indexPath, (err) => {
+            if (err) {
+              console.error('Error serving index.html:', err);
+              res.status(404).send('Frontend not built. Run npm run build first.');
+            }
+          });
+        } catch (error) {
+          console.error('Error in SPA fallback:', error);
+          res.status(500).send('Server error');
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error setting up static file serving:', error);
+  }
+}
+
+// Global error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err.status || err.statusCode || 500;
   const message = err.message || "Internal Server Error";
@@ -88,6 +122,16 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 
   res.status(status).json({ message });
+});
+
+// 404 handler for unmatched routes
+app.use('*', (req: Request, res: Response) => {
+  console.log(`404 - Route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ 
+    message: 'Route not found',
+    path: req.originalUrl,
+    method: req.method
+  });
 });
 
 // Export the Express app for Vercel serverless deployment
