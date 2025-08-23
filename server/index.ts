@@ -10,6 +10,21 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
+// Simple request logging
+app.use((req: Request, res: Response, next: NextFunction) => {
+  console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
+  next();
+});
+
+// Domain redirect middleware - redirect root domain to www
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.headers.host === 'newagefotografie.com') {
+    return res.redirect(301, `https://www.newagefotografie.com${req.url}`);
+  }
+  next();
+});
+
+// API ROUTES FIRST - before static file serving
 // Handle favicon specifically for serverless
 app.get('/favicon.ico', (req: Request, res: Response) => {
   res.status(204).end();
@@ -35,21 +50,7 @@ app.get('/api/test', (req: Request, res: Response) => {
   });
 });
 
-// Domain redirect middleware - redirect root domain to www
-app.use((req: Request, res: Response, next: NextFunction) => {
-  if (req.headers.host === 'newagefotografie.com') {
-    return res.redirect(301, `https://www.newagefotografie.com${req.url}`);
-  }
-  next();
-});
-
-// Simple request logging
-app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
-  next();
-});
-
-// Handle static files for production
+// Handle static files for production AFTER API routes
 if (process.env.NODE_ENV === 'production') {
   try {
     // Serve static files from dist/public (production build)
@@ -58,7 +59,7 @@ if (process.env.NODE_ENV === 'production') {
     
     // SPA fallback - serve index.html for all non-API routes
     app.get('*', (req: Request, res: Response) => {
-      if (!req.path.startsWith('/api/')) {
+      if (!req.path.startsWith('/api/') && !req.path.startsWith('/health') && req.path !== '/favicon.ico') {
         try {
           const indexPath = path.join(distPath, 'index.html');
           res.sendFile(indexPath, (err) => {
