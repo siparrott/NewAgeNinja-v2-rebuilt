@@ -4,10 +4,10 @@
 import "dotenv/config";
 // @ts-ignore
 import express from "express";
-import { createServer } from "http";
 import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes/index.js";
-import "./jobs";
+// Disable cron jobs for serverless deployment
+// import "./jobs";
 
 // Override demo mode for production New Age Fotografie site
 // This is NOT a demo - it's the live business website
@@ -17,7 +17,6 @@ if (!process.env.DEMO_MODE || process.env.DEMO_MODE === 'true') {
 }
 
 const app = express();
-const server = createServer(app);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -41,16 +40,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-
-
   next();
 });
 
 // Register API routes
 registerRoutes(app);
 
-  // Serve static files in production
-  if (process.env.NODE_ENV === 'production') {
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  // Use dynamic imports for better serverless compatibility
+  Promise.resolve().then(async () => {
     const path = await import('path');
     const fs = await import('fs');
     
@@ -71,38 +70,25 @@ registerRoutes(app);
         }
       });
     }
-  }
+  });
+}
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
 
-    // Enhanced error logging for production debugging
-    console.error('Server Error:', {
-      status,
-      message,
-      stack: err.stack,
-      url: _req.url,
-      method: _req.method,
-      timestamp: new Date().toISOString()
-    });
-
-    res.status(status).json({ message });
+  // Enhanced error logging for production debugging
+  console.error('Server Error:', {
+    status,
+    message,
+    stack: err.stack,
+    url: _req.url,
+    method: _req.method,
+    timestamp: new Date().toISOString()
   });
 
-  // Add a specific middleware to protect API routes from Vite's catch-all
-  app.use('/api/*', (req: Request, res: Response, next: NextFunction) => {
-    // Skip Vite handling for API routes
-    next();
-  });
+  res.status(status).json({ message });
+});
 
-  // For Vercel deployment, use the assigned port or default
-  const port = parseInt(process.env.PORT || '5000', 10);
-  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
-  
-  server.listen(port, host, () => {
-    console.log(`✅ New Age Fotografie CRM successfully started on ${host}:${port}`);
-    console.log(`Environment: ${process.env.NODE_ENV}`);
-    console.log(`Working directory: ${process.cwd()}`);
-    console.log(`Demo mode: ${process.env.DEMO_MODE}`);
-  });
+// Export the Express app for Vercel serverless deployment
+export default app;
