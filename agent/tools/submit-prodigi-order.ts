@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { neon } from "@neondatabase/serverless";
-import type { AgentCtx } from "../core/ctx";
-import { submitProdigiOrder, mapProductToProdigi } from "../integrations/labs/prodigi";
-import type { ProdigiOrder } from "../integrations/labs/types";
+import type { AgentCtx } from "../core/ctx.js";
+import { submitProdigiOrder, mapProductToProdigi } from "../integrations/labs/prodigi.js";
+import type { ProdigiOrder } from "../integrations/labs/types.js";
 
 const sql = neon(process.env.DATABASE_URL!);
 

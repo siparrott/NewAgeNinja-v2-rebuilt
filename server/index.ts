@@ -6,7 +6,6 @@ import "dotenv/config";
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes/index.js";
-import { serveStatic, log } from "./vite";
 import "./jobs";
 
 // Override demo mode for production New Age Fotografie site
@@ -23,16 +22,8 @@ app.use(express.urlencoded({ extended: false }));
 // Serve uploaded files statically
 app.use('/uploads', express.static('public/uploads'));
 
-// Serve blog images statically (before Vite middleware)
-app.use('/blog-images', express.static('server/public/blog-images', {
-  setHeaders: (res: Response, path: string) => {
-    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/jpeg');
-    } else if (path.endsWith('.png')) {
-      res.setHeader('Content-Type', 'image/png');
-    }
-  }
-}));
+// Serve blog images statically
+app.use('/blog-images', express.static('server/public/blog-images'));
 
 // Domain redirect middleware - redirect root domain to www
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -47,27 +38,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson: any) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.call(res, bodyJson);
-  };
 
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
 
   next();
 });
@@ -98,18 +69,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  
-  // Only use Vite middleware in development; serve static in production
-  if (app.get("env") === "development") {
-    // Dynamically import setupVite only in development
-    const { setupVite } = await import("./vite.js");
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+
 
   // Dynamically find available port starting from 5000
   const findPort = async (startPort: number): Promise<number> => {

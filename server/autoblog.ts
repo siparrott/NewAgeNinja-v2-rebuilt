@@ -4,14 +4,14 @@ import fs from 'fs/promises';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import FormData from 'form-data';
-import { autoBlogSchema, type AutoBlogParsed, type AutoBlogInput } from './autoblog-schema';
-import { buildAutoBlogPrompt } from './autoblog-prompt';
-import { buildSophisticatedTogninjaPrompt } from './togninja-sophisticated-prompt';
-import { stripDangerousHtml, generateUniqueSlug, cleanSlug } from './util-strip-html';
-import { storage } from './storage';
-import { BLOG_ASSISTANT, DEBUG_OPENAI } from './config';
-import { logAutoBlogCall, runAutoBlogDiagnostics } from './autoblog-diagnostics';
-import { contentProcessor, type ImageAnalysisResult } from './autoblog-content-fixes';
+import { autoBlogSchema, type AutoBlogParsed, type AutoBlogInput } from './autoblog-schema.js';
+import { buildAutoBlogPrompt } from './autoblog-prompt.js';
+import { buildSophisticatedTogninjaPrompt } from './togninja-sophisticated-prompt.js';
+import { stripDangerousHtml, generateUniqueSlug, cleanSlug } from './util-strip-html.js';
+import { storage } from './storage.js';
+import { BLOG_ASSISTANT, DEBUG_OPENAI } from './config.js';
+import { logAutoBlogCall, runAutoBlogDiagnostics } from './autoblog-diagnostics.js';
+import { contentProcessor, type ImageAnalysisResult } from './autoblog-content-fixes.js';
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
@@ -108,7 +108,7 @@ export class AutoBlogOrchestrator {
       console.log('🌐 Getting website context for:', url);
       
       // STEP 1: Get stored Website Wizard profile data
-      const { getWebsiteProfile } = await import('../agent/integrations/website-profile');
+  const { getWebsiteProfile } = await import('../agent/integrations/website-profile.js');
       const websiteProfile = await getWebsiteProfile("550e8400-e29b-41d4-a716-446655440000");
       
       let context = `Studio: ${this.studioName}\nLocation: Vienna, Austria\n`;
@@ -144,7 +144,7 @@ export class AutoBlogOrchestrator {
         
         // STEP 3: Fallback - try live scraping
         try {
-          const { scrapeSiteContent } = await import('./scraping-agent');
+          const { scrapeSiteContent } = await import('./scraping-agent.js');
           const scrapedData = await scrapeSiteContent(url);
           
           context += `Services: ${scrapedData.services || 'Family, newborn, maternity, and portrait photography'}\n`;
@@ -180,9 +180,9 @@ Key Features: High-quality photography, professional editing, personal service
       console.log('🎯 Gathering SEO intelligence and competitive data...');
       
       // Import SEO tools
-      const { analyzeKeywordGap, getAllDiscoveredKeywords, existingBlogH1s } = await import('../agent/integrations/seo-intel');
-      const { fetchReviews } = await import('../agent/integrations/serp');
-      const { getStudioContext, rebuildStudioContext } = await import('../agent/integrations/studio-context');
+  const { analyzeKeywordGap, getAllDiscoveredKeywords, existingBlogH1s } = await import('../agent/integrations/seo-intel.js');
+  const { fetchReviews } = await import('../agent/integrations/serp.js');
+  const { getStudioContext, rebuildStudioContext } = await import('../agent/integrations/studio-context.js');
       
       let enhancedContext = baseContext + '\n\n=== SEO & COMPETITIVE INTELLIGENCE ===\n';
       
@@ -1366,8 +1366,8 @@ Create complete blog package with all sections per your training. Include SEO ta
       console.log('📚 Gathering Knowledge Base articles...');
       
       // Import database connection and schema
-      const { db } = await import('./db');
-      const { knowledgeBase } = await import('../shared/schema');
+  const { db } = await import('./db.js');
+  const { knowledgeBase } = await import('../shared/schema.js');
       const { eq, desc } = await import('drizzle-orm');
       
       // Fetch active knowledge base articles - using correct schema
@@ -2068,7 +2068,7 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       console.log('- Custom slug used:', !!input.customSlug, 'Final slug:', finalSlug);
 
       // Validate blog post data before insertion
-      const { insertBlogPostSchema } = await import('../shared/schema');
+  const { insertBlogPostSchema } = await import('../shared/schema.js');
       console.log('Validating blog post data with schema...');
       console.log('Blog post data keys:', Object.keys(blogPostData));
       console.log('Content HTML in blog data:', !!blogPostData.contentHtml, 'length:', blogPostData.contentHtml?.length || 0);
@@ -2140,14 +2140,14 @@ Die Bearbeitung dauert 1-2 Wochen. Alle finalen Bilder erhaltet ihr in einer pra
       // 🚀 NEW ASSISTANT-FIRST ARCHITECTURE - ADAPTS TO YOUR PROMPT UPDATES
       console.log('🚀 USING NEW ASSISTANT-FIRST ARCHITECTURE - FULLY ADAPTIVE');
       
-      const { AssistantFirstAutoBlogGenerator } = await import('./autoblog-assistant-first');
+  const { AssistantFirstAutoBlogGenerator } = await import('./autoblog-assistant-first.js');
       const assistantFirstGenerator = new AssistantFirstAutoBlogGenerator();
       
       const result = await assistantFirstGenerator.generateBlog(processedImages, input, authorId, enhancedContext);
       console.log('✅ ASSISTANT-FIRST SUCCESS:', result.message);
       
       // Store in database
-      const { storage } = await import('./storage');
+  const { storage } = await import('./storage.js');
       const createdPost = await storage.createBlogPost(result.blogPost);
       
       return createdPost;

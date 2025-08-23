@@ -1,6 +1,6 @@
 // agent/tools/kb-search-enhanced.ts - Enhanced knowledge base search with self-reasoning
-import { ToolDefinition } from '../types';
-import { knowledgeBase } from '../core/knowledge-base';
+import { ToolDefinition } from "../types.js";
+import { knowledgeBase } from "../core/knowledge-base.js";
 
 export const kbSearchEnhancedTool: ToolDefinition = {
   name: 'kb_search_enhanced',

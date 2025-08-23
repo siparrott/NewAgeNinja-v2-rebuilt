@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { readFileSync } from "fs";
-import type { AgentCtx } from "../core/ctx";
+import type { AgentCtx } from "../core/ctx.js";
 
 export const describeCapabilitiesTool = {
   name: "describe_capabilities",

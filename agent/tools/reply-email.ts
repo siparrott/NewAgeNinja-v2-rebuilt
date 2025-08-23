@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { neon } from "@neondatabase/serverless";
-import { AgentCtx } from "../types";
+import { AgentCtx } from "../types.js";
 
 const sql = neon(process.env.DATABASE_URL!);
 

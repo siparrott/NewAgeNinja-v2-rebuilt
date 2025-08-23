@@ -1,8 +1,8 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { registerTestRoutes } from "./routes-test";
-import { storage } from "./storage";
-import { db } from "./db";
+import { registerTestRoutes } from "./routes-test.js";
+import { storage } from "./storage.js";
+import { db } from "./db.js";
 import { eq } from "drizzle-orm";
 import { 
   insertUserSchema,
@@ -34,8 +34,8 @@ import Stripe from 'stripe';
 import nodemailer from 'nodemailer';
 import { jsPDF } from 'jspdf';
 import OpenAI from 'openai';
-import websiteWizardRoutes from './routes/website-wizard';
-import galleryShopRouter from './routes/gallery-shop';
+import websiteWizardRoutes from './routes/website-wizard.js';
+import galleryShopRouter from './routes/gallery-shop.js';
 
 // Modern PDF invoice generator with actual logo and all required sections
 async function generateModernInvoicePDF(invoice: any, client: any): Promise<Buffer> {
@@ -906,10 +906,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Import and register CRM agent router
   try {
-    const { crmAgentRouter } = await import("./routes/crm-agent");
+    const { crmAgentRouter } = await import("./routes/crm-agent.js");
     app.use(crmAgentRouter);
   } catch (error) {
-    console.warn("CRM agent router not available:", error.message);
+    console.warn("CRM agent router not available:", (error as Error).message);
   }
 
   // Audio transcription endpoint using OpenAI Whisper
@@ -1009,7 +1009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = '550e8400-e29b-41d4-a716-446655440001';
       
       // Import runAgent dynamically to avoid module loading issues
-      const { runAgent } = await import('../agent/run-agent');
+      const { runAgent } = await import('../agent/run-agent.js');
       
       // Run the AI agent with Phase B write capabilities
       const response = await runAgent(studioId, userId, message);
@@ -3537,7 +3537,7 @@ Bitte versuchen Sie es später noch einmal.`;
         // Import fresh emails to capture any replies or the sent email
         setTimeout(async () => {
           try {
-            const importEmailsFromIMAP = await import('./email-import');
+            const importEmailsFromIMAP = await import('./email-import.js');
             await importEmailsFromIMAP.default({
               host: 'imap.easyname.com',
               port: 993,
@@ -4084,7 +4084,7 @@ Bitte versuchen Sie es später noch einmal.`;
         return res.status(400).json({ error: "Website URL is required" });
       }
 
-      const { WebsiteScraper } = await import('./scraping-agent');
+      const { WebsiteScraper } = await import('./scraping-agent.js');
       const scrapedData = await WebsiteScraper.scrapeWebsite(url);
       
       res.json(scrapedData);
@@ -4102,7 +4102,7 @@ Bitte versuchen Sie es später noch einmal.`;
         return res.status(400).json({ error: "Scraped data is required" });
       }
 
-      const { SEOAgent } = await import('./scraping-agent');
+      const { SEOAgent } = await import('./scraping-agent.js');
       const recommendations = SEOAgent.generateSEORecommendations(scrapedData, location);
       
       res.json(recommendations);
@@ -5371,8 +5371,8 @@ Was interessiert Sie am meisten?`;
   // FIX #2: AutoBlog route now exclusively uses TOGNINJA Assistant API (Fix from expert analysis)
   app.post("/api/autoblog/generate", authenticateUser, autoblogUpload.array('images', 3), async (req: Request, res: Response) => {
     try {
-      const { AutoBlogOrchestrator } = await import('./autoblog');
-      const { autoBlogInputSchema } = await import('./autoblog-schema');
+      const { AutoBlogOrchestrator } = await import('./autoblog.js');
+      const { autoBlogInputSchema } = await import('./autoblog-schema.js');
       
       // FIX #2: Parse ALL form data properly
       const input = autoBlogInputSchema.parse({
@@ -5463,7 +5463,7 @@ Was interessiert Sie am meisten?`;
       }
 
       // Import centralized config and debugging setup
-      const { BLOG_ASSISTANT, DEBUG_OPENAI } = await import('./config');
+      const { BLOG_ASSISTANT, DEBUG_OPENAI } = await import('./config.js');
       
       // Initialize OpenAI Assistant API with debug logging
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -5785,7 +5785,7 @@ Was interessiert Sie am meisten?`;
       }
 
       // Import runAgent dynamically to avoid module loading issues
-      const { runAgent } = await import('../agent/run-agent');
+      const { runAgent } = await import('../agent/run-agent.js');
       
       // Run the AI agent with the user's message
       const response = await runAgent(studioId, userId, message);

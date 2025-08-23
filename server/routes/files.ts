@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { db } from '../db';
-import { digital_files } from '../../shared/schema';
+import { db } from '../db.js';
+import { digitalFiles } from '../../shared/schema.js';
 import { eq, desc, asc, and, gte, lte, like, ilike } from 'drizzle-orm';
 
 const router = Router();
@@ -19,12 +19,12 @@ router.get('/', async (req, res) => {
     } = req.query;
 
     let query = db.select({
-      id: digital_files.id,
-      folder_name: digital_files.folder_name,
-      file_name: digital_files.file_name,
-      file_type: digital_files.file_type,
-      file_size: digital_files.file_size,
-      client_id: digital_files.client_id,
+      id: digitalFiles.id,
+      folder_name: digitalFiles.folder_name,
+      file_name: digitalFiles.file_name,
+      file_type: digitalFiles.file_type,
+      file_size: digitalFiles.file_size,
+      client_id: digitalFiles.client_id,
       session_id: digital_files.session_id,
       description: digital_files.description,
       tags: digital_files.tags,

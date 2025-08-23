@@ -1,9 +1,9 @@
 import { z } from "zod";
-import type { AgentCtx } from "../core/ctx";
-import { requireAuthority } from "../core/authz";
-import { auditLogExecution, auditLogFailure } from "../core/audit";
-import { createSuccessResponse, createErrorResponse } from "../core/proposals";
-import type { ProposalResponse } from "../core/proposals";
+import type { AgentCtx } from "../core/ctx.js";
+import { requireAuthority } from "../core/authz.js";
+import { auditLogExecution, auditLogFailure } from "../core/audit.js";
+import { createSuccessResponse, createErrorResponse } from "../core/proposals.js";
+import type { ProposalResponse } from "../core/proposals.js";
 import nodemailer from 'nodemailer';
 
 export const emailSendTool = {

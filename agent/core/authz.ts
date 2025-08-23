@@ -1,5 +1,5 @@
-import type { AgentCtx } from "./ctx";
-import type { Authority } from "./policy";
+import type { AgentCtx } from "./ctx.js";
+import type { Authority } from "./policy.js";
 
 export class AuthorizationError extends Error {
   constructor(message: string, public authority: Authority) {

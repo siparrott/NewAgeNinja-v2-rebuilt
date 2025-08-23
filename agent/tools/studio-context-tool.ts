@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { rebuildStudioContext, getStudioContext, getStudioIntelligenceSummary } from "../integrations/studio-context";
-import type { AgentCtx } from "../core/ctx";
+import { rebuildStudioContext, getStudioContext, getStudioIntelligenceSummary } from "../integrations/studio-context.js";
+import type { AgentCtx } from "../core/ctx.js";
 
 /* refresh_studio_context */
 export const refreshStudioContextTool = {

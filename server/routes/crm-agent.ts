@@ -1,10 +1,10 @@
 // CRM Agent API endpoints
 import { Router } from "express";
 // Direct import of the full autonomous agent
-import { runAgent as runFullAgent } from "../../agent/run-agent";
-import { createAgentContext } from "../../agent/bootstrap";
-import { toolRegistry } from "../../agent/core/tools";
-import { planAndExecute, executePlan, formatPlanOutputs } from "../../agent/core/planRunner";
+import { runAgent as runFullAgent } from "../../agent/run-agent.js";
+import { createAgentContext } from "../../agent/bootstrap.js";
+import { toolRegistry } from "../../agent/core/tools.js";
+import { planAndExecute, executePlan, formatPlanOutputs } from "../../agent/core/planRunner.js";
 
 const router = Router();
 

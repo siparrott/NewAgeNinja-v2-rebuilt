@@ -1,4 +1,4 @@
-import { StudioConfig, TemplateDefinition } from '../shared/schema';
+import { StudioConfig, TemplateDefinition } from '../shared/schema.js';
 
 // Template system for multi-photographer deployment
 export interface TemplateConfig {

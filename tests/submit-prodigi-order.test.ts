@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
-import { submitProdigiOrderTool } from '../agent/tools/submit-prodigi-order';
-import type { AgentCtx } from '../agent/core/ctx';
+import { submitProdigiOrderTool } from "../agent/tools/submit-prodigi-order.js";
+import type { AgentCtx } from "../agent/core/ctx.js";
 
 // Mock the database
 const mockSql = jest.fn();

@@ -1,6 +1,6 @@
 // Fixed AutoBlog implementation using Chat Completions API with TOGNINJA instructions
 import OpenAI from 'openai';
-import { BLOG_ASSISTANT } from './config';
+import { BLOG_ASSISTANT } from './config.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 

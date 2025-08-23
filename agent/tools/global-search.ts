@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { AgentCtx } from "../core/ctx";
-import { requireAuthority } from "../core/authz";
+import type { AgentCtx } from "../core/ctx.js";
+import { requireAuthority } from "../core/authz.js";
 
 /**
  * Search across the main CRM tables for a free-text term.

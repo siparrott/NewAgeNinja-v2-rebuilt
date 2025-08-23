@@ -1,6 +1,6 @@
 import { z } from "zod";
 import nodemailer from "nodemailer";
-import type { AgentCtx } from "../core/ctx";
+import type { AgentCtx } from "../core/ctx.js";
 
 export const sendEmailTool = {
   name: "send_email",

@@ -1,9 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import { decrypt } from "../util/crypto";
-import type { StudioCreds } from "../core/ctx";
+import { decrypt } from "../util/crypto.js";
+import type { StudioCreds } from "../core/ctx.js";
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
-import { studioIntegrations } from '../../shared/schema';
+import { studioIntegrations } from "../../shared/schema.js";
 import { eq } from 'drizzle-orm';
 
 // Initialize Supabase client for agent operations

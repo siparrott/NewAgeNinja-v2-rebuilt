@@ -1,4 +1,4 @@
-import { toolRegistry } from "./tools";
+import { toolRegistry } from "./tools.js";
 
 export async function executeToolCall(call: any, ctx: any) {
   const name = call.function.name;

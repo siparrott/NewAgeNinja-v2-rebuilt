@@ -1,7 +1,7 @@
 import { z } from "zod";
-import type { AgentCtx } from "../core/ctx";
-import { requireAuthority } from "../core/authz";
-import { openaiForStudio } from "../core/openai";
+import type { AgentCtx } from "../core/ctx.js";
+import { requireAuthority } from "../core/authz.js";
+import { openaiForStudio } from "../core/openai.js";
 
 export const draftEmailTool = {
   name: "draft_email",

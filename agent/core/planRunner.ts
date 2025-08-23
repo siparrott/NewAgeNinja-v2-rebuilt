@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { readFileSync } from "fs";
-import { toolRegistry } from "./tools";
-import type { AgentCtx } from "./ctx";
+import { toolRegistry } from "./tools.js";
+import type { AgentCtx } from "./ctx.js";
 
 interface PlanStep {
   tool: string;

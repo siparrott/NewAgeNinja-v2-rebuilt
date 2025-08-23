@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { BLOG_ASSISTANT, getAssistantInstructions } from './config';
+import { BLOG_ASSISTANT, getAssistantInstructions } from './config.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 

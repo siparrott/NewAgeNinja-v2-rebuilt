@@ -1,5 +1,5 @@
-import { planAndExecute, executePlan } from '../agent/core/planRunner';
-import { createAgentContext } from '../agent/bootstrap';
+import { planAndExecute, executePlan } from "../agent/core/planRunner.js";
+import { createAgentContext } from "../agent/bootstrap.js";
 
 // Mock dependencies
 jest.mock('../agent/bootstrap');

@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { StudioCreds } from "./ctx";
+import type { StudioCreds } from "./ctx.js";
 
 export function openaiForStudio(creds: StudioCreds) {
   const apiKey = creds.openai?.apiKey || process.env.OPENAI_API_KEY;

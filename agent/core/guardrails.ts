@@ -1,5 +1,5 @@
 // Guardrails for CRM agent operations
-import type { AgentCtx } from "./ctx";
+import type { AgentCtx } from "./ctx.js";
 
 export type GuardrailResult = "allow" | "deny" | "propose";
 

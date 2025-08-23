@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runAgentCLI } from "../run-agent";
+import { runAgentCLI } from "../run-agent.js";
 
 async function main() {
   console.log("=== Testing Multi-Studio AI Agent System ===");

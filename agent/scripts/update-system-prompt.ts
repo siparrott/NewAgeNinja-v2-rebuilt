@@ -1,4 +1,4 @@
-import { toolRegistry } from "../core/tools";
+import { toolRegistry } from "../core/tools.js";
 import { writeFileSync } from "fs";
 import path from "path";
 

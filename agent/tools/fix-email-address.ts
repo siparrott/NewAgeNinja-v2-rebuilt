@@ -1,6 +1,6 @@
 // Fix Email Address Tool - Auto-correct common email typos
 import { z } from 'zod';
-import { ToolContext, Tool } from '../types';
+import { ToolContext, Tool } from "../types.js";
 import validator from 'validator';
 
 export const fixEmailAddressSchema = z.object({

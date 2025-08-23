@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ToolHandler } from "../core/types";
+import { ToolHandler } from "../core/types.js";
 import { neon } from "@neondatabase/serverless";
 
 const sql = neon(process.env.DATABASE_URL!);

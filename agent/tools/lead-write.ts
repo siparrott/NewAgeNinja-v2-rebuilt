@@ -1,13 +1,13 @@
 import { z } from "zod";
-import type { AgentCtx } from "../core/ctx";
-import { requireAuthority } from "../core/authz";
-import { enforceGuardrail } from "../core/guardrails";
-import { auditLogProposal, auditLogExecution, auditLogFailure } from "../core/audit";
-import { makeProposal, createSuccessResponse, createApprovalResponse, createDeniedResponse, createErrorResponse } from "../core/proposals";
-import type { ProposalResponse } from "../core/proposals";
+import type { AgentCtx } from "../core/ctx.js";
+import { requireAuthority } from "../core/authz.js";
+import { enforceGuardrail } from "../core/guardrails.js";
+import { auditLogProposal, auditLogExecution, auditLogFailure } from "../core/audit.js";
+import { makeProposal, createSuccessResponse, createApprovalResponse, createDeniedResponse, createErrorResponse } from "../core/proposals.js";
+import type { ProposalResponse } from "../core/proposals.js";
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
-import { crmLeads } from '../../shared/schema';
+import { crmLeads } from "../../shared/schema.js";
 import { eq, and } from 'drizzle-orm';
 
 const sql = neon(process.env.DATABASE_URL!);

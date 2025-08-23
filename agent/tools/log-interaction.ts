@@ -1,5 +1,5 @@
-import { AgentTool } from "../core/tools";
-import { auditLog } from "../core/audit";
+import { AgentTool } from "../core/tools.js";
+import { auditLog } from "../core/audit.js";
 
 /**
  * Log user interactions and conversation context

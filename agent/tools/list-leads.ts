@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { neon } from "@neondatabase/serverless";
-import type { AgentCtx } from "../core/ctx";
-import { requireAuthority } from "../core/authz";
+import type { AgentCtx } from "../core/ctx.js";
+import { requireAuthority } from "../core/authz.js";
 
 const sql = neon(process.env.DATABASE_URL!);
 

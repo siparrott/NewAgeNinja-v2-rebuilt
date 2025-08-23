@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { analyzeKeywordGap, existingBlogH1s, getAllDiscoveredKeywords, getRecentSEOIntel } from "../integrations/seo-intel";
-import { fetchReviews, serpSearch } from "../integrations/serp";
-import type { AgentCtx } from "../core/ctx";
+import { analyzeKeywordGap, existingBlogH1s, getAllDiscoveredKeywords, getRecentSEOIntel } from "../integrations/seo-intel.js";
+import { fetchReviews, serpSearch } from "../integrations/serp.js";
+import type { AgentCtx } from "../core/ctx.js";
 
 /* search_competitors */
 export const searchCompetitorsTool = {

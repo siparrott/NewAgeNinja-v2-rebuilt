@@ -1,6 +1,6 @@
 // agent/core/self-planner.ts - Self-Planning CRM Agent with JSON step planning
-import { toolRegistry } from '../core/tools';
-import { AgentCtx } from '../types';
+import { toolRegistry } from "../core/tools.js";
+import { AgentCtx } from "../types.js";
 import OpenAI from 'openai';
 
 const openai = new OpenAI({

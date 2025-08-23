@@ -1,7 +1,7 @@
 // agent/run-agent-clean.ts - Clean version without syntax errors
-import { runLLM } from './llm/run';
-import { toolRegistry } from './core/tools';
-import { cleanQuery } from './core/cleanQuery';
+import { runLLM } from "./llm/run.js";
+import { toolRegistry } from "./core/tools.js";
+import { cleanQuery } from "./core/cleanQuery.js";
 
 interface AgentContext {
   studioId: string;

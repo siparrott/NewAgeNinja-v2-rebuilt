@@ -1,7 +1,7 @@
 import express from "express";
-import { runLighthouse } from "../../agent/integrations/lighthouse";
-import { scrapeSite } from "../../agent/integrations/webscrape";
-import { analyzeAndStoreWebsite } from "../../agent/integrations/website-profile";
+import { runLighthouse } from "../../agent/integrations/lighthouse.js";
+import { scrapeSite } from "../../agent/integrations/webscrape.js";
+import { analyzeAndStoreWebsite } from "../../agent/integrations/website-profile.js";
 
 const router = express.Router();
 

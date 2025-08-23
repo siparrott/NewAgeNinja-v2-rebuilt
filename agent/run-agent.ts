@@ -1,10 +1,10 @@
 // Main agent runner - Replit-style super-agent
-import { createAgentContext } from "./bootstrap";
-import { toolRegistry } from "./core/tools";
-import { runLLM } from "./llm/run";
-import { addMessageToHistory, getConversationHistory, updateSession } from "./core/memory";
-import { planStep } from "./core/plan";
-import { executeToolCall, surfaceToolErrors } from "./core/runTools";
+import { createAgentContext } from "./bootstrap.js";
+import { toolRegistry } from "./core/tools.js";
+import { runLLM } from "./llm/run.js";
+import { addMessageToHistory, getConversationHistory, updateSession } from "./core/memory.js";
+import { planStep } from "./core/plan.js";
+import { executeToolCall, surfaceToolErrors } from "./core/runTools.js";
 
 const SYSTEM_PROMPT = `You are {{STUDIO_NAME}}'s Autonomous CRM Operations Agent - a Replit-style super-agent.
 
@@ -80,7 +80,7 @@ export async function runAgent(studioId: string, userId: string, message: string
     console.log('🤖 Replit-style super-agent starting for:', message);
     
     // Create agent context with session persistence
-    const { loadOrCreateSession, injectMemoryMessage } = await import('./core/memory');
+    const { loadOrCreateSession, injectMemoryMessage } = await import('./core/memory.js');
     const session = await loadOrCreateSession(studioId, userId);
     
     const ctx = await createAgentContext(studioId, userId);
@@ -189,7 +189,7 @@ export async function runAgent(studioId: string, userId: string, message: string
                 // Add proper debugging for the pricing system
                 console.log('🔧 Testing pricing system for DIGI-10...');
                 try {
-                  const { getPriceBySku } = await import('../integrations/pricing.js');
+                  const { getPriceBySku } = await import('./integrations/pricing.js');
                   const testPrice = await getPriceBySku(ctx.studioId, 'DIGI-10');
                   console.log('🔧 DIGI-10 pricing result:', testPrice);
                 } catch (pricingError) {
@@ -231,7 +231,7 @@ export async function runAgent(studioId: string, userId: string, message: string
       console.log('🔍 Detected search request - executing autonomous search');
       
       // Use the cleanQuery function for consistent query cleaning
-      const { cleanQuery } = await import('./core/cleanQuery');
+      const { cleanQuery } = await import('./core/cleanQuery.js');
       let searchTerm = cleanQuery(message);
       
       if (searchTerm) {

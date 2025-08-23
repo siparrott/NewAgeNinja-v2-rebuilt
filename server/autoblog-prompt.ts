@@ -1,4 +1,4 @@
-import type { AutoBlogInput } from './autoblog-schema';
+import type { AutoBlogInput } from './autoblog-schema.js';
 
 interface PromptContext {
   studioName: string;

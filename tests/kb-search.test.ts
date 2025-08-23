@@ -1,4 +1,4 @@
-import { kbSearchTool } from '../agent/tools/kb-search';
+import { kbSearchTool } from "../agent/tools/kb-search.js";
 
 // Mock dependencies
 jest.mock('@neondatabase/serverless');

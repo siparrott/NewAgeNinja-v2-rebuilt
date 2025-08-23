@@ -1,7 +1,7 @@
 import { z } from "zod";
-import type { AgentCtx } from "../core/ctx";
-import { requireAuthority } from "../core/authz";
-import { getClientsForStudio, getLeadsForStudio, getSessionsForStudio, getInvoicesForStudio } from "../integrations/crm-data";
+import type { AgentCtx } from "../core/ctx.js";
+import { requireAuthority } from "../core/authz.js";
+import { getClientsForStudio, getLeadsForStudio, getSessionsForStudio, getInvoicesForStudio } from "../integrations/crm-data.js";
 
 export const pipelineSummaryTool = {
   name: "pipeline_summary",

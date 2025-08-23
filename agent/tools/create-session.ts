@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { neon } from "@neondatabase/serverless";
-import { AgentCtx } from "../types";
+import { AgentCtx } from "../types.js";
 
 // Simple authority check function
 function requireAuthority(ctx: AgentCtx, authority: string) {

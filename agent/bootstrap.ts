@@ -1,7 +1,7 @@
 // Agent system bootstrap
-import { loadSession, type WorkingMemory } from "./core/memory";
-import { allowWrite } from "./core/guardrails";
-import type { AgentCtx } from "./core/ctx";
+import { loadSession, type WorkingMemory } from "./core/memory.js";
+import { allowWrite } from "./core/guardrails.js";
+import type { AgentCtx } from "./core/ctx.js";
 
 export async function createAgentContext(studioId: string, userId: string): Promise<AgentCtx & { chatSessionId: string, memory: WorkingMemory }> {
   // Load or create session

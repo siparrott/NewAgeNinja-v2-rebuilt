@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { updateSession, type WorkingMemory } from "../core/memory";
-import type { AgentCtx } from "../core/ctx";
+import { updateSession, type WorkingMemory } from "../core/memory.js";
+import type { AgentCtx } from "../core/ctx.js";
 
 export const updateMemoryTool = {
   name: "update_memory",

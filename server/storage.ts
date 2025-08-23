@@ -42,7 +42,7 @@ import {
   type CouponUsage,
   type InsertCouponUsage
 } from "../shared/schema.js";
-import { db } from "./db";
+import { db } from "./db.js";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 import validator from "validator";
 

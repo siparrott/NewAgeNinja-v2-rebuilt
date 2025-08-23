@@ -270,8 +270,8 @@ CRITICAL: Generate the COMPLETE FULL BLOG ARTICLE with proper H2/H3 structure, N
    */
   private async gatherKnowledgeBaseContext(): Promise<string> {
     try {
-      const { db } = await import('./db');
-      const { knowledgeBase } = await import('../shared/schema');
+  const { db } = await import('./db.js');
+  const { knowledgeBase } = await import('../shared/schema.js');
       
       const articles = await db.select().from(knowledgeBase).limit(10);
       

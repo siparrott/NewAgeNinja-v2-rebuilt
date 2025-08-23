@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import type { ProdigiOrder, ProdigiResponse } from "./types";
+import type { ProdigiOrder, ProdigiResponse } from "./types.js";
 
 const base = process.env.PRODIGI_ENDPOINT || "https://api.sandbox.prodigi.com/v4.0";
 const key = process.env.PRODIGI_API_KEY;

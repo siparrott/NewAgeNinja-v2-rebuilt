@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
-import { aiPolicies } from '../../shared/schema';
+import { aiPolicies } from "../../shared/schema.js";
 import { eq } from 'drizzle-orm';
 
 export type Authority =

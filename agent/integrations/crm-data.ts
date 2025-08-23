@@ -1,7 +1,7 @@
 // CRM data integration layer - Direct PostgreSQL access for better performance
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
-import { crmClients, crmLeads, photographySessions, crmInvoices } from '../../shared/schema';
+import { crmClients, crmLeads, photographySessions, crmInvoices } from "../../shared/schema.js";
 import { eq } from 'drizzle-orm';
 
 const sql = neon(process.env.DATABASE_URL!);

@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { serpSearch } from "./serp";
+import { serpSearch } from "./serp.js";
 import * as keyword from "keyword-extractor";
 
 const sql = neon(process.env.DATABASE_URL!);

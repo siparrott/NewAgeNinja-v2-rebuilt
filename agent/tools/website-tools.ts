@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { analyzeAndStoreWebsite, getWebsiteProfile } from "../integrations/website-profile";
-import type { AgentCtx } from "../core/ctx";
-import { updateSession } from "../core/memory";
+import { analyzeAndStoreWebsite, getWebsiteProfile } from "../integrations/website-profile.js";
+import type { AgentCtx } from "../core/ctx.js";
+import { updateSession } from "../core/memory.js";
 
 /* analyze_website */
 export const analyzeWebsiteTool = {

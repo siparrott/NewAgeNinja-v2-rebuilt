@@ -1,8 +1,8 @@
 // Planner middleware for autonomous CRM operations
-import { createOpenAITool } from "../util/json-schema";
+import { createOpenAITool } from "../util/json-schema.js";
 import OpenAI from "openai";
-import { toolRegistry } from "./tools";
-import { cleanQuery } from "./cleanQuery";
+import { toolRegistry } from "./tools.js";
+import { cleanQuery } from "./cleanQuery.js";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY

@@ -1,6 +1,6 @@
 // AutoBlog diagnostic utilities based on expert analysis
 import OpenAI from 'openai';
-import { BLOG_ASSISTANT, DEBUG_OPENAI } from './config';
+import { BLOG_ASSISTANT, DEBUG_OPENAI } from './config.js';
 
 export interface DiagnosticResult {
   issue: string;

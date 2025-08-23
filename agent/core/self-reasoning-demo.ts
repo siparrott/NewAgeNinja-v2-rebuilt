@@ -1,5 +1,5 @@
 // agent/core/self-reasoning-demo.ts - Working demonstration of self-reasoning system
-import { selfDiagnosis } from './self-diagnosis';
+import { selfDiagnosis } from "./self-diagnosis.js";
 
 export async function demonstrateSelfReasoning() {
   console.log('🧠 DEMONSTRATING SELF-REASONING SYSTEM:');

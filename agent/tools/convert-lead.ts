@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
-import { allowWrite } from "../core/guardrails";
-import type { AgentCtx } from "../core/ctx";
+import { allowWrite } from "../core/guardrails.js";
+import type { AgentCtx } from "../core/ctx.js";
 
 const sb = createClient(process.env.VITE_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { neon } from "@neondatabase/serverless";
-import type { AgentCtx } from "../core/ctx";
-import { allowWrite } from "../core/guardrails";
+import type { AgentCtx } from "../core/ctx.js";
+import { allowWrite } from "../core/guardrails.js";
 
 const sql = neon(process.env.DATABASE_URL!);
 
