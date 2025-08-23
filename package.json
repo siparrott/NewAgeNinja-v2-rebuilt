@@ -14,6 +14,8 @@
     "start": "NODE_ENV=production PORT=5000 node dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "supabase:migrate": "node migrate-to-supabase.js",
+    "supabase:sample": "node migrate-to-supabase.js sample",
     "demo:setup": "node scripts/setup-demo-data.js",
     "demo:reset": "node scripts/reset-demo-data.js",
     "deploy:start": "NODE_ENV=production PORT=5000 node dist/index.js",
