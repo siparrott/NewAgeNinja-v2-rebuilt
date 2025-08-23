@@ -36,18 +36,31 @@ app.get('/health', (req: Request, res: Response) => {
     status: 'ok', 
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    database: 'disabled for testing'
+    database: 'supabase (testing)'
   });
 });
 
-// Simple test endpoint
-app.get('/api/test', (req: Request, res: Response) => {
-  res.json({
-    message: 'Serverless function is working without database!',
-    timestamp: new Date().toISOString(),
-    method: req.method,
-    path: req.path
-  });
+// Supabase test endpoint
+app.get('/api/test', async (req: Request, res: Response) => {
+  try {
+    // Test Supabase connection
+    const { testSupabaseConnection } = await import("./supabase.js");
+    const connectionTest = await testSupabaseConnection();
+    
+    res.json({
+      message: 'Serverless function is working!',
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      path: req.path,
+      database: connectionTest
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      message: 'Error testing Supabase connection',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Handle static files for production AFTER API routes
