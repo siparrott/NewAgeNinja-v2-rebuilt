@@ -1,8 +1,18 @@
-// Minimal serverless function without database for testing
+// Console silencing temporarily disabled for debugging
+// import '../silence-console.js';
+
 import "dotenv/config";
 import express from "express";
 import path from "path";
+import { fileURLToPath } from "url";
 import type { Request, Response, NextFunction } from "express";
+
+// Override demo mode for production New Age Fotografie site
+// This is NOT a demo - it's the live business website
+if (!process.env.DEMO_MODE || process.env.DEMO_MODE === 'true') {
+  process.env.DEMO_MODE = 'false';
+  // New Age Fotografie CRM - Live Production Site (Demo Mode Disabled)
+}
 
 const app = express();
 
@@ -21,14 +31,14 @@ app.get('/health', (req: Request, res: Response) => {
     status: 'ok', 
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    database: 'disabled for testing'
+    routes_loaded: !!registerRoutes
   });
 });
 
 // Simple test endpoint
 app.get('/api/test', (req: Request, res: Response) => {
   res.json({
-    message: 'Serverless function is working without database!',
+    message: 'Serverless function is working!',
     timestamp: new Date().toISOString(),
     method: req.method,
     path: req.path
@@ -49,6 +59,24 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// Register API routes with error handling
+let registerRoutes;
+try {
+  const routesModule = await import("./routes/index.js");
+  registerRoutes = routesModule.registerRoutes;
+  registerRoutes(app);
+  console.log('Routes loaded successfully');
+} catch (error) {
+  console.error('Error loading routes:', error);
+  // Continue without routes for now to test basic functionality
+}
+
+// Serve uploaded files statically (if they exist)
+app.use('/uploads', express.static('public/uploads', { fallthrough: true }));
+
+// Serve blog images statically (if they exist)
+app.use('/blog-images', express.static('server/public/blog-images', { fallthrough: true }));
+
 // Handle static files for production
 if (process.env.NODE_ENV === 'production') {
   try {
@@ -58,7 +86,7 @@ if (process.env.NODE_ENV === 'production') {
     
     // SPA fallback - serve index.html for all non-API routes
     app.get('*', (req: Request, res: Response) => {
-      if (!req.path.startsWith('/api/')) {
+      if (!req.path.startsWith('/api/') && !req.path.startsWith('/uploads') && !req.path.startsWith('/blog-images')) {
         try {
           const indexPath = path.join(distPath, 'index.html');
           res.sendFile(indexPath, (err) => {
@@ -83,6 +111,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err.status || err.statusCode || 500;
   const message = err.message || "Internal Server Error";
 
+  // Enhanced error logging for production debugging
   console.error('Server Error:', {
     status,
     message,
