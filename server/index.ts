@@ -63,6 +63,15 @@ app.get('/api/test', async (req: Request, res: Response) => {
   }
 });
 
+// Add Supabase test routes
+try {
+  const supabaseTestRoutes = await import("./routes/supabase-test.js");
+  app.use('/api/supabase-test', supabaseTestRoutes.default);
+  console.log('Supabase test routes loaded');
+} catch (error) {
+  console.error('Error loading Supabase test routes:', error);
+}
+
 // Handle static files for production AFTER API routes
 if (process.env.NODE_ENV === 'production') {
   try {
