@@ -1,44 +1,34 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/public",
-  "functions": {
-    "server/index.ts": {
-      "runtime": "@vercel/node",
-      "maxDuration": 30
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node@3"
     }
-  },
+  ],
   "routes": [
     {
-      "src": "/favicon.ico",
-      "dest": "/server/index.ts"
-    },
-    {
-      "src": "/health",
-      "dest": "/server/index.ts"
-    },
-    {
       "src": "/api/(.*)",
-      "dest": "/server/index.ts"
+      "dest": "/api/index.ts"
     },
     {
-      "src": "/uploads/(.*)",
-      "dest": "/server/index.ts"
-    },
-    {
-      "src": "/blog-images/(.*)",
-      "dest": "/server/index.ts"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "dest": "/dist/public/$1"
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/server/index.ts"
+      "dest": "/index.html"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
+  "functions": {
+    "api/index.ts": {
+      "runtime": "nodejs18.x"
+    }
   }
 }

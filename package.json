@@ -82,6 +82,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/sharp": "^0.31.1",
     "@types/supertest": "^6.0.3",
+    "@vercel/node": "^5.3.13",
     "cheerio": "^1.1.0",
     "chrome-launcher": "^1.2.0",
     "class-variance-authority": "^0.7.0",
