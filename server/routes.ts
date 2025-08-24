@@ -21,11 +21,16 @@ import {
   openaiAssistants,
   insertKnowledgeBaseSchema,
   insertOpenaiAssistantSchema,
-  crmMessages
-} from "@shared/schema";
+  crmMessages,
+  crmLeads
+} from "../shared/schema.js";
 import { z } from "zod";
 import { createClient } from '@supabase/supabase-js';
+import { neon } from '@neondatabase/serverless';
 import Imap from 'imap';
+
+// Initialize SQL function for Neon
+const sql = neon(process.env.DATABASE_URL!);
 import { simpleParser } from 'mailparser';
 import multer from 'multer';
 import path from 'path';

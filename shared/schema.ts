@@ -489,6 +489,23 @@ export const sessionCommunications = pgTable("session_communications", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+// Digital Files Management
+export const digitalFiles = pgTable("digital_files", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  folderName: text("folder_name"),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  fileSize: integer("file_size"),
+  clientId: uuid("client_id"),
+  sessionId: uuid("session_id"),
+  description: text("description"),
+  tags: text("tags").array(),
+  isPublic: boolean("is_public").default(false),
+  uploadedAt: timestamp("uploaded_at", { withTimezone: true }).defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
 export const weatherData = pgTable("weather_data", {
   id: text("id").primaryKey(),
   sessionId: text("session_id").notNull(),
@@ -743,6 +760,50 @@ export const insertCrmMessageSchema = createInsertSchema(crmMessages).pick({
   assignedTo: true,
 });
 
+// Studio and Template schemas
+export const insertStudioConfigSchema = createInsertSchema(studioConfigs).pick({
+  studioName: true,
+  ownerEmail: true,
+  domain: true,
+  subdomain: true,
+  activeTemplate: true,
+  logoUrl: true,
+  primaryColor: true,
+  secondaryColor: true,
+  fontFamily: true,
+  businessName: true,
+  address: true,
+  city: true,
+  state: true,
+  zipCode: true,
+  country: true,
+  phone: true,
+  email: true,
+  website: true,
+  facebookUrl: true,
+  instagramUrl: true,
+  twitterUrl: true,
+  openingHours: true,
+  enabledFeatures: true,
+  metaTitle: true,
+  metaDescription: true,
+  isActive: true,
+  subscriptionStatus: true,
+});
+
+export const insertTemplateDefinitionSchema = createInsertSchema(templateDefinitions).pick({
+  id: true,
+  name: true,
+  description: true,
+  category: true,
+  previewImage: true,
+  demoUrl: true,
+  features: true,
+  colorScheme: true,
+  isActive: true,
+  isPremium: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertPhotographySession = z.infer<typeof insertPhotographySessionSchema>;
@@ -763,7 +824,6 @@ export type CrmInvoicePayment = typeof crmInvoicePayments.$inferSelect;
 export type InsertCrmInvoicePayment = typeof crmInvoicePayments.$inferInsert;
 export type CrmMessage = typeof crmMessages.$inferSelect;
 export type InsertCrmMessage = z.infer<typeof insertCrmMessageSchema>;
-export type Gallery = typeof galleries.$inferSelect;
 export type SessionEquipment = typeof sessionEquipment.$inferSelect;
 export type SessionTask = typeof sessionTasks.$inferSelect;
 export type SessionCommunication = typeof sessionCommunications.$inferSelect;

@@ -20,47 +20,47 @@ router.get('/', async (req, res) => {
 
     let query = db.select({
       id: digitalFiles.id,
-      folder_name: digitalFiles.folder_name,
-      file_name: digitalFiles.file_name,
-      file_type: digitalFiles.file_type,
-      file_size: digitalFiles.file_size,
-      client_id: digitalFiles.client_id,
-      session_id: digital_files.session_id,
-      description: digital_files.description,
-      tags: digital_files.tags,
-      is_public: digital_files.is_public,
-      uploaded_at: digital_files.uploaded_at,
-      created_at: digital_files.created_at,
-      updated_at: digital_files.updated_at
-    }).from(digital_files);
+      folderName: digitalFiles.folderName,
+      fileName: digitalFiles.fileName,
+      fileType: digitalFiles.fileType,
+      fileSize: digitalFiles.fileSize,
+      clientId: digitalFiles.clientId,
+      sessionId: digitalFiles.sessionId,
+      description: digitalFiles.description,
+      tags: digitalFiles.tags,
+      isPublic: digitalFiles.isPublic,
+      uploadedAt: digitalFiles.uploadedAt,
+      createdAt: digitalFiles.createdAt,
+      updatedAt: digitalFiles.updatedAt
+    }).from(digitalFiles);
 
     // Apply filters
     const conditions = [];
     
     if (folder_name) {
-      conditions.push(ilike(digital_files.folder_name, `%${folder_name}%`));
+      conditions.push(ilike(digitalFiles.folderName, `%${folder_name}%`));
     }
     
     if (file_type) {
-      conditions.push(eq(digital_files.file_type, file_type as any));
+      conditions.push(eq(digitalFiles.fileType, file_type as any));
     }
     
     if (client_id) {
-      conditions.push(eq(digital_files.client_id, client_id as string));
+      conditions.push(eq(digitalFiles.clientId, client_id as string));
     }
     
     if (session_id) {
-      conditions.push(eq(digital_files.session_id, session_id as string));
+      conditions.push(eq(digitalFiles.sessionId, session_id as string));
     }
     
     if (search_term) {
       // Search in file name and description
-      const searchCondition = like(digital_files.file_name, `%${search_term}%`);
+      const searchCondition = like(digitalFiles.fileName, `%${search_term}%`);
       conditions.push(searchCondition);
     }
     
     if (is_public !== undefined) {
-      conditions.push(eq(digital_files.is_public, is_public === 'true'));
+      conditions.push(eq(digitalFiles.isPublic, is_public === 'true'));
     }
 
     if (conditions.length > 0) {
@@ -68,7 +68,7 @@ router.get('/', async (req, res) => {
     }
 
     const files = await query
-      .orderBy(desc(digital_files.uploaded_at))
+      .orderBy(desc(digitalFiles.uploadedAt))
       .limit(parseInt(limit as string));
 
     res.json(files);
@@ -102,20 +102,20 @@ router.post('/', async (req, res) => {
 
     const fileId = crypto.randomUUID();
     
-    const [newFile] = await db.insert(digital_files).values({
+    const [newFile] = await db.insert(digitalFiles).values({
       id: fileId,
-      folder_name,
-      file_name,
-      file_type,
-      file_size,
-      client_id: client_id || null,
-      session_id: session_id || null,
+      folderName: folder_name,
+      fileName: file_name,
+      fileType: file_type,
+      fileSize: file_size,
+      clientId: client_id || null,
+      sessionId: session_id || null,
       description,
-      tags: JSON.stringify(tags),
-      is_public,
-      uploaded_at: new Date(),
-      created_at: new Date(),
-      updated_at: new Date()
+      tags: tags || [],
+      isPublic: is_public,
+      uploadedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
     }).returning();
 
     res.status(201).json(newFile);
@@ -140,12 +140,12 @@ router.put('/:id', async (req, res) => {
     }
     
     // Set updated timestamp
-    updateData.updated_at = new Date();
+    updateData.updatedAt = new Date();
 
     const [updatedFile] = await db
-      .update(digital_files)
+      .update(digitalFiles)
       .set(updateData)
-      .where(eq(digital_files.id, id))
+      .where(eq(digitalFiles.id, id))
       .returning();
 
     if (!updatedFile) {
@@ -165,8 +165,8 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     const [deletedFile] = await db
-      .delete(digital_files)
-      .where(eq(digital_files.id, id))
+      .delete(digitalFiles)
+      .where(eq(digitalFiles.id, id))
       .returning();
 
     if (!deletedFile) {

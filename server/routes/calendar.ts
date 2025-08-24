@@ -19,37 +19,37 @@ router.get('/sessions', async (req, res) => {
 
     let query = db.select({
       id: photographySessions.id,
-      client_id: photographySessions.client_id,
-      session_type: photographySessions.session_type,
-      session_date: photographySessions.session_date,
-      duration_minutes: photographySessions.duration_minutes,
-      location: photographySessions.location,
+      clientId: photographySessions.clientId,
+      sessionType: photographySessions.sessionType,
+      startTime: photographySessions.startTime,
+      endTime: photographySessions.endTime,
+      locationName: photographySessions.locationName,
       notes: photographySessions.notes,
-      price: photographySessions.price,
-      deposit_required: photographySessions.deposit_required,
-      equipment_needed: photographySessions.equipment_needed,
+      basePrice: photographySessions.basePrice,
+      depositAmount: photographySessions.depositAmount,
+      equipmentList: photographySessions.equipmentList,
       status: photographySessions.status,
-      created_at: photographySessions.created_at,
-      updated_at: photographySessions.updated_at
+      createdAt: photographySessions.createdAt,
+      updatedAt: photographySessions.updatedAt
     }).from(photographySessions);
 
     // Apply filters
     const conditions = [];
     
     if (start_date) {
-      conditions.push(gte(photographySessions.session_date, new Date(start_date as string)));
+      conditions.push(gte(photographySessions.startTime, new Date(start_date as string)));
     }
     
     if (end_date) {
-      conditions.push(lte(photographySessions.session_date, new Date(end_date as string)));
+      conditions.push(lte(photographySessions.endTime, new Date(end_date as string)));
     }
     
     if (client_id) {
-      conditions.push(eq(photographySessions.client_id, client_id as string));
+      conditions.push(eq(photographySessions.clientId, client_id as string));
     }
     
     if (session_type) {
-      conditions.push(eq(photographySessions.session_type, session_type as any));
+      conditions.push(eq(photographySessions.sessionType, session_type as any));
     }
     
     if (status) {
@@ -61,7 +61,7 @@ router.get('/sessions', async (req, res) => {
     }
 
     const sessions = await query
-      .orderBy(asc(photographySessions.session_date))
+      .orderBy(asc(photographySessions.startTime))
       .limit(parseInt(limit as string));
 
     res.json(sessions);
@@ -97,18 +97,19 @@ router.post('/sessions', async (req, res) => {
     
     const [newSession] = await db.insert(photographySessions).values({
       id: sessionId,
-      client_id,
-      session_type,
-      session_date: new Date(session_date),
-      duration_minutes,
-      location,
+      title: `${session_type} Session`,
+      clientId: client_id,
+      sessionType: session_type,
+      startTime: new Date(session_date),
+      endTime: new Date(new Date(session_date).getTime() + (duration_minutes * 60000)),
+      locationName: location,
       notes,
-      price,
-      deposit_required,
-      equipment_needed: JSON.stringify(equipment_needed),
+      basePrice: price.toString(),
+      depositAmount: deposit_required.toString(),
+      equipmentList: equipment_needed,
       status: 'CONFIRMED',
-      created_at: new Date(),
-      updated_at: new Date()
+      createdAt: new Date(),
+      updatedAt: new Date()
     }).returning();
 
     res.status(201).json(newSession);
@@ -167,9 +168,8 @@ router.delete('/sessions/:id', async (req, res) => {
       .update(photographySessions)
       .set({
         status: 'CANCELLED',
-        cancellation_reason,
-        refund_amount,
-        updated_at: new Date()
+        notes: cancellation_reason ? `Cancelled: ${cancellation_reason}` : 'Cancelled',
+        updatedAt: new Date()
       })
       .where(eq(photographySessions.id, id))
       .returning();
@@ -200,18 +200,18 @@ router.get('/availability', async (req, res) => {
     // Get existing sessions for the date
     const existingSessions = await db
       .select({
-        session_date: photographySessions.session_date,
-        duration_minutes: photographySessions.duration_minutes
+        startTime: photographySessions.startTime,
+        endTime: photographySessions.endTime
       })
       .from(photographySessions)
       .where(
         and(
-          gte(photographySessions.session_date, new Date(date as string)),
-          lte(photographySessions.session_date, new Date(`${date} 23:59:59`)),
+          gte(photographySessions.startTime, new Date(date as string)),
+          lte(photographySessions.startTime, new Date(`${date} 23:59:59`)),
           eq(photographySessions.status, 'CONFIRMED')
         )
       )
-      .orderBy(asc(photographySessions.session_date));
+      .orderBy(asc(photographySessions.startTime));
 
     // Define working hours (9 AM to 6 PM)
     const workingHours = { start: 9, end: 18 };
@@ -219,10 +219,11 @@ router.get('/availability', async (req, res) => {
 
     const availableSlots = [];
     const bookedSlots = existingSessions.map(session => {
-      const sessionDate = new Date(session.session_date);
+      const sessionStart = new Date(session.startTime);
+      const sessionEnd = new Date(session.endTime);
       return {
-        start: sessionDate.getHours() + (sessionDate.getMinutes() / 60),
-        end: sessionDate.getHours() + (sessionDate.getMinutes() / 60) + (session.duration_minutes / 60)
+        start: sessionStart.getHours() + (sessionStart.getMinutes() / 60),
+        end: sessionEnd.getHours() + (sessionEnd.getMinutes() / 60)
       };
     });
 
