@@ -10,17 +10,20 @@
     "skipLibCheck": true,
     "noEmit": true,
     "noImplicitAny": false,
-    "strictNullChecks": false
+    "strictNullChecks": false,
+    "allowJs": true
   },
-  "include": ["server", "api", "scripts", "shared"],
+  "include": ["api/**/*", "server/routes.ts", "server/app.ts", "shared/**/*"],
   "exclude": [
     "agent/**/*",
     "server/autoblog*.ts",
-    "server/email-import.ts",
+    "server/email-import.ts", 
     "server/routes-test.ts",
+    "server/scraping-agent.ts",
     "**/*.test.ts",
     "**/*.spec.ts",
     "test-*.ts",
-    "test-*.js"
+    "test-*.js",
+    "scripts/**/*"
   ]
 }

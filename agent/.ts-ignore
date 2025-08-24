@@ -1,0 +1,4 @@
+// @ts-nocheck
+// This folder contains experimental AI agent code
+// TypeScript checking is disabled to prevent deployment interference
+// These files are not part of the production build

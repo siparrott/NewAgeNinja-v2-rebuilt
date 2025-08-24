@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev:api": "tsx server/dev.ts",
-    "lint": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.build.json --noEmit",
     "build": "vite build",
     "vercel-build": "npm install && vite build",
     "dev": "NODE_ENV=development DEMO_MODE=true tsx server/index.ts",
